@@ -1,0 +1,1 @@
+This folder is where json files that have already been used are stored for later use

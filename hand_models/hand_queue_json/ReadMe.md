@@ -1,0 +1,1 @@
+This is the folder to place json files of the hands you want generated
