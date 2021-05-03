@@ -129,4 +129,4 @@ dmypy.json
 .pyre/
 
 # usr specific info
-Computer_Info.json
+User_Info.json
