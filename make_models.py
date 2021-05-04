@@ -11,6 +11,7 @@ def run_blender(object_list='cuboid_cylinder', blender_loc = ""):
     Input: object_list: as string with cuboid, cylinder or cuboid_cylinder
     """
 
+<<<<<<< Updated upstream
     print(sys.platform)
     print(blender_loc)
 
@@ -29,6 +30,13 @@ def run_blender(object_list='cuboid_cylinder', blender_loc = ""):
     #     ***********************************************************************************************
 
     #                                 Windows not currently supported 
+=======
+    # linux
+    subprocess.run(f'/snap/bin/blender InitialFile.blend --background --python generator.py {object_list}', shell=True)
+    
+    # mac os
+    # subprocess.run(f'/Applications/Blender.app/Contents/MacOS/Blender InitialFile.blend --background --python generator.py {object_list}', shell=True)
+>>>>>>> Stashed changes
 
     #     ***********************************************************************************************
     #     \n''')
@@ -43,6 +51,11 @@ if __name__ == '__main__':
 
     # Grabs the location and moves to the blender resources folder
     # dir = os.path.dirname(__file__)
+<<<<<<< Updated upstream
+=======
+    dir = os.getcwd()
+    os.chdir(f'{dir}/blender_resources')
+>>>>>>> Stashed changes
 
     dir = os.getcwd()  # worked better on linux
     print(f'\n\n {dir} \n\n')
