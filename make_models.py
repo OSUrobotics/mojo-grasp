@@ -33,7 +33,6 @@ def run_blender(object_list='cuboid_cylinder', blender_loc = ""):
 =======
     # linux
     subprocess.run(f'/snap/bin/blender InitialFile.blend --background --python generator.py {object_list}', shell=True)
-    
     # mac os
     # subprocess.run(f'/Applications/Blender.app/Contents/MacOS/Blender InitialFile.blend --background --python generator.py {object_list}', shell=True)
 >>>>>>> Stashed changes
