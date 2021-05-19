@@ -130,3 +130,5 @@ dmypy.json
 
 # usr specific info
 User_Info.json
+hand_models/hand_queue_json/
+hand_models/hand_archive_json/
