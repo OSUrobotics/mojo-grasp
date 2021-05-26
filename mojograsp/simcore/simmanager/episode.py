@@ -17,11 +17,11 @@ class Episode():
 		None
 
 	def episode_pre_step(self):
-		print("Episode Pre step")
+		#print("Episode Pre step")
 		None
 
 	def episode_post_step(self):
-		print("Episode Post step")
+		#print("Episode Post step")
 		None
 
 	def episode_complete(self):

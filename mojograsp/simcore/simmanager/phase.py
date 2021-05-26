@@ -2,7 +2,7 @@
 
 class Phase():
 	
-	def __init__(self, simobjects):
+	def __init__(self):
 		print("Phase initialized")
 		None
 	
@@ -11,19 +11,19 @@ class Phase():
 		None
 
 	def pre_step(self):
-		print("Pre step")
+	#	print("Pre step")
 		None
 
 	def post_step(self):
-		print("Post step")
+	#	print("Post step")
 		None
 
 	def select_action(self):
-		print("Selecting action")
+	#	print("Selecting action")
 		return None
 
 	def execute_action(self):
-		print("Executing action")
+	#	print("Executing action")
 		None
 
 	def phase_exit_condition(self, episode_step):

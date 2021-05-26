@@ -31,7 +31,7 @@ class SimManager():
 		self.physics_client = p.connect(p.GUI)
 		p.setGravity(0,0,-10)	
 	
-	#temporary function for testing
+	#Prevents pybullet from closing
 	def stall(self):
 		while p.isConnected():
 			time.sleep(1)
@@ -48,30 +48,44 @@ class SimManager():
 		
 	#rough outline of simstep where phase functions called and pybullet stepped n times
 	def step(self):
-		print("Stepping once")
+		#take episode pre step action
+		self.episode_configuration.episode_pre_step()
+		#select action before episode step
 		action = self.current_phase.select_action()
 
+		#simulator timesteps equaling one episode timestep
 		for i in range(self.episode_timestep):
+			#phase prestep and execute called
 			self.current_phase.pre_step()
 			self.current_phase.execute_action()
+
+			#Pybullet stepped
 			p.stepSimulation()
-			self.current_phase.post_step()
 			time.sleep(self.sim_timestep)
+
+			#phase post step called
+			self.current_phase.post_step()
+
+		#after 1 episode step we call the episode post step function
+		self.episode_configuration.episode_post_step()
 
 
 	#Rough outline of run, runs for set amount of episodes where within each episode all phases are run until their exit condition is met
 	def run(self):
 		print("RUNNING")
 		
+		#resets episode settings, runs episode setup and sets the current phase
 		for i in range(self.num_episodes):
 			self.episode_configuration.reset()	
 			self.episode_configuration.setup()	
 			self.current_phase = self.starting_phase
-
+			
+			#for every phase in the dictionary we step until the exit condition is met
 			for j in range(len(self.phase_dict)):
 				self.current_phase.setup()
-				
 				step_count = 0
+				
+				#while exit condition is not met call step 
 				while(self.current_phase.phase_exit_condition(step_count) == False):
 					self.step()
 					step_count+=1
@@ -79,7 +93,10 @@ class SimManager():
 				#after exit condition is met we get the next phase name and set current phase to the specified value
 				next_phase = self.current_phase.phase_complete()	
 				if(next_phase != None):
-					self.current_phase = self.phase_dict[next_phase]
+					try:
+						self.current_phase = self.phase_dict[next_phase]
+					except:
+						print("Error: Could not find next phase " + str(next_phase))
 				else:
 					break
 					
