@@ -6,29 +6,44 @@ from mojograsp.simcore.actuators import fullyactuated, underactuated
 
 class Hand(objectbase.ObjectBase):
 
-	def __init__(self, filename, underactuation=False):
+	def __init__(self, filename, underactuation=False, fixed=False):
 		#calls initialization for objectbase class
-		super().__init__(filename)
+		super().__init__(filename, fixed)
 
-		joint_index = {}
-		sensor_index = {}
+		#initialize important variables
+		self.joint_index = {}
+		self.sensor_index = {}
 		self.create_sensor_index()
 		self.create_joint_index()
 
 		#creates instances of geometry class and actuators class
-		self.geometry = handgeometry.HandGeometry(joint_index)
+		self.geometry = handgeometry.HandGeometry(self.joint_index)
 		if(underactuation == False):
-			self.actuation = fullyactuated.FullyActuated(joint_index)
+			self.actuation = fullyactuated.FullyActuated(self.joint_index, self.id)
 		else:
-			self.actuation = underactuated.UnderActuated(joint_index)
+			self.actuation = underactuated.UnderActuated(self.joint_index, self.id)
 
 
-		
+	#placeholder		
 	def create_sensor_index(self):
 		print("creating sensors")
 
-
+	#creates joint dictionary with style name: number
 	def create_joint_index(self):
 		print("creating joint index")
+		for i in range(p.getNumJoints(self.id)):
+			info = p.getJointInfo(self.id, i)
+			joint_name = info[1].decode("ascii")
+			joint_type = info[2]
+			joint_id = info[0]
+
+			#filters out fixed joints to exclude sensors but will need better solution in the future
+			if(joint_type != 4):
+				self.joint_index[joint_name] = joint_id	
+
+		print(self.joint_index)
+
+
+
 		
 		
