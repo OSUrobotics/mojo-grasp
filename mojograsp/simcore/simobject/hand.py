@@ -22,7 +22,7 @@ class Hand(objectbase.ObjectBase):
 		if(underactuation == False):
 			self.actuation = fullyactuated.FullyActuated(self.joint_index, self.id)
 		else:
-			self.actuation = underactuated.UnderActuated(self.joint_index, self.id)
+			self.actuation = underactuated.UnderActuated(self.joint_index)
 
 
 	#rough draft of sensor index creation

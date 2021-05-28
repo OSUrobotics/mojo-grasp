@@ -4,7 +4,7 @@ from . import episode
 
 class SimManager():
 
-	def __init__(self, num_episodes=1, sim_timestep=(1. / 240.), episode_timestep=1, episode_configuration=None, gym=False):
+	def __init__(self, num_episodes=1, sim_timestep=(1. / 240.), episode_timestep_length=1, episode_configuration=None, gym=False):
 		#initializes phase dictionary and other variables we will need
 		self.phase_dict = {}
 		self.current_phase = None
@@ -19,7 +19,7 @@ class SimManager():
 			
 		#variables to keep track of episodes and timestep lengths
 		self.num_episodes = num_episodes
-		self.episode_timestep = episode_timestep
+		self.episode_timestep_length = episode_timestep_length
 		self.sim_timestep = sim_timestep
 		
 		#physics server setup, in the future needs arguments
@@ -54,7 +54,7 @@ class SimManager():
 		action = self.current_phase.select_action()
 
 		#simulator timesteps equaling one episode timestep
-		for i in range(self.episode_timestep):
+		for i in range(self.episode_timestep_length):
 			#phase prestep and execute called
 			self.current_phase.pre_step()
 			self.current_phase.execute_action()
@@ -97,6 +97,7 @@ class SimManager():
 						self.current_phase = self.phase_dict[next_phase]
 					except:
 						print("Error: Could not find next phase " + str(next_phase))
+				#if phase is none we break the for loop early
 				else:
 					break
 					
