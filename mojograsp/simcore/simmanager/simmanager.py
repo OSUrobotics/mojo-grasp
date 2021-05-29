@@ -79,9 +79,10 @@ class SimManager():
 			self.episode_configuration.reset()	
 			self.episode_configuration.setup()	
 			self.current_phase = self.starting_phase
+			exit_flag = False
 			
 			#for every phase in the dictionary we step until the exit condition is met
-			for j in range(len(self.phase_dict)):
+			while(exit_flag == False):
 				self.current_phase.setup()
 				step_count = 0
 				
@@ -96,9 +97,11 @@ class SimManager():
 					try:
 						self.current_phase = self.phase_dict[next_phase]
 					except:
+						exit_flag = True
 						print("Error: Could not find next phase " + str(next_phase))
 				#if phase is none we break the for loop early
 				else:
+					exit_flag = True
 					break
 					
 				
