@@ -57,7 +57,8 @@ class SimManager():
 		for i in range(self.episode_timestep_length):
 			#phase prestep and execute called
 			self.current_phase.pre_step()
-			self.current_phase.execute_action()
+			action = self.current_phase.controller.select_action()
+			self.current_phase.execute_action(action)
 
 			#Pybullet stepped
 			p.stepSimulation()

@@ -27,7 +27,7 @@ class Hand(objectbase.ObjectBase):
 
 	#rough draft of sensor index creation
 	def create_sensor_index(self):
-		print("creating sensors")
+		print("creating sensors", self.id)
 		for i in range(p.getNumJoints(self.id)):
 			info = p.getJointInfo(self.id, i)
 			sensor_name = info[1].decode("ascii")
