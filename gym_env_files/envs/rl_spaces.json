@@ -1,0 +1,1 @@
+{"state_space": {"joint_angles_prox": [-1.57, 1.57], "joint_velocities_prox": [-5.0, 5.0], "joint_angles_dist": [-1.57, 1.57], "joint_velocities_dist": [-5.0, 5.0], "object_pos": [3.0], "object_orientation": [4.0]}, "action_space": {"joint_angles": [-1.57, 1.57]}, "reward": {"contact_reward": [-5.0, 0.0], "path_reward": [-1.0, 1.0]}}
