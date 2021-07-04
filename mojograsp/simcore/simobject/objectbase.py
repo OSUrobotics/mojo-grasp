@@ -13,6 +13,7 @@ class ObjectBase():
 		self.orientation = None
 		self.obj_id = None
 		self.fixed = fixed
+		self.start_pos = {}
 		self.load_object()
 
 	#loads object into pybullet, needs to be changed to support urdf, sdf and others right now only supports urdf with no arguments other than fixed
@@ -21,5 +22,13 @@ class ObjectBase():
 		ids = p.loadSDF(self.model_file)
 		self.id = ids[0]
 		self.obj_id = ids[1]
+		for id in ids:
+			start_pos, start_orn = self.get_curr_pose(id)
+			self.start_pos.update({id: [start_pos, start_orn]})
 		print("loading objects")
+
+	@staticmethod
+	def get_curr_pose(object_id):
+		curr_pos, curr_orn = p.getBasePositionAndOrientation(object_id)
+		return curr_pos, curr_orn
 
