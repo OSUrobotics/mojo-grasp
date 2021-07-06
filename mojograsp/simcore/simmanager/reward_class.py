@@ -16,7 +16,7 @@ from . import state_space
 from collections import OrderedDict
 
 
-class Reward():
+class Reward:
     _sim = None
 
     def __init__(self, json_path='reward.json'):

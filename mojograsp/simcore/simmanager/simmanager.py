@@ -80,6 +80,7 @@ class SimManager:
 
         #resets episode settings, runs episode setup and sets the current phase
         for i in range(self.num_episodes):
+            self.env.reset()
             self.episode_configuration.reset()
             self.episode_configuration.setup()
             self.current_phase = self.starting_phase
@@ -98,7 +99,7 @@ class SimManager:
                     print(step_count, self.state_space)
                     self.current_phase.action = self.current_phase.controller.select_action()
                     val = [self.current_phase, self.state_space, self.reward_space]
-                    observation, reward, _, info = self.env.step(val)
+                    observation, reward, done, info = self.env.step(val)
                     done = self.current_phase.phase_exit_condition(step_count)
                     step_count+=1
 
