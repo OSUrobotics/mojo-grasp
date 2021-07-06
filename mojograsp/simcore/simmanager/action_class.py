@@ -24,6 +24,8 @@ class Action():
         @param desired_speed - list of speeds with length described in
         action.json
         @param json_path - path to json file"""
+        if acceleration_range is None:
+            acceleration_range = [0.2, 20]
         self.min_acceleration = acceleration_range[0]  # rad/s^2
         self.max_acceleration = acceleration_range[1]  # rad/s^2
         self.action_profile = []

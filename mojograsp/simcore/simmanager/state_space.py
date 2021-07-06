@@ -39,7 +39,7 @@ class StateSpace:
                          'DotProduct': DotProduct, 'StateGroup': StateGroup}
     _sim = None
 
-    def __init__(self, path='state.json'):
+    def __init__(self, path='/Users/asar/Desktop/Grimm\'s Lab/Manipulation/PyBulletStuff/mojo-grasp/mojograsp/simcore/simmanager/state.json'):
         with open(path) as f:
             json_data = json.load(f)
         self.data = OrderedDict()
