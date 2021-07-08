@@ -41,17 +41,11 @@ def read_json(user_info_loc):
 
 if __name__ == '__main__':
 
-    # Grabs the location and moves to the blender resources folder
-    # dir = os.path.dirname(__file__)
-# <<<<<<< Updated upstream
-# =======
-#     dir = os.getcwd()
-#     os.chdir(f'{dir}/blender_resources')
-# >>>>>>> Stashed changes
-
-    dir = os.getcwd()  # worked better on linux
-    print(f'\n\n {dir} \n\n')
-    user_info_loc = f'{dir}/User_Info.json'
-    os.chdir(f'{dir}/blender_resources')
-    blender_loc = read_json(user_info_loc)
-    run_blender(blender_loc=blender_loc)
+    a = sys.argv[1:]
+    print(a)
+    # dir = os.getcwd()  # worked better on linux
+    # print(f'\n\n {dir} \n\n')
+    # user_info_loc = f'{dir}/User_Info.json'
+    # os.chdir(f'{dir}/blender_resources')
+    # blender_loc = read_json(user_info_loc)
+    # run_blender(blender_loc=blender_loc)
