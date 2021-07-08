@@ -1,25 +1,3 @@
-#
-#
-# class State:
-#
-#     def __init__(self):
-#         print("State Space initialized")
-#         None
-#
-#     def setup(self):
-#         print("State space setting up")
-#         None
-#
-#     def get_observation(self):
-#         print("Return current observation")
-#         None
-#
-#     def update(self):
-#         print("Update observation")
-#         None
-
-
-
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
@@ -31,6 +9,7 @@ import json
 import time
 import numpy as np
 from .state_metric import *
+# import state_metric
 from collections import OrderedDict
 
 
@@ -39,7 +18,9 @@ class StateSpace:
                          'DotProduct': DotProduct, 'StateGroup': StateGroup}
     _sim = None
 
-    def __init__(self, path='/Users/asar/Desktop/Grimm\'s Lab/Manipulation/PyBulletStuff/mojo-grasp/mojograsp/simcore/simmanager/state.json'):
+    def __init__(self, hand, obj, path='/Users/asar/Desktop/Grimm\'s Lab/Manipulation/PyBulletStuff/mojo-grasp/mojograsp/simcore/simmanager/State/state.json'):
+        self.hand = hand
+        self.object = obj
         with open(path) as f:
             json_data = json.load(f)
         self.data = OrderedDict()
@@ -48,18 +29,18 @@ class StateSpace:
             try:
                 self.data[name] = eval(state_name[0] + '(value)')
             except NameError:
-                print(state_name[0],'ya done messed up a-a-ron, valid state names are', [name for name in
+                print(state_name[0],'Invalid State Names. Valid state names are', [name for name in
                                                                            StateSpace.valid_state_names.keys()])
 
-    def get_full_arr(self):
-        arr = []
+    def get_observation(self):
+        obs = []
         for name, value in self.data.items():
             temp = value.get_value()
             try:
-                arr.extend(temp)
+                obs.extend(temp)
             except TypeError:
-                arr.extend([temp])
-        return arr
+                obs.extend([temp])
+        return obs
 
     def get_value(self, keys):
         if type(keys) is str:

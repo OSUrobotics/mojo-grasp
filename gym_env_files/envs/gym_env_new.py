@@ -1,5 +1,6 @@
 import gym
-from mojograsp.simcore.simmanager import environment, reward_class
+from mojograsp.simcore.simmanager import environment
+from mojograsp.simcore.simmanager.Reward import reward_class
 
 
 class IHMBulletEnv(gym.Env):
@@ -40,8 +41,9 @@ class IHMBulletEnv(gym.Env):
 
         # Get reward
         print("OBSERVATION:", observation)
-        curr_reward = reward_here().update(observation=observation)
-        print("Observation: {}\nReward: {}\nDone: {}\nInfo:{}\nMax Episoddes:".format(observation, curr_reward, self.done, self.info))#, self.max_episode_steps))
+        # curr_reward = reward_here.get_reward()
+        curr_reward = 0
+        print("Observation: {}\nReward: {}\nDone: {}\nInfo:{}\nMax Episodes:".format(observation, curr_reward, self.done, self.info))#, self.max_episode_steps))
         return observation, curr_reward, self.done, self.info
         pass
 

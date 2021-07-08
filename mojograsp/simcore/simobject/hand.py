@@ -8,9 +8,9 @@ from mojograsp.simcore.sensors import sensorbase
 
 class Hand(objectbase.ObjectBase):
 
-    def __init__(self, filename, underactuation=False, fixed=False):
+    def __init__(self, filename, underactuation=False, fixed=False, base_pos=None, base_orn=None):
         # calls initialization for objectbase class
-        super().__init__(filename, fixed)
+        super().__init__(filename, fixed, base_pos, base_orn)
 
         # initialize important variables
         self.joint_index = {}

@@ -12,11 +12,11 @@ import json
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from mojograsp.simcore.datacollection.stats_tracker_base import *
-from . import state_space
+from mojograsp.simcore.simmanager.State import state_space
 from collections import OrderedDict
 
 
-class Reward:
+class Reward():
     _sim = None
 
     def __init__(self, json_path='reward.json'):
@@ -77,3 +77,15 @@ class Reward:
 if __name__ == "__main__":
     r = Reward()
     r.get_reward()
+
+
+    # Ask Nigel:
+    """
+    1) Reward mein why are there state space updates?
+    2) Why is there a separate json for finger states?
+    3) Walk through of expected usage of classes. Where will state be initialized? reward? Where will it all be stored?
+    
+    TODO:
+    Integrate keys dictionary and ids in hand geometry class and object class into keys of state space class
+    (add hand and object in init of space?)
+    """

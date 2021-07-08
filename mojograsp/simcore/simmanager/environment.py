@@ -24,7 +24,8 @@ class Environment:
         self.step_sim()
         print("State:", state)
         if state is not None:
-            observation = state.get_observation()
+            state.update()
+            observation = state.get_observation
         else:
             observation = None
         return observation, None, None, None
