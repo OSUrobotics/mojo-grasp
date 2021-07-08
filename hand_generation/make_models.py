@@ -43,9 +43,9 @@ if __name__ == '__main__':
 
     a = sys.argv[1:]
     print(a)
-    # dir = os.getcwd()  # worked better on linux
-    # print(f'\n\n {dir} \n\n')
-    # user_info_loc = f'{dir}/User_Info.json'
-    # os.chdir(f'{dir}/blender_resources')
-    # blender_loc = read_json(user_info_loc)
-    # run_blender(blender_loc=blender_loc)
+    directory = os.getcwd()  # worked better on linux
+    print(f'\n\n {directory} \n\n')
+    user_info_loc = f'{directory}/User_Info.json'
+    os.chdir(f'{directory}/blender_resources')
+    blender_loc = read_json(user_info_loc)
+    run_blender(blender_loc=blender_loc)
