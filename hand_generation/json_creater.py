@@ -65,13 +65,13 @@ def test():
             }
         },#in meters
         "hand_parameters": {
-            "palm_width": .14,
-            "palm_height": 0.04,
-            "hand_thickness": .02,
-            "finger_width": .02,
-            "finger_length": .12,
-            "joint_length": .01125,
-            "scale_factor": 1
+            "palm_width": float(input("palm width(default=0.14):  "),
+            "palm_height": float(input("palm height(default=0.04):  "),
+            "hand_thickness": float(input("hand thickness(default=0.02):  "),
+            "finger_width": float(input("finger width(default=0.02):  "),
+            "finger_length": float(input("finger length(default=0.12):  "),
+            "joint_length": float(input("joint length(default=0.01125):  "),
+            "scale_factor": float(input("scale factor(default=1):  ")
         }
     }
     print(json.dumps(hand, indent=4))
