@@ -4,8 +4,8 @@ import json
 import os
 
 
-directory = os.path.dirname(__file__)
-
+# directory = os.path.dirname(__file__)
+directory = os.getcwd()
 
 def test():
     name = input("hand_name:  ")
@@ -18,7 +18,7 @@ def test():
         },
         "left_finger": {
             "number_segments": int(input("left finger number of segments(default=3):  ")),
-            "finger_length": float(input("total length of the left finger(default=0.12):  ")),
+            "finger_length": float(input("total length of the left finger(default=0.12m):  ")),
             "segment_names": list(input("list of seg names:  ").split(" ")),
             "prox": {
                 "ratio": float(input("left prox ratio:  ")),
@@ -41,8 +41,8 @@ def test():
             }
         },
         "right_finger": {
-            "number_segments": int(input("right finger number of segments:  ")),
-            "finger_length": float(input("total length of the right finger:  ")),
+            "number_segments": int(input("right finger number of segments(default=3):  ")),
+            "finger_length": float(input("total length of the right finger(default=0.12m):  ")),
             "segment_names": list(input("list of seg names:  ").split(" ")),
             "prox": {
                 "ratio": float(input("right prox ratio:  ")),
@@ -65,17 +65,18 @@ def test():
             }
         },#in meters
         "hand_parameters": {
-            "palm_width": float(input("palm width(default=0.14):  "),
-            "palm_height": float(input("palm height(default=0.04):  "),
-            "hand_thickness": float(input("hand thickness(default=0.02):  "),
-            "finger_width": float(input("finger width(default=0.02):  "),
-            "finger_length": float(input("finger length(default=0.12):  "),
-            "joint_length": float(input("joint length(default=0.01125):  "),
-            "scale_factor": float(input("scale factor(default=1):  ")
+            "palm_width": float(input("palm width(default=0.14m):  ")),
+            "palm_height": float(input("palm height(default=0.04m):  ")),
+            "hand_thickness": float(input("hand thickness(default=0.02m):  ")),
+            "finger_width": float(input("finger width(default=0.02m):  ")),
+            "finger_length": float(input("finger length(default=0.12m):  ")),
+            "joint_length": float(input("joint length(default=0.01125m):  ")),
+            "scale_factor": float(input("scale factor(default=1):  "))
         }
     }
     print(json.dumps(hand, indent=4))
 
+    print(f'{directory}/hand_models/hand_queue_json/')
     with open(f'{directory}/hand_models/hand_queue_json/{name}.json', 'w') as file:
         json.dump(hand, file, indent=4)
 
