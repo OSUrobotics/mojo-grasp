@@ -41,6 +41,8 @@ class SimManager:
         self.num_episodes = num_episodes
         self.episode_timestep_length = episode_timestep_length
         self.sim_timestep = sim_timestep
+        self.state_space = None
+        self.reward_space = None
 
         #physics server setup, in the future needs arguments
         self.setup()
