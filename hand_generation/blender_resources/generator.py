@@ -45,7 +45,7 @@ class Generator():
         self.finger_width = hand_info["hand_parameters"]["finger_width"] * self.scale_factor
         self.joint_length = hand_info["hand_parameters"]["joint_length"] * self.scale_factor
 
-        self.object_heigt = self.hand_thickness * 3
+        self.object_height = self.hand_thickness * 3
 
         hand_mesh_dir = f'{self.hand_directory}/{self.hand_name}/obj_files/'
         self.object_mesh_dir = f'{self.object_directory}/{self.hand_name}/obj_files/'
@@ -296,7 +296,7 @@ class Generator():
                 # set name, import, and scale the object
                 object_name = f'{self.hand_name}_{obj}_{size_names[i]}'
                 self.functions.get_part(obj, (0, 0, 0))
-                self.functions.scale_part(obj, (object_sizes[i], object_sizes[i], self.object_heigt))
+                self.functions.scale_part(obj, (object_sizes[i], object_sizes[i], self.object_height))
                 self.functions.channge_name(obj, object_name)
                 self.functions.export_part(object_name)
 
@@ -326,7 +326,7 @@ class Generator():
             json.dump(json_data, file, indent=4)
         
         os.remove(file_loc)  # delete the original json file
-
+        
 
 def read_jsons(object_list):
     """
