@@ -25,7 +25,7 @@ class Environment:
         print("State:", state)
         if state is not None:
             state.update()
-            observation = state.get_observation
+            observation = state.get_observation()
         else:
             observation = None
         return observation, None, None, None
