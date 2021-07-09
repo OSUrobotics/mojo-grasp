@@ -6,7 +6,7 @@
       "Position_Palm":[[-0.1,-0.1,-0.1],[0.1,0.1,0.1]],
       "Position_Obj":[[-0.2,-0.2,-0.2],[0.2,0.2,0.2]]
       },
-  "Angle_JointState": [[-1,-1,-1,-0.1,-0.1,-0.1,-0.1,-0.1,-0.1],[2,2,2,2,2,2,2,2,2]],
+  "Angle_JointState": [[-2,-2,-2,-2,-2],[2,2,2,2,2]],
   "Distance_ObjSize": [[0,0,0],[0.2,0.2,0.2]],
   "StateGroup_FingerObjDist":{
       "F1": {"Distance_Prox1":[0,2],"Distance_Prox2":[0,2],"Distance_Dist1":[0,2],"Distance_Dist2":[0,2]},
