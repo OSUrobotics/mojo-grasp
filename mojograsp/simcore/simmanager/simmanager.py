@@ -2,7 +2,13 @@ import time
 import pybullet as p
 from . import episode
 
-class SimManager():
+class SimManager_base:
+	# TODO: fill in with relevant classes
+	def setup(self):
+		pass
+
+
+class SimManager(SimManager_base):
 
 	def __init__(self, num_episodes=1, sim_timestep=(1. / 240.), episode_timestep_length=1, episode_configuration=None, gym=False):
 		#initializes phase dictionary and other variables we will need
