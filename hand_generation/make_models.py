@@ -42,7 +42,7 @@ def read_json(user_info_loc):
 if __name__ == '__main__':
 
     a = sys.argv[1:]
-    print(a)
+    # print(a)
     directory = os.getcwd()  # worked better on linux
     print(f'\n\n {directory} \n\n')
     user_info_loc = f'{directory}/User_Info.json'
