@@ -4,10 +4,26 @@ from . import episode
 
 class SimManager_base:
 	# TODO: fill in with relevant classes
+	def __init__(self):
+		pass
+
 	def setup(self):
 		pass
 
+	def stall(self):
+		pass
 
+	def add_phase(self):
+		pass
+
+	def step(self):
+		pass
+
+	def run(self):
+		pass
+
+
+# TODO: make this SimManager_bullet class
 class SimManager(SimManager_base):
 
 	def __init__(self, num_episodes=1, sim_timestep=(1. / 240.), episode_timestep_length=1, episode_configuration=None, gym=False):
@@ -53,7 +69,7 @@ class SimManager(SimManager_base):
 		print("Added Phase")
 		
 	#rough outline of simstep where phase functions called and pybullet stepped n times
-	def step(self):
+	def step(self):  # TODO: rename to update?
 		#take episode pre step action
 		self.episode_configuration.episode_pre_step()
 		#select action before episode step
@@ -87,8 +103,10 @@ class SimManager(SimManager_base):
 			self.current_phase = self.starting_phase
 			exit_flag = False
 			
+			# TODO: make a phasemanager class, have it run the phases
+			
 			#for every phase in the dictionary we step until the exit condition is met
-			while(exit_flag == False):
+			while(exit_flag == False):  # TODO: running phases now goes into phasemanager
 				self.current_phase.setup()
 				step_count = 0
 				
