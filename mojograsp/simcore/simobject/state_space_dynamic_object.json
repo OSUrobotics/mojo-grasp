@@ -1,0 +1,8 @@
+{
+  "StateGroup_Pose": {
+    "Position_Obj":[[-0.2,-0.2,-0.2],[0.2,0.2,0.2]]
+      },
+  "Distance_ObjSize": [[0,0,0],[0.2,0.2,0.2]],
+  "StateGroup_ObjAng":{"Angle_X,Z":[[-3.2,-3.2],[3.2,3.2]]},
+  "Position_RFObjectLocation":[[-0.2,-0.2,-0.2],[0.2,0.2,0.2]]
+}
