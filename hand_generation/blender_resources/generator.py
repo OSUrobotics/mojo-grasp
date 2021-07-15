@@ -99,18 +99,18 @@ class Generator():
         # import the palm model set it at the origin, scale it, rename it for collision and export obj file
         self.functions.get_part("palm", (0, 0, 0))
         self.functions.scale_part("palm", (self.hand_thickness, (self.palm_width + self.finger_width), self.palm_height))
-        self.functions.channge_name("palm", collision_name)
+        self.functions.change_name("palm", collision_name)
         self.functions.export_part(collision_name)
         # change object to base palm name
-        self.functions.channge_name(collision_name, self.palm_name)
+        self.functions.change_name(collision_name, self.palm_name)
 
         y_loc = (self.palm_width / 2)  # y component of finger location
         # Grab the left and right joints, set location, scale and rename
         self.functions.get_part(self.palm["left_joint"], (0, -y_loc, self.palm_height))
         self.functions.scale_part(self.palm["left_joint"], (self.hand_thickness, self.finger_width, (self.finger_width / 2)))
-        self.functions.channge_name(self.palm["left_joint"], "left_joint")
+        self.functions.change_name(self.palm["left_joint"], "left_joint")
         self.functions.get_part(self.palm["right_joint"], (0, y_loc, self.palm_height))
-        self.functions.channge_name(self.palm["right_joint"], "right_joint")
+        self.functions.change_name(self.palm["right_joint"], "right_joint")
         self.functions.scale_part("right_joint", (self.hand_thickness, self.finger_width, (self.finger_width / 2)))
 
         # combine the palm and joints, export obj file
@@ -167,7 +167,7 @@ class Generator():
         self.functions.get_part("sensor", (0, 0, 0))
         self.functions.scale_part("sensor", (1, .1, .1))
         self.functions.export_part("sensor")
-        self.functions.channge_name("sensor", "sensor_collision")
+        self.functions.change_name("sensor", "sensor_collision")
         self.functions.export_part("sensor_collision")
 
         # depending on side the offset switches along the x-axis
@@ -297,11 +297,11 @@ class Generator():
                 object_name = f'{self.hand_name}_{obj}_{size_names[i]}'
                 self.functions.get_part(obj, (0, 0, 0))
                 self.functions.scale_part(obj, (object_sizes[i], object_sizes[i], self.object_heigt))
-                self.functions.channge_name(obj, object_name)
+                self.functions.change_name(obj, object_name)
                 self.functions.export_part(object_name)
 
                 object_name_collision = f'{object_name}_collision'
-                self.functions.channge_name(object_name, object_name_collision)
+                self.functions.change_name(object_name, object_name_collision)
                 self.functions.export_part(object_name_collision)
 
                 self.urdf.start_file(object_name)

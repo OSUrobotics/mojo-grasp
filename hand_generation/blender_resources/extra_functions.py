@@ -55,7 +55,7 @@ class functions():
         bpy.ops.object.join()
         bpy.context.selected_objects[0].name = new_name
 
-    def channge_name(self, old_name, new_name):
+    def change_name(self, old_name, new_name):
         """
         change the name of an object
         Inputs: old_name: name of object you want to change
@@ -73,17 +73,36 @@ class functions():
         target_file = os.path.join(self.export_directory, name)
         bpy.ops.export_scene.obj(filepath=target_file, use_triangles=True, path_mode='COPY')
 
-    def import_part(self, file_name, position, rotation, file_location=None):
+    def import_part(self, file_name, position=None, rotation=None, file_location=None):
         
         if file_location == None:
             file_location = self.export_directory
         
+        part_name = file_name
         file_name += '.obj'
+        # file_name += '.stl'
         target_file = os.path.join(file_location, file_name)
         bpy.ops.import_scene.obj(filepath=target_file)
-        bpy.context.view_layer.objects.active = bpy.data.objects[f'{file_name}_Cube']
-        bpy.context.object.location = position
-        bpy.context.object.rotation_euler = rotation
+
+        parts_list = []
+        for i in range(len((bpy.context.selected_objects))):
+            parts_list.append(bpy.context.selected_objects[i].name)
+        self.join_parts(parts_list, part_name)
+
+        if position != None:
+            self.translate_part(part_name, position)
+        if rotation != None:
+            self.rotate_part(part_name, rotation)
+
+
+    def rotate_part(self, part_name, rpy):
+
+        bpy.context.view_layer.objects.active = bpy.data.objects[part_name]
+        bpy.context.object.rotation_euler = rpy
+
+    def translate_part(self, part_name, xyz):
+        bpy.context.view_layer.objects.active = bpy.data.objects[part_name]
+        bpy.context.object.location = xyz
 
     def set_directories(self, sim='', obj=''):
         """
