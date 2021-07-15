@@ -332,7 +332,7 @@ class Generator():
         number_parts = len(part_names)
 
         for part_name, i in enumerate(number_parts):
-            #testinh
+            
             self.functions.import_part(part_name, xyz, rpy)
 
 

@@ -73,6 +73,18 @@ class functions():
         target_file = os.path.join(self.export_directory, name)
         bpy.ops.export_scene.obj(filepath=target_file, use_triangles=True, path_mode='COPY')
 
+    def import_part(self, file_name, position, rotation, file_location=None):
+        
+        if file_location == None:
+            file_location = self.export_directory
+        
+        file_name += '.obj'
+        target_file = os.path.join(file_location, file_name)
+        bpy.ops.import_scene.obj(filepath=target_file)
+        bpy.context.view_layer.objects.active = bpy.data.objects[f'{file_name}_Cube']
+        bpy.context.object.location = position
+        bpy.context.object.rotation_euler = rotation
+
     def set_directories(self, sim='', obj=''):
         """
         Change directories
