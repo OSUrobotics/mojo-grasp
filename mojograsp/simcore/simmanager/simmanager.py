@@ -1,7 +1,7 @@
 import time
 import pybullet as p
 from . import episode
-from phasemanager import PhaseManager
+from . import phasemanager
 
 class SimManager_base:
 	# TODO: fill in with relevant classes
@@ -24,7 +24,7 @@ class SimManager_base:
 		self.episode_timestep_length = episode_timestep_length  # TODO: TimeParam class goes here I think
 		self.sim_timestep = sim_timestep
 
-		self.phase_manager = PhaseManager()  # TODO: add parameters
+		self.phase_manager = phasemanager.PhaseManager()  # TODO: add parameters
 
 		# physics server setup, in the future needs arguments
 		self.setup()
@@ -44,6 +44,7 @@ class SimManager_base:
 			self.starting_phase = phase_object
 		# TODO: should we pass phase list to phasemanager each time we run phases,
 		#  or should we bake it onto phasemanager?
+		self.phase_manager.add_phase_dict(self.phase_dict, self.starting_phase)
 
 		print("Added Phase")
 
@@ -84,7 +85,7 @@ class SimManager(SimManager_base):
 		#take episode pre step action
 		self.episode_configuration.episode_pre_step()
 
-		PhaseManager.step()
+		self.phase_manager.step(self.episode_timestep_length, self.sim_timestep)
 
 		#after 1 episode step we call the episode post step function
 		self.episode_configuration.episode_post_step()
