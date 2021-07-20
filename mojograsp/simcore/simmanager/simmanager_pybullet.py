@@ -5,8 +5,8 @@ from . import phasemanager
 
 class SimManager_base:
 	# TODO: fill in with relevant classes
-	def __init__(self, num_episodes=1, sim_timestep=(1. / 240.), episode_timestep_length=1, episode_configuration=None,
-				 gym=False):
+	def __init__(self, num_episodes=1, sim_timestep=(1. / 240.), episode_timestep_length=1,
+				 episode_configuration=None, gym=False):
 		# initializes phase dictionary and other variables we will need
 		self.phase_dict = {}
 		self.current_phase = None
@@ -24,15 +24,26 @@ class SimManager_base:
 		self.episode_timestep_length = episode_timestep_length  # TODO: TimeParam class goes here I think
 		self.sim_timestep = sim_timestep
 
-		self.phase_manager = phasemanager.PhaseManager()  # TODO: add parameters
+		self.phase_manager = phasemanager.PhaseManager(episode_timestep_length=episode_timestep_length,
+														sim_timestep=sim_timestep)
 
 		# physics server setup, in the future needs arguments
 		self.setup()
 
 	def setup(self):
+		"""
+		Physics server setup.
+
+		Simulator specific, should be defined by user.
+		"""
 		pass
 
 	def stall(self):
+		"""
+		Prevent simulator from closing.
+
+		Simulator specific, should be defined by user.
+		"""
 		pass
 
 	# adds a phase to our phase dictionary
@@ -56,13 +67,13 @@ class SimManager_base:
 
 
 # TODO: make this SimManager_bullet class
-class SimManager(SimManager_base):
+class SimManager_Pybullet(SimManager_base):
 
 	def __init__(self, num_episodes=1, sim_timestep=(1. / 240.), episode_timestep_length=1, episode_configuration=None,
 				 gym=False):
-		super(SimManager, self).__init__(num_episodes=num_episodes, sim_timestep=sim_timestep,
-										 episode_timestep_length=episode_timestep_length,
-										 episode_configuration=episode_configuration, gym=gym)
+		super(SimManager_Pybullet, self).__init__(num_episodes=num_episodes, sim_timestep=sim_timestep,
+												  episode_timestep_length=episode_timestep_length,
+												  episode_configuration=episode_configuration, gym=gym)
 
 	#physics server setup, TODO: in the future needs arguments
 	def setup(self):

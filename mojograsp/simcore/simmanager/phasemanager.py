@@ -3,10 +3,13 @@ import pybullet as p
 
 class PhaseManager:
     # TODO: get functional shell down
-    def __init__(self):
+    def __init__(self, episode_timestep_length, sim_timestep):
         self.phases = None  # dictionary with phase objects in it
         self.starting_phase = None
         self.current_phase = None
+
+        self.episode_timestep_length = episode_timestep_length
+        self.sim_timestep = sim_timestep
 
     def add_phase_dict(self, phase_dict, starting_phase):
         self.phases = phase_dict
@@ -39,7 +42,7 @@ class PhaseManager:
                 exit_flag = True
                 break
 
-    def step(self, episode_timestep_length, sim_timestep):
+    def step(self):
         # select action before episode step
         action = self.current_phase.select_action()
 
@@ -48,10 +51,10 @@ class PhaseManager:
         self.current_phase.execute_action()
 
         # simulator timesteps equaling one episode timestep
-        for i in range(episode_timestep_length):  # TODO: pass this in through constructor
+        for i in range(self.episode_timestep_length):  # TODO: pass this in through constructor
             # Pybullet stepped
             p.stepSimulation()
-            time.sleep(sim_timestep)
+            time.sleep(self.sim_timestep)
 
         # phase post step called
         self.current_phase.post_step()
