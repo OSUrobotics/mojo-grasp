@@ -83,17 +83,20 @@ class functions():
         # file_name += '.stl'
         target_file = os.path.join(file_location, file_name)
         bpy.ops.import_scene.obj(filepath=target_file)
-
-        parts_list = []
-        for i in range(len((bpy.context.selected_objects))):
-            parts_list.append(bpy.context.selected_objects[i].name)
-        self.join_parts(parts_list, part_name)
+        
+        num_parts = len((bpy.context.selected_objects))
+        if num_parts > 1:
+            parts_list = []
+            for i in range(num_parts):
+                parts_list.append(bpy.context.selected_objects[i].name)
+            self.join_parts(parts_list, part_name)
+        else:
+            self.change_name(bpy.context.selected_objects[-1].name, part_name)
 
         if position != None:
             self.translate_part(part_name, position)
         if rotation != None:
             self.rotate_part(part_name, rotation)
-
 
     def rotate_part(self, part_name, rpy):
 

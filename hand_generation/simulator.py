@@ -19,8 +19,8 @@ file_number = '131'
 
 directory = os.path.dirname(__file__)
 
-boxId = p.loadURDF(f"{directory}/hand_models/3v2_test_hand/3v2_test_hand.urdf", useFixedBase=1)
-# boxId = p.loadURDF(f"{directory}/hand_models/testing1/testing1.urdf", useFixedBase=1)
+# boxId = p.loadURDF(f"{directory}/hand_models/3v2_test_hand/3v2_test_hand.urdf", useFixedBase=1)
+boxId = p.loadURDF(f"{directory}/hand_models/testing3/testing3.urdf", useFixedBase=1)
 
 
 gripper = boxId

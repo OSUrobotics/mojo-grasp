@@ -11,6 +11,7 @@ from numpy import sin, cos, pi
 import math
 
 
+
 class Generator():
     """
     Creates the hands that are in the que
@@ -265,7 +266,8 @@ class Generator():
         self.functions.delete_all()  # clear all objects
 
         if seg_name == "distal":  # distal links have sensors
-            self.create_sensors(segment=segment, seg_len=seg_len, side=side, parent=child_name)
+            if segment["sensors"]["num"] > 0:
+                self.create_sensors(segment=segment, seg_len=seg_len, side=side, parent=child_name)
         
 
     def create_object(self):
