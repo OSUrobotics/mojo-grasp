@@ -1,10 +1,10 @@
 import pybullet as p
-from mojograsp.simcore.simmanager.State.State_Metric.state_metric import StateMetric
+from mojograsp.simcore.simmanager.State.State_Metric.state_metric import StateMetricPyBullet
 
 
-class Angle(StateMetric):
+class Angle(StateMetricPyBullet):
 
-    def update(self):  # this function finds either the joint angles or the x and z angle,
+    def update(self, keys):  # this function finds either the joint angles or the x and z angle,
         """
         Get the current joint angles
         Stores in self.curr_joint_angle : current joint angles as a list
@@ -17,7 +17,7 @@ class Angle(StateMetric):
         return self.data.value
 
 
-class Position(StateMetric):
+class Position(StateMetricPyBullet):
 
-    def update(self):
+    def update(self, keys):
         pass
