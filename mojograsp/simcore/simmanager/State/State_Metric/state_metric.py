@@ -22,9 +22,16 @@ class StateMetricPyBullet(StateMetricBase):
     def get_value(self):
         return self.data.value
 
+    def get_index_from_keys(self, keys):
+        pass
 
-class StateMetricAngle(StateMetricPyBullet):
-    pass
+
+# class StateMetricAngle(StateMetricPyBullet):
+class Angle_JointState(StateMetricPyBullet):
+    def update(self, keys):
+        joint_indices = self.get_index_from_keys(keys)
+        StateMetricBase._sim.get_hand_curr_joint_angles(joint_indices)
+        pass
 
 
 class StateMetricPosition(StateMetricPyBullet):

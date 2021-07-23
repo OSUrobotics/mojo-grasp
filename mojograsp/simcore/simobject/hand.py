@@ -68,7 +68,7 @@ class Hand(objectbase.ObjectBase):
         self.end_effector_indices = []
         self.prox_indices = []
 
-        self.get_joints_info()
+        self._get_joints_info()
 
         for i in range(0, len(self.joint_info)):
             if i == 0:
@@ -94,9 +94,8 @@ class Hand(objectbase.ObjectBase):
 
     # print("END EFFECTOR LIST CREATED:{}".format(self.end_effector_indices))
 
-    def get_joints_info(self):
+    def _get_joints_info(self):
         """
-        TODO: make this private?
         Get joint info of every joint of the manipulator
         :return: list of joint info of every joint
         """
@@ -104,3 +103,18 @@ class Hand(objectbase.ObjectBase):
         for joint in range(self.num_joints):
             self.joint_info.append(p.getJointInfo(self.id, joint))
         return self.joint_info
+
+    def get_joint_angles(self, joint_indices=None):
+        """
+        Get the current pose angle of joints
+        Stores in self.curr_joint_angle : current joint angles as a list
+        :param joint_indices: List of particular joint indices to get angles for. If None, returns all joint angle values.
+        """
+        curr_joint_poses = []
+        if joint_indices is None:
+            curr_joint_states = p.getJointStates(self.id, self.joint_dict.values())
+        else:
+            curr_joint_states = p.getJointStates(self.id, joint_indices)
+        for joint in range(0, len(curr_joint_states)):
+            curr_joint_poses.append(curr_joint_states[joint][0])
+        return curr_joint_poses

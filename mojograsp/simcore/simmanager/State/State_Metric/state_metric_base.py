@@ -35,31 +35,31 @@ class StateMetricBase:
         None
 
 
-class StateMetricAngleBase(StateMetricBase):
-    def update(self, keys):
-        None
-
-
-class StateMetricPositionBase(StateMetricBase):
-    def update(self, keys):
-        None
-
-
-class StateMetricVectorBase(StateMetricBase):
-    def update(self, keys):
-        None
-
-
-class StateMetricRatioBase(StateMetricBase):
-    def update(self, keys):
-        None
-
-
-class StateMetricDistanceBase(StateMetricBase):
-    def update(self, keys):
-        None
-
-
-class StateMetricDotProductBase(StateMetricBase):
-    def update(self, keys):
-        None
+# class StateMetricAngleBase(StateMetricBase):
+#     def update(self, keys):
+#         None
+#
+#
+# class StateMetricPositionBase(StateMetricBase):
+#     def update(self, keys):
+#         None
+#
+#
+# class StateMetricVectorBase(StateMetricBase):
+#     def update(self, keys):
+#         None
+#
+#
+# class StateMetricRatioBase(StateMetricBase):
+#     def update(self, keys):
+#         None
+#
+#
+# class StateMetricDistanceBase(StateMetricBase):
+#     def update(self, keys):
+#         None
+#
+#
+# class StateMetricDotProductBase(StateMetricBase):
+#     def update(self, keys):
+#         None
