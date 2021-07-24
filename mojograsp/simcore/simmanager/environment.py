@@ -9,7 +9,7 @@ class Environment(EnvironmentBase):
     This class is used to reset the simulator's environment, execute actions, and step the simulator ahead
     """
 
-    def __init__(self, action_class, sleep=1. / 240., steps=1, hand=None, objects=None):
+    def __init__(self, action_class=None, sleep=1. / 240., steps=1, hand=None, objects=None):
         super().__init__(action_class)
         self.sleep = sleep
         self.steps = steps
@@ -22,12 +22,13 @@ class Environment(EnvironmentBase):
     def step(self, phase):
         phase.execute_action(phase.action)
         self.step_sim(phase.action)
-        print("State:", phase.state)
+
         if phase.state is not None:
             phase.state.update()
-            observation = phase.state.get_observation()
+            observation = phase.state.get_obs()
         else:
             observation = None
+        print("State:", observation)
         return observation, None, None, None
 
     def step_sim(self, action_profile):

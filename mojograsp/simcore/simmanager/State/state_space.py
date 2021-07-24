@@ -8,21 +8,21 @@ Created on Mon Apr  5 14:57:24 2021
 import json
 import time
 import numpy as np
-# from mojograsp.simcore.simmanager.State.State_Metric.state_metric import StateMetricAngle
-from mojograsp.simcore.simmanager.State.State_Metric.state_metric import Angle_JointState
+from mojograsp.simcore.simmanager.State.State_Metric.state_metric import StateMetricAngle
+# from mojograsp.simcore.simmanager.State.State_Metric.state_metric import Angle_JointState
 from collections import OrderedDict
 
 
 class StateSpace:
     # valid_state_names = {'Position': Position, 'Distance': Distance, 'Angle': Angle, 'Ratio': Ratio, 'Vector': Vector,
     #                      'DotProduct': DotProduct, 'StateGroup': StateGroup}
-    # valid_state_names = {'Angle': StateMetricAngle}
-    valid_state_names = {'Angle': Angle_JointState}
+    valid_state_names = {'Angle': StateMetricAngle}
+    # valid_state_names = {'Angle': Angle_JointState}
     _sim = None
 
     def __init__(self, path='/Users/asar/Desktop/Grimm\'s '
                                        'Lab/Manipulation/PyBulletStuff/mojo-grasp/mojograsp/simcore/simmanager/State'
-                                       '/simple_state.json'):
+                                       '/state.json'):
         print('path',path)
         with open(path) as f:
             json_data = json.load(f)
@@ -58,7 +58,7 @@ class StateSpace:
 
     def update(self):
         for name, value in self.data.items():
-            print("KEY IS: {}".format(name))
+            print("KEY IS: {}, {}".format(name, self.data[name]))
             self.data[name].update(name)
         return self.get_obs()
 

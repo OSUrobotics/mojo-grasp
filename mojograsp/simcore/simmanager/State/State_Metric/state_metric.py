@@ -26,12 +26,11 @@ class StateMetricPyBullet(StateMetricBase):
         pass
 
 
-# class StateMetricAngle(StateMetricPyBullet):
-class Angle_JointState(StateMetricPyBullet):
+class StateMetricAngle(StateMetricPyBullet):
     def update(self, keys):
         joint_indices = self.get_index_from_keys(keys)
-        StateMetricBase._sim.get_hand_curr_joint_angles(joint_indices)
-        pass
+        curr_joint_angles = StateMetricBase._sim.get_hand_curr_joint_angles(joint_indices)
+        self.data.set_value(curr_joint_angles)
 
 
 class StateMetricPosition(StateMetricPyBullet):

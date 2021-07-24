@@ -101,7 +101,7 @@ class SimManager:
                     print(step_count, self.state_space)
                     self.current_phase.action = self.current_phase.controller.select_action()
                     val = [self.current_phase, self.state_space, self.reward_space]
-                    observation, reward, done, info = self.env.step(val)
+                    observation, reward, done, info = self.env.step(self.current_phase)
                     done = self.current_phase.phase_exit_condition(step_count)
                     step_count+=1
 

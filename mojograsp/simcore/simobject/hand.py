@@ -71,10 +71,10 @@ class Hand(objectbase.ObjectBase):
         self._get_joints_info()
 
         for i in range(0, len(self.joint_info)):
-            if i == 0:
-                self.joint_dict_with_base.update({self.joint_info[i][1]: self.joint_info[i][0]})
-                self.key_names_list_with_base.append(self.joint_info[i][1])
-                continue
+            # if i == 0:
+            #     self.joint_dict_with_base.update({self.joint_info[i][1]: self.joint_info[i][0]})
+            #     self.key_names_list_with_base.append(self.joint_info[i][1])
+            #     continue
             self.joint_dict.update({self.joint_info[i][1]: self.joint_info[i][0]})
             self.joint_dict_with_base.update({self.joint_info[i][1]: self.joint_info[i][0]})
             self.key_names_list.append(self.joint_info[i][1])
