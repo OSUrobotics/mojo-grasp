@@ -11,7 +11,7 @@ class EnvironmentBase:
     Example: class EnvironmentMujoco(EnvironmentBase, gym.Env)
     """
 
-    def __init__(self, action_class):
+    def __init__(self, action_class=None):
         """
         Initializes an instance of this class. This class need values of simulation step and rl step, hence would
         require interaction with the action_class.

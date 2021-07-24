@@ -2,6 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
+      <module fileurl="file://$USER_HOME$/PycharmProjects/InHand-Manipulation/.idea/InHand-Manipulation.iml" filepath="$USER_HOME$/PycharmProjects/InHand-Manipulation/.idea/InHand-Manipulation.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/mojo-grasp.iml" filepath="$PROJECT_DIR$/.idea/mojo-grasp.iml" />
     </modules>
   </component>
