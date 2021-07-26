@@ -28,10 +28,9 @@ The purpose for this code is automate the process of creating simplified 3D mode
 
         python3 json_creater.py
     * This program will create a json file and place it in the hand_queue_json/ directory ready to be used once make_models.py is ran.
-* If you want to look at you model in the simulator you can use the simulator.py.
-    * First open the script and change line 23 so it points to the .urdf file for the gripper you want to see.
-    * Next change line 28 the .urdf file of the object for that gripper.
-    * Save the changes and run the following:
+* If you want to look at you model in the simulator you can use the simulator.py
+    * Run the following:
 
             python3 simulator.py
+    * The script will ask for the gripper's name, object type(currently just cuboid), and object size (small, medium, or large)
 
