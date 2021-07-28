@@ -62,7 +62,7 @@ class OpenHand(mojograsp.phase.Phase):
 #BASE CODE
 
 #setting up simmanager/physics server
-manager = mojograsp.simmanager.SimManager()
+manager = mojograsp.simmanager_pybullet.SimManager_Pybullet()
 #setting camera
 p.resetDebugVisualizerCamera(cameraDistance=.4, cameraYaw=0, cameraPitch=-45, cameraTargetPosition=[.1, 0, .1])
 #loading our hand object using the custom class

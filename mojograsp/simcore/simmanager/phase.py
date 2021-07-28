@@ -28,7 +28,7 @@ class Phase():
 
 	def phase_exit_condition(self, episode_step):
 		print("Exit condition checked")
-		return True
+		return True  # TODO: return next phase if phase is complete, otherwise return None?
 
 	def phase_complete(self):
 		print("Phase complete")
