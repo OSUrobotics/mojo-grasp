@@ -16,22 +16,6 @@ def run_blender(object_list='cuboid_cylinder', blender_loc = ""):
 
     subprocess.run(f'{blender_loc} InitialFile.blend --background --python generator.py {object_list}', shell=True)
 
-    # if sys.platform == "linux" or "linux2":
-    #     # if running linux fill in the path to blender
-    #     # subprocess.run(f'/snap/user/ InitialFile.blend --background --python generator.py {object_list}', shell=True)
-    #     pass
-    # elif sys.platform == "darwin":
-    #     # macOS location for creator(Josh)
-    #     subprocess.run(f'{blender_loc} InitialFile.blend --background --python generator.py {object_list}', shell=True)
-    
-    # elif sys.platform == "win32":
-    #     print('''\n  
-    #     ***********************************************************************************************
-
-    #                                 Windows not currently supported 
-    #
-    #     ***********************************************************************************************
-    #     \n''')
 
 def read_json(user_info_loc):
 
