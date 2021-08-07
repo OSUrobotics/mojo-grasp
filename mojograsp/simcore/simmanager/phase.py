@@ -1,6 +1,7 @@
 
 
-class Phase():
+class Phase:
+	_sim = None
 	
 	def __init__(self):
 		print("Phase initialized")
