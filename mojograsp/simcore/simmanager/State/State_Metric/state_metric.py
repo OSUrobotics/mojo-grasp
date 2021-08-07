@@ -37,10 +37,19 @@ class StateMetricAngle(StateMetricPyBullet):
 
 class StateMetricPosition(StateMetricPyBullet):
     def update(self, keys):
-        object_list_index = 0
-        curr_pose = StateMetricBase._sim.get_obj_curr_pose(object_list_index)
-        print("DATA:", self.data)
-        self.data.set_value(curr_pose)
+        print("KEYS: {}".format(keys))
+        if 'F1' in keys:
+            pass
+
+        elif 'F2' in keys:
+            pass
+
+        elif 'Palm' in keys:
+            object_list_index = 0
+            curr_pose = StateMetricBase._sim.get_obj_curr_pose(object_list_index)[0]
+            print("POSE:", curr_pose)
+            print("DATA:", self.data)
+            self.data.set_value(curr_pose)
 
 
 class StateMetricVector(StateMetricPyBullet):
@@ -53,9 +62,11 @@ class StateMetricRatio(StateMetricPyBullet):
 
 class StateMetricDistance(StateMetricPyBullet):
     def update(self, keys):
-        dimensions = p.getVisualShapeData(StateMetricBase._sim.objects[0].id)[0][3]
-        print("DIMENSIONS:", dimensions)
-        self.data.set_value(dimensions)
+        if 'ObjSize' in keys:
+            print("KEYS: {}".format(keys))
+            dimensions = p.getVisualShapeData(StateMetricBase._sim.objects[0].id)[0][3]
+            print("DIMENSIONS: {}".format(dimensions))
+            self.data.set_value(dimensions)
 
 
 class StateMetricDotProduct(StateMetricPyBullet):

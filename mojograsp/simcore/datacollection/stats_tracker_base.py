@@ -114,6 +114,7 @@ class StatsTrackerArray(StatsTrackerBase):
     def set_value(self, val):
         """Wherever there's an equal/data, use this. It will check for allowable values and update the stats"""
         for i, v in enumerate(val):
+            print("Val: {}\nV: {} ".format(val, v))
             if v < self.allowable_min[i]:
                 raise ValueError("{0}, {1} less than min value {2}, index {3}".format(self.get_name(), val, self.min_found, i))
             if v > self.allowable_max[i]:
