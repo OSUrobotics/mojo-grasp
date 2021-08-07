@@ -1,4 +1,8 @@
 {
   "Angle_JointState": [[-2,-2,-2,-2],[2,2,2,2]],
-  "Distance_ObjSize": [[0,0,0],[1.2,1.2,1.2]]
+  "Distance_ObjSize": [[0,0,0],[1.2,1.2,1.2]],
+  "StateGroup_Pose": {
+    "Position_Palm":[[-0.1,-0.1,-0.1],[0.1,0.1,0.1]],
+    "Position_Obj":[[-0.2,-0.2,-0.2],[0.2,0.2,0.2]]
+      }
 }
