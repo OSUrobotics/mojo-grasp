@@ -8,7 +8,7 @@ Created on Mon Apr  5 14:57:24 2021
 import json
 import time
 import numpy as np
-from mojograsp.simcore.simmanager.State.State_Metric.state_metric import StateMetricAngle
+from mojograsp.simcore.simmanager.State.State_Metric.state_metric import StateMetricAngle, StateMetricPosition, StateMetricGroup, StateMetricDistance
 # from mojograsp.simcore.simmanager.State.State_Metric.state_metric import Angle_JointState
 from collections import OrderedDict
 
@@ -16,7 +16,8 @@ from collections import OrderedDict
 class StateSpace:
     # valid_state_names = {'Position': Position, 'Distance': Distance, 'Angle': Angle, 'Ratio': Ratio, 'Vector': Vector,
     #                      'DotProduct': DotProduct, 'StateGroup': StateGroup}
-    valid_state_names = {'Angle': StateMetricAngle}
+    valid_state_names = {'Angle': StateMetricAngle, 'Position': StateMetricPosition, 'StateGroup': StateMetricGroup,
+                         'Distance': StateMetricDistance}
     # valid_state_names = {'Angle': Angle_JointState}
     _sim = None
 
@@ -30,7 +31,7 @@ class StateSpace:
         for name, value in json_data.items():
             state_name = name.split(sep='_')
             try:
-                print(state_name[0])
+                print('State Name: {}, Value: {}, Name: {}'.format(state_name[0], value, name))
                 self.data[name] = StateSpace.valid_state_names[state_name[0]](value)
             except NameError:
                 print(state_name[0],'Invalid state name. Valid state names are', [name for name in

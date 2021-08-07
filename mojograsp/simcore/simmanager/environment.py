@@ -20,8 +20,8 @@ class Environment(EnvironmentBase):
         pass
 
     def step(self, phase):
-        phase.execute_action(phase.action)
-        self.step_sim(phase.action)
+        phase.execute_action(phase.curr_action)
+        self.step_sim(phase.curr_action)
 
         if phase.state is not None:
             phase.state.update()
