@@ -39,5 +39,16 @@ class Environment(EnvironmentBase):
     def get_hand_curr_joint_angles(self, keys=None):
         return self.hand.get_joint_angles(keys)
 
-    def get_obj_curr_pose(self, key):
-        return self.objects[key].get_curr_pose(self.objects[key].id)
+    def get_obj_curr_pose(self, object_or_hand):
+        return object_or_hand.get_curr_pose(object_or_hand.id)
+
+    def get_obj_dimensions(self):
+        return self.objects.get_dimensions()
+
+    def get_curr_link_pos(self, link_id):
+        """
+
+        :param link_id: should be a joint index
+        :return:
+        """
+        return self.hand.get_link_pose(link_id)

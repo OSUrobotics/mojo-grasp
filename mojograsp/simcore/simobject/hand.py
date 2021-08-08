@@ -118,3 +118,19 @@ class Hand(objectbase.ObjectBase):
         for joint in range(0, len(curr_joint_states)):
             curr_joint_poses.append(curr_joint_states[joint][0])
         return curr_joint_poses
+
+    def get_link_pose(self, link_indices=None):
+
+        if len(link_indices) == 1:
+            curr_link_poses = p.getLinkState(self.id, link_indices[0])[0]
+            return curr_link_poses
+
+        curr_link_poses = []
+        if link_indices is None:
+            curr_link_states = p.getLinkStates(self.id, self.joint_dict.values())
+        else:
+            curr_link_states = p.getLinkStates(self.id, link_indices)
+        for link in range(0, len(curr_link_states)):
+            curr_link_poses.append(curr_link_states[link][0])
+
+        return curr_link_poses

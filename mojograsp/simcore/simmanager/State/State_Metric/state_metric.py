@@ -37,19 +37,25 @@ class StateMetricAngle(StateMetricPyBullet):
 
 class StateMetricPosition(StateMetricPyBullet):
     def update(self, keys):
-        print("KEYS: {}".format(keys))
-        if 'F1' in keys:
-            pass
+        print("KEYS_POS: {}".format(keys))
+        if 'F1l' in keys:
+            curr_pose = StateMetricBase._sim.get_curr_link_pos([0])
 
-        elif 'F2' in keys:
-            pass
+        elif 'F2_r' in keys:
+            curr_pose = StateMetricBase._sim.get_curr_link_pos([2])
 
         elif 'Palm' in keys:
-            object_list_index = 0
-            curr_pose = StateMetricBase._sim.get_obj_curr_pose(object_list_index)[0]
-            print("POSE:", curr_pose)
-            print("DATA:", self.data)
-            self.data.set_value(curr_pose)
+            curr_pose = StateMetricBase._sim.get_obj_curr_pose(StateMetricBase._sim.hand)[0]
+
+        elif 'Obj' in keys:
+            curr_pose = StateMetricBase._sim.get_obj_curr_pose(StateMetricBase._sim.objects)[0]
+
+        else:
+            print("Wrong Key!")
+            raise KeyError
+        print("POSE_POS:", curr_pose)
+        print("DATA_POS:", self.data)
+        self.data.set_value(curr_pose)
 
 
 class StateMetricVector(StateMetricPyBullet):
@@ -64,7 +70,7 @@ class StateMetricDistance(StateMetricPyBullet):
     def update(self, keys):
         if 'ObjSize' in keys:
             print("KEYS: {}".format(keys))
-            dimensions = p.getVisualShapeData(StateMetricBase._sim.objects[0].id)[0][3]
+            dimensions = StateMetricBase._sim.get_obj_dimensions()
             print("DIMENSIONS: {}".format(dimensions))
             self.data.set_value(dimensions)
 
@@ -84,7 +90,7 @@ class StateMetricGroup(StateMetricPyBullet):
         for name, value in data_structure.items():
             state_name = name.split('_')
             try:
-                print('state name',state_name[0])
+                print('state name',name)
                 self.data[name] = StateMetricGroup.valid_state_names[state_name[0]](value)
             except TypeError:
                 self.data[name] = StateMetricGroup(value)

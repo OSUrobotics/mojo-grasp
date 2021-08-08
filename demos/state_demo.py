@@ -64,7 +64,7 @@ if __name__ == '__main__':
     hand = mojograsp.hand.Hand(hand_path, fixed=True)
     cube = mojograsp.objectbase.ObjectBase(object_path, fixed=False)
 
-    sim_env = mojograsp.environment.Environment(hand=hand, objects=[cube], steps=1)
+    sim_env = mojograsp.environment.Environment(hand=hand, objects=cube, steps=1)
 
     mojograsp.phase.Phase._sim = sim_env
     open = OpenHand('open phase')
