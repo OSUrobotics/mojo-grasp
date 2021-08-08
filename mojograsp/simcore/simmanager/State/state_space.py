@@ -28,6 +28,7 @@ class StateSpace:
         with open(path) as f:
             json_data = json.load(f)
         self.data = OrderedDict()
+        print("JSON DATA: {}".format(json_data))
         for name, value in json_data.items():
             state_name = name.split(sep='_')
             try:

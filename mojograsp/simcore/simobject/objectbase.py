@@ -59,3 +59,6 @@ class ObjectBase:
     def get_curr_pose(object_id):
         curr_pos, curr_orn = p.getBasePositionAndOrientation(object_id)
         return curr_pos, curr_orn
+
+    def get_dimensions(self):
+        return p.getVisualShapeData(self.id)[0][3]
