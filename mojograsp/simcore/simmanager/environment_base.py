@@ -17,7 +17,7 @@ class EnvironmentBase:
         require interaction with the action_class.
         :param action_class: An instance of action class, to get simulation and rl timestep informaiton.
         """
-        self.rl_step = None
+        self.sim_sleep = None
         self.sim_step = None
         pass
 
@@ -41,10 +41,10 @@ class EnvironmentBase:
         #call on action class to build action profile
 
         #pass action profile to step_sim to take action
-        self.step_sim(phase.action.action_profile)
+        self.step_sim()
         return observation, reward, done, info
 
-    def step_sim(self, action_profile):
+    def step_sim(self):
         """
         Take an action based on the profile every simulator time step to build the action.
         :param action_profile:

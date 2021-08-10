@@ -28,11 +28,11 @@ class StateSpace:
         with open(path) as f:
             json_data = json.load(f)
         self.data = OrderedDict()
-        print("JSON DATA: {}".format(json_data))
+        # print("JSON DATA: {}".format(json_data))
         for name, value in json_data.items():
             state_name = name.split(sep='_')
             try:
-                print('State Name: {}, Value: {}, Name: {}'.format(state_name[0], value, name))
+                # print('State Name: {}, Value: {}, Name: {}'.format(state_name[0], value, name))
                 self.data[name] = StateSpace.valid_state_names[state_name[0]](value)
             except NameError:
                 print(state_name[0],'Invalid state name. Valid state names are', [name for name in
@@ -60,7 +60,7 @@ class StateSpace:
 
     def update(self):
         for name, value in self.data.items():
-            print("KEY IS: {}, {}".format(name, self.data[name]))
+            # print("KEY IS: {}, {}".format(name, self.data[name]))
             self.data[name].update(name)
         return self.get_obs()
 
