@@ -14,11 +14,11 @@ from mojograsp.simcore.datacollection.stats_tracker_base import StatsTrackerArra
 from collections import OrderedDict
 
 
-class Action():
+class Action:
     _sim = None
 
     def __init__(self, starting_speed=None, acceleration_range=[0.2, 20],
-                 json_path='action.json'):
+                 json_path='/Users/asar/Desktop/Grimm\'s Lab/Manipulation/PyBulletStuff/mojo-grasp/mojograsp/simcore/simmanager/Action/action.json'):
         """ Starting speed is the speed of the fingers at initialization. We
         assume the initial speed is 0 if not otherwise specified.
         @param desired_speed - list of speeds with length described in
@@ -40,17 +40,28 @@ class Action():
         params = json_conts['Parameters']
         self.time = params['Timestep_len']  # length of a timestep in seconds
         self.timesteps = params['Timestep_num']  # number of simulation
-        #                                          timesteps per step call
+        # timesteps per step call
 
         # Set up the current and last speed values with max and min speeds and
         # the order of actions pulled from the json file
         action_struct = json_conts['Action']
-        self.action_order = list(action_struct.keys())
-        action_min_and_max = np.array(list(action_struct.values()))
+        self.action_order = action_struct.keys()
+        # print("##@@## ACTION ORDER: {}".format(self.action_order))
+        action_size_list = []
+        for key in self.action_order:
+            self.link_order = json_conts['Action'][key]
+            # print("##@@## LINK ORDER: {}".format(self.link_order))
+
+            for value in self.link_order.values():
+                action_size_list.append(list(value))
+                # print("ACTION SIZE LIST: {}".format(action_size_list))
+        action_min_and_max = np.array(action_size_list)
+        # print("ACTION MIN MAX: {} {}".format(action_min_and_max, action_min_and_max[:,0]))
         self.current_speed = StatsTrackerArray(action_min_and_max[:, 0],
-                                               action_min_and_max[:, 1])
+                                                   action_min_and_max[:, 1])
         self.last_speed = StatsTrackerArray(action_min_and_max[:, 0],
-                                            action_min_and_max[:, 1])
+                                                action_min_and_max[:, 1])
+        # print("CURR SPEED: {}\nLAST SPEED: {}".format(self.current_speed, self.last_speed))
 
         # set initial values of the speed
         try:
@@ -102,9 +113,8 @@ class Action():
         """sets last speed to current speed's value and sets current speed to
         input speed value, then calculates the new action profile"""
         if len(speed) != len(self.last_speed.value):
-            raise IndexError('desired speed is not the same length as current\
-                             speed, speed not set. Speed should have length'
-                             + str(len(self.old_speed)))
+            raise IndexError('desired speed is not the same length as current speed, speed not set. Speed should have '
+                             'length '+ str(len(self.last_speed.value)) + ' but has length {}'.format(len(speed)))
         self.last_speed.set_value(self.current_speed.value)
         self.current_speed.set_value(speed)
         self.action_profile = self.build_action()

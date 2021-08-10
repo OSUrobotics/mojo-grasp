@@ -7,15 +7,15 @@ class Controller:
     def __init__(self):
         pass
 
-    def select_action(self):
+    def select_action(self, i):
         """
         This controller is defined to open the hand.
         Thus the action will always be a constant action
         of joint position to be reached
         :return: action: action to be taken in accordance with action space
         """
-        action = [1.57, 0, -1.57, 0]
-        return action
+        action = i*np.asarray([1.57, 0, -1.57, 0])
+        return list(action)
 
 
 class OpenHand(mojograsp.phase.Phase):
@@ -29,6 +29,9 @@ class OpenHand(mojograsp.phase.Phase):
         state_path = '/Users/asar/Desktop/Grimm\'s Lab/Manipulation/PyBulletStuff/mojo-grasp/mojograsp/simcore/simmanager/State/simple_state.json'
         self.state = mojograsp.state_space.StateSpace(path=state_path)
         self.curr_action=None
+        self.curr_action_profile = None
+        self.Action = mojograsp.action_class.Action()
+        self.reward = None # mojograsp.reward_class.Reward()
 
     def setup(self):
         print("{} setup".format(self.name))
@@ -64,11 +67,12 @@ if __name__ == '__main__':
     hand = mojograsp.hand.Hand(hand_path, fixed=True)
     cube = mojograsp.objectbase.ObjectBase(object_path, fixed=False)
 
-    sim_env = mojograsp.environment.Environment(hand=hand, objects=cube, steps=1)
+    sim_env = mojograsp.environment.Environment(hand=hand, objects=cube, steps=15)
+    manager.add_env(sim_env)
 
-    mojograsp.phase.Phase._sim = sim_env
+    # mojograsp.phase.Phase._sim = sim_env
     open = OpenHand('open phase')
-    mojograsp.state_metric_base.StateMetricBase._sim = sim_env
+    # mojograsp.state_metric_base.StateMetricBase._sim = sim_env
 
 
     # print("STATE DATA: {}".format(state.data['Angle_JointState'].get_xml_geom_name('F1')))

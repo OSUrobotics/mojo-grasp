@@ -28,17 +28,17 @@ class StateMetricPyBullet(StateMetricBase):
 
 class StateMetricAngle(StateMetricPyBullet):
     def update(self, keys):
-        print("BEFORE Here Angle: {}, \nKeys: ".format(self.data, keys))
+        # print("BEFORE Here Angle: {}, \nKeys: ".format(self.data, keys))
         joint_indices = self.get_index_from_keys(keys)
         curr_joint_angles = StateMetricBase._sim.get_hand_curr_joint_angles(joint_indices)
         self.data.set_value(curr_joint_angles)
-        print("AFTER Here Angle: {}".format(self.data))
+        # print("AFTER Here Angle: {}".format(self.data))
 
 
 class StateMetricPosition(StateMetricPyBullet):
     def update(self, keys):
-        print("KEYS_POS: {}".format(keys))
-        if 'F1l' in keys:
+        # print("KEYS_POS: {}".format(keys))
+        if 'F1_l' in keys:
             curr_pose = StateMetricBase._sim.get_curr_link_pos([0])
 
         elif 'F2_r' in keys:
@@ -53,8 +53,8 @@ class StateMetricPosition(StateMetricPyBullet):
         else:
             print("Wrong Key!")
             raise KeyError
-        print("POSE_POS:", curr_pose)
-        print("DATA_POS:", self.data)
+        # print("POSE_POS:", curr_pose)
+        # print("DATA_POS:", self.data)
         self.data.set_value(curr_pose)
 
 
@@ -69,9 +69,9 @@ class StateMetricRatio(StateMetricPyBullet):
 class StateMetricDistance(StateMetricPyBullet):
     def update(self, keys):
         if 'ObjSize' in keys:
-            print("KEYS: {}".format(keys))
+            # print("KEYS: {}".format(keys))
             dimensions = StateMetricBase._sim.get_obj_dimensions()
-            print("DIMENSIONS: {}".format(dimensions))
+            # print("DIMENSIONS: {}".format(dimensions))
             self.data.set_value(dimensions)
 
 
@@ -90,7 +90,7 @@ class StateMetricGroup(StateMetricPyBullet):
         for name, value in data_structure.items():
             state_name = name.split('_')
             try:
-                print('state name',name)
+                # print('state name',name)
                 self.data[name] = StateMetricGroup.valid_state_names[state_name[0]](value)
             except TypeError:
                 self.data[name] = StateMetricGroup(value)
@@ -100,9 +100,9 @@ class StateMetricGroup(StateMetricPyBullet):
 
     def update(self, keys):
         arr = []
-        print("Here Metric Group: {}\nKeys: {}".format(self.data, keys))
+        # print("Here Metric Group: {}\nKeys: {}".format(self.data, keys))
         for name, value in self.data.items():
-            print("Name: {}\nValue: {}\nKeys: {}".format(name, value, keys))
+            # print("Name: {}\nValue: {}\nKeys: {}".format(name, value, keys))
             temp = value.update(keys + '_' + name)
             arr.append(temp)
         return self.data

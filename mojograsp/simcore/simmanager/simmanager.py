@@ -7,6 +7,8 @@ from . import episode
 from . import environment
 import gym
 import gym_env_files
+from mojograsp.simcore.simmanager.State.State_Metric.state_metric_base import StateMetricBase
+from . import phase
 
 
 class SimManager:
@@ -22,11 +24,12 @@ class SimManager:
         print("Not stuck here3")
         self.rl = rl
         print("Not stuck here4")
-        if self.rl:
-            self.env = gym.make("ihm-v1")
-            self.env.reset()
-        else:
-            self.env = environment.Environment()
+        self.env = None
+        # if self.rl:
+        #     self.env = gym.make("ihm-v1")
+        #     self.env.reset()
+        # else:
+        #     self.env = environment.Environment()
         print("Not stuck here5")
 
         #sets episode configuration object and checks if it is none, if it is we create our own empty one
@@ -59,6 +62,11 @@ class SimManager:
     def stall(self):
         while p.isConnected():
             time.sleep(1)
+
+    def add_env(self, env):
+        self.env = env
+        phase.Phase._sim = self.env
+        StateMetricBase._sim = self.env
 
     def add_state_space(self, state_space):
         self.state_space = state_space
@@ -98,12 +106,11 @@ class SimManager:
                 #while exit condition is not met call step
                 print("CURRENT PHASE: {}".format(self.current_phase.name))
                 while not done:
-                    print(step_count, self.state_space)
-                    self.current_phase.curr_action = self.current_phase.controller.select_action()
-                    # val = [self.current_phase, self.state_space, self.reward_space]
-                    observation, reward, done, info = self.env.step(self.current_phase)
+                    print(step_count, i)
+                    self.current_phase.curr_action = self.current_phase.controller.select_action(step_count*0.01)
+                    observation, reward, _, info = self.env.step(self.current_phase)
                     done = self.current_phase.phase_exit_condition(step_count)
-                    step_count+=1
+                    step_count += 1
 
                 #after exit condition is met we get the next phase name and set current phase to the specified value
                 next_phase = self.current_phase.phase_complete()
