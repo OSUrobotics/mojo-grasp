@@ -1,0 +1,18 @@
+<?xml version="1.0" ?>
+<robot name="testing1_cylinder_large">
+
+    <link name="testing1_cylinder_large">
+        <visual>
+            <origin rpy="1.5707963267948966 0 0" xyz="0 0 0"/>
+            <geometry>
+                <mesh filename="obj_files/testing1_cylinder_large.obj" scale="1 1 1"/>
+            </geometry>
+        </visual>
+        <collision>
+            <geometry>
+                <mesh filename="obj_files/testing1_cylinder_large_collision.obj" scale="1 1 1"/>
+            </geometry>
+        </collision>
+    </link>
+
+</robot>

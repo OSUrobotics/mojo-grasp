@@ -1,0 +1,502 @@
+<?xml version="1.0" ?>
+<robot name="2v2_test_hand">
+
+    <link name="body_palm_lpinvrpin">
+        <visual>
+            <origin rpy="0 1.5707963267948966 0" xyz="0 0 0"/>
+            <geometry>
+                <mesh filename="obj_files/body_palm_lpinvrpin.obj" scale="1 1 1"/>
+            </geometry>
+        </visual>
+        <collision>
+            <geometry>
+                <mesh filename="obj_files/body_palm_lpinvrpin_collision.obj" scale="1 1 1"/>
+            </geometry>
+        </collision>
+    </link>
+
+    <joint name="l_prox_pin" type="revolute">
+        <parent link="body_palm_lpinvrpin"/>
+        <child link="body_l_prox_pinvpin"/>
+        <origin rpy="0 0 0" xyz="-0.02675 0.04 0"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="1000.0" lower="-3.14" upper="3.14" velocity="0.5"/>
+    </joint>
+
+    <link name="body_l_prox_pinvpin">
+        <visual>
+            <origin rpy="0 1.5707963267948966 0" xyz="0 0 0"/>
+            <geometry>
+                <mesh filename="obj_files/body_l_prox_pinvpin.obj" scale="1 1 1"/>
+            </geometry>
+        </visual>
+        <collision>
+            <geometry>
+                <mesh filename="obj_files/body_l_prox_pinvpin_collision.obj" scale="1 1 1"/>
+            </geometry>
+        </collision>
+    </link>
+
+    <joint name="l_distal_pin" type="revolute">
+        <parent link="body_l_prox_pinvpin"/>
+        <child link="body_l_distal_pinvround"/>
+        <origin rpy="0 0 0" xyz="0 0.072 0"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="1000.0" lower="-3.14" upper="3.14" velocity="0.5"/>
+    </joint>
+
+    <link name="body_l_distal_pinvround">
+        <visual>
+            <origin rpy="0 1.5707963267948966 0" xyz="0 0 0"/>
+            <geometry>
+                <mesh filename="obj_files/body_l_distal_pinvround.obj" scale="1 1 1"/>
+            </geometry>
+        </visual>
+        <collision>
+            <geometry>
+                <mesh filename="obj_files/body_l_distal_pinvround_collision.obj" scale="1 1 1"/>
+            </geometry>
+        </collision>
+    </link>
+
+    <joint name="l_sensor_0" type="fixed">
+        <parent link="body_l_distal_pinvround"/>
+        <child link="l_sensor_0"/>
+        <origin rpy="0 0 0" xyz="0.01 0.06333333333333332 0.005"/>
+        <axis xyz="0 0 0"/>
+        <limit effort="1000.0" lower="-3.14" upper="3.14" velocity="0.5"/>
+    </joint>
+
+    <link name="l_sensor_0">
+        <visual>
+            <origin rpy="0 0 0" xyz="0 0 0"/>
+            <geometry>
+                <mesh filename="obj_files/sensor.obj" scale="1 1 1"/>
+            </geometry>
+        </visual>
+        <collision>
+            <geometry>
+                <mesh filename="obj_files/sensor_collision.obj" scale="1 1 1"/>
+            </geometry>
+        </collision>
+    </link>
+
+    <joint name="l_sensor_1" type="fixed">
+        <parent link="body_l_distal_pinvround"/>
+        <child link="l_sensor_1"/>
+        <origin rpy="0 0 0" xyz="0.01 0.06333333333333332 -0.005"/>
+        <axis xyz="0 0 0"/>
+        <limit effort="1000.0" lower="-3.14" upper="3.14" velocity="0.5"/>
+    </joint>
+
+    <link name="l_sensor_1">
+        <visual>
+            <origin rpy="0 0 0" xyz="0 0 0"/>
+            <geometry>
+                <mesh filename="obj_files/sensor.obj" scale="1 1 1"/>
+            </geometry>
+        </visual>
+        <collision>
+            <geometry>
+                <mesh filename="obj_files/sensor_collision.obj" scale="1 1 1"/>
+            </geometry>
+        </collision>
+    </link>
+
+    <joint name="l_sensor_2" type="fixed">
+        <parent link="body_l_distal_pinvround"/>
+        <child link="l_sensor_2"/>
+        <origin rpy="0 0 0" xyz="0.01 0.05466666666666666 0.005"/>
+        <axis xyz="0 0 0"/>
+        <limit effort="1000.0" lower="-3.14" upper="3.14" velocity="0.5"/>
+    </joint>
+
+    <link name="l_sensor_2">
+        <visual>
+            <origin rpy="0 0 0" xyz="0 0 0"/>
+            <geometry>
+                <mesh filename="obj_files/sensor.obj" scale="1 1 1"/>
+            </geometry>
+        </visual>
+        <collision>
+            <geometry>
+                <mesh filename="obj_files/sensor_collision.obj" scale="1 1 1"/>
+            </geometry>
+        </collision>
+    </link>
+
+    <joint name="l_sensor_3" type="fixed">
+        <parent link="body_l_distal_pinvround"/>
+        <child link="l_sensor_3"/>
+        <origin rpy="0 0 0" xyz="0.01 0.05466666666666666 -0.005"/>
+        <axis xyz="0 0 0"/>
+        <limit effort="1000.0" lower="-3.14" upper="3.14" velocity="0.5"/>
+    </joint>
+
+    <link name="l_sensor_3">
+        <visual>
+            <origin rpy="0 0 0" xyz="0 0 0"/>
+            <geometry>
+                <mesh filename="obj_files/sensor.obj" scale="1 1 1"/>
+            </geometry>
+        </visual>
+        <collision>
+            <geometry>
+                <mesh filename="obj_files/sensor_collision.obj" scale="1 1 1"/>
+            </geometry>
+        </collision>
+    </link>
+
+    <joint name="l_sensor_4" type="fixed">
+        <parent link="body_l_distal_pinvround"/>
+        <child link="l_sensor_4"/>
+        <origin rpy="0 0 0" xyz="0.01 0.046 0.005"/>
+        <axis xyz="0 0 0"/>
+        <limit effort="1000.0" lower="-3.14" upper="3.14" velocity="0.5"/>
+    </joint>
+
+    <link name="l_sensor_4">
+        <visual>
+            <origin rpy="0 0 0" xyz="0 0 0"/>
+            <geometry>
+                <mesh filename="obj_files/sensor.obj" scale="1 1 1"/>
+            </geometry>
+        </visual>
+        <collision>
+            <geometry>
+                <mesh filename="obj_files/sensor_collision.obj" scale="1 1 1"/>
+            </geometry>
+        </collision>
+    </link>
+
+    <joint name="l_sensor_5" type="fixed">
+        <parent link="body_l_distal_pinvround"/>
+        <child link="l_sensor_5"/>
+        <origin rpy="0 0 0" xyz="0.01 0.046 -0.005"/>
+        <axis xyz="0 0 0"/>
+        <limit effort="1000.0" lower="-3.14" upper="3.14" velocity="0.5"/>
+    </joint>
+
+    <link name="l_sensor_5">
+        <visual>
+            <origin rpy="0 0 0" xyz="0 0 0"/>
+            <geometry>
+                <mesh filename="obj_files/sensor.obj" scale="1 1 1"/>
+            </geometry>
+        </visual>
+        <collision>
+            <geometry>
+                <mesh filename="obj_files/sensor_collision.obj" scale="1 1 1"/>
+            </geometry>
+        </collision>
+    </link>
+
+    <joint name="l_sensor_6" type="fixed">
+        <parent link="body_l_distal_pinvround"/>
+        <child link="l_sensor_6"/>
+        <origin rpy="0 0 0" xyz="0.01 0.037333333333333336 0.005"/>
+        <axis xyz="0 0 0"/>
+        <limit effort="1000.0" lower="-3.14" upper="3.14" velocity="0.5"/>
+    </joint>
+
+    <link name="l_sensor_6">
+        <visual>
+            <origin rpy="0 0 0" xyz="0 0 0"/>
+            <geometry>
+                <mesh filename="obj_files/sensor.obj" scale="1 1 1"/>
+            </geometry>
+        </visual>
+        <collision>
+            <geometry>
+                <mesh filename="obj_files/sensor_collision.obj" scale="1 1 1"/>
+            </geometry>
+        </collision>
+    </link>
+
+    <joint name="l_sensor_7" type="fixed">
+        <parent link="body_l_distal_pinvround"/>
+        <child link="l_sensor_7"/>
+        <origin rpy="0 0 0" xyz="0.01 0.037333333333333336 -0.005"/>
+        <axis xyz="0 0 0"/>
+        <limit effort="1000.0" lower="-3.14" upper="3.14" velocity="0.5"/>
+    </joint>
+
+    <link name="l_sensor_7">
+        <visual>
+            <origin rpy="0 0 0" xyz="0 0 0"/>
+            <geometry>
+                <mesh filename="obj_files/sensor.obj" scale="1 1 1"/>
+            </geometry>
+        </visual>
+        <collision>
+            <geometry>
+                <mesh filename="obj_files/sensor_collision.obj" scale="1 1 1"/>
+            </geometry>
+        </collision>
+    </link>
+
+    <joint name="l_sensor_8" type="fixed">
+        <parent link="body_l_distal_pinvround"/>
+        <child link="l_sensor_8"/>
+        <origin rpy="0 0 0" xyz="0.01 0.028666666666666674 0"/>
+        <axis xyz="0 0 0"/>
+        <limit effort="1000.0" lower="-3.14" upper="3.14" velocity="0.5"/>
+    </joint>
+
+    <link name="l_sensor_8">
+        <visual>
+            <origin rpy="0 0 0" xyz="0 0 0"/>
+            <geometry>
+                <mesh filename="obj_files/sensor.obj" scale="1 1 1"/>
+            </geometry>
+        </visual>
+        <collision>
+            <geometry>
+                <mesh filename="obj_files/sensor_collision.obj" scale="1 1 1"/>
+            </geometry>
+        </collision>
+    </link>
+
+    <joint name="r_prox_pin" type="revolute">
+        <parent link="body_palm_lpinvrpin"/>
+        <child link="body_r_prox_pinvpin"/>
+        <origin rpy="0 0 0" xyz="0.02675 0.04 0"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="1000.0" lower="-3.14" upper="3.14" velocity="0.5"/>
+    </joint>
+
+    <link name="body_r_prox_pinvpin">
+        <visual>
+            <origin rpy="0 1.5707963267948966 0" xyz="0 0 0"/>
+            <geometry>
+                <mesh filename="obj_files/body_r_prox_pinvpin.obj" scale="1 1 1"/>
+            </geometry>
+        </visual>
+        <collision>
+            <geometry>
+                <mesh filename="obj_files/body_r_prox_pinvpin_collision.obj" scale="1 1 1"/>
+            </geometry>
+        </collision>
+    </link>
+
+    <joint name="r_distal_pin" type="revolute">
+        <parent link="body_r_prox_pinvpin"/>
+        <child link="body_r_distal_pinvround"/>
+        <origin rpy="0 0 0" xyz="0 0.072 0"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="1000.0" lower="-3.14" upper="3.14" velocity="0.5"/>
+    </joint>
+
+    <link name="body_r_distal_pinvround">
+        <visual>
+            <origin rpy="0 1.5707963267948966 0" xyz="0 0 0"/>
+            <geometry>
+                <mesh filename="obj_files/body_r_distal_pinvround.obj" scale="1 1 1"/>
+            </geometry>
+        </visual>
+        <collision>
+            <geometry>
+                <mesh filename="obj_files/body_r_distal_pinvround_collision.obj" scale="1 1 1"/>
+            </geometry>
+        </collision>
+    </link>
+
+    <joint name="r_sensor_0" type="fixed">
+        <parent link="body_r_distal_pinvround"/>
+        <child link="r_sensor_0"/>
+        <origin rpy="0 0 0" xyz="-0.01 0.06333333333333332 0.005"/>
+        <axis xyz="0 0 0"/>
+        <limit effort="1000.0" lower="-3.14" upper="3.14" velocity="0.5"/>
+    </joint>
+
+    <link name="r_sensor_0">
+        <visual>
+            <origin rpy="0 0 3.141592653589793" xyz="0 0 0"/>
+            <geometry>
+                <mesh filename="obj_files/sensor.obj" scale="1 1 1"/>
+            </geometry>
+        </visual>
+        <collision>
+            <geometry>
+                <mesh filename="obj_files/sensor_collision.obj" scale="1 1 1"/>
+            </geometry>
+        </collision>
+    </link>
+
+    <joint name="r_sensor_1" type="fixed">
+        <parent link="body_r_distal_pinvround"/>
+        <child link="r_sensor_1"/>
+        <origin rpy="0 0 0" xyz="-0.01 0.06333333333333332 -0.005"/>
+        <axis xyz="0 0 0"/>
+        <limit effort="1000.0" lower="-3.14" upper="3.14" velocity="0.5"/>
+    </joint>
+
+    <link name="r_sensor_1">
+        <visual>
+            <origin rpy="0 0 3.141592653589793" xyz="0 0 0"/>
+            <geometry>
+                <mesh filename="obj_files/sensor.obj" scale="1 1 1"/>
+            </geometry>
+        </visual>
+        <collision>
+            <geometry>
+                <mesh filename="obj_files/sensor_collision.obj" scale="1 1 1"/>
+            </geometry>
+        </collision>
+    </link>
+
+    <joint name="r_sensor_2" type="fixed">
+        <parent link="body_r_distal_pinvround"/>
+        <child link="r_sensor_2"/>
+        <origin rpy="0 0 0" xyz="-0.01 0.05466666666666666 0.005"/>
+        <axis xyz="0 0 0"/>
+        <limit effort="1000.0" lower="-3.14" upper="3.14" velocity="0.5"/>
+    </joint>
+
+    <link name="r_sensor_2">
+        <visual>
+            <origin rpy="0 0 3.141592653589793" xyz="0 0 0"/>
+            <geometry>
+                <mesh filename="obj_files/sensor.obj" scale="1 1 1"/>
+            </geometry>
+        </visual>
+        <collision>
+            <geometry>
+                <mesh filename="obj_files/sensor_collision.obj" scale="1 1 1"/>
+            </geometry>
+        </collision>
+    </link>
+
+    <joint name="r_sensor_3" type="fixed">
+        <parent link="body_r_distal_pinvround"/>
+        <child link="r_sensor_3"/>
+        <origin rpy="0 0 0" xyz="-0.01 0.05466666666666666 -0.005"/>
+        <axis xyz="0 0 0"/>
+        <limit effort="1000.0" lower="-3.14" upper="3.14" velocity="0.5"/>
+    </joint>
+
+    <link name="r_sensor_3">
+        <visual>
+            <origin rpy="0 0 3.141592653589793" xyz="0 0 0"/>
+            <geometry>
+                <mesh filename="obj_files/sensor.obj" scale="1 1 1"/>
+            </geometry>
+        </visual>
+        <collision>
+            <geometry>
+                <mesh filename="obj_files/sensor_collision.obj" scale="1 1 1"/>
+            </geometry>
+        </collision>
+    </link>
+
+    <joint name="r_sensor_4" type="fixed">
+        <parent link="body_r_distal_pinvround"/>
+        <child link="r_sensor_4"/>
+        <origin rpy="0 0 0" xyz="-0.01 0.046 0.005"/>
+        <axis xyz="0 0 0"/>
+        <limit effort="1000.0" lower="-3.14" upper="3.14" velocity="0.5"/>
+    </joint>
+
+    <link name="r_sensor_4">
+        <visual>
+            <origin rpy="0 0 3.141592653589793" xyz="0 0 0"/>
+            <geometry>
+                <mesh filename="obj_files/sensor.obj" scale="1 1 1"/>
+            </geometry>
+        </visual>
+        <collision>
+            <geometry>
+                <mesh filename="obj_files/sensor_collision.obj" scale="1 1 1"/>
+            </geometry>
+        </collision>
+    </link>
+
+    <joint name="r_sensor_5" type="fixed">
+        <parent link="body_r_distal_pinvround"/>
+        <child link="r_sensor_5"/>
+        <origin rpy="0 0 0" xyz="-0.01 0.046 -0.005"/>
+        <axis xyz="0 0 0"/>
+        <limit effort="1000.0" lower="-3.14" upper="3.14" velocity="0.5"/>
+    </joint>
+
+    <link name="r_sensor_5">
+        <visual>
+            <origin rpy="0 0 3.141592653589793" xyz="0 0 0"/>
+            <geometry>
+                <mesh filename="obj_files/sensor.obj" scale="1 1 1"/>
+            </geometry>
+        </visual>
+        <collision>
+            <geometry>
+                <mesh filename="obj_files/sensor_collision.obj" scale="1 1 1"/>
+            </geometry>
+        </collision>
+    </link>
+
+    <joint name="r_sensor_6" type="fixed">
+        <parent link="body_r_distal_pinvround"/>
+        <child link="r_sensor_6"/>
+        <origin rpy="0 0 0" xyz="-0.01 0.037333333333333336 0.005"/>
+        <axis xyz="0 0 0"/>
+        <limit effort="1000.0" lower="-3.14" upper="3.14" velocity="0.5"/>
+    </joint>
+
+    <link name="r_sensor_6">
+        <visual>
+            <origin rpy="0 0 3.141592653589793" xyz="0 0 0"/>
+            <geometry>
+                <mesh filename="obj_files/sensor.obj" scale="1 1 1"/>
+            </geometry>
+        </visual>
+        <collision>
+            <geometry>
+                <mesh filename="obj_files/sensor_collision.obj" scale="1 1 1"/>
+            </geometry>
+        </collision>
+    </link>
+
+    <joint name="r_sensor_7" type="fixed">
+        <parent link="body_r_distal_pinvround"/>
+        <child link="r_sensor_7"/>
+        <origin rpy="0 0 0" xyz="-0.01 0.037333333333333336 -0.005"/>
+        <axis xyz="0 0 0"/>
+        <limit effort="1000.0" lower="-3.14" upper="3.14" velocity="0.5"/>
+    </joint>
+
+    <link name="r_sensor_7">
+        <visual>
+            <origin rpy="0 0 3.141592653589793" xyz="0 0 0"/>
+            <geometry>
+                <mesh filename="obj_files/sensor.obj" scale="1 1 1"/>
+            </geometry>
+        </visual>
+        <collision>
+            <geometry>
+                <mesh filename="obj_files/sensor_collision.obj" scale="1 1 1"/>
+            </geometry>
+        </collision>
+    </link>
+
+    <joint name="r_sensor_8" type="fixed">
+        <parent link="body_r_distal_pinvround"/>
+        <child link="r_sensor_8"/>
+        <origin rpy="0 0 0" xyz="-0.01 0.028666666666666674 0"/>
+        <axis xyz="0 0 0"/>
+        <limit effort="1000.0" lower="-3.14" upper="3.14" velocity="0.5"/>
+    </joint>
+
+    <link name="r_sensor_8">
+        <visual>
+            <origin rpy="0 0 3.141592653589793" xyz="0 0 0"/>
+            <geometry>
+                <mesh filename="obj_files/sensor.obj" scale="1 1 1"/>
+            </geometry>
+        </visual>
+        <collision>
+            <geometry>
+                <mesh filename="obj_files/sensor_collision.obj" scale="1 1 1"/>
+            </geometry>
+        </collision>
+    </link>
+
+</robot>
