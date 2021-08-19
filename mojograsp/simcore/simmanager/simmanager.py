@@ -11,6 +11,7 @@ from mojograsp.simcore.simmanager.State.State_Metric.state_metric_base import St
 from . import phase
 from . import phasemanager
 
+
 class SimManager_base:
     # TODO: fill in with relevant classes
     def __init__(self, num_episodes=1, sim_timestep=(1. / 240.), episode_timestep_length=1,
@@ -115,17 +116,6 @@ class SimManager_Pybullet(SimManager_base):
 
     def add_rewards(self, reward):
         self.reward_space = reward
-
-    #rough outline of simstep where phase functions called and pybullet stepped n times
-    def step(self):  # TODO: rename to update?
-        #take episode pre step action
-        self.episode_configuration.episode_pre_step()
-
-        self.phase_manager.step()
-
-        #after 1 episode step we call the episode post step function
-        self.episode_configuration.episode_post_step()
-
 
     def run(self):
         print("RUNNING PHASES: {}".format(self.phase_manager.phase_dict))
