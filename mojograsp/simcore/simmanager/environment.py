@@ -21,7 +21,7 @@ class Environment(EnvironmentBase):
         pass
 
     def step(self, phase):
-        phase.curr_action_profile = phase.Action.set_speed(phase.curr_action)
+        phase.curr_action_profile = phase.Action.set_action_units(phase.curr_action)
         print("Sim Steps: {}".format(self.sim_step))
         for i in range(self.sim_step):
             print("Action Profile: {}".format(phase.curr_action_profile[i]))
