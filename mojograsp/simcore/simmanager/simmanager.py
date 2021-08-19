@@ -16,7 +16,6 @@ class SimManager_base:
     def __init__(self, num_episodes=1, sim_timestep=(1. / 240.), episode_timestep_length=1,
                  episode_configuration=None, rl=False):
         # initializes phase dictionary and other variables we will need
-        self.phase_dict = {}
         self.current_phase = None
         self.starting_phase = None
         self.rl = rl
@@ -32,8 +31,7 @@ class SimManager_base:
         self.episode_timestep_length = episode_timestep_length  # TODO: TimeParam class goes here I think
         self.sim_timestep = sim_timestep
 
-        self.phase_manager = phasemanager.PhaseManager(episode_timestep_length=episode_timestep_length,
-                                                        sim_timestep=sim_timestep)
+        self.phase_manager = phasemanager.PhaseManager()
 
         self.state_space = None
         self.reward_space = None
@@ -58,16 +56,20 @@ class SimManager_base:
 
     # adds a phase to our phase dictionary
     def add_phase(self, phase_name, phase_object, start=False):
-        self.phase_dict[phase_name] = phase_object
+        #@anjali
+        # self.phase_dict[phase_name] = phase_object
+        #
+        # # if start flag set or only phase given we set it as starting phase
+        # if (len(self.phase_dict) == 1 or start == True):
+        #     self.starting_phase = phase_object
+        # # TODO: should we pass phase list to phasemanager each time we run phases,
+        # #  or should we bake it onto phasemanager?
+        # self.phase_manager.add_phase_dict(self.phase_dict, self.starting_phase)
+        #
+        # print("Added Phase")
 
-        # if start flag set or only phase given we set it as starting phase
-        if (len(self.phase_dict) == 1 or start == True):
-            self.starting_phase = phase_object
-        # TODO: should we pass phase list to phasemanager each time we run phases,
-        #  or should we bake it onto phasemanager?
-        self.phase_manager.add_phase_dict(self.phase_dict, self.starting_phase)
-
-        print("Added Phase")
+        self.phase_manager.add_phase(phase_name, phase_object, start)
+        #@anjali
 
     def step(self):
         pass
@@ -83,7 +85,7 @@ class SimManager_Pybullet(SimManager_base):
                  rl=False):
         super(SimManager_Pybullet, self).__init__(num_episodes=num_episodes, sim_timestep=sim_timestep,
                                                   episode_timestep_length=episode_timestep_length,
-                                                  episode_configuration=episode_configuration, gym=gym)
+                                                  episode_configuration=episode_configuration, rl=rl)
 
     #physics server setup, TODO: in the future needs arguments
     def setup(self):
@@ -119,25 +121,42 @@ class SimManager_Pybullet(SimManager_base):
         #take episode pre step action
         self.episode_configuration.episode_pre_step()
 
-        self.phase_manager.step(self.episode_timestep_length, self.sim_timestep)
+        self.phase_manager.step()
 
         #after 1 episode step we call the episode post step function
         self.episode_configuration.episode_post_step()
 
 
-    #Rough outline of run, runs for set amount of episodes where within each episode all phases are run until their exit condition is met
     def run(self):
-        print("RUNNING")
+        print("RUNNING PHASES: {}".format(self.phase_manager.phase_dict))
 
         #resets episode settings, runs episode setup and sets the current phase
         for i in range(self.num_episodes):
             self.env.reset()
             self.episode_configuration.reset()
             self.episode_configuration.setup()
+            self.phase_manager.exit_flag = False
+            self.phase_manager.start_phases()
+            done = False
 
-            self.phase_manager.run_phases()
+            #for every phase in the dictionary we step until the exit condition is met
+            while self.phase_manager.exit_flag == False:
+                self.phase_manager.setup_phase()
+                step_count = 0
+                done = False
 
+                #while exit condition is not met call step
+                print("CURRENT PHASE: {}".format(self.phase_manager.current_phase.name))
+                while not done:
+                    print(step_count, i)
+                    self.phase_manager.current_phase.curr_action = self.phase_manager.current_phase.controller.select_action(step_count*0.09)
+                    self.episode_configuration.episode_pre_step()
+                    observation, reward, _, info = self.env.step(self.phase_manager.current_phase)
+                    self.episode_configuration.episode_post_step()
+                    done = self.phase_manager.current_phase.phase_exit_condition(step_count)
+                    step_count += 1
 
-
-
-
+                #after exit condition is met we get the next phase name and set current phase to the specified value
+                self.phase_manager.get_next_phase()
+                if self.phase_manager.exit_flag is True:
+                    break

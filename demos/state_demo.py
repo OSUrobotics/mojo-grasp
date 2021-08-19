@@ -1,62 +1,17 @@
 import mojograsp
 import pybullet as p
 import numpy as np
+import phase1
+import phase2
 
 
-class Controller:
-    def __init__(self):
-        pass
-
-    def select_action(self, i):
-        """
-        This controller is defined to open the hand.
-        Thus the action will always be a constant action
-        of joint position to be reached
-        :return: action: action to be taken in accordance with action space
-        """
-        action = i*np.asarray([1.57, 0, -1.57, 0])
-        return list(action)
 
 
-class OpenHand(mojograsp.phase.Phase):
-    def __init__(self, name=None):
-        super().__init__()
-        self.joint_nums = self._sim.hand.actuation.get_joint_index_numbers()
-        self.target_pos = [1.57, 0, -1.57, 0]
-        self.controller = Controller()
-        self.name = name
-        self.terminal_step = 50
-        state_path = '/Users/asar/Desktop/Grimm\'s Lab/Manipulation/PyBulletStuff/mojo-grasp/mojograsp/simcore/simmanager/State/simple_state.json'
-        self.state = mojograsp.state_space.StateSpace(path=state_path)
-        self.curr_action=None
-        self.curr_action_profile = None
-        self.Action = mojograsp.action_class.Action()
-        self.reward = None # mojograsp.reward_class.Reward()
-
-    def setup(self):
-        print("{} setup".format(self.name))
-        self.joint_nums = self._sim.hand.actuation.get_joint_index_numbers()
-        print("{} executing".format(self.name))
-
-    def execute_action(self, action):
-        p.setJointMotorControlArray(self._sim.hand.id, jointIndices=self.joint_nums, controlMode=p.POSITION_CONTROL,
-                                    targetPositions=action)
-
-    def phase_exit_condition(self, curr_step):
-        # state = {'joint_angles': self.get_joint_angles()}
-        if curr_step >= self.terminal_step:
-            print("Phase: {} completed in {} steps".format(self.name, curr_step))
-            return True
-        return False
-
-    def phase_complete(self):
-        print("Done")
-        return
 
 
 if __name__ == '__main__':
     # setting up simmanager/physics server
-    manager = mojograsp.simmanager.SimManager(rl=False)
+    manager = mojograsp.simmanager.SimManager_Pybullet(rl=False)
     # setting camera
     p.resetDebugVisualizerCamera(cameraDistance=.4, cameraYaw=0, cameraPitch=-45, cameraTargetPosition=[.1, 0, .1])
     hand_path = '/Users/asar/Desktop/Grimm\'s Lab/Manipulation/PyBulletStuff/mojo-grasp/hand_generation/hand_models/2v2_nosensors/2v2_nosensors.urdf'
@@ -71,7 +26,8 @@ if __name__ == '__main__':
     manager.add_env(sim_env)
 
     # mojograsp.phase.Phase._sim = sim_env
-    open = OpenHand('open phase')
+    open = phase1.OpenHand('open phase')
+    close = phase2.CloseHand('close phase')
     # mojograsp.state_metric_base.StateMetricBase._sim = sim_env
 
 
@@ -80,7 +36,8 @@ if __name__ == '__main__':
     # manager.add_state_space(state)
 
     manager.add_phase(open.name, open, start=True)
-    print("STATE: {}".format(open.state.update()))
+    manager.add_phase(close.name, close)
+    # print("STATE: {}".format(open.state.update()))
 
     # running simulation
     manager.run()

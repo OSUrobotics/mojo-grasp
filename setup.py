@@ -8,5 +8,5 @@ setup(
    packages=['mojograsp', 'mojograsp.simcore', 'mojograsp.simcore.simobject', 'mojograsp.simcore.sensors', 'mojograsp.simcore.actuators', 'mojograsp.simcore.datacollection', 'mojograsp.simcore.simmanager', 'gym_env_files'],
    license='LICENSE.txt',
    description='Mojo-Grasp library for grasping simulation written on top of pybullet',
-   install_requires=['pybullet', 'gym'],
+   install_requires=['pybullet', 'gym', 'numpy'],
 )
