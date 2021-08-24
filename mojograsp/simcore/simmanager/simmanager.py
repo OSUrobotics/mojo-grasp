@@ -139,7 +139,7 @@ class SimManager_Pybullet(SimManager_base):
                 print("CURRENT PHASE: {}".format(self.phase_manager.current_phase.name))
                 while not done:
                     print(step_count, i)
-                    self.phase_manager.current_phase.curr_action = self.phase_manager.current_phase.controller.select_action(step_count*0.09)
+                    self.phase_manager.current_phase.curr_action = self.phase_manager.current_phase.controller.select_action()
                     self.episode_configuration.episode_pre_step()
                     observation, reward, _, info = self.env.step(self.phase_manager.current_phase)
                     self.episode_configuration.episode_post_step()
