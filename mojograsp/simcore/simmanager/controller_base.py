@@ -6,11 +6,19 @@ Created on Tue Jul  6 11:14:16 2021
 """
 import numpy as np
 import os
+import mojograsp
 
 
 class ControllerBase:
-    def __init__(self):
-        pass
+    def __init__(self, state_path=None):
+        """
+
+        :param state_path: This can be the path to a json file or a pointer to an instance of state
+        """
+        if '.json' in state_path:
+            self.state = mojograsp.state_space.StateSpace(path=state_path)
+        else:
+            self.state = state_path
 
     def select_action(self):
         pass
@@ -20,11 +28,11 @@ class GenericController(ControllerBase):
     def __init__(self, controller_type, state_path=None):
         super().__init__()
         if controller_type == "open":
-            self.controller = OpenController()
+            self.controller = OpenController(state_path)
         elif controller_type == "close":
-            self.controller = CloseController()
+            self.controller = CloseController(state_path)
         elif controller_type == "PID move":
-            self.controller = PIDMoveController()
+            self.controller = PIDMoveController(state_path)
         else:
             self.controller = controller_type
         try:
@@ -35,7 +43,7 @@ class GenericController(ControllerBase):
 
 
 class OpenController(ControllerBase):
-    def __init__(self):
+    def __init__(self, state_path):
         super().__init__()
 
     def select_action(self):
@@ -50,7 +58,7 @@ class OpenController(ControllerBase):
 
 
 class CloseController(ControllerBase):
-    def __init__(self):
+    def __init__(self, state_path):
         super().__init__()
 
     def select_action(self):
@@ -65,7 +73,8 @@ class CloseController(ControllerBase):
 
 
 class PIDMoveController(ControllerBase):
-    def __init__(self):
+#State space needs to include next pose to go to, contact points, probably a sim pointer? for access to hand joint angle numbers, etc
+    def __init__(self, state_path):
         super().__init__()
         self.timestep = 0
 
