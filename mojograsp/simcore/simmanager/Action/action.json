@@ -1,0 +1,11 @@
+{
+    "Action":{
+        "F1": {"Prox1": [-5,5], "Dist1": [-5,5]},
+        "F2": {"Prox2": [-5,5], "Dist2": [-5,5]}
+    },
+    "Parameters":{
+        "Timestep_len":0.004,
+        "Timestep_num":15,
+        "Speed_Range":[-5,5]
+        }
+}

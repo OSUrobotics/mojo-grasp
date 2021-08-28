@@ -5,6 +5,7 @@ import pybullet as p
 class CloseHand(mojograsp.phase.Phase):
 
 	def __init__(self, hand):
+		super().__init__()
 		self.hand = hand
 		self.joint_nums = None
 		
@@ -29,11 +30,13 @@ class CloseHand(mojograsp.phase.Phase):
 		print("Beggining Phase2 open")
 		return "open"
 
+
 #example 2 of a phase, opens the hand
 #each phase ovverides the needed functions from the parent class which simmanagers calls
 class OpenHand(mojograsp.phase.Phase):
 
 	def __init__(self, hand):
+		super().__init__()
 		self.hand = hand
 		self.joint_nums = None
 		

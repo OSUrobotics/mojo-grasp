@@ -1,6 +1,7 @@
 
 
-class Phase():
+class Phase:
+	_sim = None
 	
 	def __init__(self):
 		print("Phase initialized")
@@ -22,7 +23,7 @@ class Phase():
 	#	print("Selecting action")
 		return None
 
-	def execute_action(self):
+	def execute_action(self, action):
 	#	print("Executing action")
 		None
 
