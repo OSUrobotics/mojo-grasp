@@ -129,4 +129,5 @@ dmypy.json
 .pyre/
 
 # Extra
-.idea/
+hand_generation/hand_models/*
+hand_generation/object_models/*
