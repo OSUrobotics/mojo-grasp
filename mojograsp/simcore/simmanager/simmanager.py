@@ -10,6 +10,7 @@ import gym_env_files
 from mojograsp.simcore.simmanager.State.State_Metric.state_metric_base import StateMetricBase
 from . import phase
 from . import phasemanager
+from . import controller_base
 
 
 class SimManager_base:
@@ -110,6 +111,7 @@ class SimManager_Pybullet(SimManager_base):
         self.env = env
         phase.Phase._sim = self.env
         StateMetricBase._sim = self.env
+        controller_base.ControllerBase._sim = self.env
 
     def add_state_space(self, state_space):
         self.state_space = state_space
