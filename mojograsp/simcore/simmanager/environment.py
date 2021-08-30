@@ -57,3 +57,9 @@ class Environment(EnvironmentBase):
 
     def get_curr_link_pos(self, link_id):
         return self.hand.get_link_pose(link_id)
+
+    def get_num_joints(self):
+        return len(self.hand.joint_dict.values())
+
+    def get_joint_nums_as_list(self):
+        return list(self.hand.joint_dict.values())

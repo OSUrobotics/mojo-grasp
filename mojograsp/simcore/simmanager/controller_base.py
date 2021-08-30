@@ -10,6 +10,8 @@ import mojograsp
 
 
 class ControllerBase:
+    _sim = None
+
     def __init__(self, state_path=None):
         """
 
