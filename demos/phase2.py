@@ -11,7 +11,8 @@ class CloseHand(mojograsp.phase.Phase):
         self.terminal_step = 5
         state_path = '/Users/asar/Desktop/Grimm\'s Lab/Manipulation/PyBulletStuff/mojo-grasp/mojograsp/simcore/simmanager/State/simple_state.json'
         self.state = mojograsp.state_space.StateSpace(path=state_path)
-        self.controller = mojograsp.controller_base.GenericController('close', state_path=state_path)
+        self.controller = mojograsp.controller_base.ControllerBase.create_instance(state_path=state_path,
+                                                                                   controller_type='close')
         self.curr_action = None
         self.curr_action_profile = None
         self.Action = mojograsp.action_class.Action()
