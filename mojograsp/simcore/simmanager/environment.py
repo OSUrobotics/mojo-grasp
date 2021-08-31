@@ -35,8 +35,8 @@ class Environment(EnvironmentBase):
         # print("State:", observation)
 
         if phase.reward is not None:
-            reward = None
-            pass
+            reward = phase.reward.get_reward()
+            print("##$$!!! REWARD: {}".format(reward))
         else:
             reward = None
 

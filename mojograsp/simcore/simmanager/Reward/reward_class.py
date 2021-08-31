@@ -28,18 +28,14 @@ class Reward(reward_base.RewardBase):
             self.reward[i] = 0
             if i == 'finger':
                 self.finger_state = state_space.StateSpace(self.reward_params['Finger_State'])
-            elif i == 'grasp':
-                self.grasp_net = pickle.load(open(self.reward_params['Grasp_Classifier'], "rb"))
-                self.grasp_reward = False
-                self.grasp_state = state_space.StateSpace(self.reward_params['Grasp_State'])
             elif i == 'lift':
                 self.heights = StatsTrackerBase(-0.005, 0.3)
 
     def get_finger_reward(self):
-        self.finger_state.update()
-        finger_obj_dists = self.finger_state.get_obs()
-        finger_reward = -np.sum((np.array(finger_obj_dists[:6])) + (np.array(finger_obj_dists[6:])))
-        return finger_reward
+        return 0
+
+    def get_lift_reward(self):
+        return 0
 
 
 if __name__ == "__main__":
