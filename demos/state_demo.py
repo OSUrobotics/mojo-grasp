@@ -5,10 +5,6 @@ import phase1
 import phase2
 
 
-
-
-
-
 if __name__ == '__main__':
     # setting up simmanager/physics server
     manager = mojograsp.simmanager.SimManager_Pybullet(rl=False)
@@ -24,16 +20,8 @@ if __name__ == '__main__':
 
     sim_env = mojograsp.environment.Environment(hand=hand, objects=cube, steps=15)
     manager.add_env(sim_env)
-
-    # mojograsp.phase.Phase._sim = sim_env
     open = phase1.OpenHand('open phase')
     close = phase2.CloseHand('close phase')
-    # mojograsp.state_metric_base.StateMetricBase._sim = sim_env
-
-
-    # print("STATE DATA: {}".format(state.data['Angle_JointState'].get_xml_geom_name('F1')))
-
-    # manager.add_state_space(state)
 
     manager.add_phase(open.name, open, start=True)
     manager.add_phase(close.name, close)
