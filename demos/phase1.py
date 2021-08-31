@@ -16,7 +16,7 @@ class OpenHand(mojograsp.phase.Phase):
         self.curr_action = None
         self.curr_action_profile = None
         self.Action = mojograsp.action_class.Action()
-        self.reward = None # mojograsp.reward_class.Reward()
+        self.reward = mojograsp.reward_class.Reward('/Users/asar/Desktop/Grimm\'s Lab/Manipulation/PyBulletStuff/mojo-grasp/mojograsp/simcore/simmanager/Reward/reward.json')
 
     def setup(self):
         print("{} setup".format(self.name))

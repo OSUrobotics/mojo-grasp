@@ -113,11 +113,11 @@ class SimManager_Pybullet(SimManager_base):
         StateMetricBase._sim = self.env
         controller_base.ControllerBase._sim = self.env
 
-    def add_state_space(self, state_space):
-        self.state_space = state_space
-
-    def add_rewards(self, reward):
-        self.reward_space = reward
+    # def add_state_space(self, state_space):
+    #     self.state_space = state_space
+    #
+    # def add_rewards(self, reward):
+    #     self.reward_space = reward
 
     def run(self):
         print("RUNNING PHASES: {}".format(self.phase_manager.phase_dict))
