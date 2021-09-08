@@ -10,6 +10,7 @@ import gym_env_files
 from mojograsp.simcore.simmanager.State.State_Metric.state_metric_base import StateMetricBase
 from . import phase
 from . import phasemanager
+from . import controller_base
 
 
 class SimManager_base:
@@ -110,12 +111,13 @@ class SimManager_Pybullet(SimManager_base):
         self.env = env
         phase.Phase._sim = self.env
         StateMetricBase._sim = self.env
+        controller_base.ControllerBase._sim = self.env
 
-    def add_state_space(self, state_space):
-        self.state_space = state_space
-
-    def add_rewards(self, reward):
-        self.reward_space = reward
+    # def add_state_space(self, state_space):
+    #     self.state_space = state_space
+    #
+    # def add_rewards(self, reward):
+    #     self.reward_space = reward
 
     def run(self):
         print("RUNNING PHASES: {}".format(self.phase_manager.phase_dict))
@@ -139,7 +141,7 @@ class SimManager_Pybullet(SimManager_base):
                 print("CURRENT PHASE: {}".format(self.phase_manager.current_phase.name))
                 while not done:
                     print(step_count, i)
-                    self.phase_manager.current_phase.curr_action = self.phase_manager.current_phase.controller.select_action(step_count*0.09)
+                    self.phase_manager.current_phase.curr_action = self.phase_manager.current_phase.controller.select_action()
                     self.episode_configuration.episode_pre_step()
                     observation, reward, _, info = self.env.step(self.phase_manager.current_phase)
                     self.episode_configuration.episode_post_step()
