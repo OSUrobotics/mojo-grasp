@@ -5,7 +5,7 @@ import os
 
 
 # directory = os.path.dirname(__file__)
-directory = os.getcwd()
+directory = '/Users/asar/Desktop/Grimm\'s Lab/Manipulation/PyBulletStuff/mojo-grasp/hand_generation'
 
 def test():
     name = input("hand_name:  ")

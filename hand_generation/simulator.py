@@ -34,7 +34,7 @@ class sim_tester():
 
         gripper = boxId
 
-        obj = p.loadURDF(f"{self.directory}/object_models/{self.gripper_name}/{self.gripper_name}_{self.object_type}_{self.object_size}.urdf", useFixedBase=1, basePosition=[0, 0.2, 0])
+        obj = p.loadURDF(f"{self.directory}/object_models/{self.gripper_name}/{self.gripper_name}_{self.object_type}_{self.object_size}.urdf", useFixedBase=0, basePosition=[0, 0.2, 0])
 
         p.resetDebugVisualizerCamera(cameraDistance=.2, cameraYaw=180, cameraPitch=-91, cameraTargetPosition=[0, 0.1, 0.1])
         # p.resetDebugVisualizerCamera(cameraDistance=.2, cameraYaw=90, cameraPitch=0, cameraTargetPosition=[.1, 0, .1])
