@@ -39,7 +39,6 @@ class StateSpace:
                                                                            StateSpace.valid_state_names.keys()])
 
     def get_obs(self):
-        #self.update()
         arr = []
         for name, value in self.data.items():
             temp = value.get_value()

@@ -68,10 +68,20 @@ class CloseController(ControllerBase):
 
     def select_action(self):
         """
-        This controller is defined to open the hand.
+        This controller is defined to close the hand.
         Thus the action will always be a constant action
         of joint position to be reached
         :return: action: action to be taken in accordance with action space
         """
         action = [0.6, -0.9, -0.6, 0.9]
         return action
+
+class MoveController(ControllerBase):
+    def __init__(self, state_path):
+        super().__init__(state_path)
+
+    def select_action(self):
+        """
+        This controller is designed ot move an object along a certain path
+        :return:
+        """
