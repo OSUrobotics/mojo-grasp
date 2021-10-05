@@ -3,29 +3,40 @@ import pybullet as p
 import numpy as np
 import phase1_full
 import phase2_full
+import phase3_full
 
 
 if __name__ == '__main__':
-    # setting up simmanager/physics server
-    manager = mojograsp.simmanager.SimManager_Pybullet(rl=False)
+    # setting up simmanager
+    manager = mojograsp.simmanager.SimManagerPybullet(num_episodes=2, rl=False)
+
     # setting camera
-    p.resetDebugVisualizerCamera(cameraDistance=.4, cameraYaw=0, cameraPitch=-45, cameraTargetPosition=[.1, 0, .1])
-    hand_path = '/Users/asar/Desktop/Grimm\'s Lab/Manipulation/PyBulletStuff/mojo-grasp/hand_generation/hand_models/2v2_nosensors/2v2_nosensors.urdf'
-    # hand_path = "/Users/asar/PycharmProjects/InHand-Manipulation/ExampleSimWorld-Josh/2v2_hands/999/testing.sdf"
+    p.resetDebugVisualizerCamera(cameraDistance=.02, cameraYaw=0, cameraPitch=-89.9,
+                                 cameraTargetPosition=[0, 0.1, 0.5])
 
-    object_path = '/Users/asar/Desktop/Grimm\'s Lab/Manipulation/PyBulletStuff/mojo-grasp/hand_generation/object_models/2v2_nosensors/2v2_nosensors_cuboid_small.urdf'
+    # Instantiating sim objects
+    hand_path = "/Users/asar/PycharmProjects/InHand-Manipulation/ExampleSimWorld-Josh/2v2_nosensors_hand" \
+                "/2v2_nosensors.urdf"
+    object_path = "/Users/asar/PycharmProjects/InHand-Manipulation/ExampleSimWorld-Josh/2v2_nosensors_hand_object/" \
+                  "2v2_nosensors_cuboid_small.urdf"
+    hand = mojograsp.hand.Hand(hand_path, fixed=True, base_pos=[0.0, 0.0, 0.04])
+    cube = mojograsp.objectbase.ObjectBase(object_path, fixed=False, base_pos=[0.0, 0.1615, 0])
 
-    hand = mojograsp.hand.Hand(hand_path, fixed=True)
-    cube = mojograsp.objectbase.ObjectBase(object_path, fixed=False)
+    # Instantiating environment
+    sim_env = mojograsp.environment.Environment(hand=hand, objects=cube, steps=2)
 
-    sim_env = mojograsp.environment.Environment(hand=hand, objects=cube, steps=15)
+    # Adding environment
     manager.add_env(sim_env)
+
+    # Instantiating phases
     open = phase1_full.OpenHand('open phase')
     close = phase2_full.CloseHand('close phase')
+    move = phase3_full.MoveHand('move phase')
 
+    # Adding phases
     manager.add_phase(open.name, open, start=True)
     manager.add_phase(close.name, close)
-    # print("STATE: {}".format(open.state.update()))
+    manager.add_phase(move.name, move)
 
     # running simulation
     manager.run()

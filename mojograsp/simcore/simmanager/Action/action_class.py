@@ -19,11 +19,13 @@ class Action:
 
     def __init__(self, starting_action_units=None, differentiated_action_units_range=[0.2, 20],
                  json_path='/Users/asar/Desktop/Grimm\'s Lab/Manipulation/PyBulletStuff/mojo-grasp/mojograsp/simcore/simmanager/Action/action.json'):
-        """ Starting action_units is the action_units of the fingers at initialization. We
+        """
+        Starting action_units is the action_units of the fingers at initialization. We
         assume the initial action_units is 0 if not otherwise specified.
-        @param desired_action_units - list of action_unitss with length described in
+        @param desired_action_units - list of action_units with length described in
         action.json
-        @param json_path - path to json file"""
+        @param json_path - path to json file
+        """
         if differentiated_action_units_range is None:
             differentiated_action_units_range = [0.2, 20]
         self.min_differentiated_action_units = differentiated_action_units_range[0]  # rad/s^2
@@ -37,10 +39,14 @@ class Action:
         # They will be changed to class varriables when we add a function to
         # autogenerate a json file with these parameters and others when the
         # simulator starts.
-        params = json_conts['Parameters']
-        self.time = params['Timestep_len']  # length of a timestep in seconds
-        self.timesteps = params['Timestep_num']  # number of simulation
-        # timesteps per step call
+
+        if self._sim is not None:
+            self.time = self._sim.sim_sleep # length of a timestep in seconds
+            self.timesteps = self._sim.sim_step # number of simulation
+        else:
+            params = json_conts['Parameters']
+            self.time = params['Timestep_len']
+            self.timesteps = params['Timestep_num']
 
         # Set up the current and last action_units values with max and min action_unitss and
         # the order of actions pulled from the json file

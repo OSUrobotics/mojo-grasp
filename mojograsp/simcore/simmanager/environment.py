@@ -13,20 +13,29 @@ class Environment(EnvironmentBase):
         super().__init__(action_class)
         self.sim_sleep = sleep
         self.sim_step = steps
-        print("##@@###Sim Steps: {} {}".format(self.sim_step, steps))
         self.hand = hand
         self.objects = objects
 
     def reset(self):
-        pass
+        """
+        Reset environment at the start of every new episode
+        :return:
+        """
+        for i in self.hand.joint_dict.values():
+            p.resetJointState(self.hand.id, i, 0)
+        self.objects.set_curr_pose([0.00, 0.17, 0.0], self.objects.start_pos[self.objects.id][1])
 
     def step(self, phase):
+        # With Action Profile
         phase.curr_action_profile = phase.Action.set_action_units(phase.curr_action)
-        print("Sim Steps: {}".format(self.sim_step))
-        for i in range(self.sim_step):
-            print("Action Profile: {}".format(phase.curr_action_profile[i]))
-            phase.execute_action(phase.curr_action_profile[i])
+        for i, j in zip(range(self.sim_step), phase.curr_action_profile):
+            phase.execute_action(j)
             self.step_sim()
+
+        # Without Action Profile:
+        # for i in range(self.sim_step):
+        #     phase.execute_action(phase.curr_action)
+        #     self.step_sim()
 
         if phase.state is not None:
             observation = phase.state.update()
@@ -36,7 +45,6 @@ class Environment(EnvironmentBase):
 
         if phase.reward is not None:
             reward = phase.reward.get_reward()
-            print("##$$!!! REWARD: {}".format(reward))
         else:
             reward = None
 
@@ -63,3 +71,6 @@ class Environment(EnvironmentBase):
 
     def get_joint_nums_as_list(self):
         return list(self.hand.joint_dict.values())
+
+    def get_contact_info(self, joint_index):
+        return p.getContactPoints(self.objects.id, self.hand.id, linkIndexB=joint_index)

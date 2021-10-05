@@ -9,6 +9,7 @@
             </geometry>
         </visual>
         <collision>
+            <origin rpy="0 1.5707963267948966 0" xyz="0 0 0"/>
             <geometry>
                 <mesh filename="obj_files/body_palm_lpinvrpin_collision.obj" scale="1 1 1"/>
             </geometry>
@@ -31,6 +32,7 @@
             </geometry>
         </visual>
         <collision>
+            <origin rpy="0 1.5707963267948966 0" xyz="0 0 0"/>
             <geometry>
                 <mesh filename="obj_files/body_l_prox_pinvpin_collision.obj" scale="1 1 1"/>
             </geometry>
@@ -53,6 +55,7 @@
             </geometry>
         </visual>
         <collision>
+            <origin rpy="0 1.5707963267948966 0" xyz="0 0 0"/>
             <geometry>
                 <mesh filename="obj_files/body_l_distal_pinvround_collision.obj" scale="1 1 1"/>
             </geometry>
@@ -75,6 +78,7 @@
             </geometry>
         </visual>
         <collision>
+            <origin rpy="0 1.5707963267948966 0" xyz="0 0 0"/>
             <geometry>
                 <mesh filename="obj_files/body_r_prox_pinvpin_collision.obj" scale="1 1 1"/>
             </geometry>
@@ -97,6 +101,7 @@
             </geometry>
         </visual>
         <collision>
+            <origin rpy="0 1.5707963267948966 0" xyz="0 0 0"/>
             <geometry>
                 <mesh filename="obj_files/body_r_distal_pinvround_collision.obj" scale="1 1 1"/>
             </geometry>
