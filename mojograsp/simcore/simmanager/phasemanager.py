@@ -27,14 +27,12 @@ class PhaseManager:
         if next_phase != None:
             try:
                 self.current_phase = self.phase_dict[next_phase]
-                # return self.current_phase
             except:
                 self.exit_flag = True
                 print("Error: Could not find next phase " + str(next_phase))
         # if phase is none we break the for loop early
         else:
             self.exit_flag = True
-            # return next_phase
 
     def setup_phase(self):
         self.current_phase.setup()

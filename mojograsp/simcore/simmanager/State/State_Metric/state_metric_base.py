@@ -9,7 +9,6 @@ import os
 import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from mojograsp.simcore.datacollection.stats_tracker_base import *
-from collections import OrderedDict
 
 
 class StateMetricBase:
@@ -32,34 +31,4 @@ class StateMetricBase:
         return self.data.value
 
     def update(self, keys):
-        None
-
-
-# class StateMetricAngleBase(StateMetricBase):
-#     def update(self, keys):
-#         None
-#
-#
-# class StateMetricPositionBase(StateMetricBase):
-#     def update(self, keys):
-#         None
-#
-#
-# class StateMetricVectorBase(StateMetricBase):
-#     def update(self, keys):
-#         None
-#
-#
-# class StateMetricRatioBase(StateMetricBase):
-#     def update(self, keys):
-#         None
-#
-#
-# class StateMetricDistanceBase(StateMetricBase):
-#     def update(self, keys):
-#         None
-#
-#
-# class StateMetricDotProductBase(StateMetricBase):
-#     def update(self, keys):
-#         None
+        pass
