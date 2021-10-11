@@ -9,6 +9,10 @@ from . import controller_base
 from mojograsp.simcore.simmanager.Reward import reward_base
 from mojograsp.simcore.simmanager.State.state_space_base import StateSpaceBase
 from mojograsp.simcore.simmanager.Action.action_class import Action
+from mojograsp.simcore.simmanager.record_episode_base import RecordEpisodeBase
+from mojograsp.simcore.simmanager.record_timestep_base import RecordTimestepBase
+from mojograsp.simcore.simmanager.record_episode import RecordEpisode
+from mojograsp.simcore.simmanager.record_timestep import RecordTimestep
 
 
 class SimManagerBase:
@@ -18,6 +22,7 @@ class SimManagerBase:
         # initializes phase dictionary and other variables we will need
         self.current_phase = None
         self.starting_phase = None
+        # Redundant maybe?
         self.rl = rl
         self.env = None
         # sets episode configuration object and checks if it is none, if it is we create our own empty one
@@ -104,6 +109,8 @@ class SimManagerPybullet(SimManagerBase):
         reward_base.RewardBase._sim = self.env
         StateSpaceBase._sim = self.env
         Action._sim = self.env
+        RecordEpisodeBase._sim = self.env
+        RecordTimestepBase._sim = self.env
 
     def run(self):
         print("RUNNING PHASES: {}".format(self.phase_manager.phase_dict))
@@ -115,6 +122,7 @@ class SimManagerPybullet(SimManagerBase):
             self.episode_configuration.setup()
             self.phase_manager.exit_flag = False
             self.phase_manager.start_phases()
+            record_episode = RecordEpisode(identifier='cube')
 
             #for every phase in the dictionary we step until the exit condition is met
             while self.phase_manager.exit_flag == False:
@@ -132,8 +140,13 @@ class SimManagerPybullet(SimManagerBase):
                     self.episode_configuration.episode_post_step()
                     done = self.phase_manager.current_phase.phase_exit_condition(step_count)
                     step_count += 1
+                    self.env.curr_timestep += 1
+                    record_timestep = RecordTimestep(self.phase_manager.current_phase)
+                    record_episode.add_timestep(record_timestep)
+                    record_timestep.save_timestep_as_csv()
 
                 #after exit condition is met we get the next phase name and set current phase to the specified value
                 self.phase_manager.get_next_phase()
                 if self.phase_manager.exit_flag is True:
                     break
+            record_episode.save_episode_as_csv()

@@ -15,6 +15,8 @@ class Environment(EnvironmentBase):
         self.sim_step = steps
         self.hand = hand
         self.objects = objects
+        self.curr_timestep = 0
+        self.curr_simstep = 0
 
     def reset(self):
         """
@@ -24,11 +26,15 @@ class Environment(EnvironmentBase):
         for i in self.hand.joint_dict.values():
             p.resetJointState(self.hand.id, i, 0)
         self.objects.set_curr_pose([0.00, 0.17, 0.0], self.objects.start_pos[self.objects.id][1])
+        self.curr_timestep = 0
+        self.curr_simstep = 0
 
     def step(self, phase):
         # With Action Profile
+        self.curr_simstep = 0
         phase.curr_action_profile = phase.Action.set_action_units(phase.curr_action)
         for i, j in zip(range(self.sim_step), phase.curr_action_profile):
+            self.curr_simstep += 1
             phase.execute_action(j)
             self.step_sim()
 

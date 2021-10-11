@@ -79,7 +79,7 @@ class CloseController(ControllerBase):
         of joint position to be reached
         :return: action: action to be taken in accordance with action space
         """
-        action = [0.6, -0.9, -0.6, 0.9]
+        action = [0.78, -1.65, -0.78, 1.65]
         return action
 
 
