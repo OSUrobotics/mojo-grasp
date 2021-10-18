@@ -10,7 +10,6 @@ import mojograsp
 import pybullet as p
 import pandas as pd
 from math import radians
-import Markers
 
 
 class ControllerBase:
