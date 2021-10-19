@@ -13,6 +13,7 @@ from mojograsp.simcore.simmanager.record_episode_base import RecordEpisodeBase
 from mojograsp.simcore.simmanager.record_timestep_base import RecordTimestepBase
 from mojograsp.simcore.simmanager.record_episode import RecordEpisode
 from mojograsp.simcore.simmanager.record_timestep import RecordTimestep
+from mojograsp.simcore.simmanager.replay_buffer import ReplayBuffer
 
 
 class SimManagerBase:
@@ -35,6 +36,9 @@ class SimManagerBase:
         self.num_episodes = num_episodes
         self.episode_timestep_length = episode_timestep_length  # TODO: TimeParam class goes here I think
         self.sim_timestep = sim_timestep
+
+
+        self.duh = ReplayBuffer(episodes_file="/home/keegan/mojo/mojo2/mojo-grasp/mojograsp/simcore/simmanager/data/cube_all.csv")
 
         self.phase_manager = phasemanager.PhaseManager()
 
@@ -149,4 +153,5 @@ class SimManagerPybullet(SimManagerBase):
                 self.phase_manager.get_next_phase()
                 if self.phase_manager.exit_flag is True:
                     break
-            record_episode.save_episode_as_csv()
+            self.duh.add_episode(record_episode)
+            record_episode.save_episode_as_csv(file_name="cube", episode_number=i)

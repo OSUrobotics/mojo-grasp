@@ -55,7 +55,7 @@ class RecordTimestep(RecordTimestepBase):
         data.update(self.times)
         return data
 
-    def save_timestep_as_csv(self, file_name=None, write_flag='w'):
+    def save_timestep_as_csv(self, file_name=None, write_flag='w', write_all=False, episode_number=0):
         """Method to save the timestep in a csv file
         @param file_name - name of file
         @param write_flag - type of writing, defaults to write but can be set
@@ -67,17 +67,16 @@ class RecordTimestep(RecordTimestepBase):
         else:
             file_name = path + '/data/' + file_name + '.csv'
         data = self.get_full_timestep()
-        header = ['Wall time', 'Sim time', 'Timestep']
-        for i in range(len(data['state'])):
-            header.append('State_'+str(i))
-        for i in range(len(data['action'])):
-            header.append('Action_'+str(i))
-        for i in range(len(data['reward'])):
-            header.append('reward_'+str(i))
+        header = ['Episode:'+str(episode_number), 'WallTime', 'SimTime', 'TimeStep']
+        header.append('State:'+str(len(data['state'])))
+        header.append('Action:'+str(len(data['action'])))
+        header.append('Reward:'+str(len(data['reward'])))
         with open(file_name, write_flag, newline='') as csv_file:
             time_writer = csv.writer(csv_file, delimiter=',', quotechar='|',
                                      quoting=csv.QUOTE_MINIMAL)
             if write_flag == 'w':
+                time_writer.writerow(header)
+            if write_all:
                 time_writer.writerow(header)
             time_writer.writerow([data['wall_time']] + [data['sim_time']] +
                                  [data['timestep']] + data['state'] +
