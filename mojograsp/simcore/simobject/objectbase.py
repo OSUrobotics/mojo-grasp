@@ -39,26 +39,31 @@ class ObjectBase:
         else:
             self.id = p.loadURDF(self.model_file, useFixedBase=self.fixed)
 
-        start_pos, start_orn = self.get_curr_pose(self.id)
+        start_pos, start_orn = self.get_curr_pose()
         self.start_pos.update({self.id: [start_pos, start_orn]})
         print("loading object")
 
     def load_object_sdf(self):
-        # self.id = p.loadURDF(self.model_file, useFixedBase=self.fixed)
         ids = p.loadSDF(self.model_file)
         for i in range(len(ids)):
             if i == 0:
                 self.id = ids[i]
             else:
                 self.obj_id = ids[i]
-            start_pos, start_orn = self.get_curr_pose(ids[i])
+            start_pos, start_orn = self.get_curr_pose()
             self.start_pos.update({ids[i]: [start_pos, start_orn]})
         print("loading objects")
 
-    @staticmethod
-    def get_curr_pose(object_id):
-        curr_pos, curr_orn = p.getBasePositionAndOrientation(object_id)
+    def get_curr_pose(self):
+        curr_pos, curr_orn = p.getBasePositionAndOrientation(self.id)
         return curr_pos, curr_orn
 
     def get_dimensions(self):
         return p.getVisualShapeData(self.id)[0][3]
+
+    def set_curr_pose(self, pos, orn):
+        if len(orn) == 3:
+            orn = p.getQuaternionFromEuler(orn)
+        p.resetBasePositionAndOrientation(self.id, pos, orn)
+
+

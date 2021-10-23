@@ -5,32 +5,24 @@ class Phase:
 	
 	def __init__(self):
 		print("Phase initialized")
-		None
 	
 	def setup(self):
 		print("Phase setting up")
-		None
 
 	def pre_step(self):
-	#	print("Pre step")
-		None
+		print("Pre step")
 
 	def post_step(self):
-	#	print("Post step")
-		None
+		print("Post step")
 
 	def select_action(self):
-	#	print("Selecting action")
-		return None
+		print("Selecting action")
 
 	def execute_action(self, action):
-	#	print("Executing action")
-		None
+		print("Executing action")
 
 	def phase_exit_condition(self, episode_step):
 		print("Exit condition checked")
-		return True  # TODO: return next phase if phase is complete, otherwise return None?
 
 	def phase_complete(self):
 		print("Phase complete")
-		None

@@ -4,16 +4,12 @@
 Created on Wed May 12 10:56:40 2021
 @author: orochi
 """
-import pickle
-import numpy as np
 import os
 import sys
 import json
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from mojograsp.simcore.datacollection.stats_tracker_base import *
-from mojograsp.simcore.simmanager.State import state_space
-from collections import OrderedDict
+
 
 
 class RewardBase:
@@ -37,18 +33,10 @@ class RewardBase:
                 reward += self.reward[i]
             except AttributeError:
                 print("get reward method not defined for this reward: {}".format(i))
-                # raise AttributeError
+
                 self.reward[i] = None
         return reward, self.reward
 
-    # def get_finger_reward(self):
-    #     return 0
-    #
-    # def get_lift_reward(self):
-    #     return 0
-    #
-    # def get_grasp_reward(self):
-    #     return 0
 
 
 if __name__ == "__main__":

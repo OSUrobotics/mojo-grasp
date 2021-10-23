@@ -5,41 +5,23 @@ Created on Mon Apr  5 14:57:24 2021
 @author: orochi
 """
 
-import json
-import time
-import numpy as np
-from mojograsp.simcore.simmanager.State.State_Metric.state_metric import StateMetricAngle, StateMetricPosition, StateMetricGroup, StateMetricDistance
-# from mojograsp.simcore.simmanager.State.State_Metric.state_metric import Angle_JointState
-from collections import OrderedDict
+from mojograsp.simcore.simmanager.State.state_space_base import StateSpaceBase
 
 
-class StateSpace:
-    # valid_state_names = {'Position': Position, 'Distance': Distance, 'Angle': Angle, 'Ratio': Ratio, 'Vector': Vector,
-    #                      'DotProduct': DotProduct, 'StateGroup': StateGroup}
-    valid_state_names = {'Angle': StateMetricAngle, 'Position': StateMetricPosition, 'StateGroup': StateMetricGroup,
-                         'Distance': StateMetricDistance}
-    # valid_state_names = {'Angle': Angle_JointState}
-    _sim = None
+class StateSpace(StateSpaceBase):
 
-    def __init__(self, path='/Users/asar/Desktop/Grimm\'s '
-                                       'Lab/Manipulation/PyBulletStuff/mojo-grasp/mojograsp/simcore/simmanager/State'
-                                       '/state.json'):
-        print('path',path)
-        with open(path) as f:
-            json_data = json.load(f)
-        self.data = OrderedDict()
-        # print("JSON DATA: {}".format(json_data))
-        for name, value in json_data.items():
+    def __init__(self, path=None):
+        super().__init__(path)
+        for name, value in self.json_data.items():
             state_name = name.split(sep='_')
             try:
                 # print('State Name: {}, Value: {}, Name: {}'.format(state_name[0], value, name))
                 self.data[name] = StateSpace.valid_state_names[state_name[0]](value)
             except NameError:
-                print(state_name[0],'Invalid state name. Valid state names are', [name for name in
-                                                                           StateSpace.valid_state_names.keys()])
+                print(state_name[0], 'Invalid state name. Valid state names are', [name for name in
+                                                                                   StateSpace.valid_state_names.keys()])
 
     def get_obs(self):
-        #self.update()
         arr = []
         for name, value in self.data.items():
             temp = value.get_value()
@@ -52,6 +34,7 @@ class StateSpace:
     def get_value(self, keys):
         if type(keys) is str:
             keys = [keys]
+        # print("KEYS: {} {} \n{}".format(keys, keys[0], self.data))
         if len(keys) > 1:
             data = self.data[keys[0]].get_specific(keys[1:])
         else:

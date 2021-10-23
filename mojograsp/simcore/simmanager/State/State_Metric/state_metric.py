@@ -4,15 +4,9 @@
 Created on Mon Apr  5 14:57:24 2021
 @author: orochi
 """
-import time
-import numpy as np
-import re
-from pathlib import Path
 import os
 import sys
-import pybullet as p
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from mojograsp.simcore.datacollection.stats_tracker_base import *
 from collections import OrderedDict
 from mojograsp.simcore.simmanager.State.State_Metric.state_metric_base import StateMetricBase
 
@@ -22,67 +16,82 @@ class StateMetricPyBullet(StateMetricBase):
     def get_value(self):
         return self.data.value
 
-    def get_index_from_keys(self, keys):
-        pass
-
-
-class StateMetricAngle(StateMetricPyBullet):
-    def update(self, keys):
-        # print("BEFORE Here Angle: {}, \nKeys: ".format(self.data, keys))
-        joint_indices = self.get_index_from_keys(keys)
-        curr_joint_angles = StateMetricBase._sim.get_hand_curr_joint_angles(joint_indices)
-        self.data.set_value(curr_joint_angles)
-        # print("AFTER Here Angle: {}".format(self.data))
-
-
-class StateMetricPosition(StateMetricPyBullet):
-    def update(self, keys):
-        # print("KEYS_POS: {}".format(keys))
+    @staticmethod
+    def get_index_from_keys(keys):
+        # TODO: These indices should come from _sim.hand. not hard-coded
         if 'F1_l' in keys:
-            curr_pose = StateMetricBase._sim.get_curr_link_pos([0])
+            if 'Prox' in keys:
+                index = 0
+            elif 'Dist' in keys:
+                index = 1
+            else:
+                index = None
 
         elif 'F2_r' in keys:
-            curr_pose = StateMetricBase._sim.get_curr_link_pos([2])
+            if 'Prox' in keys:
+                index = 2
+            elif 'Dist' in keys:
+                index = 3
+            else:
+                index = None
 
         elif 'Palm' in keys:
-            curr_pose = StateMetricBase._sim.get_obj_curr_pose(StateMetricBase._sim.hand)[0]
+            index = 0
 
         elif 'Obj' in keys:
-            curr_pose = StateMetricBase._sim.get_obj_curr_pose(StateMetricBase._sim.objects)[0]
+            index = 0
 
         else:
             print("Wrong Key!")
             raise KeyError
-        # print("POSE_POS:", curr_pose)
-        # print("DATA_POS:", self.data)
+
+        return index
+
+
+class StateMetricAngle(StateMetricPyBullet):
+    def update(self, keys):
+        joint_index = StateMetricPyBullet.get_index_from_keys(keys)
+        curr_joint_angles = StateMetricBase._sim.get_hand_curr_joint_angles([joint_index])
+        # print("CURR JOINT ANGLES: {}".format(curr_joint_angles))
+        self.data.set_value(curr_joint_angles)
+
+
+class StateMetricPosition(StateMetricPyBullet):
+    def update(self, keys):
+        """
+        TODO: Change numbers to keys. use keys to derive joint indices
+        :param keys:
+        :return:
+        """
+        joint_index = StateMetricPyBullet.get_index_from_keys(keys)
+        curr_pose = StateMetricBase._sim.get_curr_link_pos([joint_index])
         self.data.set_value(curr_pose)
-
-
-class StateMetricVector(StateMetricPyBullet):
-    pass
-
-
-class StateMetricRatio(StateMetricPyBullet):
-    pass
+        self.data.set_value(curr_pose)
 
 
 class StateMetricDistance(StateMetricPyBullet):
     def update(self, keys):
         if 'ObjSize' in keys:
-            # print("KEYS: {}".format(keys))
             dimensions = StateMetricBase._sim.get_obj_dimensions()
-            # print("DIMENSIONS: {}".format(dimensions))
             self.data.set_value(dimensions)
 
+        elif 'FingerObj' in keys:
+            joint_index = StateMetricPyBullet.get_index_from_keys(keys)
+            contact_info = self.get_contact_info(joint_index)
+            try:
+                finger_obj_distance = contact_info[0][6]
+            except IndexError:
+                finger_obj_distance = self.data.allowable_max
+            self.data.set_value(finger_obj_distance)
 
-class StateMetricDotProduct(StateMetricPyBullet):
-    pass
+    def get_contact_info(self, joint_index_num):
+        contact_points_info = StateMetricBase._sim.get_contact_info(joint_index_num)
+        return contact_points_info
 
 
 class StateMetricGroup(StateMetricPyBullet):
     valid_state_names = {'Position': StateMetricPosition, 'Distance': StateMetricDistance, 'Angle': StateMetricAngle,
-                         'Ratio': StateMetricRatio, 'Vector': StateMetricVector, 'DotProduct': StateMetricDotProduct,
-                         'StateGroup':'StateMetricGroup'}
+                         'StateGroup': 'StateMetricGroup'}
 
     def __init__(self, data_structure):
         super().__init__(data_structure)
@@ -90,13 +99,12 @@ class StateMetricGroup(StateMetricPyBullet):
         for name, value in data_structure.items():
             state_name = name.split('_')
             try:
-                # print('state name',name)
                 self.data[name] = StateMetricGroup.valid_state_names[state_name[0]](value)
             except TypeError:
                 self.data[name] = StateMetricGroup(value)
             except KeyError:
-                print('Invalid state name. Valid state names are', [name
-                          for name in StateMetricGroup.valid_state_names.keys()])
+                print('Invalid state name. Valid state names are', [name for name in
+                                                                    StateMetricGroup.valid_state_names.keys()])
 
     def update(self, keys):
         arr = []
@@ -120,8 +128,6 @@ class StateMetricGroup(StateMetricPyBullet):
 
     def get_value(self):
         return self.search_dict(self.data, [])
-
-
 
 
 if __name__ == '__main__':
