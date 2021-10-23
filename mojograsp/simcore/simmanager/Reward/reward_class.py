@@ -14,11 +14,13 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 class Reward(reward_base.RewardBase):
 
     def __init__(self, json_path=os.path.dirname(__file__) + '/reward_demo.json'):
+
         """ """
         super().__init__(json_path)
 
         for i in self.reward_weights.keys():
             self.reward[i] = 0
+            
             if i == 'contact':
                 self.contact_state = mojograsp.state_space.StateSpace(self.reward_params['Contact_State'])
 

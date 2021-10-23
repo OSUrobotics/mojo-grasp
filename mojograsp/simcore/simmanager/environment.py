@@ -80,3 +80,4 @@ class Environment(EnvironmentBase):
 
     def get_contact_info(self, joint_index):
         return p.getContactPoints(self.objects.id, self.hand.id, linkIndexB=joint_index)
+

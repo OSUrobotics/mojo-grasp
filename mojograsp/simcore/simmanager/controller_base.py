@@ -85,7 +85,7 @@ class CloseController(ControllerBase):
 class MoveController(ControllerBase):
     def __init__(self, state_path):
         super().__init__(state_path)
-        self.dir = 'c'
+        self.dir = 'b'
         self.filename = "/Users/asar/PycharmProjects/InHand-Manipulation/Human Study Data/" \
                         "asterisk_test_data_for_anjali/trial_paths/not_normalized/sub1_2v2_{}_n_1.csv".format(self.dir)
         self.object_poses_expert = self.extract_data_from_file()
@@ -252,3 +252,4 @@ class MoveController(ControllerBase):
         #     Markers.Marker().set_marker_pose(next_info[0][0])
         #     Markers.Marker().set_marker_pose(next_info[0][1])
         return action
+

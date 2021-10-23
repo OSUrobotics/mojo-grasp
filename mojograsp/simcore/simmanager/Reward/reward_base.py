@@ -11,6 +11,7 @@ import json
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
+
 class RewardBase:
 
     _sim = None
@@ -32,8 +33,10 @@ class RewardBase:
                 reward += self.reward[i]
             except AttributeError:
                 print("get reward method not defined for this reward: {}".format(i))
+
                 self.reward[i] = None
         return reward, self.reward
+
 
 
 if __name__ == "__main__":
