@@ -124,8 +124,8 @@ class MoveController(ControllerBase):
         :param data: Data line from file as a list [x, y, rotx,  f_x,f_y,f_rot_mag]
         :return:
         """
-        pos = (data[4] * scale, 0.0, data[5] * scale)
-        orn_eul = [0, radians(data[6]), 0]
+        pos = (data[4] * scale, data[5] * scale, 0.0)
+        orn_eul = [0, 0, radians(data[6])]
         orn = p.getQuaternionFromEuler(orn_eul)
         return pos, orn
 

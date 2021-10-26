@@ -52,7 +52,7 @@ class Hand(objectbase.ObjectBase):
             if (joint_type != 4):
                 self.joint_index[joint_name] = joint_id
 
-        print(self.joint_index)
+        print("JOINT DICT: ", self.joint_index)
 
     def create_joint_dict(self, keys=None):
         """

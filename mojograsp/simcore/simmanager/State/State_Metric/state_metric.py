@@ -16,41 +16,41 @@ class StateMetricPyBullet(StateMetricBase):
     def get_value(self):
         return self.data.value
 
-    @staticmethod
-    def get_index_from_keys(keys):
-        # TODO: These indices should come from _sim.hand. not hard-coded
+    def get_index_from_keys(self, keys):
         if 'F1_l' in keys:
             if 'Prox' in keys:
-                index = 0
+                index_name = 'l_prox_pin'
             elif 'Dist' in keys:
-                index = 1
+                index_name = 'l_distal_pin'
             else:
-                index = None
+                print("Wrong Key!")
+                raise KeyError
 
         elif 'F2_r' in keys:
             if 'Prox' in keys:
-                index = 2
+                index_name = 'l_prox_pin'
             elif 'Dist' in keys:
-                index = 3
+                index_name = 'l_distal_pin'
             else:
-                index = None
+                print("Wrong Key!")
+                raise KeyError
 
         elif 'Palm' in keys:
-            index = 0
-
-        elif 'Obj' in keys:
-            index = 0
+            index = -1
+            return index
 
         else:
             print("Wrong Key!")
             raise KeyError
+
+        index = self._sim.hand.joint_index[index_name]
 
         return index
 
 
 class StateMetricAngle(StateMetricPyBullet):
     def update(self, keys):
-        joint_index = StateMetricPyBullet.get_index_from_keys(keys)
+        joint_index = self.get_index_from_keys(keys)
         curr_joint_angles = StateMetricBase._sim.get_hand_curr_joint_angles([joint_index])
         # print("CURR JOINT ANGLES: {}".format(curr_joint_angles))
         self.data.set_value(curr_joint_angles)
@@ -63,9 +63,17 @@ class StateMetricPosition(StateMetricPyBullet):
         :param keys:
         :return:
         """
-        joint_index = StateMetricPyBullet.get_index_from_keys(keys)
-        curr_pose = StateMetricBase._sim.get_curr_link_pos([joint_index])
-        self.data.set_value(curr_pose)
+        if "Obj" in keys:
+            obj_full_pose = StateMetricBase._sim.get_obj_curr_pose()
+            curr_pose = [obj_full_pose[0][0], obj_full_pose[0][1], obj_full_pose[0][2], obj_full_pose[1][0], obj_full_pose[1][1],
+                         obj_full_pose[1][2], obj_full_pose[1][3]]
+
+        else:
+            joint_index = self.get_index_from_keys(keys)
+            if joint_index == -1:
+                curr_pose = StateMetricBase._sim.get_hand_curr_pose()[0]
+            else:
+                curr_pose = StateMetricBase._sim.get_curr_link_pos([joint_index])
         self.data.set_value(curr_pose)
 
 
@@ -76,7 +84,7 @@ class StateMetricDistance(StateMetricPyBullet):
             self.data.set_value(dimensions)
 
         elif 'FingerObj' in keys:
-            joint_index = StateMetricPyBullet.get_index_from_keys(keys)
+            joint_index = self.get_index_from_keys(keys)
             contact_info = self.get_contact_info(joint_index)
             try:
                 finger_obj_distance = contact_info[0][6]

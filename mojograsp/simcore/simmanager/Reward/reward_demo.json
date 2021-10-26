@@ -4,6 +4,7 @@
         "target_pose":3
         },
     "Parameters": {
-        "Contact_State":"/Users/asar/Desktop/Grimm's Lab/Manipulation/PyBulletStuff/mojo-grasp/mojograsp/simcore/simmanager/Reward/contact_state.json"
+        "Contact_State":"/Users/asar/Desktop/Grimm's Lab/Manipulation/PyBulletStuff/mojo-grasp/mojograsp/simcore/simmanager/Reward/contact_state.json",
+        "Target_Pose_State":"/Users/asar/Desktop/Grimm's Lab/Manipulation/PyBulletStuff/mojo-grasp/mojograsp/simcore/simmanager/Reward/target_pose_state.json"
     }
 }

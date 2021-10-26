@@ -63,8 +63,11 @@ class Environment(EnvironmentBase):
     def get_hand_curr_joint_angles(self, keys=None):
         return self.hand.get_joint_angles(keys)
 
-    def get_obj_curr_pose(self, object_or_hand):
-        return object_or_hand.get_curr_pose(object_or_hand.id)
+    def get_hand_curr_pose(self):
+        return self.hand.get_curr_pose()
+
+    def get_obj_curr_pose(self):
+        return self.objects.get_curr_pose()
 
     def get_obj_dimensions(self):
         return self.objects.get_dimensions()

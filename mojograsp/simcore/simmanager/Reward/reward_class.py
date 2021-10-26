@@ -23,6 +23,8 @@ class Reward(reward_base.RewardBase):
             
             if i == 'contact':
                 self.contact_state = mojograsp.state_space.StateSpace(self.reward_params['Contact_State'])
+            elif i == 'target_pose':
+                self.target_pose_state = mojograsp.state_space.StateSpace(self.reward_params['Target_Pose_State'])
 
     def get_contact_reward(self):
         contact_reward = 0
@@ -33,6 +35,24 @@ class Reward(reward_base.RewardBase):
         return contact_reward
 
     def get_target_pose_reward(self):
+        curr_points = self.target_pose_state.update()
+        points_in_dir = None
+        rotated_points = self.rotate_points(points_in_dir)
+        reward_x = self.get_reward_in_x(rotated_points)
+        reward_y = self.get_reward_in_y(rotated_points)
+
+        target_reward = -reward_y + 10*reward_x
+        return target_reward
+
+    def rotate_points(self, points_to_rotate):
+
+        return 0
+
+    def get_reward_in_x(self, points_rotated):
+
+        return 0
+
+    def get_reward_in_y(self, points_rotated):
 
         return 0
 

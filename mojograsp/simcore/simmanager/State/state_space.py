@@ -34,7 +34,6 @@ class StateSpace(StateSpaceBase):
     def get_value(self, keys):
         if type(keys) is str:
             keys = [keys]
-        # print("KEYS: {} {} \n{}".format(keys, keys[0], self.data))
         if len(keys) > 1:
             data = self.data[keys[0]].get_specific(keys[1:])
         else:
@@ -43,7 +42,6 @@ class StateSpace(StateSpaceBase):
 
     def update(self):
         for name, value in self.data.items():
-            # print("KEY IS: {}, {}".format(name, self.data[name]))
             self.data[name].update(name)
         return self.get_obs()
 
