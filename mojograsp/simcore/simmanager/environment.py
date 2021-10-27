@@ -90,14 +90,36 @@ class Environment(EnvironmentBase):
         return p.getContactPoints(self.objects.id, self.hand.id, linkIndexB=joint_index)
 
     def set_obj_target_pose(self, direction):
+        start_pose = self.objects.start_pos[self.objects.id]
+        target_orn = start_pose[1]
         if direction == 'a':
-            start_pose = self.objects.start_pos[self.objects.id]
-            target_pos = (start_pose[0][0], start_pose[0][1] + 0.035, start_pose[0][2])
-            target_orn = start_pose[1]
+            change_in_x, change_in_y = 0, 0.035
             angle_to_horizontal = -90
+        elif direction == 'b':
+            change_in_x, change_in_y = 0.0247, 0.0247
+            angle_to_horizontal = -45
+        elif direction == 'c':
+            change_in_x, change_in_y = 0.035, 0
+            angle_to_horizontal = 0
+        elif direction == 'd':
+            change_in_x, change_in_y = 0.0247, -0.0247
+            angle_to_horizontal = 45
+        elif direction == 'e':
+            change_in_x, change_in_y = 0, -0.035
+            angle_to_horizontal = 90
+        elif direction == 'f':
+            change_in_x, change_in_y = -0.0247, -0.0247
+            angle_to_horizontal = 135
+        elif direction == 'g':
+            change_in_x, change_in_y = -0.035, 0
+            angle_to_horizontal = 180
+        elif direction == 'h':
+            change_in_x, change_in_y = -0.0247, 0.0247
+            angle_to_horizontal = -135
         else:
             print("Wrong Direction!")
             raise KeyError
+        target_pos = (start_pose[0][0] + change_in_x, start_pose[0][1] + change_in_y, start_pose[0][2])
         self.objects.target_pose = target_pos, target_orn
         self.objects.angle_to_horizontal = angle_to_horizontal
 

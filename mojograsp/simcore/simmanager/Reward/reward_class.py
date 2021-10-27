@@ -51,7 +51,7 @@ class Reward(reward_base.RewardBase):
         reward_x = self.get_reward_in_x(rotated_x, rot_target_x)
         reward_y = self.get_reward_in_y(rotated_y, rot_target_y)
 
-        target_reward = -10*reward_y + reward_x
+        target_reward = -2*reward_y + reward_x
         print("\nTARGET REWARD: {} X: {} Y: {}\n".format(target_reward, reward_x, reward_y))
         return target_reward
 

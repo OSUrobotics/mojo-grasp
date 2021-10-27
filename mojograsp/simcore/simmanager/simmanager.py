@@ -143,10 +143,10 @@ class SimManagerPybullet(SimManagerBase):
                     self.env.curr_timestep += 1
                     record_timestep = RecordTimestep(self.phase_manager.current_phase)
                     record_episode.add_timestep(record_timestep)
-                    record_timestep.save_timestep_as_csv()
+                    # record_timestep.save_timestep_as_csv()
 
                 #after exit condition is met we get the next phase name and set current phase to the specified value
                 self.phase_manager.get_next_phase()
                 if self.phase_manager.exit_flag is True:
                     break
-            record_episode.save_episode_as_csv()
+            # record_episode.save_episode_as_csv()
