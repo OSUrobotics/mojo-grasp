@@ -127,7 +127,7 @@ class SimManagerPybullet(SimManagerBase):
             #for every phase in the dictionary we step until the exit condition is met
             while self.phase_manager.exit_flag == False:
                 self.phase_manager.setup_phase()
-                step_count = 0
+                phase_step_count = 0
                 done = False
 
                 #while exit condition is not met call step
@@ -138,8 +138,8 @@ class SimManagerPybullet(SimManagerBase):
                     self.episode_configuration.episode_pre_step()
                     observation, reward, _, info = self.env.step(self.phase_manager.current_phase)
                     self.episode_configuration.episode_post_step()
-                    done = self.phase_manager.current_phase.phase_exit_condition(step_count)
-                    step_count += 1
+                    done = self.phase_manager.current_phase.phase_exit_condition(phase_step_count)
+                    phase_step_count += 1
                     self.env.curr_timestep += 1
                     record_timestep = RecordTimestep(self.phase_manager.current_phase)
                     record_episode.add_timestep(record_timestep)

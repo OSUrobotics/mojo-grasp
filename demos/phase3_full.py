@@ -35,7 +35,6 @@ class MoveHand(mojograsp.phase.Phase):
 
     def phase_exit_condition(self, curr_step):
         if curr_step >= self.terminal_step or self.controller.data_over:
-            print(curr_step, self.controller.data_over)
             done = True
         else:
             done = False

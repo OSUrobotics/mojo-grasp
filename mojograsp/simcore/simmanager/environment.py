@@ -51,6 +51,7 @@ class Environment(EnvironmentBase):
 
         if phase.reward is not None:
             reward = phase.reward.get_reward()
+            # print("TOTAL REWARD: {}".format(reward))
         else:
             reward = None
 
@@ -69,6 +70,10 @@ class Environment(EnvironmentBase):
     def get_obj_curr_pose(self):
         return self.objects.get_curr_pose()
 
+    def get_obj_curr_pose_in_start_pose(self):
+        curr_pos, curr_orn = self.get_obj_curr_pose()
+        return self.objects.get_pose_in_start_pose(curr_pos, curr_orn)
+
     def get_obj_dimensions(self):
         return self.objects.get_dimensions()
 
@@ -83,4 +88,20 @@ class Environment(EnvironmentBase):
 
     def get_contact_info(self, joint_index):
         return p.getContactPoints(self.objects.id, self.hand.id, linkIndexB=joint_index)
+
+    def set_obj_target_pose(self, direction):
+        if direction == 'a':
+            start_pose = self.objects.start_pos[self.objects.id]
+            target_pos = (start_pose[0][0], start_pose[0][1] + 0.035, start_pose[0][2])
+            target_orn = start_pose[1]
+            angle_to_horizontal = -90
+        else:
+            print("Wrong Direction!")
+            raise KeyError
+        self.objects.target_pose = target_pos, target_orn
+        self.objects.angle_to_horizontal = angle_to_horizontal
+
+    def get_obj_target_pose(self):
+        return self.objects.target_pose
+
 

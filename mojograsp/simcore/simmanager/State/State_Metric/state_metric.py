@@ -64,9 +64,17 @@ class StateMetricPosition(StateMetricPyBullet):
         :return:
         """
         if "Obj" in keys:
+            # if "in_Start" in keys:
+            #     obj_full_pose = StateMetricBase._sim.get_obj_curr_pose_in_start_pose()
+            # elif "Target" in keys:
+            #     obj_full_pose = StateMetricBase._sim.get_obj_target_pose()
+            #     print("@@@@@TARGET POSE:", obj_full_pose)
+            # else:
+            #     obj_full_pose = StateMetricBase._sim.get_obj_curr_pose()
             obj_full_pose = StateMetricBase._sim.get_obj_curr_pose()
-            curr_pose = [obj_full_pose[0][0], obj_full_pose[0][1], obj_full_pose[0][2], obj_full_pose[1][0], obj_full_pose[1][1],
-                         obj_full_pose[1][2], obj_full_pose[1][3]]
+
+            curr_pose = [obj_full_pose[0][0], obj_full_pose[0][1], obj_full_pose[0][2], obj_full_pose[1][0],
+                         obj_full_pose[1][1], obj_full_pose[1][2], obj_full_pose[1][3]]
 
         else:
             joint_index = self.get_index_from_keys(keys)

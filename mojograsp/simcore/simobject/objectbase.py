@@ -23,6 +23,8 @@ class ObjectBase:
         else:
             print("This is a urdf file")
             self.load_object()
+        self.target_pose = None
+        self.angle_to_horizontal = None
 
     # loads object into pybullet, needs to be changed to support urdf, sdf and others right now only supports urdf with
     # no arguments other than fixed
@@ -65,5 +67,11 @@ class ObjectBase:
         if len(orn) == 3:
             orn = p.getQuaternionFromEuler(orn)
         p.resetBasePositionAndOrientation(self.id, pos, orn)
+
+    def get_pose_in_start_pose(self, obj_pos_in_world, obj_orn_in_world):
+        inverted_transform_start_pos, inverted_transform_start_orn = p.invertTransform(self.start_pos[self.id][0], self.start_pos[self.id][1])
+        # obj_pos_in_world, obj_orn_in_world = self.get_curr_pose()
+        obj_pos_in_obj_start, obj_orn_in_obj_start = p.multiplyTransforms(inverted_transform_start_pos, inverted_transform_start_orn, obj_pos_in_world, obj_orn_in_world)
+        return obj_pos_in_obj_start, obj_orn_in_obj_start
 
 

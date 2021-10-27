@@ -9,6 +9,7 @@ import os
 import sys
 import mojograsp
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+import numpy as np
 
 
 class Reward(reward_base.RewardBase):
@@ -23,8 +24,8 @@ class Reward(reward_base.RewardBase):
             
             if i == 'contact':
                 self.contact_state = mojograsp.state_space.StateSpace(self.reward_params['Contact_State'])
-            elif i == 'target_pose':
-                self.target_pose_state = mojograsp.state_space.StateSpace(self.reward_params['Target_Pose_State'])
+            # elif i == 'target_pose':
+            #     self.target_pose_state = mojograsp.state_space.StateSpace(self.reward_params['Target_Pose_State'])
 
     def get_contact_reward(self):
         contact_reward = 0
@@ -32,29 +33,41 @@ class Reward(reward_base.RewardBase):
         for i in contact_points_info:
             if i == 10:
                 contact_reward -= 5
+        # print("CONTACT REWARD: {}".format(contact_reward))
         return contact_reward
 
-    def get_target_pose_reward(self):
-        curr_points = self.target_pose_state.update()
-        points_in_dir = None
-        rotated_points = self.rotate_points(points_in_dir)
-        reward_x = self.get_reward_in_x(rotated_points)
-        reward_y = self.get_reward_in_y(rotated_points)
+    def get_target_reward(self):
+        curr_points = reward_base.RewardBase._sim.get_obj_curr_pose_in_start_pose()
+        angle = reward_base.RewardBase._sim.objects.angle_to_horizontal
+        target_pos_world, target_orn_world = reward_base.RewardBase._sim.objects.target_pose
+        target_pose = reward_base.RewardBase._sim.objects.get_pose_in_start_pose(target_pos_world, target_orn_world)
 
-        target_reward = -reward_y + 10*reward_x
+        rotated_x, rotated_y = self.rotate_points(x=curr_points[0][0], y=curr_points[0][1], ang=angle)
+        print("\nOld x: {}, New x: {}".format(curr_points[0][0], rotated_x))
+        print("Old y: {}, New y: {}\n".format(curr_points[0][1], rotated_y))
+
+        rot_target_x, rot_target_y = self.rotate_points(x=target_pose[0][0], y=target_pose[0][1], ang=angle)
+
+        reward_x = self.get_reward_in_x(rotated_x, rot_target_x)
+        reward_y = self.get_reward_in_y(rotated_y, rot_target_y)
+
+        target_reward = -10*reward_y +reward_x
+        print("\nTARGET REWARD: {} X: {} Y: {}\n".format(target_reward, reward_x, reward_y))
         return target_reward
 
-    def rotate_points(self, points_to_rotate):
+    def rotate_points(self, x, y, ang):
+        rad = np.radians(ang)
+        new_x = x * np.cos(rad) - y * np.sin(rad)
+        new_y = y * np.cos(rad) + x * np.sin(rad)
+        return new_x, new_y
 
-        return 0
+    def get_reward_in_x(self, points_rotated, target_x):
+        reward = abs(points_rotated - target_x) + target_x
+        return reward
 
-    def get_reward_in_x(self, points_rotated):
-
-        return 0
-
-    def get_reward_in_y(self, points_rotated):
-
-        return 0
+    def get_reward_in_y(self, points_rotated, target_y):
+        reward = abs(points_rotated - target_y) + target_y
+        return reward
 
 
 if __name__ == "__main__":

@@ -38,7 +38,6 @@ class RewardBase:
         return reward, self.reward
 
 
-
 if __name__ == "__main__":
     r = RewardBase()
     print(r.get_reward())

@@ -1,7 +1,7 @@
 {
     "Reward":{
         "contact":2,
-        "target_pose":3
+        "target":3
         },
     "Parameters": {
         "Contact_State":"/Users/asar/Desktop/Grimm's Lab/Manipulation/PyBulletStuff/mojo-grasp/mojograsp/simcore/simmanager/Reward/contact_state.json",
