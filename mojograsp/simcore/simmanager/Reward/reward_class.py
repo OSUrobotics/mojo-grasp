@@ -43,15 +43,15 @@ class Reward(reward_base.RewardBase):
         target_pose = reward_base.RewardBase._sim.objects.get_pose_in_start_pose(target_pos_world, target_orn_world)
 
         rotated_x, rotated_y = self.rotate_points(x=curr_points[0][0], y=curr_points[0][1], ang=angle)
-        print("\nOld x: {}, New x: {}".format(curr_points[0][0], rotated_x))
-        print("Old y: {}, New y: {}\n".format(curr_points[0][1], rotated_y))
-
         rot_target_x, rot_target_y = self.rotate_points(x=target_pose[0][0], y=target_pose[0][1], ang=angle)
+
+        # print("\nOld x: {}, New x: {}, target_x: {}".format(curr_points[0][0], rotated_x, rot_target_x))
+        # print("Old y: {}, New y: {}, target_y: {}\n".format(curr_points[0][1], rotated_y, rot_target_y))
 
         reward_x = self.get_reward_in_x(rotated_x, rot_target_x)
         reward_y = self.get_reward_in_y(rotated_y, rot_target_y)
 
-        target_reward = -10*reward_y +reward_x
+        target_reward = -10*reward_y + reward_x
         print("\nTARGET REWARD: {} X: {} Y: {}\n".format(target_reward, reward_x, reward_y))
         return target_reward
 
@@ -62,11 +62,11 @@ class Reward(reward_base.RewardBase):
         return new_x, new_y
 
     def get_reward_in_x(self, points_rotated, target_x):
-        reward = abs(points_rotated - target_x) + target_x
+        reward = points_rotated
         return reward
 
     def get_reward_in_y(self, points_rotated, target_y):
-        reward = abs(points_rotated - target_y) + target_y
+        reward = abs(points_rotated)
         return reward
 
 
