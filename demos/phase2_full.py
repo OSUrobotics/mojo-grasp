@@ -9,14 +9,16 @@ class CloseHand(mojograsp.phase.Phase):
         self.target_pos = [0.6, -0.9, -0.6, 0.9]
         self.name = name
         self.terminal_step = 10
-        state_path = '/Users/asar/Desktop/Grimm\'s Lab/Manipulation/PyBulletStuff/mojo-grasp/mojograsp/simcore' \
-                     '/simmanager/State/simple_state.json'
+        #state_path = '/Users/asar/Desktop/Grimm\'s Lab/Manipulation/PyBulletStuff/mojo-grasp/mojograsp/simcore' \
+        #            '/simmanager/State/simple_state.json'
+        state_path = "/home/keegan/mojo/mojo2/mojo-grasp/mojograsp/simcore/simmanager/State/simple_state.json"
         self.state = mojograsp.state_space.StateSpace(path=state_path)
         self.controller = mojograsp.controller_base.ControllerBase.create_instance(state_path=state_path,
                                                                                    controller_type='close')
         self.curr_action = None
         self.curr_action_profile = None
-        self.Action = mojograsp.action_class.Action()
+        action_path = "/home/keegan/mojo/mojo2/mojo-grasp/mojograsp/simcore/simmanager/Action/action.json"
+        self.Action = mojograsp.action_class.Action(json_path=action_path)
         self.reward = None # mojograsp.reward_class.Reward()
 
     def setup(self):

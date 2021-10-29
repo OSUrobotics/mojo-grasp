@@ -9,15 +9,17 @@ class OpenHand(mojograsp.phase.Phase):
         self.target_pos = [1.57, 0, -1.57, 0]
         self.name = name
         self.terminal_step = 10
-        state_path = '/Users/asar/Desktop/Grimm\'s Lab/Manipulation/PyBulletStuff/mojo-grasp/mojograsp/simcore' \
-                     '/simmanager/State/simple_state.json'
+        #state_path = '/Users/asar/Desktop/Grimm\'s Lab/Manipulation/PyBulletStuff/mojo-grasp/mojograsp/simcore' \
+        #             '/simmanager/State/simple_state.json'
+        state_path = "/home/keegan/mojo/mojo2/mojo-grasp/mojograsp/simcore/simmanager/State/simple_state.json"
         self.state = mojograsp.state_space.StateSpace(path=state_path)
         self.controller = mojograsp.controller_base.ControllerBase.create_instance(state_path=state_path,
                                                                                    controller_type='open')
         # These two should be in the base class
         self.curr_action = None
         self.curr_action_profile = None
-        self.Action = mojograsp.action_class.Action()
+        action_path = "/home/keegan/mojo/mojo2/mojo-grasp/mojograsp/simcore/simmanager/Action/action.json"
+        self.Action = mojograsp.action_class.Action(json_path=action_path)
         print("Action: {}".format(self.Action))
         self.reward = None # mojograsp.reward_class.Reward('/Users/asar/Desktop/Grimm\'s Lab/Manipulation/PyBulletStuff'
                                                     # '/mojo-grasp/mojograsp/simcore/simmanager/Reward/reward.json')
