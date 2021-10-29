@@ -41,5 +41,5 @@ class CloseHand(mojograsp.phase.Phase):
         return done
 
     def phase_complete(self):
-        print("move phase")
-        return "move phase"
+        print("move rl")
+        return "move rl"

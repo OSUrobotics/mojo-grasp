@@ -4,6 +4,7 @@ import numpy as np
 import phase1_full
 import phase2_full
 import phase3_full
+import phase4_full_rl
 
 
 if __name__ == '__main__':
@@ -37,12 +38,13 @@ if __name__ == '__main__':
     # Instantiating phases
     open = phase1_full.OpenHand('open phase')
     close = phase2_full.CloseHand('close phase')
-    move = phase3_full.MoveHand('move phase')
+    # move = phase3_full.MoveHand('move phase')
+    move_rl = phase4_full_rl.MoveRL('move rl')
 
     # Adding phases
     manager.add_phase(open.name, open, start=True)
     manager.add_phase(close.name, close)
-    manager.add_phase(move.name, move)
+    manager.add_phase(move_rl.name, move_rl)
 
     # running simulation
     manager.run()
