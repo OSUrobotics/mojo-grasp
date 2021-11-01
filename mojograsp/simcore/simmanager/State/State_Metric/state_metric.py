@@ -19,7 +19,7 @@ class StateMetricPyBullet(StateMetricBase):
     def get_index_from_keys(self, keys):
         if 'F1_l' in keys:
             if 'Prox' in keys:
-                index_name = 'l_prox_pin'
+                index_name = 'l_proximal_pin'
             elif 'Dist' in keys:
                 index_name = 'l_distal_pin'
             else:
@@ -28,7 +28,7 @@ class StateMetricPyBullet(StateMetricBase):
 
         elif 'F2_r' in keys:
             if 'Prox' in keys:
-                index_name = 'l_prox_pin'
+                index_name = 'l_proximal_pin'
             elif 'Dist' in keys:
                 index_name = 'l_distal_pin'
             else:

@@ -87,8 +87,8 @@ class DDPGfD(controller_base.ControllerBase):
 
         self.batch_size = batch_size
 
-    def select_action(self, state):
-        state = torch.FloatTensor(state.reshape(1, -1)).to(device)
+    def select_action(self):
+        state = torch.FloatTensor(np.reshape(self.state, (1, -1)).to(device))
         return self.actor(state).cpu().data.numpy().flatten()
 
     def train(self, episode_step, expert_replay_buffer, replay_buffer=None, prob=0.7):

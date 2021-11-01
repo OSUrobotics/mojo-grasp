@@ -38,7 +38,7 @@ if __name__ == '__main__':
     # Instantiating phases
     open = phase1_full.OpenHand('open phase')
     close = phase2_full.CloseHand('close phase')
-    # move = phase3_full.MoveHand('move phase')
+    # move_rl = phase3_full.MoveHand('move rl')
     move_rl = phase4_full_rl.MoveRL('move rl')
 
     # Adding phases

@@ -91,6 +91,7 @@ class MoveController(ControllerBase):
         ControllerBase._sim.set_obj_target_pose(self.dir)
         self.filename = "/Users/asar/PycharmProjects/InHand-Manipulation/Human Study Data/" \
                         "asterisk_test_data_for_anjali/trial_paths/not_normalized/sub1_2v2_{}_n_1.csv".format(self.dir)
+        ControllerBase._sim.set_obj_target_pose(self.dir)
         self.object_poses_expert = self.extract_data_from_file()
         self.iterator = 0
         self.data_len = len(self.object_poses_expert)
@@ -309,9 +310,11 @@ class Critic(nn.Module):
 
 
 class DDPGfD(ControllerBase):
-    def __init__(self, state_path=None, state_dim=82, action_dim=3, max_action=0.8, n=5, discount=0.995, tau=0.0005, batch_size=64,
+    def __init__(self, state_path=None, state_dim=35, action_dim=4, max_action=2, n=5, discount=0.995, tau=0.0005, batch_size=64,
                  expert_sampling_proportion=0.7):
         super().__init__(state_path)
+        self.dir = 'c'
+        ControllerBase._sim.set_obj_target_pose(self.dir)
         self.actor = Actor(state_dim, action_dim, max_action).to(device)
         self.actor_target = copy.deepcopy(self.actor)
         self.actor_optimizer = torch.optim.Adam(self.actor.parameters(), lr=1e-4)
@@ -339,8 +342,13 @@ class DDPGfD(ControllerBase):
         self.batch_size = batch_size
 
     def select_action(self):
-        state = torch.FloatTensor(self.state.reshape(1, -1)).to(device)
-        return self.actor(state).cpu().data.numpy().flatten()
+        self.state.update()
+        # print("TYPE:", type(self.state.get_obs()), self.state.get_obs())
+        state = torch.FloatTensor(np.reshape(self.state.get_obs(), (1, -1))).to(device)
+        # print("TYPE:", type(state), state)
+        action = self.actor(state).cpu().data.numpy().flatten()
+        print("Action: {}".format(action))
+        return action
 
     def train(self, episode_step, expert_replay_buffer, replay_buffer=None, prob=0.7):
         """ Update policy based on full trajectory of one episode """
