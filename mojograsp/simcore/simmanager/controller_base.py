@@ -87,7 +87,8 @@ class MoveController(ControllerBase):
     def __init__(self, state_path):
         super().__init__(state_path)
         self.dir = 'c'
-        self.filename = "/home/keegan/mojo/mojo2/mojo-grasp/demos/asterisk_test_data_for_anjali/trial_paths/not_normalized/sub1_2v2_{}_n_1.csv".format(self.dir)
+        #TODO: Change to non hardcoded path :)
+        self.filename = "/home/keegan/mojo/mojo2/mojo-grasp/demos/full_rl_demo/asterisk_test_data_for_anjali/trial_paths/not_normalized/sub1_2v2_{}_n_1.csv".format(self.dir)
         self.object_poses_expert = self.extract_data_from_file()
         self.iterator = 0
         self.data_len = len(self.object_poses_expert)

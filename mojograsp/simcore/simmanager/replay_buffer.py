@@ -39,7 +39,8 @@ class ReplayBuffer():
         self.current_buffer = deque(maxlen=buffer_size)
 
         #creates our replay buffer from episodes_file
-        self.create_replay_buffer()
+        if self.episodes_file:
+            self.create_replay_buffer()
          
     def create_replay_buffer(self):
         '''Creates replay buffer from the given episodes_file in the __init__. Reads csv file
@@ -72,7 +73,6 @@ class ReplayBuffer():
                         new_timestep = Timestep(current_episode,row[0],float(row[1]),float(row[2]),int(row[3]), 
                                        current_state, action,reward,None)
                         self.current_buffer.append(new_timestep)
-        self.save_replay_buffer("test")
 
     def add_episode(self, new_episode):
         for i in new_episode.data.values():

@@ -19,7 +19,7 @@ from mojograsp.simcore.simmanager.replay_buffer import ReplayBuffer
 class SimManagerBase:
     # TODO: fill in with relevant classes
     def __init__(self, num_episodes=1, sim_timestep=(1. / 240.), episode_timestep_length=1,
-                 episode_configuration=None, rl=False, data_directory_path=None):
+                 episode_configuration=None, rl=False, data_directory_path=None, replay_episode_file=None):
         # initializes phase dictionary and other variables we will need
         self.current_phase = None
         self.starting_phase = None
@@ -37,9 +37,8 @@ class SimManagerBase:
         self.episode_timestep_length = episode_timestep_length  # TODO: TimeParam class goes here I think
         self.sim_timestep = sim_timestep
 
-
-        self.replay = ReplayBuffer(episodes_file="/home/keegan/mojo/mojo2/mojo-grasp/demos/data/episodes/cube_all_episodes.csv")
-        #self.replay = ReplayBuffer(episodes_file=None)
+        #replay buffer
+        self.replay = ReplayBuffer(episodes_file=replay_episode_file)
 
         self.data_path = data_directory_path
         self.create_data_directorys()
@@ -97,10 +96,11 @@ class SimManagerBase:
 class SimManagerPybullet(SimManagerBase):
 
     def __init__(self, num_episodes=1, sim_timestep=(1. / 240.), episode_timestep_length=1, episode_configuration=None,
-                 rl=False, data_directory_path=None):
+                 rl=False, data_directory_path=None, replay_episode_file=None):
         super(SimManagerPybullet, self).__init__(num_episodes=num_episodes, sim_timestep=sim_timestep,
                                                  episode_timestep_length=episode_timestep_length,
-                                                 episode_configuration=episode_configuration, rl=rl, data_directory_path=data_directory_path)
+                                                 episode_configuration=episode_configuration, rl=rl, data_directory_path=data_directory_path,
+                                                 replay_episode_file=replay_episode_file)
 
     # physics server setup, TODO: in the future needs arguments
     def setup(self):
