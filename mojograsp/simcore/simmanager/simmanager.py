@@ -1,4 +1,6 @@
 import time
+import os
+import shutil
 import pybullet as p
 import pybullet_data
 from . import episode
@@ -9,16 +11,15 @@ from . import controller_base
 from mojograsp.simcore.simmanager.Reward import reward_base
 from mojograsp.simcore.simmanager.State.state_space_base import StateSpaceBase
 from mojograsp.simcore.simmanager.Action.action_class import Action
-from mojograsp.simcore.simmanager.record_episode_base import RecordEpisodeBase
-from mojograsp.simcore.simmanager.record_timestep_base import RecordTimestepBase
 from mojograsp.simcore.simmanager.record_episode import RecordEpisode
 from mojograsp.simcore.simmanager.record_timestep import RecordTimestep
+from mojograsp.simcore.simmanager.replay_buffer import ReplayBuffer
 
 
 class SimManagerBase:
     # TODO: fill in with relevant classes
     def __init__(self, num_episodes=1, sim_timestep=(1. / 240.), episode_timestep_length=1,
-                 episode_configuration=None, rl=False):
+                 episode_configuration=None, rl=False, data_directory_path=None, replay_episode_file=None):
         # initializes phase dictionary and other variables we will need
         self.current_phase = None
         self.starting_phase = None
@@ -36,6 +37,13 @@ class SimManagerBase:
         self.episode_timestep_length = episode_timestep_length  # TODO: TimeParam class goes here I think
         self.sim_timestep = sim_timestep
 
+        #replay buffer
+        self.replay = ReplayBuffer(episodes_file=replay_episode_file)
+
+        self.data_path = data_directory_path
+        self.create_data_directorys()
+
+
         self.phase_manager = phasemanager.PhaseManager()
 
         self.state_space = None
@@ -50,6 +58,20 @@ class SimManagerBase:
         Simulator specific, should be defined by user.
         """
         pass
+
+    def create_data_directorys(self):
+        episode = self.data_path+'/episodes'
+        timesteps = self.data_path+'/timesteps'
+        if not os.path.exists(episode):
+            os.makedirs(episode)
+        else:
+            shutil.rmtree(episode)
+            os.makedirs(episode)
+        if not os.path.exists(timesteps):
+            os.makedirs(timesteps)
+        else:
+            shutil.rmtree(timesteps)
+            os.makedirs(timesteps)
 
     def stall(self):
         """
@@ -74,10 +96,11 @@ class SimManagerBase:
 class SimManagerPybullet(SimManagerBase):
 
     def __init__(self, num_episodes=1, sim_timestep=(1. / 240.), episode_timestep_length=1, episode_configuration=None,
-                 rl=False):
+                 rl=False, data_directory_path=None, replay_episode_file=None):
         super(SimManagerPybullet, self).__init__(num_episodes=num_episodes, sim_timestep=sim_timestep,
                                                  episode_timestep_length=episode_timestep_length,
-                                                 episode_configuration=episode_configuration, rl=rl)
+                                                 episode_configuration=episode_configuration, rl=rl, data_directory_path=data_directory_path,
+                                                 replay_episode_file=replay_episode_file)
 
     # physics server setup, TODO: in the future needs arguments
     def setup(self):
@@ -109,8 +132,8 @@ class SimManagerPybullet(SimManagerBase):
         reward_base.RewardBase._sim = self.env
         StateSpaceBase._sim = self.env
         Action._sim = self.env
-        RecordEpisodeBase._sim = self.env
-        RecordTimestepBase._sim = self.env
+        RecordEpisode._sim = self.env
+        RecordTimestep._sim = self.env
 
     def run(self):
         print("RUNNING PHASES: {}".format(self.phase_manager.phase_dict))
@@ -122,7 +145,7 @@ class SimManagerPybullet(SimManagerBase):
             self.episode_configuration.setup()
             self.phase_manager.exit_flag = False
             self.phase_manager.start_phases()
-            record_episode = RecordEpisode(identifier='cube_{}'.format(i))
+            record_episode = RecordEpisode(identifier='cube_{}'.format(i), data_path=self.data_path)
 
             #for every phase in the dictionary we step until the exit condition is met
             while self.phase_manager.exit_flag == False:
@@ -141,7 +164,7 @@ class SimManagerPybullet(SimManagerBase):
                     done = self.phase_manager.current_phase.phase_exit_condition(phase_step_count)
                     phase_step_count += 1
                     self.env.curr_timestep += 1
-                    record_timestep = RecordTimestep(self.phase_manager.current_phase)
+                    record_timestep = RecordTimestep(self.phase_manager.current_phase, data_path=self.data_path)
                     record_episode.add_timestep(record_timestep)
                     # record_timestep.save_timestep_as_csv()
 
@@ -152,3 +175,6 @@ class SimManagerPybullet(SimManagerBase):
                 if self.phase_manager.exit_flag is True:
                     break
             # record_episode.save_episode_as_csv()
+            #TODO needs to be in episode class instead of here
+            self.replay.add_episode(record_episode)
+            record_episode.save_episode_as_csv(episode_number=i)

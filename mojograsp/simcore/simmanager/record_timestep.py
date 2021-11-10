@@ -11,12 +11,13 @@ import csv
 from copy import deepcopy
 from collections import OrderedDict
 import json
-from mojograsp.simcore.simmanager.record_timestep_base import RecordTimestepBase
+#from mojograsp.simcore.simmanager.record_timestep_base import RecordTimestepBase
 
 
-class RecordTimestep(RecordTimestepBase):
+class RecordTimestep():
+    _sim = None
 
-    def __init__(self, phase):
+    def __init__(self, phase, data_path=None):
         """ Timestep class contains the state, action, reward and time of a
         moment in the simulator. It contains this data as their respective
         classes but has methods to return the data contained in them and save
@@ -24,7 +25,14 @@ class RecordTimestep(RecordTimestepBase):
         @param phase - Phase class containing the state, action, reward as
         State, Action and Reward classes and the timestep and sim time as int
         and float"""
-        super().__init__(phase)
+        self.state = deepcopy(phase.state)
+        # self.action = deepcopy(phase.Action)
+        self.action = phase.Action
+        self.reward = deepcopy(phase.reward)
+        self.times = {'wall_time': time.time(), 'sim_time': deepcopy(self._sim.curr_simstep),
+                      'timestep': deepcopy(self._sim.curr_timestep)}
+        self.phase = phase.name
+        self.data_path = data_path+'/timesteps/'
 
     def get_state_as_arr(self):
         """Method to return the state data as a single list
@@ -49,39 +57,36 @@ class RecordTimestep(RecordTimestepBase):
     def get_full_timestep(self):
         """Method to return all stored data as one dictionary of lists"""
         data = OrderedDict()
+        data['phase'] = self.phase
         data['state'] = self.get_state_as_arr()
         data['action'] = self.get_action_as_arr()
         data['reward'] = self.get_reward_as_arr()
         data.update(self.times)
         return data
 
-    def save_timestep_as_csv(self, file_name=None, write_flag='w'):
+    def save_timestep_as_csv(self, file_name=None, header=False, episode_number=0):
         """Method to save the timestep in a csv file
         @param file_name - name of file
         @param write_flag - type of writing, defaults to write but can be set
         to 'a' to append to the file instead"""
-        path = os.path.dirname(os.path.abspath(__file__))
         if file_name is None:
-            file_name = path + '/data/' + 'tstep_' + str(self.times['timestep']) +\
+            file_name = self.data_path + 'tstep_' + str(self.times['timestep']) +\
             '_wall_time_' + time.strftime("%m-%d-%y %H:%M:%S", time.localtime(self.times['wall_time'])) + '.csv'
-        else:
-            file_name = path + '/data/' + file_name + '.csv'
+
         data = self.get_full_timestep()
-        header = ['Wall time', 'Sim time', 'Timestep']
-        for i in range(len(data['state'])):
-            header.append('State_'+str(i))
-        for i in range(len(data['action'])):
-            header.append('Action_'+str(i))
-        for i in range(len(data['reward'])):
-            header.append('reward_'+str(i))
-        with open(file_name, write_flag, newline='') as csv_file:
+        header_text = ['Episode:'+str(episode_number),'Phase', 'WallTime', 'SimTime', 'TimeStep', 
+                  'State:'+str(len(data['state'])), 'Action:'+str(len(data['action'])), 
+                  'Reward:'+str(len(data['reward']))]
+
+        with open(file_name, 'a', newline='') as csv_file:
             time_writer = csv.writer(csv_file, delimiter=',', quotechar='|',
                                      quoting=csv.QUOTE_MINIMAL)
-            if write_flag == 'w':
-                time_writer.writerow(header)
-            time_writer.writerow([data['wall_time']] + [data['sim_time']] +
+            if header:
+                time_writer.writerow(header_text)
+            time_writer.writerow([data['phase']] + [data['wall_time']] + [data['sim_time']] +
                                  [data['timestep']] + data['state'] +
                                  data['action'] + data['reward'])
+
 
     def save_timestep_as_json(self, file_name=None):
         """Method to save the timestep in a json file

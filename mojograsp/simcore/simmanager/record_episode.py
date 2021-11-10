@@ -6,19 +6,27 @@ Created on Thu Sep 23 14:16:32 2021
 @author: orochi
 """
 from collections import OrderedDict
-from mojograsp.simcore.simmanager.record_episode_base import RecordEpisodeBase
+import csv 
+import os
+import shutil
+#from mojograsp.simcore.simmanager.record_episode_base import RecordEpisodeBase
 
 
-class RecordEpisode(RecordEpisodeBase):
+class RecordEpisode():
+    _sim = None
 
-    def __init__(self, identifier: str):
+    def __init__(self, identifier: str, data_path=None):
         """ Episode class contains the timesteps from a single episode, methods
         to acces the data and a method to save it in a csv file
         @param identifier - str containing name of episode used for identifying
         datafiles in the futureshape being picked up"""
-        super().__init__(identifier)
         self.data = OrderedDict()
         self.identifier = identifier
+
+        #get data path and make necessary directory and files
+        self.path = data_path+'/episodes/'
+        self.all_episodes_file_name = self.path+self.identifier+"_all_episodes"
+        self.episode_number = 0
 
     @staticmethod
     def build_identifier(id_1):
@@ -52,18 +60,19 @@ class RecordEpisode(RecordEpisodeBase):
             data[k] = v.get_full_timestep()
         return data
 
-    def save_episode_as_csv(self, file_name=None):
+    def save_episode_as_csv(self, episode_number=0):
         """Method to save the episode
         @param file_name - name of file"""
         flag = True
-        if file_name is None:
-            file_name = self.identifier
         for i in self.data.values():
             if flag:
-                i.save_timestep_as_csv(file_name=file_name, write_flag='w')
+                i.save_timestep_as_csv(file_name=self.all_episodes_file_name+'.csv', header=True, episode_number=episode_number)
+                i.save_timestep_as_csv(file_name=self.path+self.identifier+'_episode_'+str(episode_number)+'.csv', header=True, episode_number=episode_number)
                 flag = False
             else:
-                i.save_timestep_as_csv(file_name=file_name, write_flag='a')
+                i.save_timestep_as_csv(file_name=self.all_episodes_file_name+'.csv', episode_number=episode_number)
+                i.save_timestep_as_csv(file_name=self.path+self.identifier+'_episode_'+str(episode_number)+'.csv', episode_number=episode_number)
+        self.episode_number+=1
 
     def save_episode_as_json(self, file_name=None):
         """Method to save the episode
@@ -73,33 +82,3 @@ class RecordEpisode(RecordEpisodeBase):
         for timestep_name, value in self.data.items():
             value.save_timestep_as_json(file_name=file_name + timestep_name)
 
-
-if __name__ == '__main__':
-    from state_space import StateSpaceBase
-    from action_class_base import ActionBase
-    from reward_base import RewardBase
-    a = RecordEpisodeBase(identifier='fake_cube_1')
-    state = StateSpaceBase()
-    action = ActionBase()
-    action.set_speed([0, 0, 0, 0.3, 0.3, 0.3])
-    reward = RewardBase()
-    timestep = 0
-    sim_time = 0.02
-    class phase_placeholder:
-        def __init__(self,state,action,reward,timestep,sim_time):
-            self.state = state
-            self.action = action
-            self.reward = reward
-            self.timestep = timestep
-            self.sim_time = sim_time
-    phase = phase_placeholder(state,action,reward,timestep,sim_time)
-    b = RecordTimestepBase(phase)
-    a.add_timestep(b)
-    b = RecordTimestepBase(phase)
-    a.add_timestep(b)
-    b = RecordTimestepBase(phase)
-    a.add_timestep(b)
-    b = RecordTimestepBase(phase)
-    a.add_timestep(b)
-    a.save_episode_as_csv()
-    a.save_episode_as_json()
