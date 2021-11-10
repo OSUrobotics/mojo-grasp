@@ -7,7 +7,7 @@ class MoveRL(mojograsp.phase.Phase):
     def __init__(self, name=None):
         super().__init__()
         self.name = name
-        self.terminal_step = 100
+        self.terminal_step = 30
         state_path = '/Users/asar/Desktop/Grimm\'s Lab/Manipulation/PyBulletStuff/mojo-grasp/mojograsp/simcore/' \
                      'simmanager/State/simple_state.json'
         self.state = mojograsp.state_space.StateSpace(path=state_path)
@@ -34,8 +34,8 @@ class MoveRL(mojograsp.phase.Phase):
                                     controlMode=p.POSITION_CONTROL, targetPositions=action)
 
     def phase_exit_condition(self, curr_step):
-        if curr_step >= self.terminal_step or self.controller.data_over:
-            print(curr_step, self.controller.data_over)
+        if curr_step >= self.terminal_step:
+            print(curr_step)
             done = True
         else:
             done = False

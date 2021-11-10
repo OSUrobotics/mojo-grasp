@@ -34,7 +34,7 @@ class Environment(EnvironmentBase):
 
         # With Action Profile
         phase.curr_action_profile = phase.Action.set_action_units(phase.curr_action)
-        print("\n", "\n", phase.curr_action, "\n", phase.curr_action_profile, "\n", "\n")
+        # print("\n", "\n", phase.curr_action, "\n", phase.curr_action_profile, "\n", "\n")
         for i, j in zip(range(self.sim_step), phase.curr_action_profile):
             self.curr_simstep += 1
             phase.execute_action(j)
@@ -46,6 +46,7 @@ class Environment(EnvironmentBase):
         #     phase.execute_action(phase.curr_action)
         #     self.step_sim()
 
+        # print("Name is?: {} State is?: {}".format(phase.name, phase.state))
         if phase.state is not None:
             observation = phase.state.update()
         else:

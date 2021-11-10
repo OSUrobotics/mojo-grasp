@@ -6,6 +6,7 @@ from mojograsp.simcore.simmanager.record_timestep import RecordTimestep
 from mojograsp.simcore.simmanager.record_episode import RecordEpisode
 import csv 
 
+
 @dataclass
 class Timestep:
     episode: int
@@ -29,8 +30,8 @@ class Timestep:
             timestep_list.append("")
         return iter(timestep_list)
 
-class ReplayBuffer():
 
+class ReplayBuffer:
     def __init__(self, episodes_file=None, buffer_size=1000):
         self.episodes_file = episodes_file
         self.buffer_size = buffer_size

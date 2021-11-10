@@ -10,7 +10,7 @@ import mojograsp
 import pybullet as p
 import pandas as pd
 from math import radians
-import Markers
+# import Markers
 
 
 class ControllerBase:
@@ -350,7 +350,7 @@ class DDPGfD(ControllerBase):
         state = torch.FloatTensor(np.reshape(self.state.get_obs(), (1, -1))).to(device)
         # print("TYPE:", type(state), state)
         action = self.actor(state).cpu().data.numpy().flatten()
-        print("Action: {}".format(action))
+        # print("Action: {}".format(action))
         return action
 
     def train(self, episode_step, expert_replay_buffer, replay_buffer=None, prob=0.7):
@@ -366,7 +366,42 @@ class DDPGfD(ControllerBase):
             expert_or_random = np.random.choice(np.array(["expert", "agent"]), p=[prob, round(1. - prob, 2)])
 
         if expert_or_random == "expert":
-            state, action, next_state, reward, not_done = expert_replay_buffer.sample()
+            returned_buffer = expert_replay_buffer.get_random_timestep_sample(num_timesteps=1)
+            print("Returned Buffer: {}".format(returned_buffer))
+            objects_of_timestep = iter(returned_buffer[0])
+            for _ in range(0,5):
+                next(objects_of_timestep)
+
+            state, action, next_state = [], [], []
+            reward = 0
+            not_done = False
+
+            for i in range(0, 35):
+                state.append(next(objects_of_timestep))
+                state[i] = float(state[i])
+            state = np.asarray(state)
+            print("State: ", state)
+
+            for i in range(0, 4):
+                action.append(next(objects_of_timestep))
+                action[i] = float(action[i])
+            action = np.asarray(action)
+            print("Action: ", action)
+
+            reward = next(objects_of_timestep)
+            try:
+                reward = float(reward[0])
+            except TypeError:
+                reward = 0.0
+            print("Reward: ", reward)
+
+            for i in range(0, 35):
+                next_state.append(next(objects_of_timestep))
+                next_state[i] = float(next_state[i])
+            next_state = np.asarray(next_state)
+            print("Next: ", next_state)
+
+            print("Done: ", not_done)
         else:
             state, action, next_state, reward, not_done = replay_buffer.sample()
 
