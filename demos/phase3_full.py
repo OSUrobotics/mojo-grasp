@@ -20,10 +20,6 @@ class MoveHand(mojograsp.phase.Phase):
                                                     '/mojo-grasp/mojograsp/simcore/simmanager/Reward/reward_demo.json')
 
     def setup(self):
-        roll_fric = 0.01
-        p.changeDynamics(self._sim.objects.id, -1, mass=0.1, rollingFriction=roll_fric)
-        p.changeDynamics(self._sim.hand.id, 1, rollingFriction=roll_fric)
-        p.changeDynamics(self._sim.hand.id, 3, rollingFriction=roll_fric)
         print("{} setup".format(self.name))
         print("{} executing".format(self.name))
         self.controller.iterator = 0

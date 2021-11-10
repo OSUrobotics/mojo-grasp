@@ -6,9 +6,9 @@ import math
 class CloseHand(mojograsp.phase.Phase):
     def __init__(self, name=None):
         super().__init__()
-        self.target_pos = [0.6, -0.9, -0.6, 0.9]
+        self.target_pos = [0.7, -1.4, -0.7, 1.4]
         self.name = name
-        self.terminal_step = 10
+        self.terminal_step = 30
         state_path = '/Users/asar/Desktop/Grimm\'s Lab/Manipulation/PyBulletStuff/mojo-grasp/mojograsp/simcore' \
                      '/simmanager/State/simple_state.json'
         self.state = mojograsp.state_space.StateSpace(path=state_path)
@@ -20,6 +20,10 @@ class CloseHand(mojograsp.phase.Phase):
         self.reward = None # mojograsp.reward_class.Reward()
 
     def setup(self):
+        roll_fric = 0.01
+        p.changeDynamics(self._sim.objects.id, -1, mass=0.1, rollingFriction=roll_fric)
+        p.changeDynamics(self._sim.hand.id, 1, rollingFriction=roll_fric)
+        p.changeDynamics(self._sim.hand.id, 3, rollingFriction=roll_fric)
         print("{} setup".format(self.name))
         # self._sim.objects.set_curr_pose([0.00, 0.17, 0.0], self._sim.objects.start_pos[self._sim.objects.id][1])
         print("{} executing".format(self.name))

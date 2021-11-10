@@ -147,6 +147,8 @@ class SimManagerPybullet(SimManagerBase):
 
                 #after exit condition is met we get the next phase name and set current phase to the specified value
                 self.phase_manager.get_next_phase()
+                training_phase = self.phase_manager.phase_dict['move rl']
+                training_phase.controller.train(training_phase.terminal_step, None)
                 if self.phase_manager.exit_flag is True:
                     break
             # record_episode.save_episode_as_csv()

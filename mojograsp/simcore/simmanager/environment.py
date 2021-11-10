@@ -30,16 +30,19 @@ class Environment(EnvironmentBase):
         self.curr_simstep = 0
 
     def step(self, phase):
-        # With Action Profile
         self.curr_simstep = 0
+
+        # With Action Profile
         phase.curr_action_profile = phase.Action.set_action_units(phase.curr_action)
+        print("\n", "\n", phase.curr_action, "\n", phase.curr_action_profile, "\n", "\n")
         for i, j in zip(range(self.sim_step), phase.curr_action_profile):
             self.curr_simstep += 1
             phase.execute_action(j)
             self.step_sim()
 
-        # Without Action Profile:
+        # # Without Action Profile:
         # for i in range(self.sim_step):
+        #     self.curr_simstep += 1
         #     phase.execute_action(phase.curr_action)
         #     self.step_sim()
 

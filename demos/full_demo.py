@@ -17,6 +17,10 @@ if __name__ == '__main__':
     # setting camera
     p.resetDebugVisualizerCamera(cameraDistance=.02, cameraYaw=0, cameraPitch=-89.9,
                                  cameraTargetPosition=[0, 0.1, 0.5])
+    # p.resetDebugVisualizerCamera(cameraDistance=2, cameraYaw=0, cameraPitch=90.0,
+    #                              cameraTargetPosition=[0, 0, 10])
+    # p.resetDebugVisualizerCamera(cameraDistance=2, cameraYaw=90, cameraPitch=-90.0,
+    #                              cameraTargetPosition=[0, 0, -10])
 
     # Instantiating sim objects
     hand_path = "/Users/asar/PycharmProjects/InHand-Manipulation/ExampleSimWorld-Josh/2v2_nosensors_hand" \

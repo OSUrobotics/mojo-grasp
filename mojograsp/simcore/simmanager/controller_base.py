@@ -31,7 +31,7 @@ class ControllerBase:
     @staticmethod
     def create_instance(state_path, controller_type):
         """
-        Create a Instance based on the contorller type
+        Create a Instance based on the controller type
         :param state_path: is the json file path or instance of state space
         :param controller_type: string type, name of controller defining which controller instance to create
         :return: An instance based on the controller type
@@ -57,6 +57,7 @@ class ControllerBase:
 class OpenController(ControllerBase):
     def __init__(self, state_path):
         super().__init__(state_path)
+        self.constant_action = [1.57, 0, -1.57, 0]
 
     def select_action(self):
         """
@@ -65,13 +66,14 @@ class OpenController(ControllerBase):
         of joint position to be reached
         :return: action: action to be taken in accordance with action space
         """
-        action = [1.57, 0, -1.57, 0]
+        action = self.constant_action
         return action
 
 
 class CloseController(ControllerBase):
     def __init__(self, state_path):
         super().__init__(state_path)
+        self.constant_action = [0.7, -1.4, -0.7, 1.4]
 
     def select_action(self):
         """
@@ -80,7 +82,7 @@ class CloseController(ControllerBase):
         of joint position to be reached
         :return: action: action to be taken in accordance with action space
         """
-        action = [0.78, -1.65, -0.78, 1.65]
+        action = self.constant_action
         return action
 
 
