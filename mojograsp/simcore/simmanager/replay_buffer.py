@@ -19,6 +19,7 @@ class Timestep:
     next_state: list
 
     def __iter__(self):
+        '''Allows us to iterate through the timestep dataclass as a list of strings'''
         timestep_list = [str(self.episode), str(self.phase), str(self.wall_time), str(self.sim_time), str(self.timestep)]
         timestep_list.extend([str(x) for x in self.current_state])
         timestep_list.extend([str(x) for x in self.action])
@@ -32,6 +33,7 @@ class Timestep:
 class ReplayBuffer():
 
     def __init__(self, episodes_file=None, buffer_size=1000):
+        '''Initializes episode file being used and the replay buffer structure'''
         self.episodes_file = episodes_file
         self.buffer_size = buffer_size
 
@@ -75,10 +77,15 @@ class ReplayBuffer():
                         self.current_buffer.append(new_timestep)
 
     def add_episode(self, new_episode):
+        '''Adds all of the timesteps from a given episode into the replay buffer.
+           @param new_episode - Episode object containing all the timesteps in an episode'''
         for i in new_episode.data.values():
             self.add_timestep(i, new_episode.episode_number)
 
     def add_episode_filter_phases(self, new_episode, phases=[]):
+        '''Adds in all timesteps from certain phases into the replay buffer.
+           @param new_episode - Episode object containing all the timesteps in an episode
+           @param phases - list of phase names whose correspoding timesteps you wish to add to the replay buffer'''
         for i in new_episode.data.values():
             timestep_data = i.get_full_timestep()
             if timestep_data['phase'] in phases:
@@ -90,6 +97,9 @@ class ReplayBuffer():
                 self.current_buffer.append(timestep)
        
     def add_timestep(self, new_timestep, episode_number):
+        '''Adds a single timestep into the replay buffer.
+           @param new_timestep - Timestep object
+           @param episode_number - corresponding episode number for the timestep TODO: shouldnt be done here, should be passed into timestep'''
         timestep_data = new_timestep.get_full_timestep()
         timestep = Timestep(episode_number,timestep_data['phase'], timestep_data["wall_time"],timestep_data["sim_time"],timestep_data["timestep"],
                    timestep_data["state"], timestep_data["action"], timestep_data["reward"], None)
@@ -98,26 +108,43 @@ class ReplayBuffer():
         self.current_buffer.append(timestep)
 
     def remove_episode(self, episode_number):
+        '''Removes all timesteps within the corresponding episode number from the replay buffer
+           @param episode_number - episode number you wish to remove'''
         for i in list(self.current_buffer):
             if i.episode == episode_number:
                 self.current_buffer.remove(i)
 
     def remove_timestep(self, episode_number, timestep_number):
+        '''Removes a timestep based on the timestep number and episode number.
+           @param episode_number - episode the timestep is in
+           @param timestep_number - timestep number you wish to remove'''
         for i in list(self.current_buffer):
             if i.episode == episode_number and i.timestep == timestep_number:
                 self.current_buffer.remove(i)
 
     def get_episode(self, episode_number):
+        '''Returns list of timesteps from a given episode number.
+           @param episode_number - episode number you wish to get timesteps of
+           @return - list of timestep data class objects'''
+        timestep_list = []
         for i in list(self.current_buffer):
             if i.episode == episode_number:
-                return i
+                timestep_list.append(i)
+        return timestep_list
 
     def get_timestep(self, episode_number, timestep_number):
+        '''Returns a timestep from a given episode number.
+           @param episode_number - episode number you want to get timestep from 
+           @param timestep_number - timestep number from episode
+           @return - Timestep data class object'''
         for i in list(self.current_buffer):
             if i.episode == episode_number and i.timestep == timestep_number:
                 return i
 
     def get_random_timestep_sample(self, num_timesteps):
+        '''Returns a list of timesteps from random episodes and timestep numbers
+           @param num_timesteps - number of timesteps to return
+           @return - List of timestep data class object'''
         timestep_list = []
         if len(self.current_buffer) >= num_timesteps:
             for i in range(num_timesteps):
@@ -125,6 +152,9 @@ class ReplayBuffer():
         return timestep_list
 
     def get_recent_timestep_sample(self, num_timesteps):
+        '''Returns a list of n timesteps from most recently added timesteps
+           @param num_timesteps - number of timesteps to return
+           @return - List of timestep data class object'''
         timestep_list = []
         if len(self.current_buffer) >= num_timesteps:
             for i in range(num_timesteps):
@@ -132,6 +162,9 @@ class ReplayBuffer():
         return timestep_list
 
     def get_oldest_timestep_sample(self, num_timesteps):
+        '''Returns a list of n timesteps from most oldest added timesteps
+           @param num_timesteps - number of timesteps to return
+           @return - List of timestep data class object'''
         timestep_list = []
         if len(self.current_buffer) >= num_timesteps:
             for i in range(num_timesteps):
@@ -139,6 +172,9 @@ class ReplayBuffer():
         return timestep_list
 
     def save_replay_buffer(self, file_name):
+        '''Saves contents of the replay buffer to a csv file 
+           @param file_name - Name of replay buffer file
+           @return - List of timestep data class object'''
         current_episode = -1
         num_action_vars = 0
         num_state_vars = 0
