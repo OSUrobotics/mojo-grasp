@@ -22,8 +22,8 @@ class MoveHand(mojograsp.phase.Phase):
         self.reward = mojograsp.reward_class.Reward(current_path+'/state_action_reward/reward_demo.json')
 
     def setup(self):
-        print("{} setup".format(self.name))
-        print("{} executing".format(self.name))
+        # print("{} setup".format(self.name))
+        # print("{} executing".format(self.name))
         self.controller.iterator = 0
         self.controller.data_over = False
 
@@ -39,7 +39,7 @@ class MoveHand(mojograsp.phase.Phase):
         return done
 
     def phase_complete(self):
-        print("completed")
+        # print("completed")
         return
 
 

@@ -24,8 +24,8 @@ class MoveRL(mojograsp.phase.Phase):
         p.changeDynamics(self._sim.objects.id, -1, mass=0.1, rollingFriction=roll_fric)
         p.changeDynamics(self._sim.hand.id, 1, rollingFriction=roll_fric)
         p.changeDynamics(self._sim.hand.id, 3, rollingFriction=roll_fric)
-        print("{} setup".format(self.name))
-        print("{} executing".format(self.name))
+        # print("{} setup".format(self.name))
+        # print("{} executing".format(self.name))
         self.controller.iterator = 0
         self.controller.data_over = False
 
@@ -42,7 +42,7 @@ class MoveRL(mojograsp.phase.Phase):
         return done
 
     def phase_complete(self):
-        print("completed")
+        # print("completed")
         return
 
 

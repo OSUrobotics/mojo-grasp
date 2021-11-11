@@ -287,7 +287,7 @@ class Actor(nn.Module):
         self.max_action = max_action
 
     def forward(self, state):
-        print("State Actor: {}".format(state))
+        # print("State Actor: {}".format(state))
         a = F.relu(self.l1(state))
         a = F.relu(self.l2(a))
         return self.max_action * torch.sigmoid(self.l3(a))
@@ -309,7 +309,7 @@ class Critic(nn.Module):
     def forward(self, state, action):
         q = F.relu(self.l1(torch.cat([state, action], -1)))
         q = F.relu(self.l2(q))
-        print("Q Critic: {}".format(q))
+        # print("Q Critic: {}".format(q))
         q = torch.sigmoid(self.l3(q))
         return self.max_q_value * q
     # return self.l3(q)
@@ -367,10 +367,10 @@ class DDPGfD(ControllerBase):
             expert_or_random = "expert"
         else:
             expert_or_random = np.random.choice(np.array(["expert", "agent"]), p=[prob, round(1. - prob, 2)])
-        print(expert_or_random)
+        # print(expert_or_random)
         if expert_or_random == "expert":
             returned_buffer = expert_replay_buffer.get_between_timestep_random_sample(num_timesteps=1, start_timestep=42, end_timestep=72)[0]
-            print("Returned Buffer: {}".format(returned_buffer))
+            # print("Returned Buffer: {}".format(returned_buffer))
             state = torch.FloatTensor(returned_buffer.current_state).to(device)
             action = torch.FloatTensor(returned_buffer.action).to(device)
             next_state = torch.FloatTensor(returned_buffer.next_state).to(device)
@@ -379,12 +379,12 @@ class DDPGfD(ControllerBase):
             except TypeError:
                 reward = torch.FloatTensor([0.0])
             not_done = False
-            print("STATE: {}\nREWARD: {}".format(state, reward))
+            # print("STATE: {}\nREWARD: {}".format(state, reward))
 
         else:
             returned_buffer = replay_buffer.get_between_timestep_random_sample(num_timesteps=1, start_timestep=42,
                                                                     end_timestep=72)[0]
-            print("Returned Buffer: {}".format(returned_buffer))
+            # print("Returned Buffer: {}".format(returned_buffer))
             state = torch.FloatTensor(returned_buffer.current_state).to(device)
             action = torch.FloatTensor(returned_buffer.action).to(device)
             next_state = torch.FloatTensor(returned_buffer.next_state).to(device)
@@ -393,7 +393,7 @@ class DDPGfD(ControllerBase):
             except TypeError:
                 reward = torch.FloatTensor([0.0])
             not_done = False
-            print("STATE: {}\nREWARD: {}".format(state, reward))
+            # print("STATE: {}\nREWARD: {}".format(state, reward))
 
         """
 		finger_reward_count = 0

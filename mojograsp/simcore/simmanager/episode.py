@@ -9,11 +9,11 @@ class Episode():
 		None
 	
 	def setup(self):
-		print("Episode setting up")
+		# print("Episode setting up")
 		None
 	
 	def reset(self):
-		print("Episode reset")
+		# print("Episode reset")
 		None
 
 	def episode_pre_step(self):
@@ -25,6 +25,6 @@ class Episode():
 		None
 
 	def episode_complete(self):
-		print("Episode complete")
+		# print("Episode complete")
 		None
 

@@ -38,7 +38,8 @@ class SimManagerBase:
         self.sim_timestep = sim_timestep
 
         #replay buffer
-        self.replay = ReplayBuffer(episodes_file=replay_episode_file)
+        self.replay_expert = ReplayBuffer(episodes_file=replay_episode_file)
+        self.replay_agent = ReplayBuffer()
 
         self.data_path = data_directory_path
         self.create_data_directorys()
@@ -107,7 +108,7 @@ class SimManagerPybullet(SimManagerBase):
         """
         Physics server setup.
         """
-        self.physics_client = p.connect(p.GUI)
+        self.physics_client = p.connect(p.DIRECT)
         p.setAdditionalSearchPath(pybullet_data.getDataPath())
         p.setGravity(0, 0, -10)
         self.plane_id = p.loadURDF("plane.urdf")
@@ -148,7 +149,7 @@ class SimManagerPybullet(SimManagerBase):
             self.episode_configuration.setup()
             self.phase_manager.exit_flag = False
             self.phase_manager.start_phases()
-            record_episode = RecordEpisode(identifier='cube_{}'.format(i), data_path=self.data_path)
+            record_episode = RecordEpisode(identifier='cube_rl', data_path=self.data_path)
 
             #for every phase in the dictionary we step until the exit condition is met
             while self.phase_manager.exit_flag == False:
@@ -157,9 +158,9 @@ class SimManagerPybullet(SimManagerBase):
                 done = False
 
                 #while exit condition is not met call step
-                print("CURRENT PHASE: {}".format(self.phase_manager.current_phase.name))
+                # print("CURRENT PHASE: {}".format(self.phase_manager.current_phase.name))
                 while not done:
-                    print(self.env.curr_timestep, i)
+
                     self.phase_manager.current_phase.curr_action = self.phase_manager.current_phase.controller.select_action()
                     self.episode_configuration.episode_pre_step()
                     observation, reward, _, info = self.env.step(self.phase_manager.current_phase)
@@ -177,15 +178,19 @@ class SimManagerPybullet(SimManagerBase):
                 if self.phase_manager.exit_flag is True:
                     # Trainig of network (Everything inside if statement. Comment while evaluating)
                     if i != 0:
-                        print("Starting Training ", i)
-                        training_phase.controller.train(training_phase.terminal_step, expert_replay_buffer=None,
-                                                        replay_buffer=self.replay)
+                        # print("Starting Training ", i)
+                        training_phase.controller.train(training_phase.terminal_step, expert_replay_buffer=self.replay_expert,
+                                                        replay_buffer=self.replay_agent)
                     break
             # record_episode.save_episode_as_csv()
 
-            self.replay.add_episode(record_episode)
+            if not (i % 50):
+                print(i)
+            self.replay_agent.add_episode(record_episode)
             record_episode.save_episode_as_csv(episode_number=i)
             #TODO needs to be in episode class instead of here
-        print("Saving...")
+        print("Saving replay buffer...")
+        self.replay_agent.save_replay_buffer('agent_replay_{}'.format(i))
+        print("Saving weights...")
         training_phase.controller.save('saved_weights')
         print("Done!")

@@ -25,9 +25,9 @@ class OpenHand(mojograsp.phase.Phase):
                                                     # '/mojo-grasp/mojograsp/simcore/simmanager/Reward/reward.json')
 
     def setup(self):
-        print("{} setup".format(self.name))
+        # print("{} setup".format(self.name))
         self._sim.objects.set_curr_pose([0.00, 0.17, 0.0], self._sim.objects.start_pos[self._sim.objects.id][1])
-        print("{} executing".format(self.name))
+        # print("{} executing".format(self.name))
 
     def execute_action(self, action):
         p.setJointMotorControlArray(self._sim.hand.id, jointIndices=self._sim.hand.actuation.get_joint_index_numbers(), controlMode=p.POSITION_CONTROL,
@@ -45,5 +45,5 @@ class OpenHand(mojograsp.phase.Phase):
         return done
 
     def phase_complete(self):
-        print("close phase")
+        # print("close phase")
         return "close phase"
