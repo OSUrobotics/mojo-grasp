@@ -287,6 +287,7 @@ class Actor(nn.Module):
         self.max_action = max_action
 
     def forward(self, state):
+        print("State Actor: {}".format(state))
         a = F.relu(self.l1(state))
         a = F.relu(self.l2(a))
         return self.max_action * torch.sigmoid(self.l3(a))
@@ -308,12 +309,14 @@ class Critic(nn.Module):
     def forward(self, state, action):
         q = F.relu(self.l1(torch.cat([state, action], -1)))
         q = F.relu(self.l2(q))
-        return self.max_q_value * torch.sigmoid(self.l3(q))
+        print("Q Critic: {}".format(q))
+        q = torch.sigmoid(self.l3(q))
+        return self.max_q_value * q
     # return self.l3(q)
 
 
 class DDPGfD(ControllerBase):
-    def __init__(self, state_path=None, state_dim=35, action_dim=4, max_action=2, n=5, discount=0.995, tau=0.0005, batch_size=64,
+    def __init__(self, state_path=None, state_dim=35, action_dim=4, max_action=2, n=1, discount=0.995, tau=0.0005, batch_size=64,
                  expert_sampling_proportion=0.7):
         super().__init__(state_path)
         self.dir = 'c'
@@ -364,46 +367,33 @@ class DDPGfD(ControllerBase):
             expert_or_random = "expert"
         else:
             expert_or_random = np.random.choice(np.array(["expert", "agent"]), p=[prob, round(1. - prob, 2)])
-
+        print(expert_or_random)
         if expert_or_random == "expert":
-            returned_buffer = expert_replay_buffer.get_random_timestep_sample(num_timesteps=1)
+            returned_buffer = expert_replay_buffer.get_between_timestep_random_sample(num_timesteps=1, start_timestep=42, end_timestep=72)[0]
             print("Returned Buffer: {}".format(returned_buffer))
-            objects_of_timestep = iter(returned_buffer[0])
-            for _ in range(0,5):
-                next(objects_of_timestep)
-
-            state, action, next_state = [], [], []
-            reward = 0
-            not_done = False
-
-            for i in range(0, 35):
-                state.append(next(objects_of_timestep))
-                state[i] = float(state[i])
-            state = np.asarray(state)
-            print("State: ", state)
-
-            for i in range(0, 4):
-                action.append(next(objects_of_timestep))
-                action[i] = float(action[i])
-            action = np.asarray(action)
-            print("Action: ", action)
-
-            reward = next(objects_of_timestep)
+            state = torch.FloatTensor(returned_buffer.current_state).to(device)
+            action = torch.FloatTensor(returned_buffer.action).to(device)
+            next_state = torch.FloatTensor(returned_buffer.next_state).to(device)
             try:
-                reward = float(reward[0])
+                reward = torch.FloatTensor(returned_buffer.reward)
             except TypeError:
-                reward = 0.0
-            print("Reward: ", reward)
+                reward = torch.FloatTensor([0.0])
+            not_done = False
+            print("STATE: {}\nREWARD: {}".format(state, reward))
 
-            for i in range(0, 35):
-                next_state.append(next(objects_of_timestep))
-                next_state[i] = float(next_state[i])
-            next_state = np.asarray(next_state)
-            print("Next: ", next_state)
-
-            print("Done: ", not_done)
         else:
-            state, action, next_state, reward, not_done = replay_buffer.sample()
+            returned_buffer = replay_buffer.get_between_timestep_random_sample(num_timesteps=1, start_timestep=42,
+                                                                    end_timestep=72)[0]
+            print("Returned Buffer: {}".format(returned_buffer))
+            state = torch.FloatTensor(returned_buffer.current_state).to(device)
+            action = torch.FloatTensor(returned_buffer.action).to(device)
+            next_state = torch.FloatTensor(returned_buffer.next_state).to(device)
+            try:
+                reward = torch.FloatTensor(returned_buffer.reward)
+            except TypeError:
+                reward = torch.FloatTensor([0.0])
+            not_done = False
+            print("STATE: {}\nREWARD: {}".format(state, reward))
 
         """
 		finger_reward_count = 0
@@ -437,18 +427,20 @@ class DDPGfD(ControllerBase):
         # print("Target_QN")
         # Compute the target Q_N value
         rollreward = []
-        target_QN = self.critic_target(next_state[(self.n - 1):], self.actor_target(next_state[(self.n - 1):]))
+        input_to_qn = next_state[(self.n - 1):]
+        try_it = next_state[3:]
+        target_QN = self.critic_target(input_to_qn, self.actor_target(input_to_qn))
         # print(target_QN.shape)
         # print("target_QN: ",target_Q)
 
-        ep_timesteps = episode_step
+        ep_timesteps = 1 #episode_step
         if state.shape[0] < episode_step:
             ep_timesteps = state.shape[0]
 
         for i in range(ep_timesteps):
             if i >= (self.n - 1):
-                roll_reward = (self.discount ** (self.n - 1)) * reward[i].item() + (self.discount ** (self.n - 2)) * \
-                              reward[i - (self.n - 2)].item() + (self.discount ** 0) * reward[i - (self.n - 1)].item()
+                roll_reward = (self.discount ** (self.n - 1)) * reward[i].item() # + (self.discount ** (self.n - 2)) * \
+                              # reward[i - (self.n - 2)].item() + (self.discount ** 0) * reward[i - (self.n - 1)].item()
                 rollreward.append(roll_reward)
 
         # print("After Calc len(rollreward): ",len(rollreward))

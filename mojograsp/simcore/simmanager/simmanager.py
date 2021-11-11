@@ -137,7 +137,10 @@ class SimManagerPybullet(SimManagerBase):
 
     def run(self):
         print("RUNNING PHASES: {}".format(self.phase_manager.phase_dict))
+        training_phase = self.phase_manager.phase_dict['move rl']
+        # # Evaluation of trained policy: (Uncomment below line)
 
+        # training_phase.controller.load('saved_weights')
         #resets episode settings, runs episode setup and sets the current phase
         for i in range(self.num_episodes):
             self.env.reset()
@@ -172,13 +175,17 @@ class SimManagerPybullet(SimManagerBase):
                 self.phase_manager.get_next_phase()
 
                 if self.phase_manager.exit_flag is True:
+                    # Trainig of network (Everything inside if statement. Comment while evaluating)
                     if i != 0:
-                        training_phase = self.phase_manager.phase_dict['move rl']
                         print("Starting Training ", i)
-                        training_phase.controller.train(training_phase.terminal_step, self.replay)
+                        training_phase.controller.train(training_phase.terminal_step, expert_replay_buffer=None,
+                                                        replay_buffer=self.replay)
                     break
             # record_episode.save_episode_as_csv()
-            #TODO needs to be in episode class instead of here
 
             self.replay.add_episode(record_episode)
             record_episode.save_episode_as_csv(episode_number=i)
+            #TODO needs to be in episode class instead of here
+        print("Saving...")
+        training_phase.controller.save('saved_weights')
+        print("Done!")

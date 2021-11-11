@@ -125,6 +125,15 @@ class ReplayBuffer:
                 timestep_list.append(self.current_buffer[randint(0,len(self.current_buffer)-1)])
         return timestep_list
 
+    def get_between_timestep_random_sample(self, num_timesteps, start_timestep, end_timestep=None):
+        timestep_list = []
+        if end_timestep is None:
+            end_timestep = len(self.current_buffer)-1
+        if len(self.current_buffer) >= num_timesteps:
+            for i in range(num_timesteps):
+                timestep_list.append(self.current_buffer[randint(start_timestep, end_timestep)])
+        return timestep_list
+
     def get_recent_timestep_sample(self, num_timesteps):
         timestep_list = []
         if len(self.current_buffer) >= num_timesteps:
