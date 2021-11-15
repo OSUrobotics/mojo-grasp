@@ -1,6 +1,7 @@
 import mojograsp
 import pybullet as p
 import math
+import pathlib
 
 
 class MoveRL(mojograsp.phase.Phase):
@@ -8,8 +9,8 @@ class MoveRL(mojograsp.phase.Phase):
         super().__init__()
         self.name = name
         self.terminal_step = 30
-        state_path = '/Users/asar/Desktop/Grimm\'s Lab/Manipulation/PyBulletStuff/mojo-grasp/mojograsp/simcore/' \
-                     'simmanager/State/simple_state.json'
+        current_path = str(pathlib.Path().resolve())
+        state_path = current_path+"/state_action_reward/simple_state.json"
         self.state = mojograsp.state_space.StateSpace(path=state_path)
         self.controller = mojograsp.controller_base.ControllerBase.create_instance(state_path=state_path,
                                                                                    controller_type='rl')
@@ -35,7 +36,7 @@ class MoveRL(mojograsp.phase.Phase):
 
     def phase_exit_condition(self, curr_step):
         if curr_step >= self.terminal_step:
-            print(curr_step)
+            # print(curr_step)
             done = True
         else:
             done = False

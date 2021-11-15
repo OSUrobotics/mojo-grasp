@@ -348,9 +348,12 @@ class DDPGfD(ControllerBase):
         self.batch_size = batch_size
 
     def select_action(self):
-        self.state.update()
+        curr_state = self.state.update()
+        norm_state = np.linalg.norm(curr_state)
+        norm_state = curr_state/norm_state
+        # print("NORMALIZEDSTATE: ", norm_state)
         # print("TYPE:", type(self.state.get_obs()), self.state.get_obs())
-        state = torch.FloatTensor(np.reshape(self.state.get_obs(), (1, -1))).to(device)
+        state = torch.FloatTensor(np.reshape(norm_state, (1, -1))).to(device)
         # print("TYPE:", type(state), state)
         action = self.actor(state).cpu().data.numpy().flatten()
         # print("Action: {}".format(action))

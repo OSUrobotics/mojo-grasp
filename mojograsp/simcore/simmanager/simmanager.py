@@ -108,7 +108,8 @@ class SimManagerPybullet(SimManagerBase):
         """
         Physics server setup.
         """
-        self.physics_client = p.connect(p.DIRECT)
+        # self.physics_client = p.connect(p.DIRECT)
+        self.physics_client = p.connect(p.GUI)
         p.setAdditionalSearchPath(pybullet_data.getDataPath())
         p.setGravity(0, 0, -10)
         self.plane_id = p.loadURDF("plane.urdf")
@@ -138,7 +139,7 @@ class SimManagerPybullet(SimManagerBase):
 
     def run(self):
         print("RUNNING PHASES: {}".format(self.phase_manager.phase_dict))
-        training_phase = self.phase_manager.phase_dict['move rl']
+        # training_phase = self.phase_manager.phase_dict['move rl']
         # # Evaluation of trained policy: (Uncomment below line)
 
         # training_phase.controller.load('saved_weights')
@@ -149,7 +150,7 @@ class SimManagerPybullet(SimManagerBase):
             self.episode_configuration.setup()
             self.phase_manager.exit_flag = False
             self.phase_manager.start_phases()
-            record_episode = RecordEpisode(identifier='cube_rl', data_path=self.data_path)
+            record_episode = RecordEpisode(identifier='cube', data_path=self.data_path)
 
             #for every phase in the dictionary we step until the exit condition is met
             while self.phase_manager.exit_flag == False:
@@ -164,33 +165,34 @@ class SimManagerPybullet(SimManagerBase):
                     self.phase_manager.current_phase.curr_action = self.phase_manager.current_phase.controller.select_action()
                     self.episode_configuration.episode_pre_step()
                     observation, reward, _, info = self.env.step(self.phase_manager.current_phase)
+                    # print("Timestep Reward: {}".format(reward))
                     self.episode_configuration.episode_post_step()
                     done = self.phase_manager.current_phase.phase_exit_condition(phase_step_count)
                     phase_step_count += 1
                     self.env.curr_timestep += 1
                     record_timestep = RecordTimestep(self.phase_manager.current_phase, data_path=self.data_path)
                     record_episode.add_timestep(record_timestep)
-                    # record_timestep.save_timestep_as_csv()
+                    # # record_timestep.save_timestep_as_csv()
 
                 #after exit condition is met we get the next phase name and set current phase to the specified value
                 self.phase_manager.get_next_phase()
 
                 if self.phase_manager.exit_flag is True:
-                    # Trainig of network (Everything inside if statement. Comment while evaluating)
-                    if i != 0:
+                    # Training of network (Everything inside if statement. Comment while evaluating)
+                    # if i != 0:
                         # print("Starting Training ", i)
-                        training_phase.controller.train(training_phase.terminal_step, expert_replay_buffer=self.replay_expert,
-                                                        replay_buffer=self.replay_agent)
+                        # training_phase.controller.train(training_phase.terminal_step, expert_replay_buffer=self.replay_expert,
+                        #                                 replay_buffer=self.replay_agent)
                     break
-            # record_episode.save_episode_as_csv()
 
-            if not (i % 50):
+            # print("Episode Reward: {}".format(reward))
+            if not (i % 100):
                 print(i)
-            self.replay_agent.add_episode(record_episode)
+            self.replay_expert.add_episode(record_episode)
             record_episode.save_episode_as_csv(episode_number=i)
             #TODO needs to be in episode class instead of here
         print("Saving replay buffer...")
-        self.replay_agent.save_replay_buffer('agent_replay_{}'.format(i))
+        self.replay_agent.save_replay_buffer('expert_replay_{}'.format(i))
         print("Saving weights...")
-        training_phase.controller.save('saved_weights')
+        # training_phase.controller.save('saved_weights')
         print("Done!")

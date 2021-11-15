@@ -62,11 +62,11 @@ class Reward(reward_base.RewardBase):
         return new_x, new_y
 
     def get_reward_in_x(self, points_rotated, target_x):
-        reward = points_rotated
+        reward = 5*points_rotated
         return reward
 
     def get_reward_in_y(self, points_rotated, target_y):
-        reward = abs(points_rotated)
+        reward = 5*abs(points_rotated)
         return reward
 
 
