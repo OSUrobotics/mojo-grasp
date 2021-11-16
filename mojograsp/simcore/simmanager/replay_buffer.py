@@ -36,7 +36,7 @@ class Timestep:
 
 
 class ReplayBuffer:
-    def __init__(self, episodes_file=None, buffer_size=10000):
+    def __init__(self, episodes_file=None, buffer_size=1000):
         '''Initializes episode file being used and the replay buffer structure'''
         self.episodes_file = episodes_file
         self.buffer_size = buffer_size
@@ -80,11 +80,11 @@ class ReplayBuffer:
                                        current_state, action,reward,None)
                         self.current_buffer.append(new_timestep)
 
-    def add_episode(self, new_episode):
+    def add_episode(self, new_episode, ep_num):
         '''Adds all of the timesteps from a given episode into the replay buffer.
            @param new_episode - Episode object containing all the timesteps in an episode'''
         for i in new_episode.data.values():
-            self.add_timestep(i, new_episode.episode_number)
+            self.add_timestep(i, ep_num)
 
     def add_episode_filter_phases(self, new_episode, phases=[]):
         '''Adds in all timesteps from certain phases into the replay buffer.
@@ -195,32 +195,46 @@ class ReplayBuffer:
         :param num_ep: Number of episodes to sample
         :return: episodes_list: A list of all timesteps in order of episodes sampled
         """
-        episodes_list = []
+        all_eps = []
         if len(self.current_buffer) >= num_ep:
             # get a list of random episode numbers to sample
             episode_indices = []
             while len(episode_indices) < num_ep:
-                rand_num = np.random.randint(low=self.current_buffer[0].episode, high=self.current_buffer[-1].episode+1, size=num_ep)
+                # print("Last episode in buffer:", self.current_buffer[-1].episode)
+                rand_num = randint(self.current_buffer[0].episode, self.current_buffer[-1].episode)
                 if rand_num in episode_indices:
+                    continue
+                found_ts = False
+                i = 0
+                try:
+                    while not found_ts:
+                        ts = self.current_buffer[i]
+                        if ts.episode == rand_num and ts.timestep == 43:
+                            found_ts = True
+                        i += 1
+                    if not found_ts:
+                        continue
+                except IndexError:
                     continue
                 episode_indices.append(rand_num)
 
-            # Find all the timesteps of all the episodes, in order, append to list
-            curr_ep = self.current_buffer[0].episode
-            # Get the last timestep of current episode
-            last_step = self.get_last_timestep_from_episode(curr_ep) - ceil
-            # Iterate through buffer
-            for i in list(self.current_buffer):
-                # Update current episode variable with relevant episode number and find corresponding last time step
-                if curr_ep != i.episode:
-                    curr_ep = i.episode
-                    last_step = self.get_last_timestep_from_episode(curr_ep) - ceil
+            for index in episode_indices:
+                buffer_episode = [ts for ts in self.current_buffer if index == ts.episode]
+                # Find all the timesteps of all the episodes, in order, append to list
+                curr_ep = buffer_episode[0].episode
+                episodes_list = []
+                # Iterate through buffer
+                for i in list(buffer_episode):
+                    # append timestep to list if current episode matches an episode index from randomly generated list and fullfills other criteria
+                    if 'move' in i.phase:
+                        last_step = self.get_last_timestep_from_episode(curr_ep) - ceil
+                        if i.timestep <= last_step:
+                            episodes_list.append(i)
+                all_eps.append(episodes_list)
 
-                # append timestep to list if current episode matches an episode index from randomly generated list and fullfills other criteria
-                if curr_ep in episode_indices and 'move' in i.phase and i.timestep <= last_step:
-                    episodes_list.append(i)
-
-        return episodes_list
+        # if num_ep == 1:
+        #     return episodes_list
+        return all_eps
 
     def get_recent_timestep_sample(self, num_timesteps):
         '''Returns a list of n timesteps from most recently added timesteps

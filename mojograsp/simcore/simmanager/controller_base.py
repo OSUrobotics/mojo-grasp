@@ -287,7 +287,7 @@ class Actor(nn.Module):
         self.max_action = max_action
 
     def forward(self, state):
-        # print("State Actor: {}".format(state))
+        # print("State Actor: {}\n{}".format(state.shape, state))
         a = F.relu(self.l1(state))
         a = F.relu(self.l2(a))
         return self.max_action * torch.sigmoid(self.l3(a))
@@ -315,7 +315,7 @@ class Critic(nn.Module):
 
 
 class DDPGfD(ControllerBase):
-    def __init__(self, state_path=None, state_dim=35, action_dim=4, max_action=2, n=5, discount=0.995, tau=0.0005, batch_size=64,
+    def __init__(self, state_path=None, state_dim=35, action_dim=4, max_action=2, n=5, discount=0.995, tau=0.0005, batch_size=4,
                  expert_sampling_proportion=0.7):
         super().__init__(state_path)
         self.dir = 'c'
@@ -368,16 +368,40 @@ class DDPGfD(ControllerBase):
     def get_items_from_buffer(self, curr_buffer):
         all_state, all_action, all_next_state, all_reward = [], [], [], []
 
-        for timestep in curr_buffer:
-            all_state.append(timestep.current_state)
-            all_action.append(timestep.action)
-            all_next_state.append(timestep.next_state)
-            all_reward.append(timestep.reward)
+        for episode in curr_buffer:
+            for timestep in episode:
+                all_state.append(timestep.current_state)
+                all_action.append(timestep.action)
+                all_next_state.append(timestep.next_state)
+                all_reward.append(timestep.reward)
 
         state_tensor = torch.FloatTensor(all_state).to(device)
         action_tensor = torch.FloatTensor(all_action).to(device)
         next_state_tensor = torch.FloatTensor(all_next_state).to(device)
         reward_tensor = torch.FloatTensor(all_reward).to(device)
+
+        return state_tensor, action_tensor, next_state_tensor, reward_tensor
+
+    def get_items_from_buffer_batch(self, curr_buffer):
+        all_state, all_action, all_next_state, all_reward = [], [], [], []
+
+        for episode in curr_buffer:
+            time_state, time_action, time_next_state, time_reward = [], [], [], []
+            for timestep in episode:
+                time_state.append(timestep.current_state)
+                time_action.append(timestep.action)
+                time_next_state.append(timestep.next_state)
+                time_reward.append(timestep.reward)
+            all_state.append(time_state)
+            all_action.append(time_action)
+            all_next_state.append(time_next_state)
+            all_reward.append(time_reward)
+
+        state_tensor = torch.FloatTensor(all_state).to(device)
+        action_tensor = torch.FloatTensor(all_action).to(device)
+        next_state_tensor = torch.FloatTensor(all_next_state).to(device)
+        reward_tensor = torch.FloatTensor(all_reward).to(device)
+        # print("State: {}\nAction: {}\nNext State: {}\nReward: {}".format(state_tensor.shape, action_tensor.shape, next_state_tensor.shape, reward_tensor.shape))
 
         return state_tensor, action_tensor, next_state_tensor, reward_tensor
 
@@ -393,7 +417,6 @@ class DDPGfD(ControllerBase):
         else:
             expert_or_random = np.random.choice(np.array([expert_replay_buffer, replay_buffer]), p=[prob, round(1. - prob, 2)])
 
-        expert_or_random = expert_replay_buffer
         returned_buffer = expert_or_random.get_random_episode_sample(ceil=self.n, num_ep=1)
         state, action, next_state, reward = self.get_items_from_buffer(returned_buffer)
         not_done = True
@@ -642,7 +665,7 @@ class DDPGfD(ControllerBase):
 
     def train_batch(self, max_episode_num, episode_num, update_count, expert_replay_buffer, replay_buffer):
         """ Update policy networks based on batch_size of episodes using n-step returns """
-        mod_state_idx = self.state_dim
+        mod_state_idx = self.state_dim - 1
         self.total_it += 1
         agent_batch_size = 0
         expert_batch_size = 0
@@ -651,45 +674,55 @@ class DDPGfD(ControllerBase):
         if replay_buffer is not None and expert_replay_buffer is None:  # Only use agent replay
             # print("AGENT")
             agent_batch_size = self.batch_size
-            returned_buffer = replay_buffer.sample_batch_nstep(self.batch_size)
-            state, action, next_state, reward = self.get_items_from_buffer(returned_buffer)
+            returned_buffer = replay_buffer.get_random_episode_sample(ceil=self.n, num_ep=self.batch_size)
+            state, action, next_state, reward = self.get_items_from_buffer_batch(returned_buffer)
             not_done = True
+            # print("Done")
         elif replay_buffer is None and expert_replay_buffer is not None:  # Only use expert replay
             # print("EXPERT")
             expert_batch_size = self.batch_size
-            returned_buffer = expert_replay_buffer.sample_batch_nstep(self.batch_size)
-            state, action, next_state, reward = self.get_items_from_buffer(returned_buffer)
+            returned_buffer = expert_replay_buffer.get_random_episode_sample(ceil=self.n, num_ep=self.batch_size)
+            state, action, next_state, reward = self.get_items_from_buffer_batch(returned_buffer)
             not_done = True
+            # print("Done")
         else:
             # print("MIX OF AGENT AND EXPERT")
 
+            # @ask_steph
             # Calculate proportion of expert sampling based on decay rate -- only calculate on the first update (to avoid repeats)
             if (episode_num + 1) % self.sampling_decay_freq == 0 and update_count == 0:
                 prop_w_decay = self.initial_expert_proportion * pow((1 - self.sampling_decay_rate),
                                                                     int((episode_num + 1) / self.sampling_decay_freq))
                 self.current_expert_proportion = max(0, prop_w_decay)
-                print(
-                    "In proportion calculation, episode_num + 1: {}, prop_w_decay: {}, self.current_expert_proportion: {}".format(
-                        episode_num + 1, prop_w_decay, self.current_expert_proportion))
+                # print(
+                #     "In proportion calculation, episode_num + 1: {}, prop_w_decay: {}, self.current_expert_proportion: {}".format(
+                #         episode_num + 1, prop_w_decay, self.current_expert_proportion))
 
             # Sample from the expert and agent replay buffers
             expert_batch_size = int(self.batch_size * self.current_expert_proportion)
             agent_batch_size = self.batch_size - expert_batch_size
             # Get batches from respective replay buffers
             # print("SAMPLING FROM AGENT...agent_batch_size: ",agent_batch_size)
-            returned_buffer = replay_buffer.sample_batch_nstep(agent_batch_size)
-            agent_state, agent_action, agent_next_state, agent_reward = self.get_items_from_buffer(returned_buffer)
+
+            # print("Agent bufffer ")
+            returned_buffer = replay_buffer.get_random_episode_sample(ceil=self.n, num_ep=agent_batch_size)
+            # print("Agent bufffer done")
+            agent_state, agent_action, agent_next_state, agent_reward = self.get_items_from_buffer_batch(returned_buffer)
+
             agent_not_done = True
             # print("SAMPLING FROM EXPERT...expert_batch_size: ",expert_batch_size)
-            returned_buffer = expert_replay_buffer.sample_batch_nstep(expert_batch_size)
-            expert_state, expert_action, expert_next_state, expert_reward = self.get_items_from_buffer(returned_buffer)
+            # print("expert bufffer")
+            returned_buffer = expert_replay_buffer.get_random_episode_sample(ceil=self.n, num_ep=expert_batch_size)
+            # print("expert bufffer done")
+            expert_state, expert_action, expert_next_state, expert_reward = self.get_items_from_buffer_batch(returned_buffer)
             expert_not_done = True
 
+            dim = 1
             # Concatenate batches of agent and expert experience to get batch_size tensors of experience
-            state = torch.cat((torch.squeeze(agent_state), torch.squeeze(expert_state)), 0)
-            action = torch.cat((torch.squeeze(agent_action), torch.squeeze(expert_action)), 0)
-            next_state = torch.cat((torch.squeeze(agent_next_state), torch.squeeze(expert_next_state)), 0)
-            reward = torch.cat((torch.squeeze(agent_reward), torch.squeeze(expert_reward)), 0)
+            state = torch.cat((torch.squeeze(agent_state), torch.squeeze(expert_state)), dim)
+            action = torch.cat((torch.squeeze(agent_action), torch.squeeze(expert_action)), dim)
+            next_state = torch.cat((torch.squeeze(agent_next_state), torch.squeeze(expert_next_state)), dim)
+            reward = torch.cat((torch.squeeze(agent_reward), torch.squeeze(expert_reward)), dim)
             # not_done = torch.cat((torch.squeeze(agent_not_done), torch.squeeze(expert_not_done)), 0)
             if self.batch_size == 1:
                 state = state.unsqueeze(0)
@@ -699,20 +732,27 @@ class DDPGfD(ControllerBase):
                 # not_done = not_done.unsqueeze(0)
 
             # @ask_steph
-            expert_state = expert_state[:, :, mod_state_idx]
 
+            # expert_state = expert_state[:, mod_state_idx]
+            # Original
+            # expert_state = expert_state[:, :, mod_state_idx]
+
+        # print("Done")
         reward = reward.unsqueeze(-1)
         # not_done = not_done.unsqueeze(-1)
 
         # @ask_steph
-        state = state[:, :, mod_state_idx]
-        next_state = next_state[:, :, mod_state_idx]
+        # state = state[:, mod_state_idx]
+        # next_state = next_state[:, mod_state_idx]
+        # Original
+        # state = state[:, :, mod_state_idx]
+        # next_state = next_state[:, :, mod_state_idx]
 
         ### FOR TESTING:
         # assert_batch_size = self.batch_size * num_trajectories
-        num_timesteps_sampled = self.batch_size # len(reward)
+        # num_timesteps_sampled = self.batch_size # len(reward)
         # Original:
-        # num_timesteps_sampled = len(reward)
+        num_timesteps_sampled = len(reward)
 
         # assert_n_steps = 5
         # assert_mod_state_dim = 82
@@ -722,19 +762,26 @@ class DDPGfD(ControllerBase):
         # assert action.shape == (assert_batch_size, assert_n_steps, 4)
         # assert reward.shape == (assert_batch_size, assert_n_steps, 1)
         # assert not_done.shape == (assert_batch_size, assert_n_steps, 1)
-
-        # print("Target Q")
+        # print("State shape: {}\nNext_State: {}".format(state.shape, next_state.shape))
+        # print("Target Q", next_state[:, 0].shape, "\n", next_state[:, 0])
+        # target_Q = self.critic_target(next_state[:], self.actor_target(next_state[:]))
+        # Original
         target_Q = self.critic_target(next_state[:, 0], self.actor_target(next_state[:, 0]))
         # assert target_Q.shape == (assert_batch_size, 1)
 
         # print("Target Q: ",target_Q)
         # If we're randomly sampling trajectories, we need to index based on the done signal
-        num_trajectories = len(not_done[:, 0])
+
+        num_trajectories = len(state[:, 0])
         for n in range(num_trajectories):
-            if not_done[n, 0]:  # NOT done
-                target_Q[n, 0] = reward[n, 0] + (self.discount * target_Q[n, 0]).detach()  # bellman equation
-            else:  # Final episode trajectory reward value
-                target_Q[n, 0] = reward[n, 0]
+            target_Q[n, 0] = reward[n, 0] + (self.discount * target_Q[n, 0]).detach()  # bellman equation
+        # @ask_steph
+        # Original
+        # for n in range(num_trajectories):
+        #     if state[n, 0]:  # NOT done
+        #         target_Q[n, 0] = reward[n, 0] + (self.discount * target_Q[n, 0]).detach()  # bellman equation
+        #     else:  # Final episode trajectory reward value
+        #         target_Q[n, 0] = reward[n, 0]
 
         # print(target_Q.shape)
         # print("target_Q: ",target_Q)
