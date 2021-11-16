@@ -124,7 +124,9 @@ class Action:
         self.last_action_units.set_value(self.current_action_units.value)
         self.current_action_units.set_value(action_units)
         self.action_profile = self.build_action()
-        return self.action_profile
+
+        return np.asarray([action_units for _ in range(self._sim.sim_step)])
+        # return self.action_profile
 
     def get_name_value(self):
         """sets action_units action_units and calculates the new action profile"""

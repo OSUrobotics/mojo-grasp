@@ -11,6 +11,11 @@ class Hand(objectbase.ObjectBase):
     def __init__(self, filename, underactuation=False, fixed=False, base_pos=None, base_orn=None):
         # calls initialization for objectbase class
         super().__init__(filename, fixed, base_pos, base_orn)
+        p.changeVisualShape(self.id, -1, rgbaColor=[0.3, 0.3, 0.3, 1])
+        p.changeVisualShape(self.id, 0, rgbaColor=[1, 0.5, 0, 1])
+        p.changeVisualShape(self.id, 1, rgbaColor=[0.3, 0.3, 0.3, 1])
+        p.changeVisualShape(self.id, 2, rgbaColor=[1, 0.5, 0, 1])
+        p.changeVisualShape(self.id, 3, rgbaColor=[0.3, 0.3, 0.3, 1])
 
         # initialize important variables
         self.joint_index = {}

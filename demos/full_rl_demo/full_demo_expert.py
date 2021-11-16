@@ -4,7 +4,6 @@ import numpy as np
 import phase1_full
 import phase2_full
 import phase3_full
-# import phase4_full_rl
 import pathlib
 
 
@@ -16,12 +15,12 @@ if __name__ == '__main__':
     current_path = str(pathlib.Path().resolve())
     #ENTER REPLAY BUFFER FILE PATH HERE, ex: cube_all_episodes.csv in data directory
     replay_buffer_episode_file = None
-    manager = mojograsp.simmanager.SimManagerPybullet(num_episodes=1000, rl=False, data_directory_path=current_path+"/data",
+    manager = mojograsp.simmanager.SimManagerPybullet(num_episodes=2000, rl=False, data_directory_path=current_path+"/data",
               replay_episode_file=replay_buffer_episode_file)
 
     # setting camera
-    p.resetDebugVisualizerCamera(cameraDistance=.02, cameraYaw=0, cameraPitch=-89.9999,
-                                 cameraTargetPosition=[0, 0.1, 0.5])
+    # p.resetDebugVisualizerCamera(cameraDistance=.02, cameraYaw=0, cameraPitch=-89.9999,
+    #                              cameraTargetPosition=[0, 0.1, 0.5])
 
     # Instantiating sim objects
     hand_path = current_path+"/hand_generation/hand_models/2v2_nosensors/2v2_nosensors.urdf"

@@ -4,7 +4,8 @@ from copy import deepcopy
 from dataclasses import dataclass
 from mojograsp.simcore.simmanager.record_timestep import RecordTimestep
 from mojograsp.simcore.simmanager.record_episode import RecordEpisode
-import csv 
+import csv
+import numpy as np
 
 
 @dataclass
@@ -18,6 +19,7 @@ class Timestep:
     action: list
     reward: float
     next_state: list
+    # done: bool
 
     def __iter__(self):
         '''Allows us to iterate through the timestep dataclass as a list of strings'''
@@ -29,11 +31,12 @@ class Timestep:
             timestep_list.extend([str(x) for x in self.next_state])
         else:
             timestep_list.append("")
+        # timestep_list.append(self.done)
         return iter(timestep_list)
 
 
 class ReplayBuffer:
-    def __init__(self, episodes_file=None, buffer_size=1000):
+    def __init__(self, episodes_file=None, buffer_size=10000):
         '''Initializes episode file being used and the replay buffer structure'''
         self.episodes_file = episodes_file
         self.buffer_size = buffer_size
@@ -133,6 +136,18 @@ class ReplayBuffer:
                 timestep_list.append(i)
         return timestep_list
 
+    def get_episode_batch(self, num_episodes, n=None, start_timestep=None, end_timestep=None):
+        """
+        Returns samples of entire episodes, in corrct timestep sequence
+        :param num_episodes: Number of episodes to sample
+        :param n: n-step (To calculate ceiling of timestep to sample per episode)
+        :param start_timestep: Timestep to start sampling from, per episode
+        :param end_timestep: Timestep to end sampling from, per episode
+        :return: list of timestep dataclass objects
+        """
+        return [full_episode for full_episode in self.current_buffer if full_episode.episode == 1]
+        pass
+
     def get_timestep(self, episode_number, timestep_number):
         '''Returns a timestep from a given episode number.
            @param episode_number - episode number you want to get timestep from 
@@ -152,14 +167,60 @@ class ReplayBuffer:
                 timestep_list.append(self.current_buffer[randint(0,len(self.current_buffer)-1)])
         return timestep_list
 
+    def get_last_timestep_from_episode(self, episode_num):
+        for i in list(self.current_buffer):
+            if i.episode == episode_num:
+                last_timestep = i.timestep
+            if i.episode > episode_num:
+                break
+        return last_timestep
+
     def get_between_timestep_random_sample(self, num_timesteps, start_timestep, end_timestep=None):
         timestep_list = []
-        if end_timestep is None:
-            end_timestep = len(self.current_buffer)-1
         if len(self.current_buffer) >= num_timesteps:
             for i in range(num_timesteps):
-                timestep_list.append(self.current_buffer[randint(start_timestep, end_timestep)])
+                done = False
+                while not done:
+                    random_timestep_index = randint(0, len(self.current_buffer) - 1)
+                    last_step = self.get_last_timestep_from_episode(self.current_buffer[random_timestep_index].episode)
+                    if 'move' in self.current_buffer[random_timestep_index].phase and self.current_buffer[random_timestep_index].timestep is not last_step:
+                        done = True
+                timestep_list.append(self.current_buffer[random_timestep_index])
         return timestep_list
+
+    def get_random_episode_sample(self, ceil, num_ep=1):
+        """
+        Samples entire episodes (in order of their timesteps) until they reach ceiling timestep value of that episode
+        :param ceil: Number of timesteps to subtract from final timestep (Where to stop adding timesteps to an episode)
+        :param num_ep: Number of episodes to sample
+        :return: episodes_list: A list of all timesteps in order of episodes sampled
+        """
+        episodes_list = []
+        if len(self.current_buffer) >= num_ep:
+            # get a list of random episode numbers to sample
+            episode_indices = []
+            while len(episode_indices) < num_ep:
+                rand_num = np.random.randint(low=self.current_buffer[0].episode, high=self.current_buffer[-1].episode+1, size=num_ep)
+                if rand_num in episode_indices:
+                    continue
+                episode_indices.append(rand_num)
+
+            # Find all the timesteps of all the episodes, in order, append to list
+            curr_ep = self.current_buffer[0].episode
+            # Get the last timestep of current episode
+            last_step = self.get_last_timestep_from_episode(curr_ep) - ceil
+            # Iterate through buffer
+            for i in list(self.current_buffer):
+                # Update current episode variable with relevant episode number and find corresponding last time step
+                if curr_ep != i.episode:
+                    curr_ep = i.episode
+                    last_step = self.get_last_timestep_from_episode(curr_ep) - ceil
+
+                # append timestep to list if current episode matches an episode index from randomly generated list and fullfills other criteria
+                if curr_ep in episode_indices and 'move' in i.phase and i.timestep <= last_step:
+                    episodes_list.append(i)
+
+        return episodes_list
 
     def get_recent_timestep_sample(self, num_timesteps):
         '''Returns a list of n timesteps from most recently added timesteps

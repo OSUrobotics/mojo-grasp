@@ -23,9 +23,14 @@ class CloseHand(mojograsp.phase.Phase):
 
     def setup(self):
         roll_fric = 0.01
-        p.changeDynamics(self._sim.objects.id, -1, mass=0.1, rollingFriction=roll_fric)
-        p.changeDynamics(self._sim.hand.id, 1, rollingFriction=roll_fric)
-        p.changeDynamics(self._sim.hand.id, 3, rollingFriction=roll_fric)
+        # object
+        p.changeDynamics(self._sim.objects.id, -1, mass=0.04, rollingFriction=roll_fric)
+        # distal
+        p.changeDynamics(self._sim.hand.id, 1, mass=0.03, rollingFriction=roll_fric)
+        p.changeDynamics(self._sim.hand.id, 3, mass=0.03, rollingFriction=roll_fric)
+        # proximal
+        p.changeDynamics(self._sim.hand.id, 0, mass=0.02, rollingFriction=roll_fric)
+        p.changeDynamics(self._sim.hand.id, 2, mass=0.02, rollingFriction=roll_fric)
         # print("{} setup".format(self.name))
         # self._sim.objects.set_curr_pose([0.00, 0.17, 0.0], self._sim.objects.start_pos[self._sim.objects.id][1])
         # print("{} executing".format(self.name))
@@ -48,4 +53,5 @@ class CloseHand(mojograsp.phase.Phase):
 
     def phase_complete(self):
         # print("move rl")
-        return "move expert"
+        # return "move expert"
+        return "move rl"

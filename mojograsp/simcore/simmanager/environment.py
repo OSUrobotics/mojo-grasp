@@ -17,6 +17,16 @@ class Environment(EnvironmentBase):
         self.objects = objects
         self.curr_timestep = 0
         self.curr_simstep = 0
+        # Dynamics
+        roll_fric = 0.01
+        # object
+        p.changeDynamics(self.objects.id, -1, mass=0.04, rollingFriction=roll_fric)
+        # distal
+        p.changeDynamics(self.hand.id, 1, mass=0.03, rollingFriction=roll_fric)
+        p.changeDynamics(self.hand.id, 3, mass=0.03, rollingFriction=roll_fric)
+        # proximal
+        p.changeDynamics(self.hand.id, 0, mass=0.02, rollingFriction=roll_fric)
+        p.changeDynamics(self.hand.id, 2, mass=0.02, rollingFriction=roll_fric)
 
     def reset(self):
         """

@@ -312,22 +312,28 @@ class Critic(nn.Module):
         # print("Q Critic: {}".format(q))
         q = torch.sigmoid(self.l3(q))
         return self.max_q_value * q
-    # return self.l3(q)
 
 
 class DDPGfD(ControllerBase):
-    def __init__(self, state_path=None, state_dim=35, action_dim=4, max_action=2, n=1, discount=0.995, tau=0.0005, batch_size=64,
+    def __init__(self, state_path=None, state_dim=35, action_dim=4, max_action=2, n=5, discount=0.995, tau=0.0005, batch_size=64,
                  expert_sampling_proportion=0.7):
         super().__init__(state_path)
         self.dir = 'c'
         ControllerBase._sim.set_obj_target_pose(self.dir)
-        self.actor = Actor(state_dim, action_dim, max_action).to(device)
+        self.state_dim = state_dim
+        self.action_dim = action_dim
+        self.actor = Actor(self.state_dim, self.action_dim, max_action).to(device)
         self.actor_target = copy.deepcopy(self.actor)
         self.actor_optimizer = torch.optim.Adam(self.actor.parameters(), lr=1e-4)
 
-        self.critic = Critic(state_dim, action_dim).to(device)
+        self.critic = Critic(self.state_dim, self.action_dim).to(device)
         self.critic_target = copy.deepcopy(self.critic)
         self.critic_optimizer = torch.optim.Adam(self.critic.parameters(), lr=1e-4, weight_decay=1e-4)
+
+        self.actor_loss = 0
+        self.critic_loss = 0
+        self.critic_L1loss = 0
+        self.critic_LNloss = 0
 
         self.discount = discount
         self.tau = tau
@@ -359,64 +365,38 @@ class DDPGfD(ControllerBase):
         # print("Action: {}".format(action))
         return action
 
+    def get_items_from_buffer(self, curr_buffer):
+        all_state, all_action, all_next_state, all_reward = [], [], [], []
+
+        for timestep in curr_buffer:
+            all_state.append(timestep.current_state)
+            all_action.append(timestep.action)
+            all_next_state.append(timestep.next_state)
+            all_reward.append(timestep.reward)
+
+        state_tensor = torch.FloatTensor(all_state).to(device)
+        action_tensor = torch.FloatTensor(all_action).to(device)
+        next_state_tensor = torch.FloatTensor(all_next_state).to(device)
+        reward_tensor = torch.FloatTensor(all_reward).to(device)
+
+        return state_tensor, action_tensor, next_state_tensor, reward_tensor
+
     def train(self, episode_step, expert_replay_buffer, replay_buffer=None, prob=0.7):
         """ Update policy based on full trajectory of one episode """
         self.total_it += 1
 
         # Determine which replay buffer to sample from
         if replay_buffer is not None and expert_replay_buffer is None:  # Only use agent replay
-            expert_or_random = "agent"
+            expert_or_random = replay_buffer
         elif replay_buffer is None and expert_replay_buffer is not None:  # Only use expert replay
-            expert_or_random = "expert"
+            expert_or_random = expert_replay_buffer
         else:
-            expert_or_random = np.random.choice(np.array(["expert", "agent"]), p=[prob, round(1. - prob, 2)])
-        # print(expert_or_random)
-        if expert_or_random == "expert":
-            returned_buffer = expert_replay_buffer.get_between_timestep_random_sample(num_timesteps=1, start_timestep=42, end_timestep=72)[0]
-            # print("Returned Buffer: {}".format(returned_buffer))
-            state = torch.FloatTensor(returned_buffer.current_state).to(device)
-            action = torch.FloatTensor(returned_buffer.action).to(device)
-            next_state = torch.FloatTensor(returned_buffer.next_state).to(device)
-            try:
-                reward = torch.FloatTensor(returned_buffer.reward)
-            except TypeError:
-                reward = torch.FloatTensor([0.0])
-            not_done = False
-            # print("STATE: {}\nREWARD: {}".format(state, reward))
+            expert_or_random = np.random.choice(np.array([expert_replay_buffer, replay_buffer]), p=[prob, round(1. - prob, 2)])
 
-        else:
-            returned_buffer = replay_buffer.get_between_timestep_random_sample(num_timesteps=1, start_timestep=42,
-                                                                    end_timestep=72)[0]
-            # print("Returned Buffer: {}".format(returned_buffer))
-            state = torch.FloatTensor(returned_buffer.current_state).to(device)
-            action = torch.FloatTensor(returned_buffer.action).to(device)
-            next_state = torch.FloatTensor(returned_buffer.next_state).to(device)
-            try:
-                reward = torch.FloatTensor(returned_buffer.reward)
-            except TypeError:
-                reward = torch.FloatTensor([0.0])
-            not_done = False
-            # print("STATE: {}\nREWARD: {}".format(state, reward))
-
-        """
-		finger_reward_count = 0
-		grasp_reward_count = 0
-		lift_reward_count = 0
-		non_zero_count = 0
-		for elem in reward:
-			if elem != 0:
-				non_zero_count += 1
-				if elem < 5:
-					finger_reward_count += 1
-				elif elem < 10:
-					grasp_reward_count += 1
-				elif elem >= 10:
-					lift_reward_count += 1
-		print("\nIN OG TRAIN: non_zero_reward: ",non_zero_count)
-		print("IN OG TRAIN: finger_reward_count: ", finger_reward_count)
-		print("IN OG TRAIN: grasp_reward_count: ", grasp_reward_count)
-		print("IN OG TRAIN: lift_reward_count: ", lift_reward_count)
-		"""
+        expert_or_random = expert_replay_buffer
+        returned_buffer = expert_or_random.get_random_episode_sample(ceil=self.n, num_ep=1)
+        state, action, next_state, reward = self.get_items_from_buffer(returned_buffer)
+        not_done = True
 
         # Target Q network
         # print("Target Q")
@@ -430,20 +410,153 @@ class DDPGfD(ControllerBase):
         # print("Target_QN")
         # Compute the target Q_N value
         rollreward = []
-        input_to_qn = next_state[(self.n - 1):]
-        try_it = next_state[3:]
-        target_QN = self.critic_target(input_to_qn, self.actor_target(input_to_qn))
+        target_QN = self.critic_target(next_state[(self.n - 1):], self.actor_target(next_state[(self.n - 1):]))
+        print(target_QN.shape)
+        print("target_QN: ",target_QN)
+
+        # # Original:
+        # ep_timesteps = episode_step
+        ep_timesteps = 100 #episode_step
+
+        # @ask_steph
+        if state.shape[0] < ep_timesteps:
+            ep_timesteps = state.shape[0]
+
+        for i in range(ep_timesteps):
+            if i >= (self.n - 1):
+                # Original:
+                roll_reward = (self.discount ** (self.n - 1)) * reward[i].item()  + (self.discount ** (self.n - 2)) * \
+                              reward[i - (self.n - 2)].item() + (self.discount ** 0) * reward[i - (self.n - 1)].item()
+
+                rollreward.append(roll_reward)
+
+        # print("After Calc len(rollreward): ",len(rollreward))
+        # print("After Calc rollreward: ", rollreward)
+
+        if len(rollreward) != ep_timesteps - (self.n - 1):
+            raise ValueError
+
+        rollreward = torch.FloatTensor(np.array(rollreward).reshape(-1, 1)).to(device)
+
+        # print("After reshape len(rollreward): ",len(rollreward))
+        # print("After reshape rollreward: ", rollreward)
+
+        # Calculate target network
+        target_QN = rollreward + (self.discount ** self.n) * target_QN  # bellman equation <= this is the final N step return
+
+        print("Target QN")
+        print("Target_QN.shape: ",target_QN.shape)
+        print("Target_QN: ", target_QN)
+
+        # Get current Q estimate
+        current_Q = self.critic(state, action)
+
+        print("current_Q")
+        print("current_Q.shape: ",current_Q.shape)
+        print("current_Q: ", current_Q)
+
+        # Yi's old implementation - not needed for loss calculation
+        # current_Q_n = self.critic(state[:(ep_timesteps - (self.n - 1))], action[:(ep_timesteps - (self.n - 1))])
+
+        # print("current_Q_n")
+        # print("current_Q_n.shape: ",current_Q_n.shape)
+        # print("current_Q_n: ", current_Q_n)
+
+        # L_1 loss (Loss between current state, action and reward, next state, action)
+        critic_L1loss = F.mse_loss(current_Q, target_Q)
+
+        # print("critic_L1loss")
+        # print("critic_L1loss.shape: ",critic_L1loss.shape)
+        # print("critic_L1loss: ", critic_L1loss)
+
+        # L_2 loss (Loss between current state, action and reward, n state, n action)
+        critic_LNloss = F.mse_loss(current_Q, target_QN)
+
+        # print("critic_LNloss")
+        # print("critic_LNloss.shape: ",critic_LNloss.shape)
+        # print("critic_LNloss: ", critic_LNloss)
+
+        # Total critic loss
+        lambda_1 = 0.5  # hyperparameter to control n loss
+        critic_loss = critic_L1loss + lambda_1 * critic_LNloss
+
+        # print("critic_loss")
+        # print("critic_loss.shape: ", critic_loss.shape)
+        # print("critic_loss: ", critic_loss)
+
+        # Optimize the critic
+        self.critic_optimizer.zero_grad()
+        critic_loss.backward()
+        self.critic_optimizer.step()
+
+        # Compute actor loss
+        actor_loss = -self.critic(state, self.actor(state)).mean()
+
+        # print("actor_loss")
+        # print("actor_loss.shape: ", actor_loss.shape)
+        # print("actor_loss: ", actor_loss)
+
+        # Optimize the actor
+        self.actor_optimizer.zero_grad()
+        actor_loss.backward()
+        self.actor_optimizer.step()
+
+        if self.total_it % self.network_repl_freq == 0:
+            # Update the frozen target models
+            for param, target_param in zip(self.critic.parameters(), self.critic_target.parameters()):
+                target_param.data.copy_(self.tau * param.data + (1 - self.tau) * target_param.data)
+
+            for param, target_param in zip(self.actor.parameters(), self.actor_target.parameters()):
+                target_param.data.copy_(self.tau * param.data + (1 - self.tau) * target_param.data)
+        return actor_loss.item(), critic_loss.item(), critic_L1loss.item(), critic_LNloss.item()
+
+    def train_single_timestep(self, episode_step, expert_replay_buffer, replay_buffer=None, prob=0.7):
+        """ Update policy based on full trajectory of one episode """
+        self.total_it += 1
+
+        # Determine which replay buffer to sample from
+        if replay_buffer is not None and expert_replay_buffer is None:  # Only use agent replay
+            expert_or_random = replay_buffer
+        elif replay_buffer is None and expert_replay_buffer is not None:  # Only use expert replay
+            expert_or_random = expert_replay_buffer
+        else:
+            expert_or_random = np.random.choice(np.array([expert_replay_buffer, replay_buffer]), p=[prob, round(1. - prob, 2)])
+
+        returned_buffer = expert_or_random.get_between_timestep_random_sample(num_timesteps=1, start_timestep=42)
+        state, action, next_state, reward = self.get_items_from_buffer(returned_buffer)
+        not_done = True
+
+        # Target Q network
+        # print("Target Q")
+        target_Q = self.critic_target(next_state, self.actor_target(next_state))
+        # print(target_Q.shape)
+        # print("target_Q: ",target_Q)
+        target_Q = reward + (self.discount * target_Q).detach()  # bellman equation
+        # print(target_Q.shape)
+        # print("target_Q: ",target_Q)
+
+        # print("Target_QN")
+        # Compute the target Q_N value
+        rollreward = []
+        target_QN = self.critic_target(next_state[(self.n - 1):], self.actor_target(next_state[(self.n - 1):]))
         # print(target_QN.shape)
         # print("target_QN: ",target_Q)
 
+        # # Original:
+        # ep_timesteps = episode_step
         ep_timesteps = 1 #episode_step
+
+        # @ask_steph
         if state.shape[0] < episode_step:
             ep_timesteps = state.shape[0]
 
         for i in range(ep_timesteps):
             if i >= (self.n - 1):
-                roll_reward = (self.discount ** (self.n - 1)) * reward[i].item() # + (self.discount ** (self.n - 2)) * \
-                              # reward[i - (self.n - 2)].item() + (self.discount ** 0) * reward[i - (self.n - 1)].item()
+                roll_reward = (self.discount ** (self.n - 1)) * reward[i].item()
+                # # Original:
+                # roll_reward = (self.discount ** (self.n - 1)) * reward[i].item()  + (self.discount ** (self.n - 2)) * \
+                #               reward[i - (self.n - 2)].item() + (self.discount ** 0) * reward[i - (self.n - 1)].item()
+
                 rollreward.append(roll_reward)
 
         # print("After Calc len(rollreward): ",len(rollreward))
@@ -529,6 +642,7 @@ class DDPGfD(ControllerBase):
 
     def train_batch(self, max_episode_num, episode_num, update_count, expert_replay_buffer, replay_buffer):
         """ Update policy networks based on batch_size of episodes using n-step returns """
+        mod_state_idx = self.state_dim
         self.total_it += 1
         agent_batch_size = 0
         expert_batch_size = 0
@@ -536,14 +650,16 @@ class DDPGfD(ControllerBase):
         # Sample replay buffer
         if replay_buffer is not None and expert_replay_buffer is None:  # Only use agent replay
             # print("AGENT")
-            expert_or_random = "agent"
             agent_batch_size = self.batch_size
-            state, action, next_state, reward, not_done = replay_buffer.sample_batch_nstep(self.batch_size)
+            returned_buffer = replay_buffer.sample_batch_nstep(self.batch_size)
+            state, action, next_state, reward = self.get_items_from_buffer(returned_buffer)
+            not_done = True
         elif replay_buffer is None and expert_replay_buffer is not None:  # Only use expert replay
             # print("EXPERT")
-            expert_or_random = "expert"
             expert_batch_size = self.batch_size
-            state, action, next_state, reward, not_done = expert_replay_buffer.sample_batch_nstep(self.batch_size)
+            returned_buffer = expert_replay_buffer.sample_batch_nstep(self.batch_size)
+            state, action, next_state, reward = self.get_items_from_buffer(returned_buffer)
+            not_done = True
         else:
             # print("MIX OF AGENT AND EXPERT")
 
@@ -561,31 +677,42 @@ class DDPGfD(ControllerBase):
             agent_batch_size = self.batch_size - expert_batch_size
             # Get batches from respective replay buffers
             # print("SAMPLING FROM AGENT...agent_batch_size: ",agent_batch_size)
-            agent_state, agent_action, agent_next_state, agent_reward, agent_not_done = replay_buffer.sample_batch_nstep(
-                agent_batch_size)
+            returned_buffer = replay_buffer.sample_batch_nstep(agent_batch_size)
+            agent_state, agent_action, agent_next_state, agent_reward = self.get_items_from_buffer(returned_buffer)
+            agent_not_done = True
             # print("SAMPLING FROM EXPERT...expert_batch_size: ",expert_batch_size)
-            expert_state, expert_action, expert_next_state, expert_reward, expert_not_done = expert_replay_buffer.sample_batch_nstep(
-                expert_batch_size)
+            returned_buffer = expert_replay_buffer.sample_batch_nstep(expert_batch_size)
+            expert_state, expert_action, expert_next_state, expert_reward = self.get_items_from_buffer(returned_buffer)
+            expert_not_done = True
 
             # Concatenate batches of agent and expert experience to get batch_size tensors of experience
             state = torch.cat((torch.squeeze(agent_state), torch.squeeze(expert_state)), 0)
             action = torch.cat((torch.squeeze(agent_action), torch.squeeze(expert_action)), 0)
             next_state = torch.cat((torch.squeeze(agent_next_state), torch.squeeze(expert_next_state)), 0)
             reward = torch.cat((torch.squeeze(agent_reward), torch.squeeze(expert_reward)), 0)
-            not_done = torch.cat((torch.squeeze(agent_not_done), torch.squeeze(expert_not_done)), 0)
+            # not_done = torch.cat((torch.squeeze(agent_not_done), torch.squeeze(expert_not_done)), 0)
             if self.batch_size == 1:
                 state = state.unsqueeze(0)
                 action = action.unsqueeze(0)
                 next_state = next_state.unsqueeze(0)
                 reward = reward.unsqueeze(0)
-                not_done = not_done.unsqueeze(0)
+                # not_done = not_done.unsqueeze(0)
+
+            # @ask_steph
+            expert_state = expert_state[:, :, mod_state_idx]
 
         reward = reward.unsqueeze(-1)
-        not_done = not_done.unsqueeze(-1)
+        # not_done = not_done.unsqueeze(-1)
+
+        # @ask_steph
+        state = state[:, :, mod_state_idx]
+        next_state = next_state[:, :, mod_state_idx]
 
         ### FOR TESTING:
         # assert_batch_size = self.batch_size * num_trajectories
-        num_timesteps_sampled = len(reward)
+        num_timesteps_sampled = self.batch_size # len(reward)
+        # Original:
+        # num_timesteps_sampled = len(reward)
 
         # assert_n_steps = 5
         # assert_mod_state_dim = 82
@@ -710,6 +837,12 @@ class DDPGfD(ControllerBase):
 
             for param, target_param in zip(self.actor.parameters(), self.actor_target.parameters()):
                 target_param.data.copy_(self.tau * param.data + (1 - self.tau) * target_param.data)
+
+        self.actor_loss = actor_loss.item()
+        self.critic_loss = critic_loss.item()
+        self.critic_L1loss = critic_L1loss.item()
+        self.critic_LNloss = critic_LNloss.item()
+
         return actor_loss.item(), critic_loss.item(), critic_L1loss.item(), critic_LNloss.item()
 
     def copy(self, policy_to_copy_from):
