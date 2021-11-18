@@ -134,3 +134,6 @@ hand_generation/object_models/*
 .DS_Store
 mojograsp/simcore/simmanager/data/*
 demos/full_rl_demo/data/*
+demos/full_rl_demo/agent_replay*
+demos/full_rl_demo/expert_replay*
+demos/full_rl_demo/*weights*
