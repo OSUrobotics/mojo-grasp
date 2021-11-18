@@ -8,8 +8,10 @@ from . import reward_base
 import os
 import sys
 import mojograsp
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import numpy as np
+import pathlib
+
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
 class Reward(reward_base.RewardBase):
@@ -18,22 +20,27 @@ class Reward(reward_base.RewardBase):
 
         """ """
         super().__init__(json_path)
+        contact_reward_path = str(pathlib.Path().resolve()) + "/state_action_reward/"
 
         for i in self.reward_weights.keys():
             self.reward[i] = 0
-            
+
             if i == 'contact':
-                self.contact_state = mojograsp.state_space.StateSpace(self.reward_params['Contact_State'])
-            # elif i == 'target_pose':
-            #     self.target_pose_state = mojograsp.state_space.StateSpace(self.reward_params['Target_Pose_State'])
+                self.contact_state = mojograsp.state_space.StateSpace(contact_reward_path + self.reward_params['Contact_State'])
 
     def get_contact_reward(self):
         contact_reward = 0
         contact_points_info = self.contact_state.update()
+
         for i in contact_points_info:
-            if i == 10:
-                contact_reward -= 5
-        # print("CONTACT REWARD: {}".format(contact_reward))
+            contact_reward += abs(1000*i)
+        contact_reward = np.exp(contact_reward)
+        # print("CONTACT INFO: {}\t Contact Reward: {}".format(contact_points_info, 1 * contact_reward))
+        if contact_reward > 1000:
+            contact_reward = -100
+        else:
+            contact_reward = - contact_reward/100
+
         return contact_reward
 
     def get_target_reward(self):
@@ -51,7 +58,7 @@ class Reward(reward_base.RewardBase):
         reward_x = self.get_reward_in_x(rotated_x, rot_target_x)
         reward_y = self.get_reward_in_y(rotated_y, rot_target_y)
 
-        target_reward = -2*reward_y + reward_x
+        target_reward = -2 * reward_y + reward_x
         # print("\nTARGET REWARD: {} X: {} Y: {}\n".format(target_reward, reward_x, reward_y))
         return target_reward
 
@@ -62,11 +69,11 @@ class Reward(reward_base.RewardBase):
         return new_x, new_y
 
     def get_reward_in_x(self, points_rotated, target_x):
-        reward = 5*points_rotated
+        reward = 5 * points_rotated
         return reward
 
     def get_reward_in_y(self, points_rotated, target_y):
-        reward = 5*abs(points_rotated)
+        reward = 5 * abs(points_rotated)
         return reward
 
 

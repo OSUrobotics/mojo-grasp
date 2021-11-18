@@ -1,6 +1,6 @@
 {
-  "StateGroup_FingerObjDist":{
-    "StateGroup_Distance_FingerObj_F1_l": {"Distance_FingerObj_Dist":[[-1.0,-1.0,-1.0],[10,10,10]]},
-    "StateGroup_Distance_FingerObj_F2_r": {"Distance_FingerObj_Dist":[[-1.0,-1.0,-1.0],[10,10,10]]}
+  "StateGroup_FingerObj":{
+    "StateGroup_Distance_FingerObj_F1_l": {"Distance_FingerObj_Distal":[[-0.03],[10]]},
+    "StateGroup_Distance_FingerObj_F2_r": {"Distance_FingerObj_Distal":[[-0.03],[10]]}
   }
 }

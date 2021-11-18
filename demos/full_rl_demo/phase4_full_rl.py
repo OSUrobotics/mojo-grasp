@@ -17,8 +17,7 @@ class MoveRL(mojograsp.phase.Phase):
         self.curr_action = None
         self.curr_action_profile = None
         self.Action = mojograsp.action_class.Action()
-        self.reward = mojograsp.reward_class.Reward('/Users/asar/Desktop/Grimm\'s Lab/Manipulation/PyBulletStuff'
-                                                    '/mojo-grasp/mojograsp/simcore/simmanager/Reward/reward_demo.json')
+        self.reward = mojograsp.reward_class.Reward(current_path + '/state_action_reward/reward_demo.json')
 
     def setup(self):
         roll_fric = 0.01

@@ -18,21 +18,21 @@ class StateMetricPyBullet(StateMetricBase):
 
     def get_index_from_keys(self, keys):
         if 'F1_l' in keys:
-            if 'Prox' in keys:
+            if 'Proximal' in keys:
                 index_name = 'l_proximal_pin'
-            elif 'Dist' in keys:
+            elif 'Distal' in keys:
                 index_name = 'l_distal_pin'
             else:
-                print("Wrong Key!")
+                print("Wrong Key!", keys)
                 raise KeyError
 
         elif 'F2_r' in keys:
-            if 'Prox' in keys:
-                index_name = 'l_proximal_pin'
-            elif 'Dist' in keys:
-                index_name = 'l_distal_pin'
+            if 'Proximal' in keys:
+                index_name = 'r_proximal_pin'
+            elif 'Distal' in keys:
+                index_name = 'r_distal_pin'
             else:
-                print("Wrong Key!")
+                print("Wrong Key!", keys)
                 raise KeyError
 
         elif 'Palm' in keys:
@@ -40,7 +40,7 @@ class StateMetricPyBullet(StateMetricBase):
             return index
 
         else:
-            print("Wrong Key!")
+            print("Wrong Key!", keys)
             raise KeyError
 
         index = self._sim.hand.joint_index[index_name]
@@ -53,6 +53,7 @@ class StateMetricAngle(StateMetricPyBullet):
         joint_index = self.get_index_from_keys(keys)
         curr_joint_angles = StateMetricBase._sim.get_hand_curr_joint_angles([joint_index])
         # print("CURR JOINT ANGLES: {}".format(curr_joint_angles))
+        curr_joint_angles = self.norm_data(curr_joint_angles)
         self.data.set_value(curr_joint_angles)
 
 
@@ -73,7 +74,7 @@ class StateMetricPosition(StateMetricPyBullet):
             #     obj_full_pose = StateMetricBase._sim.get_obj_curr_pose()
             obj_full_pose = StateMetricBase._sim.get_obj_curr_pose()
 
-            curr_pose = [obj_full_pose[0][0], obj_full_pose[0][1], obj_full_pose[0][2], obj_full_pose[1][0],
+            curr_pose = [obj_full_pose[0][0], obj_full_pose[0][1], obj_full_pose[0][2] , obj_full_pose[1][0],
                          obj_full_pose[1][1], obj_full_pose[1][2], obj_full_pose[1][3]]
 
         else:
@@ -82,6 +83,7 @@ class StateMetricPosition(StateMetricPyBullet):
                 curr_pose = StateMetricBase._sim.get_hand_curr_pose()[0]
             else:
                 curr_pose = StateMetricBase._sim.get_curr_link_pos([joint_index])
+        curr_pose = self.norm_data(curr_pose)
         self.data.set_value(curr_pose)
 
 
@@ -89,15 +91,20 @@ class StateMetricDistance(StateMetricPyBullet):
     def update(self, keys):
         if 'ObjSize' in keys:
             dimensions = StateMetricBase._sim.get_obj_dimensions()
+            dimensions = self.norm_data(dimensions)
             self.data.set_value(dimensions)
 
         elif 'FingerObj' in keys:
             joint_index = self.get_index_from_keys(keys)
             contact_info = self.get_contact_info(joint_index)
             try:
-                finger_obj_distance = contact_info[0][6]
+                # finger_obj_distance = contact_info[0][6]
+                finger_obj_distance = [contact_info[0][8]]
+                # print(contact_info[0][8], joint_index, keys)
             except IndexError:
                 finger_obj_distance = self.data.allowable_max
+                # print(contact_info)
+            finger_obj_distance = self.norm_data(finger_obj_distance)
             self.data.set_value(finger_obj_distance)
 
     def get_contact_info(self, joint_index_num):

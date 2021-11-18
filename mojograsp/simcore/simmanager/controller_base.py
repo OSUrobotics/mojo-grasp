@@ -315,7 +315,7 @@ class Critic(nn.Module):
 
 
 class DDPGfD(ControllerBase):
-    def __init__(self, state_path=None, state_dim=35, action_dim=4, max_action=2, n=5, discount=0.995, tau=0.0005, batch_size=4,
+    def __init__(self, state_path=None, state_dim=35, action_dim=4, max_action=2, n=5, discount=0.995, tau=0.0005, batch_size=10,
                  expert_sampling_proportion=0.7):
         super().__init__(state_path)
         self.dir = 'c'
@@ -355,11 +355,9 @@ class DDPGfD(ControllerBase):
 
     def select_action(self):
         curr_state = self.state.update()
-        norm_state = np.linalg.norm(curr_state)
-        norm_state = curr_state/norm_state
-        # print("NORMALIZEDSTATE: ", norm_state)
-        # print("TYPE:", type(self.state.get_obs()), self.state.get_obs())
-        state = torch.FloatTensor(np.reshape(norm_state, (1, -1))).to(device)
+        # norm_state = np.linalg.norm(curr_state)
+        # norm_state = curr_state/norm_state
+        state = torch.FloatTensor(np.reshape(curr_state, (1, -1))).to(device)
         # print("TYPE:", type(state), state)
         action = self.actor(state).cpu().data.numpy().flatten()
         # print("Action: {}".format(action))
@@ -404,6 +402,284 @@ class DDPGfD(ControllerBase):
         # print("State: {}\nAction: {}\nNext State: {}\nReward: {}".format(state_tensor.shape, action_tensor.shape, next_state_tensor.shape, reward_tensor.shape))
 
         return state_tensor, action_tensor, next_state_tensor, reward_tensor
+
+    def train_batch(self, max_episode_num, episode_num, update_count, expert_replay_buffer, replay_buffer):
+        """ Update policy networks based on batch_size of episodes using n-step returns """
+        self.total_it += 1
+        agent_batch_size = 0
+        expert_batch_size = 0
+
+        # Sample replay buffer
+        if replay_buffer is not None and expert_replay_buffer is None:  # Only use agent replay
+            # print("AGENT")
+            agent_batch_size = self.batch_size
+            state, action, next_state, reward = replay_buffer.sample_batch_nstep(self.batch_size)
+            # state, action, next_state, reward = self.get_items_from_buffer_batch(returned_buffer)
+            not_done = True
+            # print("Done")
+        elif replay_buffer is None and expert_replay_buffer is not None:  # Only use expert replay
+            # print("EXPERT")
+            expert_batch_size = self.batch_size
+            state, action, next_state, reward = expert_replay_buffer.sample_batch_nstep(self.batch_size)
+            # state, action, next_state, reward = self.get_items_from_buffer_batch(returned_buffer)
+            not_done = True
+            # print("Done")
+        else:
+            # print("MIX OF AGENT AND EXPERT")
+
+            # @ask_steph
+            # Calculate proportion of expert sampling based on decay rate -- only calculate on the first update (to avoid repeats)
+            if (episode_num + 1) % self.sampling_decay_freq == 0 and update_count == 0:
+                prop_w_decay = self.initial_expert_proportion * pow((1 - self.sampling_decay_rate),
+                                                                    int((episode_num + 1) / self.sampling_decay_freq))
+                self.current_expert_proportion = max(0, prop_w_decay)
+                # print(
+                #     "In proportion calculation, episode_num + 1: {}, prop_w_decay: {}, self.current_expert_proportion: {}".format(
+                #         episode_num + 1, prop_w_decay, self.current_expert_proportion))
+
+            # Sample from the expert and agent replay buffers
+            expert_batch_size = int(self.batch_size * self.current_expert_proportion)
+            agent_batch_size = self.batch_size - expert_batch_size
+            # Get batches from respective replay buffers
+            # print("SAMPLING FROM AGENT...agent_batch_size: ",agent_batch_size)
+
+            # print("Agent bufffer ")
+            agent_state, agent_action, agent_next_state, agent_reward = replay_buffer.sample_batch_nstep(agent_batch_size)
+            # print("Agent bufffer done")
+            # agent_state, agent_action, agent_next_state, agent_reward = self.get_items_from_buffer_batch(returned_buffer)
+
+            agent_not_done = True
+            # print("SAMPLING FROM EXPERT...expert_batch_size: ",expert_batch_size)
+            # print("expert bufffer")
+            expert_state, expert_action, expert_next_state, expert_reward = expert_replay_buffer.sample_batch_nstep(expert_batch_size)
+            # print("expert bufffer done")
+            # expert_state, expert_action, expert_next_state, expert_reward = self.get_items_from_buffer_batch(returned_buffer)
+            expert_not_done = True
+
+            dim = 0
+            # Concatenate batches of agent and expert experience to get batch_size tensors of experience
+            state = torch.cat((torch.squeeze(agent_state), torch.squeeze(expert_state)), dim)
+            action = torch.cat((torch.squeeze(agent_action), torch.squeeze(expert_action)), dim)
+            next_state = torch.cat((torch.squeeze(agent_next_state), torch.squeeze(expert_next_state)), dim)
+            reward = torch.cat((torch.squeeze(agent_reward), torch.squeeze(expert_reward)), dim)
+            # not_done = torch.cat((torch.squeeze(agent_not_done), torch.squeeze(expert_not_done)), 0)
+            if self.batch_size == 1:
+                state = state.unsqueeze(0)
+                action = action.unsqueeze(0)
+                next_state = next_state.unsqueeze(0)
+                reward = reward.unsqueeze(0)
+                # not_done = not_done.unsqueeze(0)
+
+            # @ask_steph
+
+            # expert_state = expert_state[:, mod_state_idx]
+            # Original
+            # expert_state = expert_state[:, :, mod_state_idx]
+
+        # print("Done")
+        reward = reward.unsqueeze(-1)
+        # not_done = not_done.unsqueeze(-1)
+
+        # @ask_steph
+        # state = state[:, mod_state_idx]
+        # next_state = next_state[:, mod_state_idx]
+        # Original
+        # state = state[:, :, mod_state_idx]
+        # next_state = next_state[:, :, mod_state_idx]
+
+        ### FOR TESTING:
+        # assert_batch_size = self.batch_size * num_trajectories
+        # num_timesteps_sampled = self.batch_size # len(reward)
+        # Original:
+        num_timesteps_sampled = len(reward)
+
+        # assert_n_steps = 5
+        # assert_mod_state_dim = 82
+
+        # assert state.shape == (assert_batch_size, assert_n_steps, assert_mod_state_dim)
+        # assert next_state.shape == (assert_batch_size, assert_n_steps, assert_mod_state_dim)
+        # assert action.shape == (assert_batch_size, assert_n_steps, 4)
+        # assert reward.shape == (assert_batch_size, assert_n_steps, 1)
+        # assert not_done.shape == (assert_batch_size, assert_n_steps, 1)
+        # print("State shape: {}\nNext_State: {}".format(state.shape, next_state.shape))
+        # print("Target Q", next_state[:, 0].shape, "\n", next_state[:, 0])
+        # target_Q = self.critic_target(next_state[:], self.actor_target(next_state[:]))
+        # Original
+        target_Q = self.critic_target(next_state[:, 0], self.actor_target(next_state[:, 0]))
+        # assert target_Q.shape == (assert_batch_size, 1)
+
+        # print("Target Q: ",target_Q)
+        # If we're randomly sampling trajectories, we need to index based on the done signal
+
+        # number of trajectories in total
+        num_trajectories = len(state[:, 0])
+        for n in range(num_trajectories):
+            # if state[n, 0]:  # NOT done
+            target_Q[n, 0] = reward[n, 0] + (self.discount * target_Q[n, 0]).detach()  # bellman equation
+            # else:  # Final episode trajectory reward value
+            #     target_Q[n, 0] = reward[n, 0]
+        # @ask_steph
+        # Original
+        # for n in range(num_trajectories):
+        #     if state[n, 0]:  # NOT done
+        #         target_Q[n, 0] = reward[n, 0] + (self.discount * target_Q[n, 0]).detach()  # bellman equation
+        #     else:  # Final episode trajectory reward value
+        #         target_Q[n, 0] = reward[n, 0]
+
+        # print(target_Q.shape)
+        # print("target_Q: ",target_Q)
+        # assert target_Q.shape == (assert_batch_size, 1)
+
+        # print("Target action")
+        target_action = self.actor_target(next_state[:, -1])
+        # print(target_action.shape)
+        # print("target_action: ", target_action)
+        # assert target_action.shape == (assert_batch_size, 4)
+
+        # print("Target Critic Q value")
+        target_critic_val = self.critic_target(next_state[:, -1], target_action)  # shape: (self.batch_size, 1)
+        # print(target_critic_val.shape)
+        # print("target_critic_val: ",target_critic_val)
+        # assert target_Q.shape == (assert_batch_size, 1)
+
+        n_step_return = torch.zeros(num_timesteps_sampled).to(device)  # shape: (self.batch_size,)
+        # print("N step return before calculation (N=5)")
+        # print(n_step_return.shape)
+        # print("n_step_return: ", n_step_return)
+        # assert n_step_return.shape == (assert_batch_size,)
+
+        for i in range(self.n):
+            n_step_return += (self.discount ** i) * reward[:, i].squeeze(-1)
+
+        # print("N step return after calculation (N=5)")
+        # print(n_step_return.shape)
+        # print("n_step_return: ", n_step_return)
+        # assert n_step_return.shape == (assert_batch_size,)
+
+        # print("Target QN, N STEPS")
+        # this is the n step return with the added value fn estimation
+        target_QN = n_step_return + (self.discount ** self.n) * target_critic_val.squeeze(-1)
+        # print(target_QN.shape)
+        # print("target_QN: ",target_QN)
+        # assert target_QN.shape == (assert_batch_size,)
+        target_QN = target_QN.unsqueeze(dim=-1)
+        # print(target_QN.shape)
+        # print("target_QN: ", target_QN)
+        # assert target_QN.shape == (assert_batch_size, 1)
+
+        # print("Current Q")
+        # New implementation
+        current_Q = self.critic(state[:, 0], action[:, 0])
+        # print(current_Q.shape)
+        # print("current_Q: ", current_Q)
+        # assert current_Q.shape == (assert_batch_size, 1)
+
+        # print("CRITIC L1 Loss:")
+        # L_1 loss (Loss between current state, action and reward, next state, action)
+        critic_L1loss = F.mse_loss(current_Q, target_Q)
+        # print(critic_L1loss.shape)
+        # print("critic_L1loss: ", critic_L1loss)
+
+        # print("CRITIC LN Loss:")
+        # L_2 loss (Loss between current state, action and reward, n state, n action)
+        critic_LNloss = F.mse_loss(current_Q, target_QN)
+        # print(critic_LNloss.shape)
+        # print("critic_LNloss: ", critic_LNloss)
+
+        # print("CRITIC Loss (L1 loss + lambda * LN Loss):")
+        # Total critic loss
+        lambda_1 = 0.5  # hyperparameter to control n loss
+        critic_loss = critic_L1loss + lambda_1 * critic_LNloss
+        # print(critic_loss.shape)
+        # print("critic_loss: ", critic_loss)
+
+        # Optimize the critic
+        self.critic_optimizer.zero_grad()
+        critic_loss.backward()
+        self.critic_optimizer.step()
+
+        # Compute Behavior Cloning loss - state and action are from the expert
+        Lbc = 0
+        # If we are decaying the amount of expert experience, then decay the BC loss as well
+        if self.sampling_decay_rate != 0:
+            self.lambda_Lbc = self.current_expert_proportion
+        # Compute loss based on Mean Squared Error between the actor network's action and the expert's action
+        if expert_batch_size > 0:
+            # Expert state and expert action are sampled from the expert demonstrations (expert replay buffer)
+            Lbc = F.mse_loss(self.actor(expert_state), expert_action)
+        # print("self.lambda_Lbc: ", self.lambda_Lbc)
+
+        # Compute actor loss
+        actor_loss = -self.critic(state, self.actor(state)).mean() + self.lambda_Lbc * Lbc
+        # print("Actor loss: ")
+        # print(actor_loss.shape)
+        # print("actor_loss: ",actor_loss)
+
+        # Optimize the actor
+        self.actor_optimizer.zero_grad()
+        actor_loss.backward()
+        self.actor_optimizer.step()
+
+        if self.total_it % self.network_repl_freq == 0:
+            # Update the frozen target models
+            for param, target_param in zip(self.critic.parameters(), self.critic_target.parameters()):
+                target_param.data.copy_(self.tau * param.data + (1 - self.tau) * target_param.data)
+
+            for param, target_param in zip(self.actor.parameters(), self.actor_target.parameters()):
+                target_param.data.copy_(self.tau * param.data + (1 - self.tau) * target_param.data)
+
+        self.actor_loss = actor_loss.item()
+        self.critic_loss = critic_loss.item()
+        self.critic_L1loss = critic_L1loss.item()
+        self.critic_LNloss = critic_LNloss.item()
+
+        return actor_loss.item(), critic_loss.item(), critic_L1loss.item(), critic_LNloss.item()
+
+    def copy(self, policy_to_copy_from):
+        """ Copy input policy to be set to another policy instance
+		policy_to_copy_from: policy that will be copied from
+        """
+        # Copy the actor and critic networks
+        self.actor = copy.deepcopy(policy_to_copy_from.actor)
+        self.actor_target = copy.deepcopy(policy_to_copy_from.actor_target)
+        self.actor_optimizer = copy.deepcopy(policy_to_copy_from.actor_optimizer)
+
+        self.critic = copy.deepcopy(policy_to_copy_from.critic)
+        self.critic_target = copy.deepcopy(policy_to_copy_from.critic_target)
+        self.critic_optimizer = copy.deepcopy(policy_to_copy_from.critic_optimizer)
+
+        self.discount = policy_to_copy_from.discount
+        self.tau = policy_to_copy_from.tau
+        self.n = policy_to_copy_from.n
+        self.network_repl_freq = policy_to_copy_from.network_repl_freq
+        self.total_it = policy_to_copy_from.total_it
+        self.lambda_Lbc = policy_to_copy_from.lambda_Lbc
+        self.avg_evaluation_reward = policy_to_copy_from.avg_evaluation_reward
+
+        # Sample from the expert replay buffer, decaying the proportion expert-agent experience over time
+        self.initial_expert_proportion = policy_to_copy_from.initial_expert_proportion
+        self.current_expert_proportion = policy_to_copy_from.current_expert_proportion
+        self.sampling_decay_rate = policy_to_copy_from.sampling_decay_rate
+        self.sampling_decay_freq = policy_to_copy_from.sampling_decay_freq
+        self.batch_size = policy_to_copy_from.batch_size
+
+    def save(self, filename):
+        torch.save(self.critic.state_dict(), filename + "_critic")
+        torch.save(self.critic_target.state_dict(), filename + "_critic_target")
+        torch.save(self.critic_optimizer.state_dict(), filename + "_critic_optimizer")
+        torch.save(self.actor.state_dict(), filename + "_actor")
+        torch.save(self.actor_target.state_dict(), filename + "_actor_target")
+        torch.save(self.actor_optimizer.state_dict(), filename + "_actor_optimizer")
+        np.save(filename + "avg_evaluation_reward", np.array([self.avg_evaluation_reward]))
+
+    def load(self, filename):
+        self.critic.load_state_dict(torch.load(filename + "_critic", map_location=device))
+        self.critic_optimizer.load_state_dict(torch.load(filename + "_critic_optimizer", map_location=device))
+        self.actor.load_state_dict(torch.load(filename + "_actor", map_location=device))
+        self.actor_optimizer.load_state_dict(torch.load(filename + "_actor_optimizer", map_location=device))
+
+        self.critic_target = copy.deepcopy(self.critic)
+        self.actor_target = copy.deepcopy(self.actor)
 
     def train(self, episode_step, expert_replay_buffer, replay_buffer=None, prob=0.7):
         """ Update policy based on full trajectory of one episode """
@@ -662,278 +938,3 @@ class DDPGfD(ControllerBase):
             for param, target_param in zip(self.actor.parameters(), self.actor_target.parameters()):
                 target_param.data.copy_(self.tau * param.data + (1 - self.tau) * target_param.data)
         return actor_loss.item(), critic_loss.item(), critic_L1loss.item(), critic_LNloss.item()
-
-    def train_batch(self, max_episode_num, episode_num, update_count, expert_replay_buffer, replay_buffer):
-        """ Update policy networks based on batch_size of episodes using n-step returns """
-        mod_state_idx = self.state_dim - 1
-        self.total_it += 1
-        agent_batch_size = 0
-        expert_batch_size = 0
-
-        # Sample replay buffer
-        if replay_buffer is not None and expert_replay_buffer is None:  # Only use agent replay
-            # print("AGENT")
-            agent_batch_size = self.batch_size
-            returned_buffer = replay_buffer.get_random_episode_sample(ceil=self.n, num_ep=self.batch_size)
-            state, action, next_state, reward = self.get_items_from_buffer_batch(returned_buffer)
-            not_done = True
-            # print("Done")
-        elif replay_buffer is None and expert_replay_buffer is not None:  # Only use expert replay
-            # print("EXPERT")
-            expert_batch_size = self.batch_size
-            returned_buffer = expert_replay_buffer.get_random_episode_sample(ceil=self.n, num_ep=self.batch_size)
-            state, action, next_state, reward = self.get_items_from_buffer_batch(returned_buffer)
-            not_done = True
-            # print("Done")
-        else:
-            # print("MIX OF AGENT AND EXPERT")
-
-            # @ask_steph
-            # Calculate proportion of expert sampling based on decay rate -- only calculate on the first update (to avoid repeats)
-            if (episode_num + 1) % self.sampling_decay_freq == 0 and update_count == 0:
-                prop_w_decay = self.initial_expert_proportion * pow((1 - self.sampling_decay_rate),
-                                                                    int((episode_num + 1) / self.sampling_decay_freq))
-                self.current_expert_proportion = max(0, prop_w_decay)
-                # print(
-                #     "In proportion calculation, episode_num + 1: {}, prop_w_decay: {}, self.current_expert_proportion: {}".format(
-                #         episode_num + 1, prop_w_decay, self.current_expert_proportion))
-
-            # Sample from the expert and agent replay buffers
-            expert_batch_size = int(self.batch_size * self.current_expert_proportion)
-            agent_batch_size = self.batch_size - expert_batch_size
-            # Get batches from respective replay buffers
-            # print("SAMPLING FROM AGENT...agent_batch_size: ",agent_batch_size)
-
-            # print("Agent bufffer ")
-            returned_buffer = replay_buffer.get_random_episode_sample(ceil=self.n, num_ep=agent_batch_size)
-            # print("Agent bufffer done")
-            agent_state, agent_action, agent_next_state, agent_reward = self.get_items_from_buffer_batch(returned_buffer)
-
-            agent_not_done = True
-            # print("SAMPLING FROM EXPERT...expert_batch_size: ",expert_batch_size)
-            # print("expert bufffer")
-            returned_buffer = expert_replay_buffer.get_random_episode_sample(ceil=self.n, num_ep=expert_batch_size)
-            # print("expert bufffer done")
-            expert_state, expert_action, expert_next_state, expert_reward = self.get_items_from_buffer_batch(returned_buffer)
-            expert_not_done = True
-
-            dim = 1
-            # Concatenate batches of agent and expert experience to get batch_size tensors of experience
-            state = torch.cat((torch.squeeze(agent_state), torch.squeeze(expert_state)), dim)
-            action = torch.cat((torch.squeeze(agent_action), torch.squeeze(expert_action)), dim)
-            next_state = torch.cat((torch.squeeze(agent_next_state), torch.squeeze(expert_next_state)), dim)
-            reward = torch.cat((torch.squeeze(agent_reward), torch.squeeze(expert_reward)), dim)
-            # not_done = torch.cat((torch.squeeze(agent_not_done), torch.squeeze(expert_not_done)), 0)
-            if self.batch_size == 1:
-                state = state.unsqueeze(0)
-                action = action.unsqueeze(0)
-                next_state = next_state.unsqueeze(0)
-                reward = reward.unsqueeze(0)
-                # not_done = not_done.unsqueeze(0)
-
-            # @ask_steph
-
-            # expert_state = expert_state[:, mod_state_idx]
-            # Original
-            # expert_state = expert_state[:, :, mod_state_idx]
-
-        # print("Done")
-        reward = reward.unsqueeze(-1)
-        # not_done = not_done.unsqueeze(-1)
-
-        # @ask_steph
-        # state = state[:, mod_state_idx]
-        # next_state = next_state[:, mod_state_idx]
-        # Original
-        # state = state[:, :, mod_state_idx]
-        # next_state = next_state[:, :, mod_state_idx]
-
-        ### FOR TESTING:
-        # assert_batch_size = self.batch_size * num_trajectories
-        # num_timesteps_sampled = self.batch_size # len(reward)
-        # Original:
-        num_timesteps_sampled = len(reward)
-
-        # assert_n_steps = 5
-        # assert_mod_state_dim = 82
-
-        # assert state.shape == (assert_batch_size, assert_n_steps, assert_mod_state_dim)
-        # assert next_state.shape == (assert_batch_size, assert_n_steps, assert_mod_state_dim)
-        # assert action.shape == (assert_batch_size, assert_n_steps, 4)
-        # assert reward.shape == (assert_batch_size, assert_n_steps, 1)
-        # assert not_done.shape == (assert_batch_size, assert_n_steps, 1)
-        # print("State shape: {}\nNext_State: {}".format(state.shape, next_state.shape))
-        # print("Target Q", next_state[:, 0].shape, "\n", next_state[:, 0])
-        # target_Q = self.critic_target(next_state[:], self.actor_target(next_state[:]))
-        # Original
-        target_Q = self.critic_target(next_state[:, 0], self.actor_target(next_state[:, 0]))
-        # assert target_Q.shape == (assert_batch_size, 1)
-
-        # print("Target Q: ",target_Q)
-        # If we're randomly sampling trajectories, we need to index based on the done signal
-
-        num_trajectories = len(state[:, 0])
-        for n in range(num_trajectories):
-            target_Q[n, 0] = reward[n, 0] + (self.discount * target_Q[n, 0]).detach()  # bellman equation
-        # @ask_steph
-        # Original
-        # for n in range(num_trajectories):
-        #     if state[n, 0]:  # NOT done
-        #         target_Q[n, 0] = reward[n, 0] + (self.discount * target_Q[n, 0]).detach()  # bellman equation
-        #     else:  # Final episode trajectory reward value
-        #         target_Q[n, 0] = reward[n, 0]
-
-        # print(target_Q.shape)
-        # print("target_Q: ",target_Q)
-        # assert target_Q.shape == (assert_batch_size, 1)
-
-        # print("Target action")
-        target_action = self.actor_target(next_state[:, -1])
-        # print(target_action.shape)
-        # print("target_action: ", target_action)
-        # assert target_action.shape == (assert_batch_size, 4)
-
-        # print("Target Critic Q value")
-        target_critic_val = self.critic_target(next_state[:, -1], target_action)  # shape: (self.batch_size, 1)
-        # print(target_critic_val.shape)
-        # print("target_critic_val: ",target_critic_val)
-        # assert target_Q.shape == (assert_batch_size, 1)
-
-        n_step_return = torch.zeros(num_timesteps_sampled).to(device)  # shape: (self.batch_size,)
-        # print("N step return before calculation (N=5)")
-        # print(n_step_return.shape)
-        # print("n_step_return: ", n_step_return)
-        # assert n_step_return.shape == (assert_batch_size,)
-
-        for i in range(self.n):
-            n_step_return += (self.discount ** i) * reward[:, i].squeeze(-1)
-
-        # print("N step return after calculation (N=5)")
-        # print(n_step_return.shape)
-        # print("n_step_return: ", n_step_return)
-        # assert n_step_return.shape == (assert_batch_size,)
-
-        # print("Target QN, N STEPS")
-        # this is the n step return with the added value fn estimation
-        target_QN = n_step_return + (self.discount ** self.n) * target_critic_val.squeeze(-1)
-        # print(target_QN.shape)
-        # print("target_QN: ",target_QN)
-        # assert target_QN.shape == (assert_batch_size,)
-        target_QN = target_QN.unsqueeze(dim=-1)
-        # print(target_QN.shape)
-        # print("target_QN: ", target_QN)
-        # assert target_QN.shape == (assert_batch_size, 1)
-
-        # print("Current Q")
-        # New implementation
-        current_Q = self.critic(state[:, 0], action[:, 0])
-        # print(current_Q.shape)
-        # print("current_Q: ", current_Q)
-        # assert current_Q.shape == (assert_batch_size, 1)
-
-        # print("CRITIC L1 Loss:")
-        # L_1 loss (Loss between current state, action and reward, next state, action)
-        critic_L1loss = F.mse_loss(current_Q, target_Q)
-        # print(critic_L1loss.shape)
-        # print("critic_L1loss: ", critic_L1loss)
-
-        # print("CRITIC LN Loss:")
-        # L_2 loss (Loss between current state, action and reward, n state, n action)
-        critic_LNloss = F.mse_loss(current_Q, target_QN)
-        # print(critic_LNloss.shape)
-        # print("critic_LNloss: ", critic_LNloss)
-
-        # print("CRITIC Loss (L1 loss + lambda * LN Loss):")
-        # Total critic loss
-        lambda_1 = 0.5  # hyperparameter to control n loss
-        critic_loss = critic_L1loss + lambda_1 * critic_LNloss
-        # print(critic_loss.shape)
-        # print("critic_loss: ", critic_loss)
-
-        # Optimize the critic
-        self.critic_optimizer.zero_grad()
-        critic_loss.backward()
-        self.critic_optimizer.step()
-
-        # Compute Behavior Cloning loss - state and action are from the expert
-        Lbc = 0
-        # If we are decaying the amount of expert experience, then decay the BC loss as well
-        if self.sampling_decay_rate != 0:
-            self.lambda_Lbc = self.current_expert_proportion
-        # Compute loss based on Mean Squared Error between the actor network's action and the expert's action
-        if expert_batch_size > 0:
-            # Expert state and expert action are sampled from the expert demonstrations (expert replay buffer)
-            Lbc = F.mse_loss(self.actor(expert_state), expert_action)
-        # print("self.lambda_Lbc: ", self.lambda_Lbc)
-
-        # Compute actor loss
-        actor_loss = -self.critic(state, self.actor(state)).mean() + self.lambda_Lbc * Lbc
-        # print("Actor loss: ")
-        # print(actor_loss.shape)
-        # print("actor_loss: ",actor_loss)
-
-        # Optimize the actor
-        self.actor_optimizer.zero_grad()
-        actor_loss.backward()
-        self.actor_optimizer.step()
-
-        if self.total_it % self.network_repl_freq == 0:
-            # Update the frozen target models
-            for param, target_param in zip(self.critic.parameters(), self.critic_target.parameters()):
-                target_param.data.copy_(self.tau * param.data + (1 - self.tau) * target_param.data)
-
-            for param, target_param in zip(self.actor.parameters(), self.actor_target.parameters()):
-                target_param.data.copy_(self.tau * param.data + (1 - self.tau) * target_param.data)
-
-        self.actor_loss = actor_loss.item()
-        self.critic_loss = critic_loss.item()
-        self.critic_L1loss = critic_L1loss.item()
-        self.critic_LNloss = critic_LNloss.item()
-
-        return actor_loss.item(), critic_loss.item(), critic_L1loss.item(), critic_LNloss.item()
-
-    def copy(self, policy_to_copy_from):
-        """ Copy input policy to be set to another policy instance
-		policy_to_copy_from: policy that will be copied from
-        """
-        # Copy the actor and critic networks
-        self.actor = copy.deepcopy(policy_to_copy_from.actor)
-        self.actor_target = copy.deepcopy(policy_to_copy_from.actor_target)
-        self.actor_optimizer = copy.deepcopy(policy_to_copy_from.actor_optimizer)
-
-        self.critic = copy.deepcopy(policy_to_copy_from.critic)
-        self.critic_target = copy.deepcopy(policy_to_copy_from.critic_target)
-        self.critic_optimizer = copy.deepcopy(policy_to_copy_from.critic_optimizer)
-
-        self.discount = policy_to_copy_from.discount
-        self.tau = policy_to_copy_from.tau
-        self.n = policy_to_copy_from.n
-        self.network_repl_freq = policy_to_copy_from.network_repl_freq
-        self.total_it = policy_to_copy_from.total_it
-        self.lambda_Lbc = policy_to_copy_from.lambda_Lbc
-        self.avg_evaluation_reward = policy_to_copy_from.avg_evaluation_reward
-
-        # Sample from the expert replay buffer, decaying the proportion expert-agent experience over time
-        self.initial_expert_proportion = policy_to_copy_from.initial_expert_proportion
-        self.current_expert_proportion = policy_to_copy_from.current_expert_proportion
-        self.sampling_decay_rate = policy_to_copy_from.sampling_decay_rate
-        self.sampling_decay_freq = policy_to_copy_from.sampling_decay_freq
-        self.batch_size = policy_to_copy_from.batch_size
-
-    def save(self, filename):
-        torch.save(self.critic.state_dict(), filename + "_critic")
-        torch.save(self.critic_target.state_dict(), filename + "_critic_target")
-        torch.save(self.critic_optimizer.state_dict(), filename + "_critic_optimizer")
-        torch.save(self.actor.state_dict(), filename + "_actor")
-        torch.save(self.actor_target.state_dict(), filename + "_actor_target")
-        torch.save(self.actor_optimizer.state_dict(), filename + "_actor_optimizer")
-        np.save(filename + "avg_evaluation_reward", np.array([self.avg_evaluation_reward]))
-
-    def load(self, filename):
-        self.critic.load_state_dict(torch.load(filename + "_critic", map_location=device))
-        self.critic_optimizer.load_state_dict(torch.load(filename + "_critic_optimizer", map_location=device))
-        self.actor.load_state_dict(torch.load(filename + "_actor", map_location=device))
-        self.actor_optimizer.load_state_dict(torch.load(filename + "_actor_optimizer", map_location=device))
-
-        self.critic_target = copy.deepcopy(self.critic)
-        self.actor_target = copy.deepcopy(self.actor)

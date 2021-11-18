@@ -11,7 +11,7 @@
 # See Code Design: Core functionality of simulator
 #   https://docs.google.com/document/d/1n8lx0HtgjiIuXMuVhB-bQtbvZuE114Cetnb8XVvn0yM/edit?usp=sharing
 #
-
+import numpy as np
 
 class StatsTrackerBase:
     def __init__(self, allowable_min, allowable_max):
@@ -113,6 +113,7 @@ class StatsTrackerArray(StatsTrackerBase):
 
     def set_value(self, val):
         """Wherever there's an equal/data, use this. It will check for allowable values and update the stats"""
+        # print("VAL", val)
         for i, v in enumerate(val):
             # print("Val: {}\nV: {}\nAllowable min: {} ".format(val, v, self.allowable_min[i]))
             if v < self.allowable_min[i]:
@@ -127,6 +128,93 @@ class StatsTrackerArray(StatsTrackerBase):
             self.avg_found[i] = self.avg_found[i] * (self.count / n) + v * (1.0 / n)
 
         self.count += 1
+        self.value = val
+
+
+class StatsTrackerArrayScaled(StatsTrackerBase):
+    """ Overrides just the methods that need to do array accesses"""
+    def __init__(self, allowable_min, allowable_max):
+        """ Dimension sizes will be found in allowable min/max - they should match
+        @param allowable_min - array
+        @param allowable_max - array"""
+        # Will call reset() and set the _found variables to be the right size
+        super(StatsTrackerArrayScaled, self).__init__(allowable_min, allowable_max)
+
+    def __str__(self):
+        return self.get_name() + \
+               " Min: [" + ",".join(["{0:0.2f}".format(v) for v in self.min_found]) + "]" + \
+               " Max: [" + ",".join(["{0:0.2f}".format(v) for v in self.max_found]) + "]" + \
+               " Avg: [" + ",".join(["{0:0.2f}".format(v) for v in self.avg_found]) + "]" + \
+               " N: {}".format(self.count)
+
+    def reset(self):
+        """ Have to set all of the elements in the array - indirectly checks that the arrays are same size"""
+        for min_v, max_v in zip(self.allowable_min, self.allowable_max):
+            if max_v < min_v:
+                raise ValueError("{0} max less than min".format(self))
+
+        self.min_found = [v * 1e6 for v in self.allowable_max]
+        self.max_found = [v * 1e-6 for v in self.allowable_min]
+        self.avg_found = [0 for _ in self.allowable_max]
+        self.count = 0
+
+    def set_value(self, val):
+        """Wherever there's an equal/data, use this. It will check for allowable values and update the stats"""
+        # print("VAL", val)
+        for i, v in enumerate(val):
+            # print("Val: {}\nV: {}\nAllowable min: {} ".format(val, v, self.allowable_min[i]))
+            if v < self.allowable_min[i]:
+                v = self.allowable_min[i]
+            if v > self.allowable_max[i]:
+                v = self.allowable_max[i]
+
+            try:
+                v = (v - self.allowable_min[i])/(self.allowable_max[i] - self.allowable_min[i])
+                if np.isnan(v):
+                    v = 0
+            except ZeroDivisionError:
+                v = 0
+            val[i] = v
+
+            self.min_found[i] = min(self.min_found[i], v)
+            self.max_found[i] = max(self.max_found[i], v)
+
+            n = self.count+1
+            self.avg_found[i] = self.avg_found[i] * (self.count / n) + v * (1.0 / n)
+
+        self.count += 1
+        self.value = val
+
+
+class StatsTrackerBaseScaled(StatsTrackerBase):
+    """ Overrides just the methods that need to do array accesses"""
+    def __init__(self, allowable_min, allowable_max):
+        """ Dimension sizes will be found in allowable min/max - they should match
+        @param allowable_min - array
+        @param allowable_max - array"""
+        # Will call reset() and set the _found variables to be the right size
+        super(StatsTrackerBaseScaled, self).__init__(allowable_min, allowable_max)
+
+    def set_value(self, val):
+        """Wherever there's an equal/data, use this. It will check for allowable values and update the stats"""
+        if val < self.allowable_min:
+            v = self.allowable_min
+        if val > self.allowable_max:
+            v = self.allowable_max
+
+        try:
+            val = (val - self.allowable_min) / (self.allowable_max - self.allowable_min)
+            if np.isnan(val):
+                val = 0
+        except ZeroDivisionError:
+            val = 0
+
+        self.min_found = min(self.min_found, val)
+        self.max_found = max(self.max_found, val)
+        n = self.count+1
+        self.avg_found = self.avg_found * (self.count / n) + val * (1.0 / n)
+        self.count = n
+
         self.value = val
 
 

@@ -7,6 +7,7 @@ Created on Sun Jul 11 13:59:44 2021
 
 import os
 import sys
+import numpy as np
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from mojograsp.simcore.datacollection.stats_tracker_base import *
 
@@ -17,11 +18,11 @@ class StateMetricBase:
     def __init__(self, data_structure):
         print('intializing with data strucure:', data_structure)
         try:
-            self.data = StatsTrackerArray(data_structure[0], data_structure[1])
+            self.data = StatsTrackerArrayScaled(data_structure[0], data_structure[1])
             print('stats tracker array initialized with min and max',
                   self.data.allowable_min, self.data.allowable_max)
         except TypeError:
-            self.data = StatsTrackerBase(data_structure[0], data_structure[1])
+            self.data = StatsTrackerBaseScaled(data_structure[0], data_structure[1])
             print('stats tracker base initialized with min and max',
                   self.data.allowable_min, self.data.allowable_max)
         except KeyError:
@@ -32,3 +33,6 @@ class StateMetricBase:
 
     def update(self, keys):
         pass
+
+    def norm_data(self, value):
+        return list(value) # /np.linalg.norm(value)

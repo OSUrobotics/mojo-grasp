@@ -101,7 +101,7 @@ class Environment(EnvironmentBase):
         return list(self.hand.joint_dict.values())
 
     def get_contact_info(self, joint_index):
-        return p.getContactPoints(self.objects.id, self.hand.id, linkIndexB=joint_index)
+        return p.getClosestPoints(self.objects.id, self.hand.id, distance=10, linkIndexB=joint_index)
 
     def set_obj_target_pose(self, direction):
         start_pose = self.objects.start_pos[self.objects.id]

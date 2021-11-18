@@ -19,8 +19,8 @@ if __name__ == '__main__':
               replay_episode_file=replay_buffer_episode_file)
 
     # setting camera
-    # p.resetDebugVisualizerCamera(cameraDistance=.02, cameraYaw=0, cameraPitch=-89.9999,
-    #                              cameraTargetPosition=[0, 0.1, 0.5])
+    p.resetDebugVisualizerCamera(cameraDistance=.02, cameraYaw=0, cameraPitch=-89.9999,
+                                 cameraTargetPosition=[0, 0.1, 0.5])
 
     # Instantiating sim objects
     hand_path = current_path+"/hand_generation/hand_models/2v2_nosensors/2v2_nosensors.urdf"

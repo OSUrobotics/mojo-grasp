@@ -6,6 +6,9 @@ from mojograsp.simcore.simmanager.record_timestep import RecordTimestep
 from mojograsp.simcore.simmanager.record_episode import RecordEpisode
 import csv
 import numpy as np
+import torch
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 @dataclass
@@ -36,7 +39,7 @@ class Timestep:
 
 
 class ReplayBuffer:
-    def __init__(self, episodes_file=None, buffer_size=1000):
+    def __init__(self, episodes_file=None, buffer_size=10000):
         '''Initializes episode file being used and the replay buffer structure'''
         self.episodes_file = episodes_file
         self.buffer_size = buffer_size
@@ -47,6 +50,10 @@ class ReplayBuffer:
         #creates our replay buffer from episodes_file
         if self.episodes_file:
             self.create_replay_buffer()
+        self.n_step_indices = []
+        self.n = 5
+        for num in range(self.buffer_size - self.n):
+            self.n_step_indices.append(np.arange(num, num + self.n))
          
     def create_replay_buffer(self):
         '''Creates replay buffer from the given episodes_file in the __init__. Reads csv file
@@ -191,7 +198,7 @@ class ReplayBuffer:
     def get_random_episode_sample(self, ceil, num_ep=1):
         """
         Samples entire episodes (in order of their timesteps) until they reach ceiling timestep value of that episode
-        :param ceil: Number of timesteps to subtract from final timestep (Where to stop adding timesteps to an episode)
+        :param ceil: Number of timesteps to subtract from final timestep (n-step)
         :param num_ep: Number of episodes to sample
         :return: episodes_list: A list of all timesteps in order of episodes sampled
         """
@@ -235,6 +242,46 @@ class ReplayBuffer:
         # if num_ep == 1:
         #     return episodes_list
         return all_eps
+
+    def sample_batch_nstep(self, batch_size):
+        """
+
+        :param batch_size:
+        :param n_step:
+        :return:
+        """
+        all_eps = []
+        if len(self.current_buffer) >= batch_size:
+            # get a list of random episode numbers to sample
+            episode_indices = []
+            state_arr, action_arr, next_state_arr, reward_arr = [], [], [], []
+            select_from_episodes = np.asarray(range(self.current_buffer[0].episode, self.current_buffer[-1].episode))
+            while len(episode_indices) < batch_size:
+                ep_state, ep_action, ep_next_state, ep_reward = [], [], [], []
+                rand_num = np.random.choice(select_from_episodes, replace=False)
+                for all_ts in self.current_buffer:
+                    if rand_num == all_ts.episode and 'move' in all_ts.phase:
+                        ep_state.append(np.asarray(all_ts.current_state))
+                        ep_action.append(np.asarray(all_ts.action))
+                        ep_next_state.append(np.asarray(all_ts.next_state))
+                        ep_reward.append(np.asarray(all_ts.reward))
+                    if all_ts.episode > rand_num:
+                        break
+
+                if not len(ep_state):
+                    continue
+                temp_state, temp_action, temp_next_state, temp_reward = np.asarray(ep_state), np.asarray(ep_action), np.asarray(ep_next_state), np.asarray(ep_reward)
+
+                traj_arr = self.n_step_indices[:(len(temp_reward) - self.n)]
+                for row in traj_arr:
+                    state_arr.append(temp_state[row])
+                    action_arr.append(temp_action[row])
+                    next_state_arr.append(temp_next_state[row])
+                    reward_arr.append(temp_reward[row])
+                episode_indices.append(rand_num)
+
+        return (torch.FloatTensor(state_arr).to(device), torch.FloatTensor(action_arr).to(device),
+                torch.FloatTensor(next_state_arr).to(device), torch.FloatTensor(reward_arr).to(device))
 
     def get_recent_timestep_sample(self, num_timesteps):
         '''Returns a list of n timesteps from most recently added timesteps
