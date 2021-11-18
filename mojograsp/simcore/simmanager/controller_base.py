@@ -290,7 +290,8 @@ class Actor(nn.Module):
         # print("State Actor: {}\n{}".format(state.shape, state))
         a = F.relu(self.l1(state))
         a = F.relu(self.l2(a))
-        return self.max_action * torch.sigmoid(self.l3(a))
+        # return self.max_action * torch.sigmoid(self.l3(a))
+        return self.max_action * torch.tanh(self.l3(a))
 
 
 class Critic(nn.Module):
@@ -315,7 +316,7 @@ class Critic(nn.Module):
 
 
 class DDPGfD(ControllerBase):
-    def __init__(self, state_path=None, state_dim=35, action_dim=4, max_action=2, n=5, discount=0.995, tau=0.0005, batch_size=10,
+    def __init__(self, state_path=None, state_dim=31, action_dim=4, max_action=1.57, n=5, discount=0.995, tau=0.0005, batch_size=10,
                  expert_sampling_proportion=0.7):
         super().__init__(state_path)
         self.dir = 'c'
