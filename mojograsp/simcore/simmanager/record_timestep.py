@@ -34,7 +34,7 @@ class RecordTimestep():
         self.phase = phase.name
         self.data_path = data_path+'/timesteps/'
         self.data = OrderedDict()
-        self.get_full_timestep()
+        self.save_full_timestep()
 
     def get_state_as_arr(self):
         """Method to return the state data as a single list
@@ -56,14 +56,17 @@ class RecordTimestep():
             reward = None
         return [reward]
 
-    def get_full_timestep(self):
+    def save_full_timestep(self):
         """Method to return all stored data as one dictionary of lists"""
-
         self.data['phase'] = self.phase
         self.data['state'] = self.get_state_as_arr()
         self.data['action'] = self.get_action_as_arr()
         self.data['reward'] = self.get_reward_as_arr()
         self.data.update(self.times)
+        # print("REWARD: ", self.data['reward'])# return self.data
+
+    def get_full_timestep(self):
+        """Method to return all stored data as one dictionary of lists"""
         return self.data
 
     def save_timestep_as_csv(self, file_name=None, header=False, episode_number=0):
@@ -75,7 +78,6 @@ class RecordTimestep():
             file_name = self.data_path + 'tstep_' + str(self.times['timestep']) +\
             '_wall_time_' + time.strftime("%m-%d-%y %H:%M:%S", time.localtime(self.times['wall_time'])) + '.csv'
 
-        # data = self.get_full_timestep()
         header_text = ['Episode:'+str(episode_number),'Phase', 'WallTime', 'SimTime', 'TimeStep', 
                   'State:'+str(len(self.data['state'])), 'Action:'+str(len(self.data['action'])),
                   'Reward:'+str(len(self.data['reward']))]
