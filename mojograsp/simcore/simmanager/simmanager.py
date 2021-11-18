@@ -110,8 +110,8 @@ class SimManagerPybullet(SimManagerBase):
         """
         Physics server setup.
         """
-        # self.physics_client = p.connect(p.DIRECT)
-        self.physics_client = p.connect(p.GUI)
+        self.physics_client = p.connect(p.DIRECT)
+        # self.physics_client = p.connect(p.GUI)
         p.setAdditionalSearchPath(pybullet_data.getDataPath())
         p.setGravity(0, 0, -10)
         self.plane_id = p.loadURDF("plane.urdf")
@@ -152,7 +152,7 @@ class SimManagerPybullet(SimManagerBase):
             self.episode_configuration.setup()
             self.phase_manager.exit_flag = False
             self.phase_manager.start_phases()
-            record_episode = RecordEpisode(identifier='cube_rl', data_path=self.data_path)
+            record_episode = RecordEpisode(identifier='cube', data_path=self.data_path)
 
             #for every phase in the dictionary we step until the exit condition is met
             while self.phase_manager.exit_flag == False:
@@ -189,19 +189,19 @@ class SimManagerPybullet(SimManagerBase):
                     break
 
             # print("Episode Reward: {}".format(reward))
-            # if not (i % 100):
-            #     print(i)
+            if not (i % 100):
+                print(i)
             # if not (i % 2000):
             #     training_phase.controller.save('saved_weights')
             # self.replay_agent.add_episode(record_episode, i)
 
-            # # self.replay_expert.add_episode(record_episode, i)
+            self.replay_expert.add_episode(record_episode, i)
 
-            # record_episode.save_episode_as_csv(episode_number=i)
+            record_episode.save_episode_as_csv(episode_number=i)
             #TODO needs to be in episode class instead of here
-        # print("Saving replay buffer...")
-        # # self.replay_expert.save_replay_buffer('expert_replay_{}'.format(i))
+        print("Saving replay buffer...")
+        self.replay_expert.save_replay_buffer('expert_replay_{}'.format(i))
         # self.replay_agent.save_replay_buffer('agent_replay_{}'.format(i))
         # print("Saving weights...")
         # training_phase.controller.save('saved_weights')
-        # print("Done!")
+        print("Done!")
