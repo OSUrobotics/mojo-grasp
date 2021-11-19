@@ -33,6 +33,7 @@ class Reward(reward_base.RewardBase):
         contact_points_info = self.contact_state.update()
 
         for i in contact_points_info:
+            # i is in mm, converting to mts will make exponential extremely sensitive, which is what we want
             contact_reward += abs(1000*i)
         contact_reward = np.exp(contact_reward)
         # print("CONTACT INFO: {}\t Contact Reward: {}".format(contact_points_info, 1 * contact_reward))
