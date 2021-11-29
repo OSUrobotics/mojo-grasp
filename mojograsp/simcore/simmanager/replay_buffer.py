@@ -76,9 +76,16 @@ class ReplayBuffer:
                         #get state, action and reward values from row and cast to floats
                         current_state = list(map(float,row[4:num_state_vars+4]))
                         action = list(map(float,row[num_state_vars+4:num_action_vars+num_state_vars+4]))
+                        # print("State:", current_state)
+                        # print("Ac", action)
+                        # current_state = list(map(float,row[4:num_state_vars]))
+                        # action = list(map(float,row[num_state_vars:num_action_vars+num_state_vars]))
                         reward = None
                         if row[-1] != "":
-                            reward = float(row[-1])
+                            try:
+                                reward = float(row[-1])
+                            except ValueError:
+                                reward = float(row[-1].strip('][').split(',')[0])
                         #fill in previous timesteps next state based on the new timestep current state
                         if len(self.current_buffer) >= 1:
                             self.current_buffer[-1].next_state = current_state

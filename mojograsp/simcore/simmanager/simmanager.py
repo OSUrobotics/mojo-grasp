@@ -41,7 +41,7 @@ class SimManagerBase:
         # self.replay_expert = ReplayBuffer(episodes_file=replay_episode_file)
         # self.replay_agent = ReplayBuffer()
         #
-        # # self.replay_expert = ReplayBuffer(episodes_file=replay_episode_file, buffer_size=2000)
+        # self.replay_expert = ReplayBuffer(episodes_file=replay_episode_file, buffer_size=5000)
 
         self.data_path = data_directory_path
         self.create_data_directorys()
@@ -163,11 +163,10 @@ class SimManagerPybullet(SimManagerBase):
                 #while exit condition is not met call step
                 # print("CURRENT PHASE: {}".format(self.phase_manager.current_phase.name))
                 while not done:
-
                     self.phase_manager.current_phase.curr_action = self.phase_manager.current_phase.controller.select_action()
                     self.episode_configuration.episode_pre_step()
                     observation, reward, _, info = self.env.step(self.phase_manager.current_phase)
-                    print("Timestep Reward: {}\n".format(reward))
+                    print("Timestep Reward: {} {}\n".format(reward, self.env.curr_dir))
                     self.episode_configuration.episode_post_step()
                     done = self.phase_manager.current_phase.phase_exit_condition(phase_step_count)
                     phase_step_count += 1
@@ -181,16 +180,19 @@ class SimManagerPybullet(SimManagerBase):
                 if self.phase_manager.exit_flag is True:
                     # Training of network (Everything inside if statement. Comment while evaluating)
                     # if i > 20:
-                        # # print("Starting Training ", i)
-                        # # training_phase.controller.train(training_phase.terminal_step, expert_replay_buffer=self.replay_expert,
-                        # #                                replay_buffer=self.replay_agent)
-                        # training_phase.controller.train_batch(max_episode_num=training_phase.terminal_step, episode_num=i, update_count=1, expert_replay_buffer=self.replay_expert,
-                        #                                       replay_buffer=self.replay_agent)
+                    #     # # print("Starting Training ", i)
+                    #     # # training_phase.controller.train(training_phase.terminal_step, expert_replay_buffer=self.replay_expert,
+                    #     # #                                replay_buffer=self.replay_agent)
+                    #     training_phase.controller.train_batch(max_episode_num=training_phase.terminal_step,
+                    #                                           episode_num=i, update_count=1,
+                    #                                           expert_replay_buffer=self.replay_expert,
+                    #                                           replay_buffer=self.replay_agent)
                     break
 
             # print("Episode Reward: {}".format(reward))
             # if not (i % 100):
-            print(i)
+            if not (i % 1):
+                print(i)
             # if not (i % 2000):
             #     training_phase.controller.save('saved_weights')
             # self.replay_agent.add_episode(record_episode, i)

@@ -2,14 +2,20 @@
 import time
 import pybullet as p
 from mojograsp.simcore.simmanager.environment_base import EnvironmentBase
+import random
 
 
 class Environment(EnvironmentBase):
     """
     This class is used to reset the simulator's environment, execute actions, and step the simulator ahead
     """
-
-    def __init__(self, action_class=None, sleep=1. / 240., steps=1, hand=None, objects=None):
+    """
+    Environment reset will set the environment variable direction by randomly selecting between directions 
+    [g, c, b, h, a], sub [1, 2, 3], trial [1, 2, 3, 4, 5]
+    Phase 3 -> Expert/ RL Controller will get direction from environment variable
+    """
+    def __init__(self, action_class=None, sleep=1. / 240., steps=1, hand=None, objects=None, directions=None,
+                 subjects=None, trials=None):
         super().__init__(action_class)
         self.sim_sleep = sleep
         self.sim_step = steps
@@ -17,6 +23,11 @@ class Environment(EnvironmentBase):
         self.objects = objects
         self.curr_timestep = 0
         self.curr_simstep = 0
+        self.directions = directions
+        self.subjects = subjects
+        self.trials = trials
+        self.curr_dir, self.curr_sub, self.curr_trial = None, None, None
+
         # Dynamics
         roll_fric = 0.01
         # object
@@ -38,6 +49,12 @@ class Environment(EnvironmentBase):
         self.objects.set_curr_pose([0.00, 0.17, 0.0], self.objects.start_pos[self.objects.id][1])
         self.curr_timestep = 0
         self.curr_simstep = 0
+        self.curr_dir = random.choice(self.directions)
+        self.curr_sub = random.choice(self.subjects)
+        self.curr_trial = random.choice(self.trials)
+        # print(self.curr_dir, self.curr_sub, self.curr_trial)
+        self.set_obj_target_pose(self.curr_dir)
+
 
     def step(self, phase):
         self.curr_simstep = 0
@@ -108,36 +125,58 @@ class Environment(EnvironmentBase):
         target_orn = start_pose[1]
         if direction == 'a':
             change_in_x, change_in_y = 0, 0.035
-            angle_to_horizontal = -90
         elif direction == 'b':
             change_in_x, change_in_y = 0.0247, 0.0247
-            angle_to_horizontal = -45
         elif direction == 'c':
             change_in_x, change_in_y = 0.035, 0
-            angle_to_horizontal = 0
         elif direction == 'd':
             change_in_x, change_in_y = 0.0247, -0.0247
-            angle_to_horizontal = 45
         elif direction == 'e':
             change_in_x, change_in_y = 0, -0.035
-            angle_to_horizontal = 90
         elif direction == 'f':
             change_in_x, change_in_y = -0.0247, -0.0247
-            angle_to_horizontal = 135
         elif direction == 'g':
             change_in_x, change_in_y = -0.035, 0
-            angle_to_horizontal = 180
         elif direction == 'h':
             change_in_x, change_in_y = -0.0247, 0.0247
-            angle_to_horizontal = -135
+        elif direction == 'a_b':
+            change_in_x, change_in_y = 0.013, 0.032
+        elif direction == 'b_c':
+            change_in_x, change_in_y = 0.0323, 0.0134
         else:
             print("Wrong Direction!")
             raise KeyError
         target_pos = (start_pose[0][0] + change_in_x, start_pose[0][1] + change_in_y, start_pose[0][2])
         self.objects.target_pose = target_pos, target_orn
-        self.objects.angle_to_horizontal = angle_to_horizontal
+        self.objects.angle_to_horizontal = self.get_dir_angle()
 
     def get_obj_target_pose(self):
         return self.objects.target_pose
+
+    def get_dir_angle(self):
+        if self.curr_dir == 'a':
+            angle = -1.5708
+        elif self.curr_dir == 'b':
+            angle = -0.7854
+        elif self.curr_dir == 'c':
+            angle = 0.0
+        elif self.curr_dir == 'd':
+            angle = 0.7854
+        elif self.curr_dir == 'e':
+            angle = 1.57
+        elif self.curr_dir == 'f':
+            angle = 2.3562
+        elif self.curr_dir == 'g':
+            angle = 3.14
+        elif self.curr_dir == 'h':
+            angle = -2.3562
+        elif self.curr_dir == 'a_b':
+            angle = -1.1781
+        elif self.curr_dir == 'b_c':
+            angle = -0.3926
+        else:
+            print("Wrong Direction!")
+            raise KeyError
+        return [angle]
 
 

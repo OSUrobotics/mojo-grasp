@@ -28,6 +28,7 @@ class MoveRL(mojograsp.phase.Phase):
         # print("{} executing".format(self.name))
         self.controller.iterator = 0
         self.controller.data_over = False
+        self.controller.dir = mojograsp.phase.Phase._sim.curr_dir
 
     def execute_action(self, action):
         p.setJointMotorControlArray(self._sim.hand.id, jointIndices=self._sim.hand.actuation.get_joint_index_numbers(),

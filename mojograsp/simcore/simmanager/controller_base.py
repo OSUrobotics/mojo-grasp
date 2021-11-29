@@ -90,15 +90,16 @@ class CloseController(ControllerBase):
 class MoveController(ControllerBase):
     def __init__(self, state_path):
         super().__init__(state_path)
-        self.dir = 'c'
-        ControllerBase._sim.set_obj_target_pose(self.dir)
-        self.filename = "/Users/asar/PycharmProjects/InHand-Manipulation/Human Study Data/" \
-                        "asterisk_test_data_for_anjali/trial_paths/not_normalized/sub1_2v2_{}_n_1.csv".format(self.dir)
-        ControllerBase._sim.set_obj_target_pose(self.dir)
-        self.object_poses_expert = self.extract_data_from_file()
-        self.iterator = 0
-        self.data_len = len(self.object_poses_expert)
-        self.data_over = False
+        # self.dir = ControllerBase._sim.curr_dir
+        # self.sub = ControllerBase._sim.curr_sub
+        # self.trial = ControllerBase._sim.curr_trial
+        # self.filename = "/Users/asar/PycharmProjects/InHand-Manipulation/Human Study Data/" \
+        #                 "asterisk_test_data_for_anjali/trial_paths/not_normalized/sub{}_2v2_{}_n_{}.csv".format(self.sub, self.dir, self.trial)
+        # ControllerBase._sim.set_obj_target_pose(self.dir)
+        # self.object_poses_expert = self.extract_data_from_file()
+        # self.iterator = 0
+        # self.data_len = len(self.object_poses_expert)
+        # self.data_over = False
 
     def extract_data_from_file(self):
         """
@@ -305,22 +306,20 @@ class Critic(nn.Module):
         self.l3 = nn.Linear(300, 1)
         torch.nn.init.kaiming_uniform_(self.l3.weight, a=0, mode='fan_in', nonlinearity='leaky_relu')
 
-        self.max_q_value = 50
+        self.max_q_value = 40
 
     def forward(self, state, action):
         q = F.relu(self.l1(torch.cat([state, action], -1)))
         q = F.relu(self.l2(q))
         # print("Q Critic: {}".format(q))
-        q = torch.sigmoid(self.l3(q))
+        q = torch.tanh(self.l3(q))
         return self.max_q_value * q
 
 
 class DDPGfD(ControllerBase):
-    def __init__(self, state_path=None, state_dim=31, action_dim=4, max_action=1.57, n=5, discount=0.995, tau=0.0005, batch_size=10,
+    def __init__(self, state_path=None, state_dim=32, action_dim=4, max_action=1.57, n=5, discount=0.995, tau=0.0005, batch_size=10,
                  expert_sampling_proportion=0.7):
         super().__init__(state_path)
-        self.dir = 'c'
-        ControllerBase._sim.set_obj_target_pose(self.dir)
         self.state_dim = state_dim
         self.action_dim = action_dim
         self.actor = Actor(self.state_dim, self.action_dim, max_action).to(device)

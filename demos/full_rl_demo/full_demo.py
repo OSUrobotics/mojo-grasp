@@ -14,8 +14,8 @@ if __name__ == '__main__':
     # setting up simmanager
     current_path = str(pathlib.Path().resolve())
     #ENTER REPLAY BUFFER FILE PATH HERE, ex: cube_all_episodes.csv in data directory
-    replay_buffer_episode_file = None # current_path + "/data/cube_all_episodes.csv"
-    manager = mojograsp.simmanager.SimManagerPybullet(num_episodes=10, rl=False, data_directory_path=current_path+"/data",
+    replay_buffer_episode_file = None #current_path + "/data/cube_all_episodes.csv"
+    manager = mojograsp.simmanager.SimManagerPybullet(num_episodes=10000, rl=False, data_directory_path=current_path+"/data",
               replay_episode_file=replay_buffer_episode_file)
 
     # setting camera
@@ -29,7 +29,10 @@ if __name__ == '__main__':
     cube = mojograsp.objectbase.ObjectBase(object_path, fixed=False, base_pos=[0.0, 0.17, 0])
 
     # Instantiating environment
-    sim_env = mojograsp.environment.Environment(hand=hand, objects=cube, steps=2)
+    sim_env = mojograsp.environment.Environment(hand=hand, objects=cube, steps=2, directions=['b_c', 'b',  'c'],
+                                                subjects=['sub1', 'sub2', 'sub3'], trials=[1, 2, 3, 4, 5])
+    # sim_env = mojograsp.environment.Environment(hand=hand, objects=cube, steps=2, directions=['b', 'c', 'g', 'h', 'a'],
+    #                                             subjects=['sub1', 'sub2', 'sub3'], trials=[1, 2, 3, 4, 5])
 
     # Adding environment
     manager.add_env(sim_env)

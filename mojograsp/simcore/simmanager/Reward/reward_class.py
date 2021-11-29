@@ -50,8 +50,8 @@ class Reward(reward_base.RewardBase):
         target_pos_world, target_orn_world = reward_base.RewardBase._sim.objects.target_pose
         target_pose = reward_base.RewardBase._sim.objects.get_pose_in_start_pose(target_pos_world, target_orn_world)
 
-        rotated_x, rotated_y = self.rotate_points(x=curr_points[0][0], y=curr_points[0][1], ang=angle)
-        rot_target_x, rot_target_y = self.rotate_points(x=target_pose[0][0], y=target_pose[0][1], ang=angle)
+        rotated_x, rotated_y = self.rotate_points(x=curr_points[0][0], y=curr_points[0][1], rad=angle)
+        rot_target_x, rot_target_y = self.rotate_points(x=target_pose[0][0], y=target_pose[0][1], rad=angle)
 
         # print("\nOld x: {}, New x: {}, target_x: {}".format(curr_points[0][0], rotated_x, rot_target_x))
         # print("Old y: {}, New y: {}, target_y: {}\n".format(curr_points[0][1], rotated_y, rot_target_y))
@@ -63,8 +63,7 @@ class Reward(reward_base.RewardBase):
         # print("\nTARGET REWARD: {} X: {} Y: {}\n".format(target_reward, reward_x, reward_y))
         return target_reward
 
-    def rotate_points(self, x, y, ang):
-        rad = np.radians(ang)
+    def rotate_points(self, x, y, rad):
         new_x = x * np.cos(rad) - y * np.sin(rad)
         new_y = y * np.cos(rad) + x * np.sin(rad)
         return new_x, new_y

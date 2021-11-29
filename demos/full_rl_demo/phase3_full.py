@@ -24,7 +24,15 @@ class MoveHand(mojograsp.phase.Phase):
     def setup(self):
         # print("{} setup".format(self.name))
         # print("{} executing".format(self.name))
+        self.controller.dir = mojograsp.phase.Phase._sim.curr_dir
+        self.controller.sub = mojograsp.phase.Phase._sim.curr_sub
+        self.controller.trial = mojograsp.phase.Phase._sim.curr_trial
+        self.controller.filename = "/Users/asar/PycharmProjects/InHand-Manipulation/Human Study Data/" \
+                        "asterisk_test_data_for_anjali/trial_paths/not_normalized/{}_2v2_{}_n_{}.csv".format(self.controller.sub, self.controller.dir, self.controller.trial)
+        mojograsp.phase.Phase._sim.set_obj_target_pose(self.controller.dir)
+        self.controller.object_poses_expert = self.controller.extract_data_from_file()
         self.controller.iterator = 0
+        self.controller.data_len = len(self.controller.object_poses_expert)
         self.controller.data_over = False
 
     def execute_action(self, action):

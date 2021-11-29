@@ -50,11 +50,16 @@ class StateMetricPyBullet(StateMetricBase):
 
 class StateMetricAngle(StateMetricPyBullet):
     def update(self, keys):
-        joint_index = self.get_index_from_keys(keys)
-        curr_joint_angles = StateMetricBase._sim.get_hand_curr_joint_angles([joint_index])
-        # print("CURR JOINT ANGLES: {}".format(curr_joint_angles))
-        curr_joint_angles = self.norm_data(curr_joint_angles)
-        self.data.set_value(curr_joint_angles)
+        if "TargetDir" in keys:
+            dir_from_horizontal = StateMetricBase._sim.get_dir_angle()
+            dir_from_horizontal = self.norm_data(dir_from_horizontal)
+            self.data.set_value(dir_from_horizontal)
+        else:
+            joint_index = self.get_index_from_keys(keys)
+            curr_joint_angles = StateMetricBase._sim.get_hand_curr_joint_angles([joint_index])
+            # print("CURR JOINT ANGLES: {}".format(curr_joint_angles))
+            curr_joint_angles = self.norm_data(curr_joint_angles)
+            self.data.set_value(curr_joint_angles)
 
 
 class StateMetricPosition(StateMetricPyBullet):
