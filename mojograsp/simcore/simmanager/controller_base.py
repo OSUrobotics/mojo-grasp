@@ -90,16 +90,6 @@ class CloseController(ControllerBase):
 class MoveController(ControllerBase):
     def __init__(self, state_path):
         super().__init__(state_path)
-        # self.dir = ControllerBase._sim.curr_dir
-        # self.sub = ControllerBase._sim.curr_sub
-        # self.trial = ControllerBase._sim.curr_trial
-        # self.filename = "/Users/asar/PycharmProjects/InHand-Manipulation/Human Study Data/" \
-        #                 "asterisk_test_data_for_anjali/trial_paths/not_normalized/sub{}_2v2_{}_n_{}.csv".format(self.sub, self.dir, self.trial)
-        # ControllerBase._sim.set_obj_target_pose(self.dir)
-        # self.object_poses_expert = self.extract_data_from_file()
-        # self.iterator = 0
-        # self.data_len = len(self.object_poses_expert)
-        # self.data_over = False
 
     def extract_data_from_file(self):
         """
@@ -241,7 +231,6 @@ class MoveController(ControllerBase):
 
         return [T_origin_new_cp_pos, T_origin_new_cp_orn, T_origin_new_link_pos, T_origin_new_link_orn,
          T_origin_nextpose_cube]
-        # return T_origin_new_link_pos
 
     def select_action(self):
         """
@@ -256,9 +245,6 @@ class MoveController(ControllerBase):
         action = p.calculateInverseKinematics2(bodyUniqueId=self._sim.hand.id,
                                                endEffectorLinkIndices=self._sim.hand.end_effector_indices,
                                                targetPositions=next_contact_points)
-        # if next_info[0] is not None:
-        #     Markers.Marker().set_marker_pose(next_info[0][0])
-        #     Markers.Marker().set_marker_pose(next_info[0][1])
         return action
 
 

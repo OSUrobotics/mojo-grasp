@@ -27,8 +27,16 @@ class MoveHand(mojograsp.phase.Phase):
         self.controller.dir = mojograsp.phase.Phase._sim.curr_dir
         self.controller.sub = mojograsp.phase.Phase._sim.curr_sub
         self.controller.trial = mojograsp.phase.Phase._sim.curr_trial
-        self.controller.filename = "/Users/asar/PycharmProjects/InHand-Manipulation/Human Study Data/" \
-                        "asterisk_test_data_for_anjali/trial_paths/not_normalized/{}_2v2_{}_n_{}.csv".format(self.controller.sub, self.controller.dir, self.controller.trial)
+        self.controller.trial_type = mojograsp.phase.Phase._sim.curr_trial_type
+        if self.controller.trial_type == 'human':
+            self.controller.filename = "/Users/asar/PycharmProjects/InHand-Manipulation/Human Study Data/" \
+                            "asterisk_test_data_for_anjali/trial_paths/not_normalized/{}_2v2_{}_n_{}.csv".format(self.controller.sub, self.controller.dir, self.controller.trial)
+        elif self.controller.trial_type == 'expected':
+            self.controller.filename = "/Users/asar/PycharmProjects/InHand-Manipulation/Human Study Data/" \
+                                       "expected_data/exp_2v2_{}_n_1.csv".format(self.controller.dir)
+        else:
+            print("Wrong controller trial type!!")
+            raise ValueError
         mojograsp.phase.Phase._sim.set_obj_target_pose(self.controller.dir)
         self.controller.object_poses_expert = self.controller.extract_data_from_file()
         self.controller.iterator = 0

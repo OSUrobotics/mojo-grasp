@@ -13,7 +13,7 @@ class Phase:
 		print("Pre step")
 
 	def post_step(self):
-		print("Post step")
+		None
 
 	def select_action(self):
 		print("Selecting action")

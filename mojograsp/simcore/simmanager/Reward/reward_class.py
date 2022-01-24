@@ -36,12 +36,11 @@ class Reward(reward_base.RewardBase):
             # i is in mm, converting to mts will make exponential extremely sensitive, which is what we want
             contact_reward += abs(1000*i)
         contact_reward = np.exp(contact_reward)
-        # print("CONTACT INFO: {}\t Contact Reward: {}".format(contact_points_info, 1 * contact_reward))
         if contact_reward > 1000:
             contact_reward = -100
         else:
             contact_reward = - contact_reward/100
-
+        # print("CONTACT INFO: {}\t Contact Reward: {}".format(contact_points_info, 1 * contact_reward))
         return contact_reward
 
     def get_target_reward(self):
@@ -53,14 +52,24 @@ class Reward(reward_base.RewardBase):
         rotated_x, rotated_y = self.rotate_points(x=curr_points[0][0], y=curr_points[0][1], rad=angle)
         rot_target_x, rot_target_y = self.rotate_points(x=target_pose[0][0], y=target_pose[0][1], rad=angle)
 
-        # print("\nOld x: {}, New x: {}, target_x: {}".format(curr_points[0][0], rotated_x, rot_target_x))
-        # print("Old y: {}, New y: {}, target_y: {}\n".format(curr_points[0][1], rotated_y, rot_target_y))
+        # print("\nDir: {},  Old x: {}, New x: {}, Old target_x: {}, New target_x: {}, Old y: {}, New y: {}, Old target_y: {}, "
+        #       "New target_y: {}\n".format(self._sim.curr_dir, curr_points[0][0], rotated_x, target_pose[0][0], rot_target_x,
+        #                                   curr_points[0][1], rotated_y, target_pose[0][1], rot_target_y))
 
         reward_x = self.get_reward_in_x(rotated_x, rot_target_x)
         reward_y = self.get_reward_in_y(rotated_y, rot_target_y)
 
         target_reward = -2 * reward_y + reward_x
-        # print("\nTARGET REWARD: {} X: {} Y: {}\n".format(target_reward, reward_x, reward_y))
+        # target_reward = -0.5*reward_y + reward_x
+
+        # prev_x, prev_y, prev_angle = 0.02, -0.02, 0.7854
+        # trial_x, trial_y = self.rotate_points(prev_x, prev_y, prev_angle)
+        # print("\nX: {} Y: {}\n".format(trial_x, trial_y))
+        #
+        # prev_x, prev_y, prev_angle = 0.02, 0.04, 0.7854
+        # trial_x, trial_y = self.rotate_points(prev_x, prev_y, prev_angle)
+        # print("\nX: {} Y: {}\nDONE \n".format(trial_x, trial_y))
+
         return target_reward
 
     def rotate_points(self, x, y, rad):

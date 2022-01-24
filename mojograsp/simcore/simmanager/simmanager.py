@@ -14,12 +14,14 @@ from mojograsp.simcore.simmanager.Action.action_class import Action
 from mojograsp.simcore.simmanager.record_episode import RecordEpisode
 from mojograsp.simcore.simmanager.record_timestep import RecordTimestep
 from mojograsp.simcore.simmanager.replay_buffer import ReplayBuffer
+from mojograsp.simcore.simmanager.user_functions_base import UserFunctionsBase
+
 
 
 class SimManagerBase:
     # TODO: fill in with relevant classes
     def __init__(self, num_episodes=1, sim_timestep=(1. / 240.), episode_timestep_length=1,
-                 episode_configuration=None, rl=False, data_directory_path=None, replay_episode_file=None):
+                 episode_configuration=None, rl=False, data_directory_path=None, replay_episode_file=None, agent_replay=True, user_func=None):
         # initializes phase dictionary and other variables we will need
         self.current_phase = None
         self.starting_phase = None
@@ -37,21 +39,28 @@ class SimManagerBase:
         self.episode_timestep_length = episode_timestep_length  # TODO: TimeParam class goes here I think
         self.sim_timestep = sim_timestep
 
+        ###############!!!!!!!!!###############
         #replay buffer
         # self.replay_expert = ReplayBuffer(episodes_file=replay_episode_file)
-        # self.replay_agent = ReplayBuffer()
-        #
-        # self.replay_expert = ReplayBuffer(episodes_file=replay_episode_file, buffer_size=5000)
+        if agent_replay:
+            self.replay_agent = ReplayBuffer(buffer_size=20000)
+        else:
+            self.replay_agent = None
 
+        self.replay_expert = ReplayBuffer(episodes_file=replay_episode_file, buffer_size=5000)
+        ###############!!!!!!!!!###############
         self.data_path = data_directory_path
         self.create_data_directorys()
-
 
         self.phase_manager = phasemanager.PhaseManager()
 
         self.state_space = None
         self.reward_space = None
         # physics server setup, in the future needs arguments
+        if user_func is None:
+            self.user_func = UserFunctionsBase()
+        else:
+            self.user_func = user_func
         self.setup()
 
     def setup(self):
@@ -99,11 +108,11 @@ class SimManagerBase:
 class SimManagerPybullet(SimManagerBase):
 
     def __init__(self, num_episodes=1, sim_timestep=(1. / 240.), episode_timestep_length=1, episode_configuration=None,
-                 rl=False, data_directory_path=None, replay_episode_file=None):
+                 rl=False, data_directory_path=None, replay_episode_file=None, agent_replay=True, user_func=None):
         super(SimManagerPybullet, self).__init__(num_episodes=num_episodes, sim_timestep=sim_timestep,
                                                  episode_timestep_length=episode_timestep_length,
                                                  episode_configuration=episode_configuration, rl=rl, data_directory_path=data_directory_path,
-                                                 replay_episode_file=replay_episode_file)
+                                                 replay_episode_file=replay_episode_file, agent_replay=agent_replay, user_func=user_func)
 
     # physics server setup, TODO: in the future needs arguments
     def setup(self):
@@ -141,10 +150,9 @@ class SimManagerPybullet(SimManagerBase):
 
     def run(self):
         print("RUNNING PHASES: {}".format(self.phase_manager.phase_dict))
-        training_phase = self.phase_manager.phase_dict['move rl']
-        # # Evaluation of trained policy: (Uncomment below line)
+        # User Function 1
+        self.user_func.pre_run(self.phase_manager.phase_dict)
 
-        training_phase.controller.load('saved_weights')
         #resets episode settings, runs episode setup and sets the current phase
         for i in range(self.num_episodes):
             self.env.reset()
@@ -152,13 +160,15 @@ class SimManagerPybullet(SimManagerBase):
             self.episode_configuration.setup()
             self.phase_manager.exit_flag = False
             self.phase_manager.start_phases()
-            # record_episode = RecordEpisode(identifier='cube', data_path=self.data_path)
+            record_episode = RecordEpisode(identifier='cube', data_path=self.data_path)
+            self.user_func.pre_phaseloop()
 
             #for every phase in the dictionary we step until the exit condition is met
             while self.phase_manager.exit_flag == False:
                 self.phase_manager.setup_phase()
                 phase_step_count = 0
                 done = False
+                self.user_func.pre_phase()
 
                 #while exit condition is not met call step
                 # print("CURRENT PHASE: {}".format(self.phase_manager.current_phase.name))
@@ -166,45 +176,43 @@ class SimManagerPybullet(SimManagerBase):
                     self.phase_manager.current_phase.curr_action = self.phase_manager.current_phase.controller.select_action()
                     self.episode_configuration.episode_pre_step()
                     observation, reward, _, info = self.env.step(self.phase_manager.current_phase)
-                    print("Timestep Reward: {} {}\n".format(reward, self.env.curr_dir))
                     self.episode_configuration.episode_post_step()
+                    self.phase_manager.current_phase.post_step()
                     done = self.phase_manager.current_phase.phase_exit_condition(phase_step_count)
                     phase_step_count += 1
                     self.env.curr_timestep += 1
-                    # record_timestep = RecordTimestep(self.phase_manager.current_phase, data_path=self.data_path)
-                    # record_episode.add_timestep(record_timestep)
+                    record_timestep = RecordTimestep(self.phase_manager.current_phase, data_path=self.data_path)
+                    record_episode.add_timestep(record_timestep)
 
+                self.user_func.post_phase()
                 #after exit condition is met we get the next phase name and set current phase to the specified value
                 self.phase_manager.get_next_phase()
 
                 if self.phase_manager.exit_flag is True:
-                    # Training of network (Everything inside if statement. Comment while evaluating)
-                    # if i > 20:
-                    #     # # print("Starting Training ", i)
-                    #     # # training_phase.controller.train(training_phase.terminal_step, expert_replay_buffer=self.replay_expert,
-                    #     # #                                replay_buffer=self.replay_agent)
-                    #     training_phase.controller.train_batch(max_episode_num=training_phase.terminal_step,
-                    #                                           episode_num=i, update_count=1,
-                    #                                           expert_replay_buffer=self.replay_expert,
-                    #                                           replay_buffer=self.replay_agent)
+                    # User function 2
+                    self.user_func.post_lastphase(data=[i, self.replay_expert, self.replay_agent])
                     break
 
             # print("Episode Reward: {}".format(reward))
-            # if not (i % 100):
-            if not (i % 1):
-                print(i)
-            # if not (i % 2000):
-            #     training_phase.controller.save('saved_weights')
-            # self.replay_agent.add_episode(record_episode, i)
 
-            # self.replay_expert.add_episode(record_episode, i)
+            # User function 3
+            self.user_func.post_phaseloop(data=[i, reward])
 
-            # record_episode.save_episode_as_csv(episode_number=i)
+            if self.replay_agent is not None:
+                self.replay_agent.add_episode(record_episode, i)
+            if self.replay_expert is not None:
+                self.replay_expert.add_episode(record_episode, i)
+
+            record_episode.save_episode_as_csv(episode_number=i)
 
             #TODO needs to be in episode class instead of here
-        # print("Saving replay buffer...")
-        # self.replay_expert.save_replay_buffer('expert_replay_{}'.format(i))
-        # self.replay_agent.save_replay_buffer('agent_replay_{}'.format(i))
-        # print("Saving weights...")
-        # training_phase.controller.save('saved_weights')
+
+        print("Saving replay buffer...")
+        if self.replay_agent is not None:
+            self.replay_agent.save_replay_buffer('agent_replay_{}'.format(i))
+        if self.replay_expert is not None:
+            self.replay_expert.save_replay_buffer('expert_replay_{}'.format(i))
+
+        # User function 4
+        self.user_func.post_run()
         print("Done!")

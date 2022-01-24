@@ -16,6 +16,7 @@ class StateMetricBase:
     _sim = None
 
     def __init__(self, data_structure):
+        # Remember that you are using an inherited class of StatsTrackerBase to Scale data between min and max
         print('intializing with data strucure:', data_structure)
         try:
             self.data = StatsTrackerArrayScaled(data_structure[0], data_structure[1])

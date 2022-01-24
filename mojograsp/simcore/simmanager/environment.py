@@ -15,7 +15,7 @@ class Environment(EnvironmentBase):
     Phase 3 -> Expert/ RL Controller will get direction from environment variable
     """
     def __init__(self, action_class=None, sleep=1. / 240., steps=1, hand=None, objects=None, directions=None,
-                 subjects=None, trials=None):
+                 subjects=None, trials=None, trial_types=None):
         super().__init__(action_class)
         self.sim_sleep = sleep
         self.sim_step = steps
@@ -26,8 +26,10 @@ class Environment(EnvironmentBase):
         self.directions = directions
         self.subjects = subjects
         self.trials = trials
-        self.curr_dir, self.curr_sub, self.curr_trial = None, None, None
+        self.trial_types = trial_types
+        self.curr_dir, self.curr_sub, self.curr_trial, self.curr_trial_type = None, None, None, None
 
+        # TODO Make these accessible to user? or put else where
         # Dynamics
         roll_fric = 0.01
         # object
@@ -52,7 +54,8 @@ class Environment(EnvironmentBase):
         self.curr_dir = random.choice(self.directions)
         self.curr_sub = random.choice(self.subjects)
         self.curr_trial = random.choice(self.trials)
-        # print(self.curr_dir, self.curr_sub, self.curr_trial)
+        self.curr_trial_type = random.choice(self.trial_types)
+        # print(self.curr_trial_type)
         self.set_obj_target_pose(self.curr_dir)
 
 
@@ -120,6 +123,7 @@ class Environment(EnvironmentBase):
     def get_contact_info(self, joint_index):
         return p.getClosestPoints(self.objects.id, self.hand.id, distance=10, linkIndexB=joint_index)
 
+    # TODO: This needs to go
     def set_obj_target_pose(self, direction):
         start_pose = self.objects.start_pos[self.objects.id]
         target_orn = start_pose[1]
@@ -140,9 +144,21 @@ class Environment(EnvironmentBase):
         elif direction == 'h':
             change_in_x, change_in_y = -0.0247, 0.0247
         elif direction == 'a_b':
-            change_in_x, change_in_y = 0.013, 0.032
+            change_in_x, change_in_y = 0.0134, 0.0323
         elif direction == 'b_c':
             change_in_x, change_in_y = 0.0323, 0.0134
+        elif direction == 'c_d':
+            change_in_x, change_in_y = 0.0323, -0.0134
+        elif direction == 'd_e':
+            change_in_x, change_in_y = 0.0123, -0.0323
+        elif direction == 'e_f':
+            change_in_x, change_in_y = -0.0123, -0.0323
+        elif direction == 'f_g':
+            change_in_x, change_in_y = -0.0323, -0.0134
+        elif direction == 'g_h':
+            change_in_x, change_in_y = -0.0323, 0.0134
+        elif direction == 'h_a':
+            change_in_x, change_in_y = -0.0134, 0.0323
         else:
             print("Wrong Direction!")
             raise KeyError
@@ -163,7 +179,7 @@ class Environment(EnvironmentBase):
         elif self.curr_dir == 'd':
             angle = 0.7854
         elif self.curr_dir == 'e':
-            angle = 1.57
+            angle = 1.5708
         elif self.curr_dir == 'f':
             angle = 2.3562
         elif self.curr_dir == 'g':
@@ -174,6 +190,18 @@ class Environment(EnvironmentBase):
             angle = -1.1781
         elif self.curr_dir == 'b_c':
             angle = -0.3926
+        elif self.curr_dir == 'c_d':
+            angle = 0.3926
+        elif self.curr_dir == 'd_e':
+            angle = 1.1781
+        elif self.curr_dir == 'e_f':
+            angle = 1.9634
+        elif self.curr_dir == 'f_g':
+            angle = 2.7489
+        elif self.curr_dir == 'g_h':
+            angle = -2.7489
+        elif self.curr_dir == 'h_a':
+            angle = -1.9634
         else:
             print("Wrong Direction!")
             raise KeyError

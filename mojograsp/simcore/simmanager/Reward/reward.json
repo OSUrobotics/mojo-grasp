@@ -1,9 +1,0 @@
-{
-    "Reward":{
-        "lift":50,
-        "finger":1
-        },
-    "Parameters":{
-        "Finger_State":"/Users/asar/Desktop/Grimm's Lab/Manipulation/PyBulletStuff/mojo-grasp/mojograsp/simcore/simmanager/Reward/finger_state.json"
-    }
-}

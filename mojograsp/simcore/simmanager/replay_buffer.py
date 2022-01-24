@@ -259,6 +259,7 @@ class ReplayBuffer:
         """
         all_eps = []
         if len(self.current_buffer) >= batch_size:
+            # print(len(self.current_buffer), batch_size)
             # get a list of random episode numbers to sample
             episode_indices = []
             state_arr, action_arr, next_state_arr, reward_arr = [], [], [], []

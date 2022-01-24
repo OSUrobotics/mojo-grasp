@@ -2,9 +2,11 @@ import mojograsp
 import pybullet as p
 import numpy as np
 import phase1_full
-import phase2_full_expert
-import phase3_full
+import phase2_full_rl
+import phase4_full_rl
 import pathlib
+import user_functions_train
+
 
 
 if __name__ == '__main__':
@@ -14,9 +16,9 @@ if __name__ == '__main__':
     # setting up simmanager
     current_path = str(pathlib.Path().resolve())
     #ENTER REPLAY BUFFER FILE PATH HERE, ex: cube_all_episodes.csv in data directory
-    replay_buffer_episode_file = None
-    manager = mojograsp.simmanager.SimManagerPybullet(num_episodes=5000, rl=False, data_directory_path=current_path+"/data",
-              replay_episode_file=replay_buffer_episode_file, agent_replay=False)
+    replay_buffer_episode_file = current_path + "/data/cube_all_episodes.csv"
+    manager = mojograsp.simmanager.SimManagerPybullet(num_episodes=20000, rl=False, data_directory_path=current_path+"/data",
+              replay_episode_file=replay_buffer_episode_file, user_func=user_functions_train.UserFunctionsTrain())
 
     # setting camera
     p.resetDebugVisualizerCamera(cameraDistance=.02, cameraYaw=0, cameraPitch=-89.9999,
@@ -28,14 +30,13 @@ if __name__ == '__main__':
     hand = mojograsp.hand.Hand(hand_path, fixed=True, base_pos=[0.0, 0.0, 0.08])
     cube = mojograsp.objectbase.ObjectBase(object_path, fixed=False, base_pos=[0.0, 0.17, 0])
 
-    train = ['a', 'b', 'c', 'd', 'g'] # 'e', 'f', 'g', 'h']
-    test = ['a_b', 'b_c', 'c_d', 'd_e', 'e_f', 'f_g', 'g_h', 'h_a']
+    train = ['g', 'h']
+    test = ['b_c'] #, 'c_d', 'f_g', 'g_h', 'h_a']
 
     # Instantiating environment
     # sim_env = mojograsp.environment.Environment(hand=hand, objects=cube, steps=2, directions=['a_b', 'b_c'],
     #                                             subjects=['sub1', 'sub2', 'sub3'], trials=[1, 2, 3, 4, 5])
-
-    sim_env = mojograsp.environment.Environment(hand=hand, objects=cube, steps=2, directions=train,
+    sim_env = mojograsp.environment.Environment(hand=hand, objects=cube, steps=2, directions=test,
                                                 subjects=['sub1', 'sub2', 'sub3'], trials=[1, 2, 3, 4, 5],
                                                 trial_types=['human', 'expected'])
 
@@ -47,14 +48,13 @@ if __name__ == '__main__':
     """
     # Instantiating phases
     open = phase1_full.OpenHand('open phase')
-    close = phase2_full_expert.CloseHand('close phase')
-    move_expert = phase3_full.MoveHand('move expert')
-    # move_rl = phase4_full_rl.MoveRL('move rl')
+    close = phase2_full_rl.CloseHand('close phase')
+    move_rl = phase4_full_rl.MoveRL('move rl')
 
     # Adding phases
     manager.add_phase(open.name, open, start=True)
     manager.add_phase(close.name, close)
-    manager.add_phase(move_expert.name, move_expert)
+    manager.add_phase(move_rl.name, move_rl)
 
     # running simulation
     manager.run()
