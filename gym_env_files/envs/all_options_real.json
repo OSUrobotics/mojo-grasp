@@ -1,5 +1,0 @@
-{
-  "full_state_space": ["joint_angles_prox", "joint_velocities_prox", "joint_angles_dist", "joint_velocities_dist", "object_pos", "object_orientation"],
-  "full_action_space": ["joint_angles", "joint_velocities", "path_increments"],
-  "full_reward": ["contact_reward", "path_reward", "reward3"]
-}
