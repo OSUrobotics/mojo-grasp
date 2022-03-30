@@ -22,7 +22,7 @@ class PhaseManager:
         self.current_phase = self.starting_phase
 
     def get_next_phase(self):
-        next_phase = self.current_phase.phase_complete()
+        next_phase = self.current_phase.next_phase()
         if next_phase != None:
             try:
                 self.current_phase = self.phase_dict[next_phase]

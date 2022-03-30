@@ -25,8 +25,8 @@ class RecordDataDefault(RecordData):
     def __init__(self, data_path: str = None, data_prefix: str = "Episode", save_all=False, save_episode=True):
         self.data_path = data_path
         self.data_prefix = data_prefix
-        self.save_all = save_all
-        self.save_episode = save_episode
+        self.save_all_flag = save_all
+        self.save_episode_flag = save_episode
         self.timestep_num = 0
 
         self.timesteps = []
@@ -60,7 +60,7 @@ class RecordDataDefault(RecordData):
         self.timestep_num = 0
 
     def save_episode(self):
-        print(self.episodes)
+        print(self.episodes[-1])
 
     def save_all(self):
-        print(self.episodes)
+        pass

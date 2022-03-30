@@ -52,17 +52,21 @@ class SimManagerDefault(SimManager):
         self.episode = episode
         self.record = record
         self.phase_manager = PhaseManager()
+        self.inject_env()
 
     def add_phase(self, phase_name: str, phase_object: Phase, start: bool = False):
         self.phase_manager.add_phase(phase_name, phase_object, start)
 
     def inject_env(self):
         if self.env:
+            Phase.env = self.env
+            Episode.env = self.env
             pass
         pass
 
     def step(self):
-        pass
+        p.stepSimulation()
+        time.sleep(1./240.)
 
     def run(self):
         if len(self.phase_manager.phase_dict) > 0:
@@ -81,13 +85,19 @@ class SimManagerDefault(SimManager):
                         self.phase_manager.current_phase.name))
                     while not done:
                         current_phase.pre_step()
+                        current_phase.execute_action()
+                        self.record.record_timestep()
                         self.step()
                         current_phase.post_step()
                         done = current_phase.exit_condition()
                     self.phase_manager.get_next_phase()
+                    current_phase = self.phase_manager.current_phase
 
+                self.record.record_episode()
+                self.record.save_episode()
                 self.episode.post_episode()
                 self.episode.reset()
         else:
             logging.warn("No Phases have been added")
-        logging.info("COMPLETED")
+        self.record.save_all()
+        print("COMPLETED")

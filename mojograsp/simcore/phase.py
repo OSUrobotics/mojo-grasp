@@ -2,7 +2,11 @@ from abc import ABC, abstractmethod
 
 
 class Phase(ABC):
-    sim = None
+    env = None
+
+    @abstractmethod
+    def __init__(self):
+        self.name = None
 
     @abstractmethod
     def setup(self):

@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 
 
 class Episode(ABC):
-    sim = None
+    env = None
 
     @abstractmethod
     def setup(self):
