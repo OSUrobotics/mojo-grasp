@@ -1,28 +1,27 @@
+from abc import ABC, abstractmethod
 
 
-class Phase:
-	_sim = None
-	
-	def __init__(self):
-		print("Phase initialized")
-	
-	def setup(self):
-		print("Phase setting up")
+class Phase(ABC):
+    sim = None
 
-	def pre_step(self):
-		print("Pre step")
+    @abstractmethod
+    def setup(self):
+        pass
 
-	def post_step(self):
-		None
+    @abstractmethod
+    def execute_action(self):
+        pass
 
-	def select_action(self):
-		print("Selecting action")
+    @abstractmethod
+    def exit_condition(self) -> bool:
+        pass
 
-	def execute_action(self, action):
-		print("Executing action")
+    @abstractmethod
+    def next_phase(self) -> str:
+        pass
 
-	def phase_exit_condition(self, episode_step):
-		print("Exit condition checked")
+    def pre_step(self):
+        pass
 
-	def phase_complete(self):
-		print("Phase complete")
+    def post_step(self):
+        pass

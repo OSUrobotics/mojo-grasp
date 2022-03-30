@@ -20,7 +20,6 @@ class PhaseManager:
 
     def start_phases(self):
         self.current_phase = self.starting_phase
-        return self.current_phase
 
     def get_next_phase(self):
         next_phase = self.current_phase.phase_complete()
@@ -33,7 +32,3 @@ class PhaseManager:
         # if phase is none we break the for loop early
         else:
             self.exit_flag = True
-
-    def setup_phase(self):
-        self.current_phase.setup()
-

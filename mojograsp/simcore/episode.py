@@ -1,30 +1,28 @@
+from abc import ABC, abstractmethod
 
 
+class Episode(ABC):
+    sim = None
 
-#Eventually filled with standard values
-class Episode():
-	
-	def __init__(self):
-		print("Episode initialized")
-		None
-	
-	def setup(self):
-		# print("Episode setting up")
-		None
-	
-	def reset(self):
-		# print("Episode reset")
-		None
+    @abstractmethod
+    def setup(self):
+        pass
 
-	def episode_pre_step(self):
-		#print("Episode Pre step")
-		None
+    @abstractmethod
+    def reset(self):
+        pass
 
-	def episode_post_step(self):
-		#print("Episode Post step")
-		None
+    @abstractmethod
+    def post_episode(self):
+        pass
 
-	def episode_complete(self):
-		# print("Episode complete")
-		None
 
+class EpisodeBlank(Episode):
+    def setup(self):
+        pass
+
+    def reset(self):
+        pass
+
+    def post_episode(self):
+        pass
