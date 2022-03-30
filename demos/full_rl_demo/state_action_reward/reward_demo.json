@@ -1,9 +1,0 @@
-{
-    "Reward":{
-        "contact":1,
-        "target":100
-        },
-    "Parameters": {
-        "Contact_State":"contact_state.json"
-    }
-}

@@ -1,1 +1,0 @@
-Instructions for using the hand generator script w/blender

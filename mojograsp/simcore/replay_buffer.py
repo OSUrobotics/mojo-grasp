@@ -2,13 +2,8 @@ from collections import namedtuple, deque
 from random import shuffle, randint
 from copy import deepcopy
 from dataclasses import dataclass
-from mojograsp.simcore.simmanager.record_timestep import RecordTimestep
-from mojograsp.simcore.simmanager.record_episode import RecordEpisode
 import csv
 import numpy as np
-import torch
-
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 @dataclass
@@ -26,7 +21,8 @@ class Timestep:
 
     def __iter__(self):
         '''Allows us to iterate through the timestep dataclass as a list of strings'''
-        timestep_list = [str(self.episode), str(self.phase), str(self.wall_time), str(self.sim_time), str(self.timestep)]
+        timestep_list = [str(self.episode), str(self.phase), str(
+            self.wall_time), str(self.sim_time), str(self.timestep)]
         timestep_list.extend([str(x) for x in self.current_state])
         timestep_list.extend([str(x) for x in self.action])
         timestep_list.append(self.reward)
@@ -44,17 +40,17 @@ class ReplayBuffer:
         self.episodes_file = episodes_file
         self.buffer_size = buffer_size
 
-        #deque data structure deletes oldest entry in array once buffer_size is exceeded
+        # deque data structure deletes oldest entry in array once buffer_size is exceeded
         self.current_buffer = deque(maxlen=buffer_size)
 
-        #creates our replay buffer from episodes_file
+        # creates our replay buffer from episodes_file
         if self.episodes_file:
             self.create_replay_buffer()
         self.n_step_indices = []
         self.n = 5
         for num in range(self.buffer_size - self.n):
             self.n_step_indices.append(np.arange(num, num + self.n))
-         
+
     def create_replay_buffer(self):
         '''Creates replay buffer from the given episodes_file in the __init__. Reads csv file
            row by row and creates timestep object for each before storing them into the current_buffer.'''
@@ -62,20 +58,22 @@ class ReplayBuffer:
             current_episode = 0
             num_action_vars = 0
             num_state_vars = 0
-            #open csv file with timesteps
+            # open csv file with timesteps
             with open(self.episodes_file) as csv_file:
                 reader = csv.reader(csv_file)
                 for row in reader:
-                    #check if there is a header and we are entering a new episode
+                    # check if there is a header and we are entering a new episode
                     if ":" in row[0]:
                         current_episode = int(row[0].split(":")[1])
                         num_state_vars = int(row[5].split(":")[1])
                         num_action_vars = int(row[6].split(":")[1])
-                    #otherwise we construct our Timestep object and add it to the replay buffer
+                    # otherwise we construct our Timestep object and add it to the replay buffer
                     else:
-                        #get state, action and reward values from row and cast to floats
-                        current_state = list(map(float,row[4:num_state_vars+4]))
-                        action = list(map(float,row[num_state_vars+4:num_action_vars+num_state_vars+4]))
+                        # get state, action and reward values from row and cast to floats
+                        current_state = list(
+                            map(float, row[4:num_state_vars+4]))
+                        action = list(
+                            map(float, row[num_state_vars+4:num_action_vars+num_state_vars+4]))
                         # print("State:", current_state)
                         # print("Ac", action)
                         # current_state = list(map(float,row[4:num_state_vars]))
@@ -85,13 +83,14 @@ class ReplayBuffer:
                             try:
                                 reward = float(row[-1])
                             except ValueError:
-                                reward = float(row[-1].strip('][').split(',')[0])
-                        #fill in previous timesteps next state based on the new timestep current state
+                                reward = float(
+                                    row[-1].strip('][').split(',')[0])
+                        # fill in previous timesteps next state based on the new timestep current state
                         if len(self.current_buffer) >= 1:
                             self.current_buffer[-1].next_state = current_state
-                        #create Timestep object and add to buffer
-                        new_timestep = Timestep(current_episode,row[0],float(row[1]),float(row[2]),int(row[3]), 
-                                       current_state, action,reward,None)
+                        # create Timestep object and add to buffer
+                        new_timestep = Timestep(current_episode, row[0], float(row[1]), float(row[2]), int(row[3]),
+                                                current_state, action, reward, None)
                         self.current_buffer.append(new_timestep)
 
     def add_episode(self, new_episode, ep_num):
@@ -107,20 +106,20 @@ class ReplayBuffer:
         for i in new_episode.data.values():
             timestep_data = i.get_full_timestep()
             if timestep_data['phase'] in phases:
-                timestep = Timestep(new_episode.episode_number,timestep_data['phase'], timestep_data["wall_time"],
-                           timestep_data["sim_time"],timestep_data["timestep"],
-                           timestep_data["state"], timestep_data["action"], timestep_data["reward"], None)
+                timestep = Timestep(new_episode.episode_number, timestep_data['phase'], timestep_data["wall_time"],
+                                    timestep_data["sim_time"], timestep_data["timestep"],
+                                    timestep_data["state"], timestep_data["action"], timestep_data["reward"], None)
                 if len(self.current_buffer) >= 1:
                     self.current_buffer[-1].next_state = timestep_data["state"]
                 self.current_buffer.append(timestep)
-       
+
     def add_timestep(self, new_timestep, episode_number):
         '''Adds a single timestep into the replay buffer.
            @param new_timestep - Timestep object
            @param episode_number - corresponding episode number for the timestep TODO: shouldnt be done here, should be passed into timestep'''
         timestep_data = new_timestep.get_full_timestep()
-        timestep = Timestep(episode_number,timestep_data['phase'], timestep_data["wall_time"],timestep_data["sim_time"],timestep_data["timestep"],
-                   timestep_data["state"], timestep_data["action"], timestep_data["reward"], None)
+        timestep = Timestep(episode_number, timestep_data['phase'], timestep_data["wall_time"], timestep_data["sim_time"], timestep_data["timestep"],
+                            timestep_data["state"], timestep_data["action"], timestep_data["reward"], None)
         if len(self.current_buffer) > 1:
             self.current_buffer[-1].next_state = timestep_data["state"]
         self.current_buffer.append(timestep)
@@ -178,7 +177,8 @@ class ReplayBuffer:
         timestep_list = []
         if len(self.current_buffer) >= num_timesteps:
             for i in range(num_timesteps):
-                timestep_list.append(self.current_buffer[randint(0,len(self.current_buffer)-1)])
+                timestep_list.append(
+                    self.current_buffer[randint(0, len(self.current_buffer)-1)])
         return timestep_list
 
     def get_last_timestep_from_episode(self, episode_num):
@@ -195,11 +195,14 @@ class ReplayBuffer:
             for i in range(num_timesteps):
                 done = False
                 while not done:
-                    random_timestep_index = randint(0, len(self.current_buffer) - 1)
-                    last_step = self.get_last_timestep_from_episode(self.current_buffer[random_timestep_index].episode)
+                    random_timestep_index = randint(
+                        0, len(self.current_buffer) - 1)
+                    last_step = self.get_last_timestep_from_episode(
+                        self.current_buffer[random_timestep_index].episode)
                     if 'move' in self.current_buffer[random_timestep_index].phase and self.current_buffer[random_timestep_index].timestep is not last_step:
                         done = True
-                timestep_list.append(self.current_buffer[random_timestep_index])
+                timestep_list.append(
+                    self.current_buffer[random_timestep_index])
         return timestep_list
 
     def get_random_episode_sample(self, ceil, num_ep=1):
@@ -215,7 +218,8 @@ class ReplayBuffer:
             episode_indices = []
             while len(episode_indices) < num_ep:
                 # print("Last episode in buffer:", self.current_buffer[-1].episode)
-                rand_num = randint(self.current_buffer[0].episode, self.current_buffer[-1].episode)
+                rand_num = randint(
+                    self.current_buffer[0].episode, self.current_buffer[-1].episode)
                 if rand_num in episode_indices:
                     continue
                 found_ts = False
@@ -233,7 +237,8 @@ class ReplayBuffer:
                 episode_indices.append(rand_num)
 
             for index in episode_indices:
-                buffer_episode = [ts for ts in self.current_buffer if index == ts.episode]
+                buffer_episode = [
+                    ts for ts in self.current_buffer if index == ts.episode]
                 # Find all the timesteps of all the episodes, in order, append to list
                 curr_ep = buffer_episode[0].episode
                 episodes_list = []
@@ -241,7 +246,8 @@ class ReplayBuffer:
                 for i in list(buffer_episode):
                     # append timestep to list if current episode matches an episode index from randomly generated list and fullfills other criteria
                     if 'move' in i.phase:
-                        last_step = self.get_last_timestep_from_episode(curr_ep) - ceil
+                        last_step = self.get_last_timestep_from_episode(
+                            curr_ep) - ceil
                         if i.timestep <= last_step:
                             episodes_list.append(i)
                 all_eps.append(episodes_list)
@@ -263,10 +269,12 @@ class ReplayBuffer:
             # get a list of random episode numbers to sample
             episode_indices = []
             state_arr, action_arr, next_state_arr, reward_arr = [], [], [], []
-            select_from_episodes = np.asarray(range(self.current_buffer[0].episode, self.current_buffer[-1].episode))
+            select_from_episodes = np.asarray(
+                range(self.current_buffer[0].episode, self.current_buffer[-1].episode))
             while len(episode_indices) < batch_size:
                 ep_state, ep_action, ep_next_state, ep_reward = [], [], [], []
-                rand_num = np.random.choice(select_from_episodes, replace=False)
+                rand_num = np.random.choice(
+                    select_from_episodes, replace=False)
                 for all_ts in self.current_buffer:
                     if rand_num == all_ts.episode and 'move' in all_ts.phase:
                         ep_state.append(np.asarray(all_ts.current_state))
@@ -278,7 +286,8 @@ class ReplayBuffer:
 
                 if not len(ep_state):
                     continue
-                temp_state, temp_action, temp_next_state, temp_reward = np.asarray(ep_state), np.asarray(ep_action), np.asarray(ep_next_state), np.asarray(ep_reward)
+                temp_state, temp_action, temp_next_state, temp_reward = np.asarray(
+                    ep_state), np.asarray(ep_action), np.asarray(ep_next_state), np.asarray(ep_reward)
 
                 traj_arr = self.n_step_indices[:(len(temp_reward) - self.n)]
                 for row in traj_arr:
@@ -320,7 +329,8 @@ class ReplayBuffer:
         num_state_vars = 0
         num_state_vars_next = 0
         with open(file_name, 'w', newline='') as csv_file:
-            replay_write = csv.writer(csv_file, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
+            replay_write = csv.writer(
+                csv_file, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
             for i in self.current_buffer:
                 if i.episode != current_episode:
                     current_episode = i.episode
@@ -330,11 +340,12 @@ class ReplayBuffer:
                         num_state_vars_next = len(i.next_state)
                     else:
                         num_state_vars_next = 0
-                    header_text = ['Episode:'+str(current_episode),'Phase', 'WallTime', 'SimTime', 'TimeStep', 
-                                   'State:'+str(num_state_vars), 'Action:'+str(num_action_vars), 
+                    header_text = ['Episode:'+str(current_episode), 'Phase', 'WallTime', 'SimTime', 'TimeStep',
+                                   'State:' +
+                                   str(num_state_vars), 'Action:' +
+                                   str(num_action_vars),
                                    'Reward:1', 'NextState:'+str(num_state_vars_next)]
                     replay_write.writerow(header_text)
                     replay_write.writerow(i)
                 else:
                     replay_write.writerow(i)
-    

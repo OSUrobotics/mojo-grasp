@@ -2,8 +2,8 @@ import pybullet as p
 from . import objectbase
 from . import handgeometry
 
-from mojograsp.simcore.actuators import fullyactuated, underactuated
-from mojograsp.simcore.sensors import sensorbase
+from mojograsp.simobjects.fullyactuated import FullyActuated
+from mojograsp.simobjects.sensorbase import SensorBase
 
 
 class Hand(objectbase.ObjectBase):
@@ -28,9 +28,7 @@ class Hand(objectbase.ObjectBase):
         # creates instances of geometry class and actuators class
         self.geometry = handgeometry.HandGeometry(self.joint_index)
         if (underactuation == False):
-            self.actuation = fullyactuated.FullyActuated(self.joint_index, self.id)
-        else:
-            self.actuation = underactuated.UnderActuated(self.joint_index)
+            self.actuation = FullyActuated(self.joint_index, self.id)
 
     # rough draft of sensor index creation
     def create_sensor_index(self):
@@ -43,7 +41,8 @@ class Hand(objectbase.ObjectBase):
 
             # if any joints have name with substring sensor we create a sensor object and add it to the index
             if (sensor_name.find("sensor") != -1):
-                self.sensor_index[sensor_name] = sensorbase.SensorBase(self.id, sensor_name)
+                self.sensor_index[sensor_name] = SensorBase(
+                    self.id, sensor_name)
 
     # creates joint dictionary with style name: number
     def create_joint_index(self):
@@ -80,8 +79,10 @@ class Hand(objectbase.ObjectBase):
             #     self.joint_dict_with_base.update({self.joint_info[i][1]: self.joint_info[i][0]})
             #     self.key_names_list_with_base.append(self.joint_info[i][1])
             #     continue
-            self.joint_dict.update({self.joint_info[i][1]: self.joint_info[i][0]})
-            self.joint_dict_with_base.update({self.joint_info[i][1]: self.joint_info[i][0]})
+            self.joint_dict.update(
+                {self.joint_info[i][1]: self.joint_info[i][0]})
+            self.joint_dict_with_base.update(
+                {self.joint_info[i][1]: self.joint_info[i][0]})
             self.key_names_list.append(self.joint_info[i][1])
             self.key_names_list_with_base.append(self.joint_info[i][1])
             if 'dist' in str(self.joint_info[i][1]):
@@ -95,7 +96,8 @@ class Hand(objectbase.ObjectBase):
         # print("DICTIONARY CREATED:{}".format(self.joint_dict))
         # print("DICTIONARY CREATED WITH BASE:{}".format(self.joint_dict_with_base))
         # print("LIST CREATED:{}".format(self.key_names_list))
-        print("LIST CREATED WITH BASE:{}".format(self.key_names_list_with_base))
+        print("LIST CREATED WITH BASE:{}".format(
+            self.key_names_list_with_base))
 
     # print("END EFFECTOR LIST CREATED:{}".format(self.end_effector_indices))
 
@@ -117,7 +119,8 @@ class Hand(objectbase.ObjectBase):
         """
         curr_joint_poses = []
         if joint_indices is None:
-            curr_joint_states = p.getJointStates(self.id, self.joint_dict.values())
+            curr_joint_states = p.getJointStates(
+                self.id, self.joint_dict.values())
         else:
             curr_joint_states = p.getJointStates(self.id, joint_indices)
         for joint in range(0, len(curr_joint_states)):
@@ -132,7 +135,8 @@ class Hand(objectbase.ObjectBase):
 
         curr_link_poses = []
         if link_indices is None:
-            curr_link_states = p.getLinkStates(self.id, self.joint_dict.values())
+            curr_link_states = p.getLinkStates(
+                self.id, self.joint_dict.values())
         else:
             curr_link_states = p.getLinkStates(self.id, link_indices)
         for link in range(0, len(curr_link_states)):
