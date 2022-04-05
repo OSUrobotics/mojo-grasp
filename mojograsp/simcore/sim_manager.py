@@ -6,8 +6,8 @@ from mojograsp.simcore.environment import Environment, EnvironmentDefault
 from mojograsp.simcore.phase import Phase
 from mojograsp.simcore.reward import Reward
 from mojograsp.simcore.state import State
-from mojograsp.simcore.episode import Episode, EpisodeBlank
-from mojograsp.simcore.record_data import RecordData
+from mojograsp.simcore.episode import Episode, EpisodeDefault
+from mojograsp.simcore.record_data import RecordData, RecordDataDefault
 from mojograsp.simcore.replay_buffer import ReplayBuffer
 from mojograsp.simcore.phasemanager import PhaseManager
 # python imports
@@ -24,17 +24,10 @@ class SimManager(ABC):
         pass
 
     @abstractmethod
-    def inject_env(self):
-        pass
-
-    @abstractmethod
-    def step(self):
-        pass
-
-    @abstractmethod
     def run(self):
         pass
 
+    @abstractmethod
     def stall(self):
         while p.isConnected():
             time.sleep(1)
@@ -42,31 +35,17 @@ class SimManager(ABC):
 
 class SimManagerDefault(SimManager):
 
-    def __init__(self, num_episodes: int = 1, sim_timestep: float = (1. / 240.), gui: bool = True,
-                 env: Environment = None, episode: Episode = EpisodeBlank(), record: RecordData = None):
-
+    def __init__(self, num_episodes: int = 1, sim_timestep: float = (1. / 240.), env: Environment = EnvironmentDefault(),
+                 episode: Episode = EpisodeDefault(), record: RecordData = RecordDataDefault()):
         self.num_episodes = num_episodes
         self.sim_timestep = sim_timestep
-        self.gui = gui
         self.env = env
         self.episode = episode
         self.record = record
         self.phase_manager = PhaseManager()
-        self.inject_env()
 
-    def add_phase(self, phase_name: str, phase_object: Phase, start: bool = False):
-        self.phase_manager.add_phase(phase_name, phase_object, start)
-
-    def inject_env(self):
-        if self.env:
-            Phase.env = self.env
-            Episode.env = self.env
-            pass
-        pass
-
-    def step(self):
-        p.stepSimulation()
-        time.sleep(1./240.)
+    def add_phase(self, phase_name: str, phase: Phase, start: bool = False):
+        self.phase_manager.add_phase(phase_name, phase, start)
 
     def run(self):
         if len(self.phase_manager.phase_dict) > 0:
@@ -74,30 +53,32 @@ class SimManagerDefault(SimManager):
                 self.phase_manager.phase_dict))
             for i in range(self.num_episodes):
                 self.episode.setup()
-                self.phase_manager.exit_flag = False
-                self.phase_manager.start_phases()
-                current_phase = self.phase_manager.current_phase
+                self.env.setup()
+                self.phase_manager.set_exit_flag(False)
+                self.phase_manager.setup()
 
-                while self.phase_manager.exit_flag == False:
-                    current_phase.setup()
+                while self.phase_manager.get_exit_flag() == False:
+                    self.phase_manager.current_phase.setup()
                     done = False
                     logging.info("CURRENT PHASE: {}".format(
                         self.phase_manager.current_phase.name))
                     while not done:
-                        current_phase.pre_step()
-                        current_phase.execute_action()
+                        self.phase_manager.current_phase.pre_step()
+                        self.phase_manager.current_phase.execute_action()
                         self.record.record_timestep()
-                        self.step()
-                        current_phase.post_step()
-                        done = current_phase.exit_condition()
+                        self.env.step()
+                        self.phase_manager.current_phase.post_step()
+                        done = self.phase_manager.current_phase.exit_condition()
                     self.phase_manager.get_next_phase()
-                    current_phase = self.phase_manager.current_phase
 
                 self.record.record_episode()
                 self.record.save_episode()
                 self.episode.post_episode()
-                self.episode.reset()
+                self.env.reset()
         else:
             logging.warn("No Phases have been added")
         self.record.save_all()
         print("COMPLETED")
+
+    def stall(self):
+        super().stall()

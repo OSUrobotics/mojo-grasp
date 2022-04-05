@@ -1,19 +1,20 @@
 import pybullet as p
 from mojograsp.simcore.phase import Phase
+from mojograsp.simobjects.hand import Hand
+from mojograsp.simobjects.objectbase import ObjectBase
 
 from math import isclose
 
 
 class CloseHand(Phase):
 
-    def __init__(self):
+    def __init__(self, hand: Hand, obj: ObjectBase):
         self.name = "close"
         self.target_pos = [0.7, -1.32, -0.7, 1.32]
-        self.hand = self.env.hand
-        self.obj = self.env.object
+        self.hand = hand
+        self.obj = obj
 
     def setup(self):
-        print("RUNNING 2")
         roll_fric = 0.01
         # object
         p.changeDynamics(self.obj.id, -1, mass=0.04, rollingFriction=roll_fric)

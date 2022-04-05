@@ -3,19 +3,18 @@ from abc import ABC, abstractmethod
 
 class State(ABC):
     @abstractmethod
-    def get_state(self) -> dict:
+    def __init__(self):
         pass
 
-
-class StateBlank(State):
+    @abstractmethod
     def get_state(self) -> dict:
-        return None
+        pass
 
 
 class StateDefault(State):
     # TODO Find reasonable default, best done after refactor of hand and object classes
     def __init__(self):
-        pass
+        super().__init__()
 
     def get_state(self) -> dict:
-        pass
+        super().get_state()

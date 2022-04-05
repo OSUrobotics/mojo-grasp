@@ -1,9 +1,14 @@
 from abc import ABC, abstractmethod
 from copy import deepcopy
 
+from mojograsp.simcore.state import State
+from mojograsp.simcore.reward import Reward
+
 
 class RecordData(ABC):
-    sim = None
+    @abstractmethod
+    def __init__(self):
+        pass
 
     @abstractmethod
     def record_timestep(self):
@@ -17,12 +22,31 @@ class RecordData(ABC):
     def save_episode(self):
         pass
 
+    @abstractmethod
     def save_all(self):
         pass
 
 
 class RecordDataDefault(RecordData):
-    def __init__(self, data_path: str = None, data_prefix: str = "Episode", save_all=False, save_episode=True):
+    def __init__(self):
+        super().__init__()
+
+    def record_timestep(self):
+        super().record_timestep()
+
+    def record_episode(self):
+        super().record_episode()
+
+    def save_episode(self):
+        super().save_episode()
+
+    def save_all(self):
+        super().save_all()
+
+
+class RecordDataJSON(RecordData):
+    def __init__(self, data_path: str = None, data_prefix: str = "Episode", save_all=False, save_episode=True,
+                 state: State = None, reward: Reward = None):
         self.data_path = data_path
         self.data_prefix = data_prefix
         self.save_all_flag = save_all
@@ -32,11 +56,8 @@ class RecordDataDefault(RecordData):
         self.timesteps = []
         self.episodes = []
 
-        self.state = None
-        self.reward = None
-        if self.sim:
-            self.state = self.sim.state
-            self.reward = self.sim.reward
+        self.state = state
+        self.reward = reward
 
     def record_timestep(self):
         tstep_state = None
@@ -60,7 +81,7 @@ class RecordDataDefault(RecordData):
         self.timestep_num = 0
 
     def save_episode(self):
-        print(self.episodes[-1])
+        super().save_episode
 
     def save_all(self):
-        pass
+        super().save_all

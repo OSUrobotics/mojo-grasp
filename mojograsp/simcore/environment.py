@@ -1,9 +1,7 @@
 from abc import ABC, abstractmethod
 
-from mojograsp.simcore.state import State
-from mojograsp.simcore.reward import Reward
-from mojograsp.simobjects.hand import Hand
-from mojograsp.simobjects.objectbase import ObjectBase
+import pybullet as p
+import time
 
 
 class Environment(ABC):
@@ -11,11 +9,29 @@ class Environment(ABC):
     def __init__(self):
         pass
 
+    @abstractmethod
+    def setup(self):
+        pass
+
+    @abstractmethod
+    def step(self):
+        p.stepSimulation()
+        time.sleep(1./240.)
+
+    @abstractmethod
+    def reset(self):
+        pass
+
 
 class EnvironmentDefault(Environment):
-    # TODO Needs fleshing out, and safety checks
-    def __init__(self, hand: Hand = None, object: ObjectBase = None, state: State = None, reward: Reward = None):
-        self.hand = hand
-        self.object = object
-        self.state = state
-        self.reward = reward
+    def __init__(self):
+        super().__init__()
+
+    def setup(self):
+        super().setup()
+
+    def step(self):
+        super().step()
+
+    def reset(self):
+        super().reset()

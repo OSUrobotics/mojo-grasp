@@ -2,14 +2,8 @@ from abc import ABC, abstractmethod
 
 
 class Episode(ABC):
-    env = None
-
     @abstractmethod
     def setup(self):
-        pass
-
-    @abstractmethod
-    def reset(self):
         pass
 
     @abstractmethod
@@ -17,12 +11,9 @@ class Episode(ABC):
         pass
 
 
-class EpisodeBlank(Episode):
+class EpisodeDefault(Episode):
     def setup(self):
-        pass
-
-    def reset(self):
-        pass
+        super().setup()
 
     def post_episode(self):
-        pass
+        super().post_episode()
