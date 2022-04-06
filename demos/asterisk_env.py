@@ -1,11 +1,11 @@
 from mojograsp.simcore.environment import Environment
-from mojograsp.simobjects.hand import Hand
-from mojograsp.simobjects.objectbase import ObjectBase
+from mojograsp.simobjects.two_finger_gripper import TwoFingerGripper
+from mojograsp.simobjects.object_base import ObjectBase
 import pybullet as p
 
 
 class AsteriskEnv(Environment):
-    def __init__(self, hand: Hand, obj: ObjectBase):
+    def __init__(self, hand: TwoFingerGripper, obj: ObjectBase):
         self.hand = hand
         self.obj = obj
 

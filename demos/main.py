@@ -12,14 +12,13 @@ from mojograsp.simcore.state import StateDefault
 from mojograsp.simcore.reward import RewardDefault
 from mojograsp.simcore.environment import EnvironmentDefault
 from mojograsp.simcore.record_data import RecordDataDefault
-from mojograsp.simobjects.hand import Hand
-from mojograsp.simobjects.objectbase import ObjectBase
+from mojograsp.simobjects.two_finger_gripper import TwoFingerGripper
+from mojograsp.simobjects.object_base import ObjectBase
 
 # resource paths
 current_path = str(pathlib.Path().resolve())
 hand_path = current_path+"/2v2_nosensors/2v2_nosensors.urdf"
-object_path = current_path + "/2v2_nosensors_objects/2v2_nosensors_cuboid_small.urdf"
-
+cube_path = current_path + "/2v2_nosensors_objects/2v2_nosensors_cuboid_small.urdf"
 
 # start pybullet
 physics_client = p.connect(p.GUI)
@@ -27,11 +26,23 @@ p.setAdditionalSearchPath(pybullet_data.getDataPath())
 p.setGravity(0, 0, -10)
 p.resetDebugVisualizerCamera(cameraDistance=.02, cameraYaw=0, cameraPitch=-89.9999,
                              cameraTargetPosition=[0, 0.1, 0.5])
-plane_id = p.loadURDF("plane.urdf")
 
-# objects
-hand = Hand(hand_path, fixed=True, base_pos=[0.0, 0.0, 0.05])
-cube = ObjectBase(object_path, fixed=False, base_pos=[0.0, 0.17, .06])
+# load objects
+plane_id = p.loadURDF("plane.urdf")
+hand_id = p.loadURDF(hand_path, useFixedBase=True,
+                     basePosition=[0.0, 0.0, 0.05])
+cube_id = p.loadURDF(cube_path, basePosition=[0.0, 0.17, .06])
+hand = TwoFingerGripper(hand_id)
+cube = ObjectBase(cube_id)
+
+
+# change visual of gripper
+p.changeVisualShape(hand_id, -1, rgbaColor=[0.3, 0.3, 0.3, 1])
+p.changeVisualShape(hand_id, 0, rgbaColor=[1, 0.5, 0, 1])
+p.changeVisualShape(hand_id, 1, rgbaColor=[0.3, 0.3, 0.3, 1])
+p.changeVisualShape(hand_id, 2, rgbaColor=[1, 0.5, 0, 1])
+p.changeVisualShape(hand_id, 3, rgbaColor=[0.3, 0.3, 0.3, 1])
+
 
 #state and reward
 state = StateDefault()

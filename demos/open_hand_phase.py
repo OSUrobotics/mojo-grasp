@@ -1,14 +1,14 @@
 import pybullet as p
 from mojograsp.simcore.phase import Phase
-from mojograsp.simobjects.hand import Hand
-from mojograsp.simobjects.objectbase import ObjectBase
+from mojograsp.simobjects.two_finger_gripper import TwoFingerGripper
+from mojograsp.simobjects.object_base import ObjectBase
 
 from math import isclose
 
 
 class OpenHand(Phase):
 
-    def __init__(self, hand: Hand, obj: ObjectBase):
+    def __init__(self, hand: TwoFingerGripper, obj: ObjectBase):
         self.name = "open"
         self.target_pos = [1.57, 0, -1.57, 0]
         self.hand = hand
@@ -18,11 +18,11 @@ class OpenHand(Phase):
         pass
 
     def execute_action(self):
-        p.setJointMotorControlArray(self.hand.id, jointIndices=self.hand.actuation.get_joint_index_numbers(),
+        p.setJointMotorControlArray(self.hand.id, jointIndices=self.hand.get_joint_numbers(),
                                     controlMode=p.POSITION_CONTROL, targetPositions=self.target_pos)
 
     def exit_condition(self) -> bool:
-        joint_index = self.hand.actuation.get_joint_index_numbers()
+        joint_index = self.hand.get_joint_numbers()
         joint_angles = self.hand.get_joint_angles(joint_index)
 
         for i in range(len(self.target_pos)):
