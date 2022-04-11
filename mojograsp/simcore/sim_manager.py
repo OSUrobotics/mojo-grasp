@@ -75,9 +75,9 @@ class SimManagerDefault(SimManager):
                 self.record.save_episode()
                 self.episode.post_episode()
                 self.env.reset()
+            self.record.save_all()
         else:
             logging.warn("No Phases have been added")
-        self.record.save_all()
         print("COMPLETED")
 
     def stall(self):

@@ -1,5 +1,7 @@
 from abc import ABC, abstractmethod
 
+from mojograsp.simobjects.object_base import ObjectBase
+
 import pybullet as p
 import time
 

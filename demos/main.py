@@ -7,18 +7,19 @@ import open_hand_phase
 import close_hand_phase
 import asterisk_env
 from mojograsp.simcore.sim_manager import SimManagerDefault
-from mojograsp.simcore.environment import EnvironmentDefault
 from mojograsp.simcore.state import StateDefault
 from mojograsp.simcore.reward import RewardDefault
 from mojograsp.simcore.environment import EnvironmentDefault
-from mojograsp.simcore.record_data import RecordDataDefault
+from mojograsp.simcore.record_data import RecordDataJSON
 from mojograsp.simobjects.two_finger_gripper import TwoFingerGripper
 from mojograsp.simobjects.object_base import ObjectBase
 
 # resource paths
 current_path = str(pathlib.Path().resolve())
-hand_path = current_path+"/2v2_nosensors/2v2_nosensors.urdf"
-cube_path = current_path + "/2v2_nosensors_objects/2v2_nosensors_cuboid_small.urdf"
+hand_path = current_path+"/resources/2v2_nosensors/2v2_nosensors.urdf"
+cube_path = current_path + \
+    "/resources/2v2_nosensors_objects/2v2_nosensors_cuboid_small.urdf"
+data_path = current_path+"/data/"
 
 # start pybullet
 physics_client = p.connect(p.GUI)
@@ -32,8 +33,8 @@ plane_id = p.loadURDF("plane.urdf")
 hand_id = p.loadURDF(hand_path, useFixedBase=True,
                      basePosition=[0.0, 0.0, 0.05])
 cube_id = p.loadURDF(cube_path, basePosition=[0.0, 0.17, .06])
-hand = TwoFingerGripper(hand_id)
-cube = ObjectBase(cube_id)
+hand = TwoFingerGripper(hand_id, path=hand_path)
+cube = ObjectBase(cube_id, path=cube_path)
 
 
 # change visual of gripper
@@ -44,15 +45,18 @@ p.changeVisualShape(hand_id, 2, rgbaColor=[1, 0.5, 0, 1])
 p.changeVisualShape(hand_id, 3, rgbaColor=[0.3, 0.3, 0.3, 1])
 
 
-#state and reward
-state = StateDefault()
+# state and reward
+state = StateDefault(objects=[hand, cube])
 reward = RewardDefault()
 
-#environment and recording
+# data recording
+record = RecordDataJSON(data_path=data_path, state=state, save_all=True)
+
+# environment and recording
 env = asterisk_env.AsteriskEnv(hand=hand, obj=cube)
 
 # sim manager
-manager = SimManagerDefault(num_episodes=4, env=env)
+manager = SimManagerDefault(num_episodes=3, env=env, record=record)
 
 open_hand = open_hand_phase.OpenHand(hand, cube)
 close_hand = close_hand_phase.CloseHand(hand, cube)

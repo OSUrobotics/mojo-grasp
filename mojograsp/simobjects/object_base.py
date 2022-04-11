@@ -1,19 +1,24 @@
+from numpy import angle
 import pybullet as p
 import logging
 
 
 class ObjectBase:
 
-    def __init__(self, id: int = None):
+    def __init__(self, id: int = None, path: str = None, name: str = None):
         # all coordinate frame magic will be done here.
         logging.info("Object Created with id: {}".format(id))
+        self.path = path
         self.id = id
+        self.name = name
+        if not self.name:
+            self.name = "obj_" + str(id)
 
     def get_curr_pose(self) -> list[float]:
         pose = []
         curr_pos, curr_orn = p.getBasePositionAndOrientation(self.id)
-        pose.append(curr_pos)
-        pose.append(curr_orn)
+        pose.append(list(curr_pos))
+        pose.append(list(curr_orn))
         return pose
 
     def get_dimensions(self) -> list[float]:
@@ -24,11 +29,18 @@ class ObjectBase:
             orn = p.getQuaternionFromEuler(orn)
         p.resetBasePositionAndOrientation(self.id, pos, orn)
 
+# TODO: This should be more fleshed out in the future to get all relevant data
+    def get_data(self) -> dict:
+        data = {}
+        data["pose"] = self.get_curr_pose()
+        return data
 
 # TODO: Create functions for keeping track of links similar to joints
+
+
 class ActuatedObject(ObjectBase):
-    def __init__(self, id: int = None):
-        super().__init__(id=id)
+    def __init__(self, id: int = None, path: str = None, name: str = None):
+        super().__init__(id=id, path=path, name=name)
         self.joint_dict = {}
         self.create_joint_dict()
 
@@ -47,11 +59,9 @@ class ActuatedObject(ObjectBase):
     def get_joint_dict(self) -> dict:
         return self.joint_dict
 
-    # gets joint names from index
     def get_joint_names(self) -> list[str]:
         return list(self.joint_dict.keys())
 
-        # gets joint numbers from index
     def get_joint_numbers(self) -> list[int]:
         return list(self.joint_dict.values())
 
@@ -59,18 +69,18 @@ class ActuatedObject(ObjectBase):
     def get_joints_by_name(self, names: list[str] = []) -> list[int]:
         joint_num_list = []
         for i in names:
-            if(i in self.joint_index):
-                joint_num_list.append(self.joint_index[i])
+            if(i in self.joint_dict):
+                joint_num_list.append(self.joint_dict[i])
             else:
-                logging.warn("Could not find " + str(i) + " in joint index")
+                logging.warn("Could not find " + str(i) + " in joint dict")
         return joint_num_list
 
     # gets joint names from a list of joint numbers
     # TODO: REDO THIS FUNCTION, IMPLEMENTED WEIRD
     def get_joints_by_number(self, numbers: list[int] = []) -> list[str]:
         joint_name_list = []
-        name = list(self.joint_index.keys())
-        num = list(self.joint_index.values())
+        name = list(self.joint_dict.keys())
+        num = list(self.joint_dict.values())
         for i in numbers:
             found = False
             for j in range(len(num)):
@@ -80,5 +90,35 @@ class ActuatedObject(ObjectBase):
                     break
             if(found == False):
                 logging.warn("Could not find joint " +
-                             str(i) + " in joint index")
+                             str(i) + " in joint dict")
         return joint_name_list
+
+    def get_joint_angles(self, joint_numbers: list[int] = None) -> list[float]:
+        '''
+        Get the current pose angle of joints
+        Stores in self.curr_joint_angle : current joint angles as a list
+        :param joint_indices: List of particular joint indices to get angles for. If None, returns all joint angle values.
+        '''
+        curr_joint_poses = []
+        if joint_numbers is None:
+            curr_joint_states = p.getJointStates(
+                self.id, self.joint_dict.values())
+        else:
+            curr_joint_states = p.getJointStates(self.id, joint_numbers)
+        for joint in range(0, len(curr_joint_states)):
+            curr_joint_poses.append(curr_joint_states[joint][0])
+        return curr_joint_poses
+
+
+# TODO: This should be more fleshed out in the future to get all relevant data
+
+    def get_data(self) -> dict:
+        data = {}
+        data["pose"] = self.get_curr_pose()
+        names = self.get_joint_names()
+        angles = self.get_joint_angles()
+        angle_dict = {}
+        for i in range(len(names)):
+            angle_dict[names[i]] = angles[i]
+        data["joint_angles"] = angle_dict
+        return data

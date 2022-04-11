@@ -10,10 +10,17 @@ class AsteriskEnv(Environment):
         self.obj = obj
 
     def reset(self):
-        for i in self.hand.joint_dict.values():
-            p.resetJointState(self.hand.id, i, 0)
-        p.resetBasePositionAndOrientation(
-            self.obj.id, [0.0, 0.17, .06], [0, 0, 0, 1])
+        p.resetSimulation()
+        hand_id = p.loadURDF(self.hand.path, useFixedBase=True,
+                             basePosition=[0.0, 0.0, 0.05])
+        obj_id = p.loadURDF(self.obj.path, basePosition=[0.0, 0.17, .06])
+        self.hand.id = hand_id
+        self.obj.id = obj_id
+        p.changeVisualShape(hand_id, -1, rgbaColor=[0.3, 0.3, 0.3, 1])
+        p.changeVisualShape(hand_id, 0, rgbaColor=[1, 0.5, 0, 1])
+        p.changeVisualShape(hand_id, 1, rgbaColor=[0.3, 0.3, 0.3, 1])
+        p.changeVisualShape(hand_id, 2, rgbaColor=[1, 0.5, 0, 1])
+        p.changeVisualShape(hand_id, 3, rgbaColor=[0.3, 0.3, 0.3, 1])
 
     def setup(self):
         super().setup()
