@@ -16,7 +16,7 @@ class State(ABC):
 
 class StateDefault(State):
     # TODO Find reasonable default, best done after refactor of hand and object classes
-    def __init__(self, objects: list[ObjectBase] = None):
+    def __init__(self, objects: list = None):
         super().__init__()
         self.objects = objects
 

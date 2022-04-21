@@ -14,14 +14,14 @@ class ObjectBase:
         if not self.name:
             self.name = "obj_" + str(id)
 
-    def get_curr_pose(self) -> list[float]:
+    def get_curr_pose(self) -> list:
         pose = []
         curr_pos, curr_orn = p.getBasePositionAndOrientation(self.id)
         pose.append(list(curr_pos))
         pose.append(list(curr_orn))
         return pose
 
-    def get_dimensions(self) -> list[float]:
+    def get_dimensions(self) -> list:
         return p.getVisualShapeData(self.id)[0][3]
 
     def set_curr_pose(self, pos, orn):
@@ -59,14 +59,14 @@ class ActuatedObject(ObjectBase):
     def get_joint_dict(self) -> dict:
         return self.joint_dict
 
-    def get_joint_names(self) -> list[str]:
+    def get_joint_names(self) -> list:
         return list(self.joint_dict.keys())
 
-    def get_joint_numbers(self) -> list[int]:
+    def get_joint_numbers(self) -> list:
         return list(self.joint_dict.values())
 
     # takes a list of names and returns the joint numbers
-    def get_joints_by_name(self, names: list[str] = []) -> list[int]:
+    def get_joints_by_name(self, names: list = []) -> list:
         joint_num_list = []
         for i in names:
             if(i in self.joint_dict):
@@ -77,7 +77,7 @@ class ActuatedObject(ObjectBase):
 
     # gets joint names from a list of joint numbers
     # TODO: REDO THIS FUNCTION, IMPLEMENTED WEIRD
-    def get_joints_by_number(self, numbers: list[int] = []) -> list[str]:
+    def get_joints_by_number(self, numbers: list = []) -> list:
         joint_name_list = []
         name = list(self.joint_dict.keys())
         num = list(self.joint_dict.values())
@@ -93,7 +93,7 @@ class ActuatedObject(ObjectBase):
                              str(i) + " in joint dict")
         return joint_name_list
 
-    def get_joint_angles(self, joint_numbers: list[int] = None) -> list[float]:
+    def get_joint_angles(self, joint_numbers: list = None) -> list:
         '''
         Get the current pose angle of joints
         Stores in self.curr_joint_angle : current joint angles as a list
