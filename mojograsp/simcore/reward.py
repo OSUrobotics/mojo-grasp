@@ -8,7 +8,8 @@ class Reward(ABC):
 
     @abstractmethod
     def get_reward(self) -> dict:
-        pass
+        data_dict = {}
+        return data_dict
 
 
 class RewardDefault(Reward):

@@ -5,8 +5,9 @@ from copy import deepcopy
 import json
 import logging
 
-from mojograsp.simcore.state import State
-from mojograsp.simcore.reward import Reward
+from mojograsp.simcore.state import State, StateDefault
+from mojograsp.simcore.action import Action, ActionDefault
+from mojograsp.simcore.reward import Reward, RewardDefault
 
 
 class RecordData(ABC):
@@ -44,7 +45,7 @@ class RecordDataDefault(RecordData):
 class RecordDataJSON(RecordData):
 
     def __init__(self, data_path: str = None, data_prefix: str = "episode", save_all=False, save_episode=True,
-                 state: State = None, reward: Reward = None):
+                 state: State = StateDefault(), action: Action = ActionDefault(), reward: Reward = RewardDefault()):
         if not data_path:
             logging.warn("No data path provided")
         self.data_path = data_path
@@ -52,31 +53,34 @@ class RecordDataJSON(RecordData):
         self.save_all_flag = save_all
         self.save_episode_flag = save_episode
         self.state = state
+        self.action = action
         self.reward = reward
         self.timestep_num = 1
         self.episode_num = 0
         self.timesteps = []
+        self.episode_data = []
         self.current_episode = None
         self.episodes = {}
 
     def record_timestep(self):
         state_reward_dict = {}
+        timestep_dict = {"number": self.timestep_num}
         if self.state:
-            state_reward_dict["state"] = self.state.get_state()
+            timestep_dict["state"] = self.state.get_state()
         if self.reward:
-            state_reward_dict["reward"] = self.reward.get_reward()
-        timestep_name = "timestep " + str(self.timestep_num)
-        timestep_dict = {timestep_name: state_reward_dict}
+            timestep_dict["reward"] = self.reward.get_reward()
+        if self.action:
+            timestep_dict["action"] = self.action.get_action()
         self.timesteps.append(timestep_dict)
         self.timestep_num += 1
 
     def record_episode(self):
-        episode_num = "episode_" + str(self.episode_num+1)
-        episode = {episode_num: self.timesteps}
+        episode = {"number": self.episode_num+1}
+        episode["timestep_list"] = self.timesteps
         self.current_episode = episode
 
         if self.save_all_flag:
-            self.episodes[episode_num] = self.timesteps
+            self.episode_data.append(episode)
 
         self.timesteps = []
         self.timestep_num = 1
@@ -95,4 +99,5 @@ class RecordDataJSON(RecordData):
             file_path = self.data_path + \
                 self.data_prefix + "_all"
             with open(file_path, 'w') as fout:
+                self.episodes = {"episode_list": self.episode_data}
                 json.dump(self.episodes, fout)
