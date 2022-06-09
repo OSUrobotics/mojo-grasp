@@ -11,7 +11,7 @@ Submodules
    mojograsp.simcore.environment
    mojograsp.simcore.episode
    mojograsp.simcore.phase
-   mojograsp.simcore.phasemanager
+   mojograsp.simcore.phase_manager
    mojograsp.simcore.record_data
    mojograsp.simcore.replay_buffer
    mojograsp.simcore.reward

@@ -15,8 +15,8 @@ class Action(ABC):
     @abstractmethod
     def get_action(self) -> dict:
         """
-        Abstract method returns a dictionary that represents the intended target action
-        BEFORE the sim is stepped. This could include joint target angles, 
+        Method should return a dictionary that represents the intended target action
+        BEFORE it is executed and the sim is stepped. This could include joint target angles, 
         end effector targets, etc.
 
         :return: Dictionary containing the representation of an intended action for a simulator object.
@@ -34,14 +34,13 @@ class ActionDefault(Action):
     """
 
     def __init__(self):
-        """Default constructor, takes no arguments.
-        """
+        """Default Placeholder if no Action class is provided"""
         super().__init__()
 
     def get_action(self) -> dict:
         """Default method that returns an empty dictionary. 
 
         :return: An empty dictionary.
-        :rtype: dictionary.
+        :rtype: dict
         """
         super().get_action()

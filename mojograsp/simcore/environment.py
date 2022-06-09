@@ -46,11 +46,11 @@ class Environment(ABC):
 
 class EnvironmentDefault(Environment):
     def __init__(self):
-        """Default Placeholder"""
+        """Default Placeholder if no Environment class is provided"""
         super().__init__()
 
     def setup(self):
-        """Default Placeholder"""
+        """Default Placeholder if no Environment class is provided"""
         super().setup()
 
     def step(self):
@@ -58,5 +58,5 @@ class EnvironmentDefault(Environment):
         super().step()
 
     def reset(self):
-        """Default Placeholder"""
+        """Default Placeholder if no Environment class is provided"""
         super().reset()

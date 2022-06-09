@@ -31,6 +31,7 @@ autodoc_default_options = {
     'exclude-members': '__weakref__'
 }
 
+add_module_names = False
 # -- General configuration ---------------------------------------------------
 
 # Add any Sphinx extension module names here, as strings. They can be

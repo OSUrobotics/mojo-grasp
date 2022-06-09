@@ -4,8 +4,20 @@ import logging
 
 
 class ObjectBase:
+    """ObjectBase Base Class"""
 
     def __init__(self, id: int = None, path: str = None, name: str = None):
+        """
+        Constructor takes in object id, path to urdf or sdf files (If one exists) and an object name. 
+        This serves as the base class that all other object types should inherit from. 
+
+        :param id: The id returned from pybullet when an object is loaded in. 
+        :param path: Path to the urdf or sdf file that was used. 
+        :param name: Name of the object.  
+        :type id: int
+        :type path: str
+        :type name: str
+        """
         # all coordinate frame magic will be done here.
         logging.info("Object Created with id: {}".format(id))
         self.path = path
@@ -15,6 +27,12 @@ class ObjectBase:
             self.name = "obj_" + str(id)
 
     def get_curr_pose(self) -> list:
+        """
+        Gets the current base position and orientation, returns a list of 2 lists: [[position],[orientation]]
+
+        :return: list of lists [[position],[orientation]]
+        :rtype: list[list]
+        """
         pose = []
         curr_pos, curr_orn = p.getBasePositionAndOrientation(self.id)
         pose.append(list(curr_pos))
@@ -22,15 +40,38 @@ class ObjectBase:
         return pose
 
     def get_dimensions(self) -> list:
+        """
+        Returns the visual shape data dimensions of an object.
+
+        :return: list
+        :rtype: list
+        """
         return p.getVisualShapeData(self.id)[0][3]
 
     def set_curr_pose(self, pos, orn):
+        """
+        Sets the current position and orientation of an object. Should not be used while stepping the simulator, 
+        only before or after a trial. 
+
+        :param pos: position [x,y,z]
+        :param orn: orientation (quaternion) [x,y,z,w]
+        :type pos: list
+        :type orn: list
+        """
         if len(orn) == 3:
             orn = p.getQuaternionFromEuler(orn)
         p.resetBasePositionAndOrientation(self.id, pos, orn)
 
 # TODO: This should be more fleshed out in the future to get all relevant data
     def get_data(self) -> dict:
+        """
+        Placeholder method that should be overriden if you would like to return more data. 
+        It is used in :func:`~mojograsp.simcore.state.StateDefault` to collect the state information 
+        of an object. The default dictionary that is returned contains the current pose of the object.
+
+        :return: dictionary of data about the object (can be used with the default state class)
+        :rtype: dict
+        """
         data = {}
         data["pose"] = self.get_curr_pose()
         return data
@@ -39,12 +80,34 @@ class ObjectBase:
 
 
 class ActuatedObject(ObjectBase):
+    """
+    ActuatedObject Class inherits from ObjectBase and is intended to make it easier to work with 
+    actuated objects with pybullet. Offers helper functions and keeps track of joint dictionary. 
+    """
+
     def __init__(self, id: int = None, path: str = None, name: str = None):
+        """
+        Constructor takes in object id, path to urdf or sdf files (If one exists) and an object name. 
+        This serves as the base class that all other object types should inherit from. 
+
+        :param id: The id returned from pybullet when an object is loaded in. 
+        :param path: Path to the urdf or sdf file that was used. 
+        :param name: Name of the object.  
+        :type id: int
+        :type path: str
+        :type name: str
+        """
+
         super().__init__(id=id, path=path, name=name)
         self.joint_dict = {}
         self.create_joint_dict()
 
     def create_joint_dict(self):
+        """
+        Method creates the joint dictionary for the given object, containing both name and
+        joint number for easier use.  
+        TODO: Add link functionality.
+        """
         # creates joint dictionary with style = name: number
         for i in range(p.getNumJoints(self.id)):
             info = p.getJointInfo(self.id, i)
@@ -57,16 +120,43 @@ class ActuatedObject(ObjectBase):
         logging.info("Joint dict: ", self.joint_dict)
 
     def get_joint_dict(self) -> dict:
+        """
+        Method returns the joint dictionary for the given object, containing both name and
+        joint number for easier use.  
+
+        :return: Joint dictionary for object
+        :rtype: dict
+        """
         return self.joint_dict
 
     def get_joint_names(self) -> list:
+        """
+        Method returns the joint dictionary for the given object, containing both name and
+        joint number for easier use.  
+
+        :return: Joint dictionary for object
+        :rtype: dict
+        """
         return list(self.joint_dict.keys())
 
     def get_joint_numbers(self) -> list:
+        """
+        Method returns a list of all the joint numbers.
+
+        :return: List of joint numbers
+        :rtype: list
+        """
         return list(self.joint_dict.values())
 
     # takes a list of names and returns the joint numbers
     def get_joints_by_name(self, names: list = []) -> list:
+        """
+        Method returns a list of joint numbers that correspond to the list of given joint names. 
+
+        :param names: list of joint names that you would like the number of.
+        :return: list of joint numbers.
+        :rtype: list
+        """
         joint_num_list = []
         for i in names:
             if(i in self.joint_dict):
@@ -76,8 +166,15 @@ class ActuatedObject(ObjectBase):
         return joint_num_list
 
     # gets joint names from a list of joint numbers
-    # TODO: REDO THIS FUNCTION, IMPLEMENTED WEIRD
     def get_joints_by_number(self, numbers: list = []) -> list:
+        """
+        Method returns a list of joint names that correspond to the list of given joint numbers. 
+        TODO: REDO THIS FUNCTION, IMPLEMENTED WEIRD
+
+        :param names: list of joint numbers that you would like the name of.
+        :return: list of joint names.
+        :rtype: list
+        """
         joint_name_list = []
         name = list(self.joint_dict.keys())
         num = list(self.joint_dict.values())
@@ -94,11 +191,14 @@ class ActuatedObject(ObjectBase):
         return joint_name_list
 
     def get_joint_angles(self, joint_numbers: list = None) -> list:
-        '''
-        Get the current pose angle of joints
-        Stores in self.curr_joint_angle : current joint angles as a list
-        :param joint_indices: List of particular joint indices to get angles for. If None, returns all joint angle values.
-        '''
+        """
+        Method returns a list of joint angles that correspond to the list of given joint numbers. 
+        If joint_numbers is None then all joint angles are returned.
+
+        :param joint_numbers: list of joint numbers that you would like to get the current joint angles for.
+        :return: List of current joint angles.
+        :rtype: list
+        """
         curr_joint_poses = []
         if joint_numbers is None:
             curr_joint_states = p.getJointStates(
@@ -109,10 +209,14 @@ class ActuatedObject(ObjectBase):
             curr_joint_poses.append(curr_joint_states[joint][0])
         return curr_joint_poses
 
-
-# TODO: This should be more fleshed out in the future to get all relevant data
-
     def get_data(self) -> dict:
+        """
+        Method overrides the ObjectBase Parent class get_data() to instead return a dictionary containing
+        the current pose, joint names and joint angles.
+
+        :return: dictionary containing object base pose (list), and joint_angles/names (dict)
+        :rtype: dict
+        """
         data = {}
         data["pose"] = self.get_curr_pose()
         names = self.get_joint_names()
