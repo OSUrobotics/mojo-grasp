@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>mojograsp.simcore.phase_manager module &mdash; mojo-grasp 0.1.0.devl documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="_static/doctools.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="mojograsp.simcore.record_data module" href="mojograsp.simcore.record_data.html" />
+    <link rel="prev" title="mojograsp.simcore.phase module" href="mojograsp.simcore.phase.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="index.html" class="icon icon-home"> mojo-grasp
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">mojograsp</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="mojograsp.html">mojograsp package</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="mojograsp.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l4 current"><a class="reference internal" href="mojograsp.simcore.html">mojograsp.simcore package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mojograsp.simobjects.html">mojograsp.simobjects package</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="mojograsp.html#module-mojograsp">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">mojo-grasp</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="modules.html">mojograsp</a> &raquo;</li>
+          <li><a href="mojograsp.html">mojograsp package</a> &raquo;</li>
+          <li><a href="mojograsp.simcore.html">mojograsp.simcore package</a> &raquo;</li>
+      <li>mojograsp.simcore.phase_manager module</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/mojograsp.simcore.phase_manager.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-mojograsp.simcore.phase_manager">
+<span id="mojograsp-simcore-phase-manager-module"></span><h1>mojograsp.simcore.phase_manager module<a class="headerlink" href="#module-mojograsp.simcore.phase_manager" title="Permalink to this heading"></a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="mojograsp.simcore.phase_manager.PhaseManager">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">PhaseManager</span></span><a class="headerlink" href="#mojograsp.simcore.phase_manager.PhaseManager" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Phase Manager Class</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="mojograsp.simcore.phase_manager.PhaseManager.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#mojograsp.simcore.phase_manager.PhaseManager.__init__" title="Permalink to this definition"></a></dt>
+<dd><p>Constructor initializes the phase dictionary, starting phase, current phase and 
+exit flag to Empty and None.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mojograsp.simcore.phase_manager.PhaseManager.add_phase">
+<span class="sig-name descname"><span class="pre">add_phase</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">phase_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">phase</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="mojograsp.simcore.phase.html#mojograsp.simcore.phase.Phase" title="mojograsp.simcore.phase.Phase"><span class="pre">Phase</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">start</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mojograsp.simcore.phase_manager.PhaseManager.add_phase" title="Permalink to this definition"></a></dt>
+<dd><p>Method takes in a phase name, phase object and a boolean to specify whether it is the starting phase.
+Adds the phase to the phase dictionary in the style PHASE_NAME: PHASE_OBJECT.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>phase_name</strong> (<em>str</em>) – Name of the phase being added.</p></li>
+<li><p><strong>phase</strong> (<a class="reference internal" href="mojograsp.simcore.phase.html#mojograsp.simcore.phase.Phase" title="mojograsp.simcore.phase.Phase"><code class="xref py py-func docutils literal notranslate"><span class="pre">Phase()</span></code></a>) – <a class="reference internal" href="mojograsp.simcore.phase.html#mojograsp.simcore.phase.Phase" title="mojograsp.simcore.phase.Phase"><code class="xref py py-func docutils literal notranslate"><span class="pre">Phase()</span></code></a> object.</p></li>
+<li><p><strong>start</strong> (<em>bool</em>) – If True then the phase given will be the starting phase.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mojograsp.simcore.phase_manager.PhaseManager.setup">
+<span class="sig-name descname"><span class="pre">setup</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#mojograsp.simcore.phase_manager.PhaseManager.setup" title="Permalink to this definition"></a></dt>
+<dd><p>Method called before starting episodes by <a class="reference internal" href="mojograsp.simcore.sim_manager.html#mojograsp.simcore.sim_manager.SimManager" title="mojograsp.simcore.sim_manager.SimManager"><code class="xref py py-func docutils literal notranslate"><span class="pre">SimManager()</span></code></a>, sets the current phase to the starting phase</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mojograsp.simcore.phase_manager.PhaseManager.get_next_phase">
+<span class="sig-name descname"><span class="pre">get_next_phase</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#mojograsp.simcore.phase_manager.PhaseManager.get_next_phase" title="Permalink to this definition"></a></dt>
+<dd><p>Method called by <a class="reference internal" href="mojograsp.simcore.sim_manager.html#mojograsp.simcore.sim_manager.SimManager" title="mojograsp.simcore.sim_manager.SimManager"><code class="xref py py-func docutils literal notranslate"><span class="pre">SimManager()</span></code></a> to get the next phase
+after the current one has completed. If no phase is given or phase name does not exist
+in the phase dictionary then the phase manager terminates.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mojograsp.simcore.phase_manager.PhaseManager.get_exit_flag">
+<span class="sig-name descname"><span class="pre">get_exit_flag</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#mojograsp.simcore.phase_manager.PhaseManager.get_exit_flag" title="Permalink to this definition"></a></dt>
+<dd><p>Gets the internal exit flag so that <a class="reference internal" href="mojograsp.simcore.sim_manager.html#mojograsp.simcore.sim_manager.SimManager" title="mojograsp.simcore.sim_manager.SimManager"><code class="xref py py-func docutils literal notranslate"><span class="pre">SimManager()</span></code></a> can check if all phases are complete</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mojograsp.simcore.phase_manager.PhaseManager.set_exit_flag">
+<span class="sig-name descname"><span class="pre">set_exit_flag</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">val</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mojograsp.simcore.phase_manager.PhaseManager.set_exit_flag" title="Permalink to this definition"></a></dt>
+<dd><p>Allows <a class="reference internal" href="mojograsp.simcore.sim_manager.html#mojograsp.simcore.sim_manager.SimManager" title="mojograsp.simcore.sim_manager.SimManager"><code class="xref py py-func docutils literal notranslate"><span class="pre">SimManager()</span></code></a> to manually set the exit flag after a run is completed for the next episode.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="mojograsp.simcore.phase.html" class="btn btn-neutral float-left" title="mojograsp.simcore.phase module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="mojograsp.simcore.record_data.html" class="btn btn-neutral float-right" title="mojograsp.simcore.record_data module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Keegan Nave.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
