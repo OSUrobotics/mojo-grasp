@@ -12,20 +12,29 @@ class State(ABC):
         data that a State will need to function. Usually this will be a manipulator 
         or other mojograsp objects.
         """
+        self.current_state = {}
         pass
+
+    @abstractmethod
+    def set_state(self) -> dict:
+        """
+        Method should be used to set the class variable self.current_state to represent the current state. 
+        It is called by the sim manager BEFORE the simulator is stepped. This can be set however you would like, as long as self.current_action
+        is updated so that get_action is returns properly. This could include joint angles, locations, etc.
+        """
+        self.current_state = {}
 
     @abstractmethod
     def get_state(self) -> dict:
         """
-        Method should return a dictionary that represents the current state of the simulator
-        BEFORE an action is taken and the sim is stepped. This could include joint angles,
-        object locations, etc.
+        Method should return a dictionary that represents the current state of the simulator environment
+        BEFORE it is executed and the sim is stepped. The return value is class variable 
+        self.current_state which is updated by set_state(). 
 
-        :return: Dictionary containing the representation of the current simulator state
+        :return: Dictionary containing the representation of the current state as a dictionary
         :rtype: Dictionary with format {string: **ANY TYPE**}.
         """
-        data_dict = {}
-        return data_dict
+        return self.current_state
 
 
 class StateDefault(State):
@@ -46,6 +55,18 @@ class StateDefault(State):
         super().__init__()
         self.objects = objects
 
+    def set_state(self) -> dict:
+        """
+        Default method that sets self.current_stae to an empty dictionary. 
+        """
+        if self.objects:
+            data_dict = {}
+            for i in self.objects:
+                data_dict[i.name] = i.get_data()
+            self.current_state = data_dict
+        else:
+            self.current_state = {}
+
     def get_state(self) -> dict:
         """
         Default method will return a dictionary containing the the get_data() return value for every object
@@ -54,10 +75,4 @@ class StateDefault(State):
         :return: Dictionary containing the representation of the current simulator state or an empty dictionary.
         :rtype: dict
         """
-        if self.objects:
-            data_dict = {}
-            for i in self.objects:
-                data_dict[i.name] = i.get_data()
-            return data_dict
-        else:
-            super().get_state()
+        return self.current_state
