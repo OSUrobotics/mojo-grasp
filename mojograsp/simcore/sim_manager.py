@@ -1,13 +1,8 @@
 # pybullet imports
-from mojograsp.simcore.action import ActionDefault
 import pybullet as p
-import pybullet_data
 # mojograsp module imports
 from mojograsp.simcore.environment import Environment, EnvironmentDefault
 from mojograsp.simcore.phase import Phase
-from mojograsp.simcore.reward import Reward, RewardDefault
-from mojograsp.simcore.state import State, StateDefault
-from mojograsp.simcore.action import Action, ActionDefault
 from mojograsp.simcore.episode import Episode, EpisodeDefault
 from mojograsp.simcore.record_data import RecordData, RecordDataDefault
 from mojograsp.simcore.replay_buffer import ReplayBuffer, ReplayBufferDefault
@@ -15,11 +10,8 @@ from mojograsp.simcore.phase_manager import PhaseManager
 # python imports
 import time
 import os
-# alsdkf
 from abc import ABC, abstractmethod
 import logging
-
-from requests import Response
 
 
 class SimManager(ABC):
@@ -58,33 +50,29 @@ class SimManagerDefault(SimManager):
     """
 
     def __init__(self, num_episodes: int = 1, env: Environment = EnvironmentDefault(),
-                 episode: Episode = EpisodeDefault(), record_data: RecordData = RecordDataDefault(),
-                 state: State = StateDefault(), action: Action = ActionDefault(), reward: Reward = RewardDefault()):
+                 episode: Episode = EpisodeDefault(), record_data: RecordData = RecordDataDefault()):
         """
-        Constructor passes in the environment, episode and record data objects and simmanager parameters.
+            Constructor passes in the environment, episode and record data objects and simmanager parameters.
 
-        :param num_episodes: Number of episodes to run.
-        :param env: :func:`~mojograsp.simcore.environment.Environment` object
-        :param episode: :func:`~mojograsp.simcore.episode.Episode` object
-        :param record_data: :func:`~mojograsp.simcore.record_data.RecordData` object
-        :param state: :func:`~mojograsp.simcore.state.State` object
-        :param action: :func:`~mojograsp.simcore.action.Action` object
-        :param reward: :func:`~mojograsp.simcore.reward.Reward` object
-        :type num_episodes: int
-        :type env: :func:`~mojograsp.simcore.environment.Environment`
-        :type episode: :func:`~mojograsp.simcore.episode.Episode`
-        :type record: :func:`~mojograsp.simcore.record_data.RecordData`
-        :type state: :func:`~mojograsp.simcore.state.State`
-        :type action: :func:`~mojograsp.simcore.action.Action`
-        :type reward: :func:`~mojograsp.simcore.reward.Reward`
-        """
+            :param num_episodes: Number of episodes to run.
+            :param env: :func:`~mojograsp.simcore.environment.Environment` object
+            :param episode: :func:`~mojograsp.simcore.episode.Episode` object
+            :param record_data: :func:`~mojograsp.simcore.record_data.RecordData` object
+            :param state: :func:`~mojograsp.simcore.state.State` object
+            :param action: :func:`~mojograsp.simcore.action.Action` object
+            :param reward: :func:`~mojograsp.simcore.reward.Reward` object
+            :type num_episodes: int
+            :type env: :func:`~mojograsp.simcore.environment.Environment`
+            :type episode: :func:`~mojograsp.simcore.episode.Episode`
+            :type record: :func:`~mojograsp.simcore.record_data.RecordData`
+            :type state: :func:`~mojograsp.simcore.state.State`
+            :type action: :func:`~mojograsp.simcore.action.Action`
+            :type reward: :func:`~mojograsp.simcore.reward.Reward`
+            """
         self.num_episodes = num_episodes
         self.env = env
         self.episode = episode
         self.record = record_data
-        self.state = state
-        self.reward = reward
-        self.action = action
         self.phase_manager = PhaseManager()
 
     def add_phase(self, phase_name: str, phase: Phase, start: bool = False):
@@ -123,14 +111,11 @@ class SimManagerDefault(SimManager):
                     logging.info("CURRENT PHASE: {}".format(
                         self.phase_manager.current_phase.name))
                     while not done:
-                        self.state.set_state()
-                        self.action.set_action()
                         self.phase_manager.current_phase.pre_step()
                         self.phase_manager.current_phase.execute_action()
                         self.env.step()
-                        self.reward.set_reward()
-                        self.record.record_timestep()
                         self.phase_manager.current_phase.post_step()
+                        self.record.record_timestep()
                         done = self.phase_manager.current_phase.exit_condition()
                     self.phase_manager.get_next_phase()
 
@@ -155,7 +140,6 @@ class SimManagerRL(SimManager):
 
     def __init__(self, num_episodes: int = 1, env: Environment = EnvironmentDefault(),
                  episode: Episode = EpisodeDefault(), record_data: RecordData = RecordDataDefault(),
-                 state: State = StateDefault(), action: Action = ActionDefault(), reward: Reward = RewardDefault(),
                  replay_buffer: ReplayBuffer = ReplayBufferDefault):
         """
         Constructor passes in the environment, episode and record data objects and simmanager parameters.
@@ -181,9 +165,6 @@ class SimManagerRL(SimManager):
         self.env = env
         self.episode = episode
         self.record = record_data
-        self.state = state
-        self.reward = reward
-        self.action = action
         self.replay_buffer = replay_buffer
         self.phase_manager = PhaseManager()
 
@@ -227,16 +208,13 @@ class SimManagerRL(SimManager):
                         self.phase_manager.current_phase.name))
                     while not done:
                         timestep_number += 1
-                        self.state.set_state()
-                        self.action.set_action()
                         self.phase_manager.current_phase.pre_step()
                         self.phase_manager.current_phase.execute_action()
                         self.env.step()
-                        self.reward.set_reward()
+                        self.phase_manager.current_phase.post_step()
                         self.record.record_timestep()
                         self.replay_buffer.add_timestep(
                             episode_num=episode_number, timestep_num=timestep_number)
-                        self.phase_manager.current_phase.post_step()
                         done = self.phase_manager.current_phase.exit_condition()
                     self.phase_manager.get_next_phase()
 
@@ -245,6 +223,7 @@ class SimManagerRL(SimManager):
                 self.episode.post_episode()
                 self.env.reset()
             self.record.save_all()
+            self.replay_buffer.save_buffer()
         else:
             logging.warn("No Phases have been added")
         print("COMPLETED")

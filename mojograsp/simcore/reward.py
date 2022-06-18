@@ -14,10 +14,10 @@ class Reward(ABC):
         pass
 
     @abstractmethod
-    def set_reward(self) -> dict:
+    def set_reward(self):
         """
-        Method should be used to set the class variable self.current_reward. It is called by the sim manager
-        AFTER the simulator is stepped. This can be set however you would like, as long as self.current_reward
+        Method should be used to set the class variable self.current_reward. It should be called in the post_step()
+        method of a user defined phase. This can be set however you would like, as long as self.current_reward
         is updated so that get_reward() is returns properly. This could be distance measures, or any other 
         metrics saved in a dictionary
         """
@@ -46,7 +46,7 @@ class RewardDefault(Reward):
         """Default Placeholder if no Reward class is provided"""
         super().__init__()
 
-    def set_reward(self) -> dict:
+    def set_reward(self):
         """
         Default method that sets self.current_reward to an empty dictionary. 
         """

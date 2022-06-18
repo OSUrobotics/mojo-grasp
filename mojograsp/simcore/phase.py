@@ -54,18 +54,18 @@ class Phase(ABC):
         """
         pass
 
+    @abstractmethod
     def pre_step(self):
         """
         This method is called before every step by :func:`~mojograsp.simcore.sim_manager.SimManager`
-        while the currrent phase is active. This is not an abstract method and does not need to be
-        overidden. 
+        while the currrent phase is active. 
         """
         pass
 
+    @abstractmethod
     def post_step(self):
         """
         This method is called after every step by :func:`~mojograsp.simcore.sim_manager.SimManager`
-        while the currrent phase is active. This is not an abstract method and does not need to be
-        overidden. 
+        while the currrent phase is active.
         """
         pass
