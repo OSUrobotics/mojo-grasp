@@ -14,10 +14,10 @@ class Action(ABC):
         pass
 
     @abstractmethod
-    def set_action(self) -> dict:
+    def set_action(self):
         """
-        Method should be used to set the class variable self.current_action. It is called by the sim manager
-        BEFORE the simulator is stepped. This can be set however you would like, as long as self.current_action
+        Method should be used to set the class variable self.current_action. It should be called in the pre_step()
+        method of a user defined phase. This can be set however you would like, as long as self.current_action
         is updated so that get_action is returns properly. This could include joint target angles, 
         end effector targets, etc.
 
@@ -48,7 +48,7 @@ class ActionDefault(Action):
         """Default Placeholder if no Action class is provided"""
         super().__init__()
 
-    def set_action(self) -> dict:
+    def set_action(self):
         """
         Default method that sets self.current_action to an empty dictionary. 
         """

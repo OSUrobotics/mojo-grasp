@@ -139,7 +139,7 @@ class RecordDataJSON(RecordData):
         """
         if self.save_episode_flag and self.data_path != None:
             file_path = self.data_path + \
-                self.data_prefix + "_" + str(self.episode_num)
+                self.data_prefix + "_" + str(self.episode_num) + ".json"
             with open(file_path, 'w') as fout:
                 json.dump(self.current_episode, fout)
         self.current_episode = {}
@@ -152,7 +152,7 @@ class RecordDataJSON(RecordData):
 
         if self.save_all_flag and self.data_path != None:
             file_path = self.data_path + \
-                self.data_prefix + "_all"
+                self.data_prefix + "_all.json"
             with open(file_path, 'w') as fout:
                 self.episodes = {"episode_list": self.episode_data}
                 json.dump(self.episodes, fout)

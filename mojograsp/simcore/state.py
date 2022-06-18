@@ -16,11 +16,12 @@ class State(ABC):
         pass
 
     @abstractmethod
-    def set_state(self) -> dict:
+    def set_state(self):
         """
         Method should be used to set the class variable self.current_state to represent the current state. 
-        It is called by the sim manager BEFORE the simulator is stepped. This can be set however you would like, as long as self.current_action
-        is updated so that get_action is returns properly. This could include joint angles, locations, etc.
+        It should be called by the pre_step() method of a user defined phase. 
+        This can be set however you would like, as long as self.current_action is updated so that get_action is returns
+        properly. This could include joint angles, locations, etc.
         """
         self.current_state = {}
 
@@ -55,9 +56,9 @@ class StateDefault(State):
         super().__init__()
         self.objects = objects
 
-    def set_state(self) -> dict:
+    def set_state(self):
         """
-        Default method that sets self.current_stae to an empty dictionary. 
+        Default method that sets self.current_state to either get_data() for the object or an empty dictionary
         """
         if self.objects:
             data_dict = {}
