@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Simobjects &mdash; mojo-grasp 0.0.1 documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="_static/doctools.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="Simcore" href="simcore.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="index.html" class="icon icon-home"> mojo-grasp
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Mojo-Grasp:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="index.html">Home</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Simcore:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="simcore.html">Simcore</a></li>
+<li class="toctree-l1"><a class="reference internal" href="simcore.html#module-mojograsp.simcore.sim_manager">SimManager</a></li>
+<li class="toctree-l1"><a class="reference internal" href="simcore.html#module-mojograsp.simcore.phase">Phase</a></li>
+<li class="toctree-l1"><a class="reference internal" href="simcore.html#module-mojograsp.simcore.phase_manager">PhaseManager</a></li>
+<li class="toctree-l1"><a class="reference internal" href="simcore.html#module-mojograsp.simcore.environment">Environment</a></li>
+<li class="toctree-l1"><a class="reference internal" href="simcore.html#module-mojograsp.simcore.episode">Episode</a></li>
+<li class="toctree-l1"><a class="reference internal" href="simcore.html#module-mojograsp.simcore.record_data">RecordData</a></li>
+<li class="toctree-l1"><a class="reference internal" href="simcore.html#module-mojograsp.simcore.replay_buffer">ReplayBuffer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="simcore.html#module-mojograsp.simcore.state">State</a></li>
+<li class="toctree-l1"><a class="reference internal" href="simcore.html#module-mojograsp.simcore.action">Action</a></li>
+<li class="toctree-l1"><a class="reference internal" href="simcore.html#module-mojograsp.simcore.reward">Reward</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Simobjects:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Simobjects</a></li>
+<li class="toctree-l1"><a class="reference internal" href="#module-mojograsp.simobjects.object_base">ObjectBase</a></li>
+<li class="toctree-l1"><a class="reference internal" href="#module-mojograsp.simobjects.sensor_base">SensorBase</a></li>
+<li class="toctree-l1"><a class="reference internal" href="#module-mojograsp.simobjects.two_finger_gripper">TwoFingerGripper</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">mojo-grasp</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>Simobjects</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/simobjects.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="simobjects">
+<h1>Simobjects<a class="headerlink" href="#simobjects" title="Permalink to this heading"></a></h1>
+</section>
+<section id="module-mojograsp.simobjects.object_base">
+<span id="objectbase"></span><h1>ObjectBase<a class="headerlink" href="#module-mojograsp.simobjects.object_base" title="Permalink to this heading"></a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="mojograsp.simobjects.object_base.ActuatedObject">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mojograsp.simobjects.object_base.</span></span><span class="sig-name descname"><span class="pre">ActuatedObject</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mojograsp.simobjects.object_base.ActuatedObject" title="Permalink to this definition"></a></dt>
+<dd><p>ActuatedObject Class inherits from ObjectBase and is intended to make it easier to work with 
+actuated objects with pybullet. Offers helper functions and keeps track of joint dictionary.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="mojograsp.simobjects.object_base.ActuatedObject.create_joint_dict">
+<span class="sig-name descname"><span class="pre">create_joint_dict</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#mojograsp.simobjects.object_base.ActuatedObject.create_joint_dict" title="Permalink to this definition"></a></dt>
+<dd><p>Method creates the joint dictionary for the given object, containing both name and
+joint number for easier use.  
+TODO: Add link functionality.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mojograsp.simobjects.object_base.ActuatedObject.get_data">
+<span class="sig-name descname"><span class="pre">get_data</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="headerlink" href="#mojograsp.simobjects.object_base.ActuatedObject.get_data" title="Permalink to this definition"></a></dt>
+<dd><p>Method overrides the ObjectBase Parent class get_data() to instead return a dictionary containing
+the current pose, joint names and joint angles.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>dictionary containing object base pose (list), and joint_angles/names (dict)</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mojograsp.simobjects.object_base.ActuatedObject.get_joint_angles">
+<span class="sig-name descname"><span class="pre">get_joint_angles</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">joint_numbers</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">list</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span></span></span><a class="headerlink" href="#mojograsp.simobjects.object_base.ActuatedObject.get_joint_angles" title="Permalink to this definition"></a></dt>
+<dd><p>Method returns a list of joint angles that correspond to the list of given joint numbers. 
+If joint_numbers is None then all joint angles are returned.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>joint_numbers</strong> – list of joint numbers that you would like to get the current joint angles for.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>List of current joint angles.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>list</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mojograsp.simobjects.object_base.ActuatedObject.get_joint_dict">
+<span class="sig-name descname"><span class="pre">get_joint_dict</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="headerlink" href="#mojograsp.simobjects.object_base.ActuatedObject.get_joint_dict" title="Permalink to this definition"></a></dt>
+<dd><p>Method returns the joint dictionary for the given object, containing both name and
+joint number for easier use.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Joint dictionary for object</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mojograsp.simobjects.object_base.ActuatedObject.get_joint_names">
+<span class="sig-name descname"><span class="pre">get_joint_names</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span></span></span><a class="headerlink" href="#mojograsp.simobjects.object_base.ActuatedObject.get_joint_names" title="Permalink to this definition"></a></dt>
+<dd><p>Method returns the joint dictionary for the given object, containing both name and
+joint number for easier use.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Joint dictionary for object</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mojograsp.simobjects.object_base.ActuatedObject.get_joint_numbers">
+<span class="sig-name descname"><span class="pre">get_joint_numbers</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span></span></span><a class="headerlink" href="#mojograsp.simobjects.object_base.ActuatedObject.get_joint_numbers" title="Permalink to this definition"></a></dt>
+<dd><p>Method returns a list of all the joint numbers.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>List of joint numbers</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>list</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mojograsp.simobjects.object_base.ActuatedObject.get_joints_by_name">
+<span class="sig-name descname"><span class="pre">get_joints_by_name</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">names</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[]</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span></span></span><a class="headerlink" href="#mojograsp.simobjects.object_base.ActuatedObject.get_joints_by_name" title="Permalink to this definition"></a></dt>
+<dd><p>Method returns a list of joint numbers that correspond to the list of given joint names.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>names</strong> – list of joint names that you would like the number of.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>list of joint numbers.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>list</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mojograsp.simobjects.object_base.ActuatedObject.get_joints_by_number">
+<span class="sig-name descname"><span class="pre">get_joints_by_number</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">numbers</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[]</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span></span></span><a class="headerlink" href="#mojograsp.simobjects.object_base.ActuatedObject.get_joints_by_number" title="Permalink to this definition"></a></dt>
+<dd><p>Method returns a list of joint names that correspond to the list of given joint numbers. 
+TODO: REDO THIS FUNCTION, IMPLEMENTED WEIRD</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>names</strong> – list of joint numbers that you would like the name of.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>list of joint names.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>list</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="mojograsp.simobjects.object_base.ObjectBase">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mojograsp.simobjects.object_base.</span></span><span class="sig-name descname"><span class="pre">ObjectBase</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mojograsp.simobjects.object_base.ObjectBase" title="Permalink to this definition"></a></dt>
+<dd><p>ObjectBase Base Class</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="mojograsp.simobjects.object_base.ObjectBase.get_curr_pose">
+<span class="sig-name descname"><span class="pre">get_curr_pose</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span></span></span><a class="headerlink" href="#mojograsp.simobjects.object_base.ObjectBase.get_curr_pose" title="Permalink to this definition"></a></dt>
+<dd><p>Gets the current base position and orientation, returns a list of 2 lists: [[position],[orientation]]</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>list of lists [[position],[orientation]]</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>list[list]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mojograsp.simobjects.object_base.ObjectBase.get_data">
+<span class="sig-name descname"><span class="pre">get_data</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="headerlink" href="#mojograsp.simobjects.object_base.ObjectBase.get_data" title="Permalink to this definition"></a></dt>
+<dd><p>Placeholder method that should be overriden if you would like to return more data. 
+It is used in <a class="reference internal" href="simcore.html#mojograsp.simcore.state.StateDefault" title="mojograsp.simcore.state.StateDefault"><code class="xref py py-func docutils literal notranslate"><span class="pre">StateDefault()</span></code></a> to collect the state information 
+of an object. The default dictionary that is returned contains the current pose of the object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>dictionary of data about the object (can be used with the default state class)</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mojograsp.simobjects.object_base.ObjectBase.get_dimensions">
+<span class="sig-name descname"><span class="pre">get_dimensions</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span></span></span><a class="headerlink" href="#mojograsp.simobjects.object_base.ObjectBase.get_dimensions" title="Permalink to this definition"></a></dt>
+<dd><p>Returns the visual shape data dimensions of an object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>list</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>list</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mojograsp.simobjects.object_base.ObjectBase.set_curr_pose">
+<span class="sig-name descname"><span class="pre">set_curr_pose</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pos</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">orn</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mojograsp.simobjects.object_base.ObjectBase.set_curr_pose" title="Permalink to this definition"></a></dt>
+<dd><p>Sets the current position and orientation of an object. Should not be used while stepping the simulator, 
+only before or after a trial.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>pos</strong> (<em>list</em>) – position [x,y,z]</p></li>
+<li><p><strong>orn</strong> (<em>list</em>) – orientation (quaternion) [x,y,z,w]</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-mojograsp.simobjects.sensor_base">
+<span id="sensorbase"></span><h1>SensorBase<a class="headerlink" href="#module-mojograsp.simobjects.sensor_base" title="Permalink to this heading"></a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="mojograsp.simobjects.sensor_base.SensorBase">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mojograsp.simobjects.sensor_base.</span></span><span class="sig-name descname"><span class="pre">SensorBase</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">unique_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sensor_name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mojograsp.simobjects.sensor_base.SensorBase" title="Permalink to this definition"></a></dt>
+<dd><p>SensorBase Class will eventually be the base class that all other supported sensors inherit from.
+The idea is to be able to attach and sensor to any object easily.</p>
+</dd></dl>
+
+</section>
+<section id="module-mojograsp.simobjects.two_finger_gripper">
+<span id="twofingergripper"></span><h1>TwoFingerGripper<a class="headerlink" href="#module-mojograsp.simobjects.two_finger_gripper" title="Permalink to this heading"></a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="mojograsp.simobjects.two_finger_gripper.TwoFingerGripper">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mojograsp.simobjects.two_finger_gripper.</span></span><span class="sig-name descname"><span class="pre">TwoFingerGripper</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'two_finger_gripper'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mojograsp.simobjects.two_finger_gripper.TwoFingerGripper" title="Permalink to this definition"></a></dt>
+<dd><p>TwoFingerGripper Class is a child class of ActuatedObject</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="mojograsp.simobjects.two_finger_gripper.TwoFingerGripper.create_sensor_index">
+<span class="sig-name descname"><span class="pre">create_sensor_index</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#mojograsp.simobjects.two_finger_gripper.TwoFingerGripper.create_sensor_index" title="Permalink to this definition"></a></dt>
+<dd><p>Method is a rough draft of the create sensor index method. In the future this will construct a dictionary 
+of sensors on the object.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="simcore.html" class="btn btn-neutral float-left" title="Simcore" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Keegan Nave.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
