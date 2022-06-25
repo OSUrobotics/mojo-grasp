@@ -13,7 +13,7 @@
             <geometry>
                 <mesh filename="Shapes/20_r_hourglass.STL" scale=".001 .001 .001"/>
             </geometry>
-        </collision >
+        </collision>
         <inertial>
             <mass value="0.3"/>
             <inertia ixx="0.000029435425" ixy="0.0" ixz="0.0" iyy="0.000029435425" iyz="0.0" izz="0.00000725805"/>

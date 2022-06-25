@@ -72,7 +72,7 @@ class MultiprocessGymWrapper(gym.Env):
         self.first = True
         self.reduced_saving = True
         self.small_enough = False #args['epochs'] <= 100000
-        self.OBJECT_POSE_RANDOMIZATION = args['object_random_start']
+        self.ONE_FINGER = args['one_finger_straight']
         try:
             self.DOMAIN_RANDOMIZATION_MASS = args['domain_randomization_object_mass']
             self.DOMAIN_RANDOMIZATION_FINGER = args['domain_randomization_finger_friction']
@@ -191,7 +191,7 @@ class MultiprocessGymWrapper(gym.Env):
         self.first = False
         self.env.apply_domain_randomization(self.DOMAIN_RANDOMIZATION_FINGER,self.DOMAIN_RANDOMIZATION_FLOOR,self.DOMAIN_RANDOMIZATION_MASS)
         
-        if self.eval:
+        if self.eval:     
             self.eval_run +=1
 
         if self.eval_point is not None:
@@ -205,6 +205,9 @@ class MultiprocessGymWrapper(gym.Env):
                 self.env.reset(special['goal_position'], special['fingers'])
             else:
                 self.env.reset(special['goal_position'])
+            if self.ONE_FINGER:
+                self.env.reset([0,0],finger=[-0.175,0.175,.785,-1.57])
+
         elif (self.TASK == 'Rotation_region') | ('contact' in self.TASK) | (self.TASK=='big_Rotation'):
             self.env.reset(new_goal['goal_position'],fingerys=fingerys)
         elif self.OBJECT_POSE_RANDOMIZATION:
@@ -215,13 +218,15 @@ class MultiprocessGymWrapper(gym.Env):
             self.env.reset([x,y])
         elif 'wall' in self.TASK:
             self.env.reset([0.0463644396618753, 0.012423314164921])
+        elif self.ONE_FINGER:
+            self.env.reset([0,0],finger=[-0.175,0.175])
         else:
             # print('reseting with NO parameters')
             self.env.reset()
         self.manipulation_phase.setup()
         
         state, _ = self.manipulation_phase.get_episode_info()
-        # print(state['two_finger_gripper']['joint_angles'])
+        # print(state['two_  gripper']['joint_angles'])
         # print('goal pose in reset', state['goal_pose'])
         # print('start object pos', state['obj_2']['pose'])
         # print('joint angles', state['two_finger_gripper']['joint_angles'])
