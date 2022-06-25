@@ -29,7 +29,7 @@ class ExpertController():
     def get_current_cube_position(self):
         self.current_cube_pose = self.cube.get_curr_pose()
 
-    def get_next_cube_position(self) -> list[float]:
+    def get_next_cube_position(self) -> list:
         # get current (x,y)
         current_x = self.current_cube_pose[0][0]
         current_y = self.current_cube_pose[0][1]
@@ -142,7 +142,7 @@ class ExpertController():
                                              targetPositions=next_link_positions_global)
         return goal
 
-    def set_goal_position(self, position: list[float]):
+    def set_goal_position(self, position: list):
         # world coordinates
         self.goal_position = position
 
