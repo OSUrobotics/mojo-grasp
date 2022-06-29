@@ -462,6 +462,6 @@ class RLController(ExpertController):
         return action.tolist()
 
     def train_policy(self):
-        # can flesh this out/try different taining methods
+        # can flesh this out/try different training methods
         for _ in range(100):
             self.policy.train(None, self.replay_buffer)

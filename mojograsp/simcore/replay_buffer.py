@@ -8,6 +8,8 @@ from mojograsp.simcore.action import Action, ActionDefault
 from mojograsp.simcore.reward import Reward, RewardDefault
 from mojograsp.simcore.state import State, StateDefault
 import random
+import numpy as np
+from torch.utils.tensorboard import SummaryWriter
 
 @dataclass
 class Timestep:
@@ -59,9 +61,9 @@ class ReplayBufferDefault:
 
         :param buffer_size: Size of the deque before oldest entry is deleted.
         :param no_delete: Set if you do not wish old entries to be deleted. 
-        :param state: State objecct.
-        :param action: action objecct.
-        :param reward: Reward objecct.
+        :param state: State object.
+        :param action: action object.
+        :param reward: Reward object.
         :type buffer_size: int
         :type no_delete: bool
         :type state: :func:`~mojograsp.simcore.state.State` 
@@ -75,12 +77,8 @@ class ReplayBufferDefault:
         self.reward = reward
         self.action = action
 
-        # deque data structure deletes oldest entry in array once buffer_size is exceeded
-        if no_delete:
-            # no deletion limit
-            self.buffer = deque()
-        else:
-            self.buffer = deque(maxlen=buffer_size)
+        # Using list instead of deque for access speed and forward rollout access
+        self.buffer = list()
 
     def load_buffer_JSON(self, file_path: str):
         """
@@ -144,6 +142,9 @@ class ReplayBufferDefault:
         if self.prev_timestep:
             self.prev_timestep.next_state = tstep.state
             self.buffer.append(self.prev_timestep)
+            # List doesn't have max size, this enforces it if needed
+            if self.buffer_size:
+                self.buffer = self.buffer[-self.buffer_size:]
         # set new previous timestep to current one
         self.prev_timestep = tstep
 
@@ -176,5 +177,33 @@ class ReplayBufferDefault:
     def sample(self, batch_size):
         return random.sample(self.buffer, batch_size)
 
+    def sample_rollout(self, batch_size, rollout_size=5):
+        inds = np.random.choice(self.__len__(), batch_size)
+        sample = []
+        rewards = []
+        last_next_state = []
+        for ind in inds:
+            sample.append(self.buffer[ind])
+            temp = self.buffer[ind:ind+rollout_size]
+            ep = self.buffer[ind].episode
+            temp_rewards = []
+            for r in temp:
+                if r.episode != ep:
+                    break
+                else:
+                    temp_rewards.append(r.reward)
+                    temp_next_state = r.next_state
+            rewards.append(temp_rewards)
+            last_next_state.append(temp_next_state)
+        return sample, rewards, last_next_state
+
     def __len__(self):
         return(len(self.buffer))
+
+    def get_average_reward(self, num):
+        rewards = self.buffer[-num:]
+        avg_reward = 0
+        for r in rewards:
+            avg_reward += -r.reward['distance_to_goal']
+        avg_reward = avg_reward/len(rewards)
+        return avg_reward
