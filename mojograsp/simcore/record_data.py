@@ -140,8 +140,9 @@ class RecordDataJSON(RecordData):
         if self.save_episode_flag and self.data_path != None:
             file_path = self.data_path + \
                 self.data_prefix + "_" + str(self.episode_num) + ".json"
+            print(file_path)
             with open(file_path, 'w') as fout:
-                json.dump(self.current_episode, fout)
+                json.dump(self.current_episode, fout, indent=4)
         self.current_episode = {}
 
     def save_all(self):

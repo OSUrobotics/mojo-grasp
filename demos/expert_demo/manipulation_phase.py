@@ -21,7 +21,7 @@ class Manipulation(Phase):
         self.reward = reward
         self.terminal_step = 400
         self.timestep = 0
-        self.episode = 0
+        self.episode = 18
         self.x = x
         self.y = y
         self.target = None
@@ -61,6 +61,9 @@ class Manipulation(Phase):
     def exit_condition(self) -> bool:
         # If we reach 400 steps or the controller exit condition finishes we exit the phase
         if self.timestep > self.terminal_step or self.controller.exit_condition():
+            print('ending with distance', self.controller.check_goal())
+            print('retry count', self.controller.retry_count)
+            self.controller.retry_count=0
             return True
         return False
 

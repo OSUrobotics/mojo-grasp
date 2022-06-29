@@ -7,7 +7,7 @@ import logging
 from mojograsp.simcore.action import Action, ActionDefault
 from mojograsp.simcore.reward import Reward, RewardDefault
 from mojograsp.simcore.state import State, StateDefault
-
+import random
 
 @dataclass
 class Timestep:
@@ -157,8 +157,8 @@ class ReplayBufferDefault:
         :type episode_num: int
         :type timestep_num: int
         """
-        tstep = Timestep(episode=episode_num, timestep=timestep_num, state=self.state.get_state,
-                         action=self.action.get_action, reward=self.reward.get_reward)
+        tstep = Timestep(episode=episode_num, timestep=timestep_num, state=self.state.get_state(),
+                         action=self.action.get_action(), reward=self.reward.get_reward())
         self.backfill(tstep)
 
     def save_buffer(self, file_path: str = None):
@@ -172,3 +172,9 @@ class ReplayBufferDefault:
             temp_list = list(self.buffer)
             temp_list = [asdict(x) for x in temp_list]
             json.dump(temp_list, fout)
+
+    def sample(self, batch_size):
+        return random.sample(self.buffer, batch_size)
+
+    def __len__(self):
+        return(len(self.buffer))
