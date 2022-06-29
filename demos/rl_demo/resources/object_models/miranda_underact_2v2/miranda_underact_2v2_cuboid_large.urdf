@@ -1,0 +1,18 @@
+<?xml version="1.0" ?>
+<robot name="miranda_underact_2v2_cuboid_large">
+
+    <link name="miranda_underact_2v2_cuboid_large">
+        <visual>
+            <origin rpy="1.5707963267948966 0 0" xyz="0 0 0"/>
+            <geometry>
+                <mesh filename="obj_files/miranda_underact_2v2_cuboid_large.obj" scale="1 1 1"/>
+            </geometry>
+        </visual>
+        <collision>
+            <geometry>
+                <mesh filename="obj_files/miranda_underact_2v2_cuboid_large_collision.obj" scale="1 1 1"/>
+            </geometry>
+        </collision>
+    </link>
+
+</robot>

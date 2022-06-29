@@ -1,0 +1,75 @@
+{
+    "hand_name": "2v2_nosensors",
+    "palm": {
+        "left_joint": "pin",
+        "right_joint": "pin",
+        "stiffness": 0
+    },
+    "left_finger": {
+        "number_segments": 2,
+        "finger_length": 0.144,
+        "segment_names": [
+            "prox",
+            "distal"
+        ],
+        "prox": {
+            "ratio": 0.5,
+            "joint_bottom": "pin",
+            "joint_top": "pin"
+        },
+        "intermediate": {
+            "ratio": 0.0,
+            "joint_bottom": "na",
+            "joint_top": "na"
+        },
+        "distal": {
+            "ratio": 0.5,
+            "joint_bottom": "pin",
+            "ending": "round",
+            "sensors": {
+                "num": 0,
+                "type": [
+                    "na"
+                ]
+            }
+        }
+    },
+    "right_finger": {
+        "number_segments": 2,
+        "finger_length": 0.144,
+        "segment_names": [
+            "prox",
+            "distal"
+        ],
+        "prox": {
+            "ratio": 0.5,
+            "joint_bottom": "pin",
+            "joint_top": "pin"
+        },
+        "intermediate": {
+            "ratio": 0.0,
+            "joint_bottom": "na",
+            "joint_top": "na"
+        },
+        "distal": {
+            "ratio": 0.5,
+            "joint_bottom": "pin",
+            "ending": "round",
+            "sensors": {
+                "num": 0,
+                "type": [
+                    "na"
+                ]
+            }
+        }
+    },
+    "hand_parameters": {
+        "palm_width": 0.0535,
+        "palm_height": 0.053,
+        "hand_thickness": 0.032,
+        "finger_width": 0.022,
+        "finger_length": 0.144,
+        "joint_length": 0.02,
+        "scale_factor": 1.0
+    }
+}

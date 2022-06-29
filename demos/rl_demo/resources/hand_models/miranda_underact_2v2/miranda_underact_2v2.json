@@ -1,0 +1,75 @@
+{
+    "hand_name": "miranda_underact_2v2",
+    "palm": {
+        "left_joint": "pin",
+        "right_joint": "pin",
+        "stiffness": 0
+    },
+    "left_finger": {
+        "number_segments": 2,
+        "finger_length": 0.159,
+        "segment_names": [
+            "proximal",
+            "distal"
+        ],
+        "proximal": {
+            "ratio": 0.555,
+            "joint_bottom": "pin",
+            "joint_top": "spring"
+        },
+        "intermediate": {
+            "ratio": 0.0,
+            "joint_bottom": "NA",
+            "joint_top": "NA"
+        },
+        "distal": {
+            "ratio": 0.445,
+            "joint_bottom": "spring",
+            "ending": "round",
+            "sensors": {
+                "num": 0,
+                "type": [
+                    "NA"
+                ]
+            }
+        }
+    },
+    "right_finger": {
+        "number_segments": 2,
+        "finger_length": 0.159,
+        "segment_names": [
+            "proximal",
+            "distal"
+        ],
+        "proximal": {
+            "ratio": 0.555,
+            "joint_bottom": "pin",
+            "joint_top": "spring"
+        },
+        "intermediate": {
+            "ratio": 0.0,
+            "joint_bottom": "NA",
+            "joint_top": "NA"
+        },
+        "distal": {
+            "ratio": 0.445,
+            "joint_bottom": "spring",
+            "ending": "round",
+            "sensors": {
+                "num": 0,
+                "type": [
+                    "NA"
+                ]
+            }
+        }
+    },
+    "hand_parameters": {
+        "palm_width": 0.078,
+        "palm_height": 0.058,
+        "hand_thickness": 0.032,
+        "finger_width": 0.011,
+        "finger_length": 0.159,
+        "joint_length": 0.022,
+        "scale_factor": 1.0
+    }
+}

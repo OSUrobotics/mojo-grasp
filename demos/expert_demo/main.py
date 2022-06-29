@@ -13,6 +13,7 @@ from mojograsp.simcore.record_data import RecordDataJSON
 from mojograsp.simobjects.two_finger_gripper import TwoFingerGripper
 from mojograsp.simobjects.object_base import ObjectBase
 
+
 # resource paths
 current_path = str(pathlib.Path().resolve())
 hand_path = current_path+"/resources/2v2_nosensors/2v2_nosensors.urdf"
@@ -56,7 +57,7 @@ p.changeVisualShape(hand_id, 0, rgbaColor=[1, 0.5, 0, 1])
 p.changeVisualShape(hand_id, 1, rgbaColor=[0.3, 0.3, 0.3, 1])
 p.changeVisualShape(hand_id, 2, rgbaColor=[1, 0.5, 0, 1])
 p.changeVisualShape(hand_id, 3, rgbaColor=[0.3, 0.3, 0.3, 1])
-
+# p.setTimeStep(1/2400)
 
 # state and reward
 state = StateDefault(objects=[hand, cube])
@@ -71,7 +72,7 @@ record_data = RecordDataJSON(
 env = expert_env.ExpertEnv(hand=hand, obj=cube)
 
 # sim manager
-manager = SimManagerDefault(num_episodes=3, env=env, record_data=record_data)
+manager = SimManagerDefault(num_episodes=len(x), env=env, record_data=record_data)
 
 # Create phase and pass it to the sim manager
 manipulation = manipulation_phase.Manipulation(

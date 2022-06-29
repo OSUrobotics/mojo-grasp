@@ -5,7 +5,7 @@ import numpy as np
 
 from mojograsp.simobjects.two_finger_gripper import TwoFingerGripper
 from mojograsp.simobjects.object_base import ObjectBase
-
+from typing import List
 
 class ExpertController():
     # Maximum move per step
@@ -25,11 +25,11 @@ class ExpertController():
         self.num_contact_loss = 0
         self.prev_distance = 0
         self.distance_count = 0
-
+        self.retry_count = 0
     def get_current_cube_position(self):
         self.current_cube_pose = self.cube.get_curr_pose()
 
-    def get_next_cube_position(self) -> list[float]:
+    def get_next_cube_position(self) -> List[float]:
         # get current (x,y)
         current_x = self.current_cube_pose[0][0]
         current_y = self.current_cube_pose[0][1]
@@ -77,9 +77,10 @@ class ExpertController():
         return contact_points
 
     def retry_contact(self):
-        # if no contact attempt to reastablish contact by moving towards cube
+        # if no contact attempt to reestablish contact by moving towards cube
         location = self.current_cube_pose[0]
         next_positions = []
+        # print('need to retry contact!')
         for i in range(len(self.end_effector_links)):
             distal_link = p.getLinkState(
                 self.gripper.id, self.end_effector_links[i])
@@ -142,7 +143,7 @@ class ExpertController():
                                              targetPositions=next_link_positions_global)
         return goal
 
-    def set_goal_position(self, position: list[float]):
+    def set_goal_position(self, position: List[float]):
         # world coordinates
         self.goal_position = position
 
@@ -159,8 +160,8 @@ class ExpertController():
         else:
             self.distance_count = 0
 
-        # Exits if we lost contact for 5 steps, we are within .01 of our goal, or if our distance has been getting worse for 20 steps
-        if self.num_contact_loss > 5 or self.check_goal() < .01 or self.distance_count > 20:
+        # Exits if we lost contact for 5 steps, we are within .001 of our goal, or if our distance has been getting worse for 20 steps
+        if self.num_contact_loss > 5 or self.check_goal() < .001 or self.distance_count > 20:
             self.distance_count = 0
             self.num_contact_loss = 0
             return True
@@ -184,8 +185,19 @@ class ExpertController():
             # get goal link positions
             goal = self.get_next_link_positions(
                 current_contact_points=current_contact_points, next_contact_points=next_contact_points)
+            # print('current cube pose', self.current_cube_pose)
+            # print('next cube pose', next_cube_position)
+            # print('cube shift', [next_cube_position[i]-self.current_cube_pose[0][i] for i in range(3)] )
+            # print('contact point 1 shift', [next_contact_points[0][0][i] - current_contact_points[0][i] for i in range(3)])
+            # print('contact point 2 shift', [next_contact_points[1][0][i] - current_contact_points[1][i] for i in range(3)])
+            # print('goal link positions', goal)
+            # print('current link positions', )
+            # # print('goal pose', self.goal_position)
+            # input('how we lookin?')
         else:
+            # input('retrying contact')
             self.num_contact_loss += 1
+            self.retry_count+=1
             goal = self.retry_contact()
 
         return goal
