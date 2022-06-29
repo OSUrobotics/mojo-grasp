@@ -14,7 +14,6 @@ from mojograsp.simobjects.two_finger_gripper import TwoFingerGripper
 from mojograsp.simobjects.object_base import ObjectBase
 from rl_controller import RLController
 from mojograsp.simcore.replay_buffer import ReplayBufferDefault
-
 # resource paths
 current_path = str(pathlib.Path().resolve())
 hand_path = current_path+"/resources/2v2_nosensors/2v2_nosensors.urdf"
@@ -86,11 +85,11 @@ manipulation = manipulation_phase_rl.ManipulationRL(
 manager.add_phase("manipulation", manipulation, start=True)
 
 # Run the sim
-for _ in range(1000):
+for k in range(1000):
     manager.run()
     print('TRAINING NOW')
     manager.phase_manager.phase_dict["manipulation"].controller.train_policy()
     manager.phase_manager.phase_dict['manipulation'].reset()
 
-manager.stall()
 
+manager.stall()

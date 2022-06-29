@@ -13,6 +13,7 @@ import os
 from abc import ABC, abstractmethod
 import logging
 from PIL import Image
+from torch.utils.tensorboard import SummaryWriter
 
 
 class SimManager(ABC):
@@ -100,6 +101,7 @@ class SimManagerDefault(SimManager):
         if len(self.phase_manager.phase_dict) > 0:
             logging.info("RUNNING PHASES: {}".format(
                 self.phase_manager.phase_dict))
+
             for i in range(self.num_episodes):
                 self.episode.setup()
                 self.env.setup()
@@ -173,6 +175,8 @@ class SimManagerRL(SimManager):
         self.record = record_data
         self.replay_buffer = replay_buffer
         self.phase_manager = PhaseManager()
+        self.episode_number = 0
+        self.writer = SummaryWriter()
 
     def add_phase(self, phase_name: str, phase: Phase, start: bool = False):
         """
@@ -198,9 +202,9 @@ class SimManagerRL(SimManager):
         if len(self.phase_manager.phase_dict) > 0:
             logging.info("RUNNING PHASES: {}".format(
                 self.phase_manager.phase_dict))
-            episode_number = 0
+
             for i in range(self.num_episodes):
-                episode_number += 1
+                self.episode_number += 1
                 self.episode.setup()
                 self.env.setup()
                 self.phase_manager.set_exit_flag(False)
@@ -220,15 +224,14 @@ class SimManagerRL(SimManager):
                         self.phase_manager.current_phase.post_step()
                         self.record.record_timestep()
                         self.replay_buffer.add_timestep(
-                            episode_num=episode_number, timestep_num=timestep_number)
+                            episode_num=self.episode_number, timestep_num=timestep_number)
                         done = self.phase_manager.current_phase.exit_condition()
                     self.phase_manager.get_next_phase()
-
                 self.record.record_episode()
                 self.record.save_episode()
                 self.episode.post_episode()
                 self.env.reset()
-
+                self.writer.add_scalar('average reward', self.replay_buffer.get_average_reward(40000), self.episode_number/self.num_episodes)
             self.record.save_all()
             self.replay_buffer.save_buffer('./data/temp_buffer.json')
         else:
