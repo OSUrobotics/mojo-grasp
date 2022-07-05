@@ -39,6 +39,7 @@ class ManipulationRL(Phase):
         # Get new goal position
         self.goal_position = [float(self.x[self.episode]), float(
             self.y[self.episode] + .16), 0]
+        p.createVisualShape(shapeType=0,radius=0.05,visualFramePosition=self.goal_position )
         # set the new goal position for the controller
         self.controller.set_goal_position(self.goal_position)
 

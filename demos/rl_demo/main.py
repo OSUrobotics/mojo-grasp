@@ -28,8 +28,8 @@ x = df["x"]
 y = df["y"]
 
 # start pybullet
-# physics_client = p.connect(p.GUI)
-physics_client = p.connect(p.DIRECT)
+physics_client = p.connect(p.GUI)
+# physics_client = p.connect(p.DIRECT)
 p.setAdditionalSearchPath(pybullet_data.getDataPath())
 p.setGravity(0, 0, -10)
 p.resetDebugVisualizerCamera(cameraDistance=.02, cameraYaw=0, cameraPitch=-89.9999,
