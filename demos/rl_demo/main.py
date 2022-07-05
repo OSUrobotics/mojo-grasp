@@ -12,7 +12,6 @@ from mojograsp.simcore.reward import RewardDefault
 from mojograsp.simcore.record_data import RecordDataJSON
 from mojograsp.simobjects.two_finger_gripper import TwoFingerGripper
 from mojograsp.simobjects.object_base import ObjectBase
-from rl_controller import RLController
 from mojograsp.simcore.replay_buffer import ReplayBufferDefault
 # resource paths
 current_path = str(pathlib.Path().resolve())
@@ -26,7 +25,8 @@ points_path = current_path+"/resources/points.csv"
 df = pd.read_csv(points_path, index_col=False)
 x = df["x"]
 y = df["y"]
-
+y[0] = 0.0
+x[0] = -0.045
 # start pybullet
 # physics_client = p.connect(p.GUI)
 physics_client = p.connect(p.DIRECT)
@@ -64,7 +64,7 @@ p.changeVisualShape(hand_id, 3, rgbaColor=[0.3, 0.3, 0.3, 1])
 state = StateDefault(objects=[hand, cube])
 action = rl_action.ExpertAction()
 reward = rl_reward.ExpertReward()
-arg_dict = {'state_dim': 14, 'action_dim': 4, 'max_action': 1.57, 'n': 5, 'discount': 0.995, 'tau': 0.0005,
+arg_dict = {'state_dim': 11, 'action_dim': 4, 'max_action': 1.57, 'n': 5, 'discount': 0.995, 'tau': 0.0005,
             'batch_size': 100, 'expert_sampling_proportion': 0.7}
 # data recording
 record_data = RecordDataJSON(
@@ -77,19 +77,24 @@ replay_buffer = ReplayBufferDefault(state=state, action=action, reward=reward)
 env = rl_env.ExpertEnv(hand=hand, obj=cube)
 
 # sim manager
-manager = SimManagerRL(num_episodes=len(x), env=env, record_data=record_data, replay_buffer=replay_buffer)
+manager = SimManagerRL(num_episodes=1, env=env, record_data=record_data, replay_buffer=replay_buffer)
 
 # Create phase and pass it to the sim manager
 manipulation = manipulation_phase_rl.ManipulationRL(
     hand, cube, x, y, state, action, reward, replay_buffer=replay_buffer, args=arg_dict)
 manager.add_phase("manipulation", manipulation, start=True)
 
+# load up replay buffer
+for i in range(20):
+    manager.run()
+    manager.phase_manager.phase_dict['manipulation'].reset()
+
 # Run the sim
-for k in range(1000):
+for k in range(500):
     manager.run()
     print('TRAINING NOW')
     manager.phase_manager.phase_dict["manipulation"].controller.train_policy()
     manager.phase_manager.phase_dict['manipulation'].reset()
 
 
-manager.stall()
+# manager.stall()
