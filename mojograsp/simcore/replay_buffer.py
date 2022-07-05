@@ -20,6 +20,8 @@ class Timestep:
     action: dict = None
     reward: dict = None
     next_state: dict = None
+    priority: float = None
+    end: bool = False
 
 
 class ReplayBuffer(ABC):
@@ -207,3 +209,20 @@ class ReplayBufferDefault:
             avg_reward += -r.reward['distance_to_goal']
         avg_reward = avg_reward/len(rewards)
         return avg_reward
+
+    def get_min_reward(self, num):
+        rewards = self.buffer[-num:]
+        reward2=[]
+        for r in rewards:
+            reward2.append(-r.reward['distance_to_goal'])
+        min_reward = min(reward2)
+        return min_reward
+
+    def get_max_reward(self, num):
+        rewards = self.buffer[-num:]
+        reward2=[]
+        for r in rewards:
+            reward2.append(-r.reward['distance_to_goal'])
+        max_reward = max(reward2)
+        return max_reward
+

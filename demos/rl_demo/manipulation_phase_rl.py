@@ -30,6 +30,7 @@ class ManipulationRL(Phase):
         self.goal_position = None
         # create controller
         self.controller = rl_controller.RLController(hand, cube, replay_buffer=replay_buffer, args=args)
+        # self.controller = rl_controller.ExpertController(hand, cube)
 
     def setup(self):
         # reset timestep counter
@@ -60,10 +61,12 @@ class ManipulationRL(Phase):
         # Set the reward from the given action after the step
         self.reward.set_reward(self.goal_position, self.cube)
 
+
     def exit_condition(self) -> bool:
         # If we reach 400 steps or the controller exit condition finishes we exit the phase
         if self.timestep > self.terminal_step or self.controller.exit_condition():
             self.controller.retry_count=0
+            print(self.cube.get_curr_pose()[0][0],self.cube.get_curr_pose()[0][1]-0.16)
             return True
         return False
 
