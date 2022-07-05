@@ -47,7 +47,7 @@ class Critic(nn.Module):
         self.l3 = nn.Linear(300, 1)
         torch.nn.init.kaiming_uniform_(self.l3.weight, a=0, mode='fan_in', nonlinearity='leaky_relu')
 
-        self.max_q_value = 0.5
+        self.max_q_value = 0.1
 
     def forward(self, state, action):
         q = F.relu(self.l1(torch.cat([state, action], -1)))
@@ -199,7 +199,7 @@ class DDPGfD():
                 temp_state.extend(t_state['obj_2']['pose'][0])
                 temp_state.extend(t_state['obj_2']['pose'][1])
                 temp_state.extend([item for item in t_state['two_finger_gripper']['joint_angles'].values()])
-                temp_state.extend(timestep.reward['goal_position'])
+                #temp_state.extend(timestep.reward['goal_position'])
                 state.append(temp_state)
                 action.append(timestep.action['target_joint_angles'])
                 reward.append(-timestep.reward['distance_to_goal'])
@@ -208,7 +208,7 @@ class DDPGfD():
                 temp_next_state.extend(t_next_state['obj_2']['pose'][0])
                 temp_next_state.extend(t_next_state['obj_2']['pose'][1])
                 temp_next_state.extend([item for item in t_next_state['two_finger_gripper']['joint_angles'].values()])
-                temp_next_state.extend(timestep.reward['goal_position'])
+                #temp_next_state.extend(timestep.reward['goal_position'])
                 next_state.append(temp_next_state)
             state = torch.tensor(state)
             action = torch.tensor(action)
@@ -229,7 +229,7 @@ class DDPGfD():
                     temp_last_state.extend(t_last_state['obj_2']['pose'][1])
                     temp_last_state.extend(
                     [item for item in t_last_state['two_finger_gripper']['joint_angles'].values()])
-                    temp_last_state.extend(timestep.reward['goal_position'])
+                    #temp_last_state.extend(timestep.reward['goal_position'])
                     last_state.append(temp_next_state)
                 last_state = torch.tensor(last_state)
                 last_state = last_state.to(device)
@@ -302,8 +302,10 @@ class DDPGfD():
         # update target networks
         if self.total_it % self.network_repl_freq == 0:
             self.update_target()
-            print('critic of state and action')
-            print(self.critic(state, self.actor(state)))
+            # print('critic of state and action')
+            # print(self.critic(state, self.actor(state)))
+            # print('target q - current q')
+            # print(target_Q-current_Q)
 
         return actor_loss.item(), critic_loss.item(), critic_L1loss.item(), critic_LNloss.item()
 

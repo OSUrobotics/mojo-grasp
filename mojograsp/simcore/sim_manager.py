@@ -231,7 +231,11 @@ class SimManagerRL(SimManager):
                 self.record.save_episode()
                 self.episode.post_episode()
                 self.env.reset()
-                self.writer.add_scalar('average reward', self.replay_buffer.get_average_reward(40000), self.episode_number/self.num_episodes)
+                self.writer.add_scalar('rewards/average reward', self.replay_buffer.get_average_reward(40000), self.episode_number/self.num_episodes)
+                self.writer.add_scalar('rewards/min reward', self.replay_buffer.get_min_reward(40000),
+                                       self.episode_number / self.num_episodes)
+                self.writer.add_scalar('rewards/max reward', self.replay_buffer.get_max_reward(40000),
+                                       self.episode_number / self.num_episodes)
             self.record.save_all()
             self.replay_buffer.save_buffer('./data/temp_buffer.json')
         else:
