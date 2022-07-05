@@ -12,13 +12,9 @@ import pybullet as p
 import pandas as pd
 from math import radians
 # import Markers
-import copy
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
 from mojograsp.simcore.DDPGfD import DDPGfD
 from mojograsp.simcore.replay_buffer import ReplayBufferDefault
-
+import torch
 
 class ExpertController():
     # Maximum move per step
@@ -39,6 +35,7 @@ class ExpertController():
         self.prev_distance = 0
         self.distance_count = 0
         self.retry_count = 0
+
     def get_current_cube_position(self):
         self.current_cube_pose = self.cube.get_curr_pose()
 
@@ -164,6 +161,8 @@ class ExpertController():
         # Finds distance between current cube position and goal position
         distance = np.sqrt((self.goal_position[0] - self.current_cube_pose[0][0])**2 +
                            (self.goal_position[1] - self.current_cube_pose[0][1])**2)
+        if distance < 0.001:
+            print('SUCCESS')
         return distance
 
     def exit_condition(self):
@@ -173,8 +172,8 @@ class ExpertController():
         else:
             self.distance_count = 0
 
-        # Exits if we lost contact for 5 steps, we are within .001 of our goal, or if our distance has been getting worse for 20 steps
-        if self.num_contact_loss > 5 or self.check_goal() < .001 or self.distance_count > 20:
+        # Exits if we lost contact for 5 steps, we are within .002 of our goal, or if our distance has been getting worse for 20 steps
+        if self.num_contact_loss > 5 or self.check_goal() < .002 or self.distance_count > 20:
             self.distance_count = 0
             self.num_contact_loss = 0
             return True
@@ -452,16 +451,41 @@ class RLController(ExpertController):
         super().__init__(gripper, cube, data_file)
         self.policy = DDPGfD(args)
         self.replay_buffer = replay_buffer
+        self.max_change = 0.1
+        self.cooling_rate = 0.99
+        self.rand_size = 0.1
 
     def get_next_action(self):
+
+        # get current cube position
+        self.get_current_cube_position()
+        # get next cube position
+        next_cube_position = self.get_next_cube_position()
+        # get current contact points
+        current_contact_points = self.get_current_contact_points()
+
+
+
+        # if current_contact_points:
         self.get_current_cube_position()
         finger_angles = self.gripper.get_joint_angles()
-        state = self.current_cube_pose[0] + self.current_cube_pose[1] + finger_angles + self.goal_position
+        state = self.current_cube_pose[0] + self.current_cube_pose[1] + finger_angles# + self.goal_position
         action = self.policy.select_action(state)
+        rand_action = self.rand_size * np.random.rand(4)
+        action = (action*self.max_change + finger_angles + rand_action).tolist()
+        # else:
+        #     print('retrying contact')
+        #     self.num_contact_loss += 1
+        #     self.retry_count += 1
+        #     action = self.retry_contact()
         # print(action)
-        return action.tolist()
+        return action
 
     def train_policy(self):
         # can flesh this out/try different training methods
         for _ in range(100):
             self.policy.train(None, self.replay_buffer)
+        self.update_random_size()
+
+    def update_random_size(self):
+        self.rand_size = self.rand_size*self.cooling_rate

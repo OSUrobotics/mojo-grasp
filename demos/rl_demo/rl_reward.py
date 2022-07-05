@@ -12,6 +12,7 @@ class ExpertReward(Reward):
         # Finds distance between current cube position and goal position
         distance = np.sqrt((goal_position[0] - current_cube_pose[0][0])**2 +
                            (goal_position[1] - current_cube_pose[0][1])**2)
+
         self.current_reward["distance_to_goal"] = distance
         self.current_reward["goal_position"] = goal_position
 
