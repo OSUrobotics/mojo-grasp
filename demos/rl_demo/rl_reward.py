@@ -17,4 +17,5 @@ class ExpertReward(Reward):
         self.current_reward["goal_position"] = goal_position
 
     def get_reward(self) -> dict:
+        # print('reward', self.current_reward['distance_to_goal'])
         return self.current_reward.copy()
