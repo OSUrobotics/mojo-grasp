@@ -12,8 +12,8 @@ import pybullet as p
 import pandas as pd
 from math import radians
 # import Markers
-from mojograsp.simcore.DDPGfD import DDPGfD
-from mojograsp.simcore.replay_buffer import ReplayBufferDefault
+from mojograsp.simcore.DDPGfD import DDPGfD, DDPGfD_priority
+from mojograsp.simcore.replay_buffer import ReplayBufferDefault, ReplayBufferDF
 import torch
 
 class ExpertController():
@@ -173,7 +173,7 @@ class ExpertController():
             self.distance_count = 0
 
         # Exits if we lost contact for 5 steps, we are within .002 of our goal, or if our distance has been getting worse for 20 steps
-        if self.num_contact_loss > 5 or self.check_goal() < .002 or self.distance_count > 20:
+        if self.num_contact_loss > 5 or self.check_goal() < .002:# or self.distance_count > 20:
             self.distance_count = 0
             self.num_contact_loss = 0
             return True
@@ -449,7 +449,10 @@ class MoveController(ControllerBase):
 class RLController(ExpertController):
     def __init__(self, gripper: TwoFingerGripper, cube: ObjectBase, data_file: str = None, replay_buffer: ReplayBufferDefault = None, args: dict = None):
         super().__init__(gripper, cube, data_file)
-        self.policy = DDPGfD(args)
+        if type(replay_buffer) == ReplayBufferDF:
+            self.policy = DDPGfD_priority(args)
+        else:
+            self.policy = DDPGfD(args)
         self.replay_buffer = replay_buffer
         self.max_change = 0.1
         self.cooling_rate = 0.99
@@ -471,7 +474,8 @@ class RLController(ExpertController):
         finger_angles = self.gripper.get_joint_angles()
         state = self.current_cube_pose[0] + self.current_cube_pose[1] + finger_angles# + self.goal_position
         action = self.policy.select_action(state)
-        rand_action = self.rand_size * np.random.rand(4)
+        # print('action', action)
+        rand_action = self.rand_size * (np.random.rand(4) - 0.5)
         action = (action*self.max_change + finger_angles + rand_action).tolist()
         # else:
         #     print('retrying contact')
@@ -480,9 +484,11 @@ class RLController(ExpertController):
         #     action = self.retry_contact()
         # print(action)
         return action
-
+ 
     def train_policy(self):
         # can flesh this out/try different training methods
+        if type(self.policy) == DDPGfD_priority:
+            self.replay_buffer.make_DF()
         for _ in range(100):
             self.policy.train(None, self.replay_buffer)
         self.update_random_size()

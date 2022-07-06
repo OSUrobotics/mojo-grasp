@@ -12,24 +12,24 @@ from mojograsp.simcore.reward import RewardDefault
 from mojograsp.simcore.record_data import RecordDataJSON
 from mojograsp.simobjects.two_finger_gripper import TwoFingerGripper
 from mojograsp.simobjects.object_base import ObjectBase
-from mojograsp.simcore.replay_buffer import ReplayBufferDefault
+from mojograsp.simcore.replay_buffer import ReplayBufferDefault, ReplayBufferDF
 # resource paths
 current_path = str(pathlib.Path().resolve())
 hand_path = current_path+"/resources/2v2_nosensors/2v2_nosensors.urdf"
 cube_path = current_path + \
     "/resources/object_models/2v2_mod/2v2_mod_cuboid_small.urdf"
-data_path = current_path+"/data/"
+data_path = current_path+"/data/forward/"
 points_path = current_path+"/resources/points.csv"
 
 # Load in the cube goal positions
 df = pd.read_csv(points_path, index_col=False)
 x = df["x"]
 y = df["y"]
-y[0] = 0.0
-x[0] = -0.045
+y[0] = 0.055
+x[0] = 0.0
 # start pybullet
-physics_client = p.connect(p.GUI)
-# physics_client = p.connect(p.DIRECT)
+# physics_client = p.connect(p.GUI)
+physics_client = p.connect(p.DIRECT)
 p.setAdditionalSearchPath(pybullet_data.getDataPath())
 p.setGravity(0, 0, -10)
 p.resetDebugVisualizerCamera(cameraDistance=.02, cameraYaw=0, cameraPitch=-89.9999,
@@ -85,7 +85,7 @@ manipulation = manipulation_phase_rl.ManipulationRL(
 manager.add_phase("manipulation", manipulation, start=True)
 
 # load up replay buffer
-for i in range(20):
+for i in range(4):
     manager.run()
     manager.phase_manager.phase_dict['manipulation'].reset()
 

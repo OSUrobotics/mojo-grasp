@@ -30,6 +30,7 @@ class ExpertEnv(Environment):
         p.changeVisualShape(hand_id, 1, rgbaColor=[0.3, 0.3, 0.3, 1])
         p.changeVisualShape(hand_id, 2, rgbaColor=[1, 0.5, 0, 1])
         p.changeVisualShape(hand_id, 3, rgbaColor=[0.3, 0.3, 0.3, 1])
+        
 
     def setup(self):
         super().setup()

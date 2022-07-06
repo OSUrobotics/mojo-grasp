@@ -10,6 +10,7 @@ from mojograsp.simcore.state import State, StateDefault
 import random
 import numpy as np
 from torch.utils.tensorboard import SummaryWriter
+import pandas as pd
 
 @dataclass
 class Timestep:
@@ -54,7 +55,7 @@ class ReplayBuffer(ABC):
 
 
 class ReplayBufferDefault:
-    def __init__(self, buffer_size: int = 10000, no_delete=False, state: State = StateDefault,
+    def __init__(self, buffer_size: int = 40000, no_delete=False, state: State = StateDefault,
                  action: Action = ActionDefault, reward: Reward = RewardDefault):
         '''
         Constructor takes in the necessary state, action, reward objects and sets the parameters of the 
@@ -161,7 +162,7 @@ class ReplayBufferDefault:
         :type timestep_num: int
         """
         tstep = Timestep(episode=episode_num, timestep=timestep_num, state=self.state.get_state(),
-                         action=self.action.get_action(), reward=self.reward.get_reward())
+                         action=self.action.get_action(), reward=self.reward.get_reward(), priority=0.1)
         self.backfill(tstep)
 
     def save_buffer(self, file_path: str = None):
@@ -226,3 +227,32 @@ class ReplayBufferDefault:
         max_reward = max(reward2)
         return max_reward
 
+class ReplayBufferDF(ReplayBufferDefault):
+    def __init__(self, buffer_size: int = 10000, no_delete=False, state: State = StateDefault,
+                action: Action = ActionDefault, reward: Reward = RewardDefault):
+        super(ReplayBufferDF,self).__init__(buffer_size, no_delete, state, action, reward)
+        self.df_buffer = None
+
+    def sample_DF(self,batch_size):
+        return self.df_buffer.sample(batch_size, weights = self.df_buffer['priority'])
+
+    def sample_rollout_DF(self, batch_size, rollout_size=5):
+        sample = self.sample_DF(batch_size)
+        rewards = []
+        last_next_state = []
+        for index, timestep in sample.iterrows():
+            temp = self.df_buffer.loc[index:index+rollout_size]
+            ep = self.df_buffer['episode'][index]
+            for rollout_end_ind, r in temp.iterrows():
+                if r['episode'] != ep:
+                    break
+            # print(index, rollout_end_ind)
+            rewards.append(list(self.df_buffer.loc[index:rollout_end_ind]['reward']))
+            last_next_state.append(list(self.df_buffer.loc[index:rollout_end_ind]['next_state']))
+        return sample, rewards, last_next_state
+
+    def make_DF(self):
+        super_list = []
+        for timestep in self.buffer:
+            super_list.append([timestep.episode, timestep.timestep, timestep.state, timestep.action, timestep.reward, timestep.next_state, timestep.priority, timestep.end])
+        self.df_buffer = pd.DataFrame(super_list,columns=['episode','timestep','state','action','reward','next_state','priority','end'])
