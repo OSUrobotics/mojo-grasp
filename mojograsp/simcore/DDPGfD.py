@@ -54,8 +54,8 @@ class Critic(nn.Module):
         q = F.relu(self.l1(torch.cat([state, action], -1)))
         q = F.relu(self.l2(q))
         # print("Q Critic: {}".format(q))
-        q = torch.sigmoid(self.l3(q))
-        return -self.max_q_value * q
+        q = F.relu(self.l3(q))
+        return -1 * q
 
 
 class DDPGfD():
@@ -85,7 +85,7 @@ class DDPGfD():
         self.discount = arg_dict['discount']
         self.tau = arg_dict['tau']
         self.n = arg_dict['n']
-        self.network_repl_freq = 100
+        self.network_repl_freq = 2
         self.total_it = 0
         self.lambda_Lbc = 1
 
@@ -255,67 +255,69 @@ class DDPGfD():
                                                p=[prob, round(1. - prob, 2)])
 
         state, action, next_state, reward, rollout_reward, last_state = self.collect_batch(returned_buffer)
+        if state is not None:
+            target_Q = self.critic_target(next_state, self.actor_target(next_state))
 
-        target_Q = self.critic_target(next_state, self.actor_target(next_state))
+            target_Q = reward + (self.discount * target_Q).detach()  # bellman equation
 
-        target_Q = reward + (self.discount * target_Q).detach()  # bellman equation
+            target_Q = target_Q.float()
 
-        target_Q = target_Q.float()
+            # Compute the roll rewards and the number of steps forward (could be less than rollout size if timestep near end of trial)
+            sum_rewards, num_rewards = self.calc_roll_rewards(rollout_reward)
 
-        # Compute the roll rewards and the number of steps forward (could be less than rollout size if timestep near end of trial)
-        sum_rewards, num_rewards = self.calc_roll_rewards(rollout_reward)
+            target_QN = self.critic_target(last_state, self.actor_target(last_state))
 
-        target_QN = self.critic_target(last_state, self.actor_target(last_state))
+            # Compute QN from roll reward and discounted final state
+            target_QN = sum_rewards.to(device) + (self.discount**num_rewards * target_QN).detach()
 
-        # Compute QN from roll reward and discounted final state
-        target_QN = sum_rewards.to(device) + (self.discount**num_rewards * target_QN).detach()
+            target_QN = target_QN.float()
 
-        target_QN = target_QN.float()
+            # Get current Q estimate
+            current_Q = self.critic(state, action)
 
-        # Get current Q estimate
-        current_Q = self.critic(state, action)
+            # L_1 loss (Loss between current state, action and reward, next state, action)
+            critic_L1loss = F.mse_loss(current_Q, target_Q)
 
-        # L_1 loss (Loss between current state, action and reward, next state, action)
-        critic_L1loss = F.mse_loss(current_Q, target_Q)
+            # L_2 loss (Loss between current state, action and reward, n state, n action)
+            critic_LNloss = F.mse_loss(current_Q, target_QN)
 
-        # L_2 loss (Loss between current state, action and reward, n state, n action)
-        critic_LNloss = F.mse_loss(current_Q, target_QN)
+            # Total critic loss
+            lambda_1 = 0.5  # hyperparameter to control n loss
+            critic_loss = critic_L1loss.float() + lambda_1 * critic_LNloss
 
-        # Total critic loss
-        lambda_1 = 0.5  # hyperparameter to control n loss
-        critic_loss = critic_L1loss.float() + lambda_1 * critic_LNloss
+            # print(target_QN)
 
-        # Optimize the critic
-        self.critic_optimizer.zero_grad()
-        critic_loss.backward()
-        self.critic_optimizer.step()
+            # Optimize the critic
+            self.critic_optimizer.zero_grad()
+            critic_loss.backward()
+            self.critic_optimizer.step()
 
-        # Compute actor loss
-        actor_loss = -self.critic(state, self.actor(state))
-        priorities = 0.0001 + actor_loss**2 + 2*(current_Q-target_Q)**2
-        actor_loss = actor_loss.mean()
+            # Compute actor loss
+            actor_loss = -self.critic(state, self.actor(state))
+            # input(actor_loss)
+            priorities = 0.0001 + actor_loss**2 + 2*(current_Q-target_Q)**2
+            actor_loss = actor_loss.mean()
 
-        # Optimize the actor
-        self.actor_optimizer.zero_grad()
-        actor_loss.backward()
-        self.actor_optimizer.step()
+            # Optimize the actor
+            self.actor_optimizer.zero_grad()
+            actor_loss.backward()
+            self.actor_optimizer.step()
 
-        self.writer.add_scalar('Loss/critic',critic_loss.detach(),self.total_it)
-        self.writer.add_scalar('Loss/critic_L1',critic_L1loss.detach(),self.total_it)
-        self.writer.add_scalar('Loss/critic_LN',critic_LNloss.detach(),self.total_it)
-        self.writer.add_scalar('Loss/actor',actor_loss.detach(),self.total_it)
+            self.writer.add_scalar('Loss/critic',critic_loss.detach(),self.total_it)
+            self.writer.add_scalar('Loss/critic_L1',critic_L1loss.detach(),self.total_it)
+            self.writer.add_scalar('Loss/critic_LN',critic_LNloss.detach(),self.total_it)
+            self.writer.add_scalar('Loss/actor',actor_loss.detach(),self.total_it)
 
-        
+            
 
-        # update target networks
-        if self.total_it % self.network_repl_freq == 0:
-            self.update_target()
-            # print('critic of state and action')
-            # print(self.critic(state, self.actor(state)))
-            # print('target q - current q')
-            # print(target_Q-current_Q)
-
-        return actor_loss.item(), critic_loss.item(), critic_L1loss.item(), critic_LNloss.item()
+            # update target networks
+            if self.total_it % self.network_repl_freq == 0:
+                self.update_target()
+                # print('critic of state and action')
+                # print(self.critic(state, self.actor(state)))
+                # print('target q - current q')
+                # print(target_Q-current_Q)
+            return actor_loss.item(), critic_loss.item(), critic_L1loss.item(), critic_LNloss.item()
 
 
 class DDPGfD_priority(DDPGfD):
@@ -444,5 +446,5 @@ class DDPGfD_priority(DDPGfD):
             # print(self.critic(state, self.actor(state)))
             # print('target q - current q')
             # print(target_Q-current_Q)
-
+            print('updated target')
         return actor_loss.item(), critic_loss.item(), critic_L1loss.item(), critic_LNloss.item()
