@@ -86,15 +86,15 @@ manipulation = manipulation_phase_rl.ManipulationRL(
 manager.add_phase("manipulation", manipulation, start=True)
 
 # load up replay buffer
-for i in range(4):
-    manager.run()
-    manager.phase_manager.phase_dict['manipulation'].reset()
+# for i in range(4):
+#     manager.run()
+#     manager.phase_manager.phase_dict['manipulation'].reset()
 
 # Run the sim
 for k in range(500):
     manager.run()
-    print('TRAINING NOW')
-    manager.phase_manager.phase_dict["manipulation"].controller.train_policy()
+    # print('TRAINING NOW')
+    # manager.phase_manager.phase_dict["manipulation"].controller.train_policy()
     manager.phase_manager.phase_dict['manipulation'].reset()
 
 

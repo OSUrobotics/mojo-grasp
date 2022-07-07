@@ -226,6 +226,7 @@ class SimManagerRL(SimManager):
                         self.replay_buffer.add_timestep(
                             episode_num=self.episode_number, timestep_num=timestep_number)
                         done = self.phase_manager.current_phase.exit_condition()
+                        self.phase_manager.current_phase.controller.train_policy()
                     self.phase_manager.get_next_phase()
                 self.record.record_episode()
                 self.record.save_episode()

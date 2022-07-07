@@ -490,9 +490,12 @@ class RLController(ExpertController):
         # can flesh this out/try different training methods
         if type(self.policy) == DDPGfD_priority:
             self.replay_buffer.make_DF()
-        for _ in range(100):
-            self.policy.train(None, self.replay_buffer)
-        self.update_random_size()
+        self.policy.train(None, self.replay_buffer)
+        
 
     def update_random_size(self):
         self.rand_size = self.rand_size*self.cooling_rate
+
+    def set_goal_position(self, position: List[float]):
+        self.update_random_size()
+        return super().set_goal_position(position)
