@@ -201,6 +201,7 @@ class DDPGfD():
                 temp_state.extend(t_state['obj_2']['pose'][0])
                 temp_state.extend(t_state['obj_2']['pose'][1])
                 temp_state.extend([item for item in t_state['two_finger_gripper']['joint_angles'].values()])
+                temp_state.extend(t_state['obj_2']['velocity'][0])
                 #temp_state.extend(timestep.reward['goal_position'])
                 state.append(temp_state)
                 action.append(timestep.action['target_joint_angles'])
@@ -210,6 +211,7 @@ class DDPGfD():
                 temp_next_state.extend(t_next_state['obj_2']['pose'][0])
                 temp_next_state.extend(t_next_state['obj_2']['pose'][1])
                 temp_next_state.extend([item for item in t_next_state['two_finger_gripper']['joint_angles'].values()])
+                temp_next_state.extend(t_next_state['obj_2']['velocity'][0])
                 #temp_next_state.extend(timestep.reward['goal_position'])
                 next_state.append(temp_next_state)
             state = torch.tensor(state)
@@ -231,6 +233,7 @@ class DDPGfD():
                     temp_last_state.extend(t_last_state['obj_2']['pose'][1])
                     temp_last_state.extend(
                     [item for item in t_last_state['two_finger_gripper']['joint_angles'].values()])
+                    temp_last_state.extend(t_last_state['obj_2']['velocity'][0])
                     #temp_last_state.extend(timestep.reward['goal_position'])
                     last_state.append(temp_last_state)
                 last_state = torch.tensor(last_state)
