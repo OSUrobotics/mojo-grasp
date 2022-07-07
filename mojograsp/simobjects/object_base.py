@@ -62,6 +62,19 @@ class ObjectBase:
             orn = p.getQuaternionFromEuler(orn)
         p.resetBasePositionAndOrientation(self.id, pos, orn)
 
+    def get_curr_velocity(self) -> list:
+        """
+        Gets the current linear velocity and angular velocity, returns a list of lists: [[linear velocity],[angular velocity]]
+
+        :return: list [[linear velocity],[angular velocity]]
+        :rtype: list[list]
+        """
+        vel = []
+        linear_velocity, angular_velocity = p.getBaseVelocity(self.id)
+        vel.append(list(linear_velocity))
+        vel.append(list(angular_velocity))
+        return vel
+
 # TODO: This should be more fleshed out in the future to get all relevant data
     def get_data(self) -> dict:
         """

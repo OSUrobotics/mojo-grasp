@@ -472,7 +472,8 @@ class RLController(ExpertController):
         # if current_contact_points:
         self.get_current_cube_position()
         finger_angles = self.gripper.get_joint_angles()
-        state = self.current_cube_pose[0] + self.current_cube_pose[1] + finger_angles# + self.goal_position
+        object_velocity = self.cube.get_curr_velocity()
+        state = self.current_cube_pose[0] + self.current_cube_pose[1] + finger_angles + object_velocity[0] # + self.goal_position
         action = self.policy.select_action(state)
         # print('action', action)
         rand_action = self.rand_size * (np.random.rand(4) - 0.5)

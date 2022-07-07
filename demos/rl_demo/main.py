@@ -12,6 +12,7 @@ from mojograsp.simcore.reward import RewardDefault
 from mojograsp.simcore.record_data import RecordDataJSON
 from mojograsp.simobjects.two_finger_gripper import TwoFingerGripper
 from mojograsp.simobjects.object_base import ObjectBase
+from mojograsp.simobjects.object_with_velocity import ObjectWithVelocity
 from mojograsp.simcore.replay_buffer import ReplayBufferDefault, ReplayBufferDF
 # resource paths
 current_path = str(pathlib.Path().resolve())
@@ -50,7 +51,7 @@ p.resetJointState(hand_id, 2, -.75)
 p.resetJointState(hand_id, 3, 1.4)
 
 # Create ObjectBase for the cube object
-cube = ObjectBase(cube_id, path=cube_path)
+cube = ObjectWithVelocity(cube_id, path=cube_path)
 
 # change visual of gripper
 p.changeVisualShape(hand_id, -1, rgbaColor=[0.3, 0.3, 0.3, 1])
@@ -64,7 +65,7 @@ p.changeVisualShape(hand_id, 3, rgbaColor=[0.3, 0.3, 0.3, 1])
 state = StateDefault(objects=[hand, cube])
 action = rl_action.ExpertAction()
 reward = rl_reward.ExpertReward()
-arg_dict = {'state_dim': 11, 'action_dim': 4, 'max_action': 1.57, 'n': 5, 'discount': 0.995, 'tau': 0.0005,
+arg_dict = {'state_dim': 14, 'action_dim': 4, 'max_action': 1.57, 'n': 5, 'discount': 0.995, 'tau': 0.0005,
             'batch_size': 100, 'expert_sampling_proportion': 0.7}
 # data recording
 record_data = RecordDataJSON(
