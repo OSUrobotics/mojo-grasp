@@ -40,7 +40,7 @@ class Actor(nn.Module):
 class Critic(nn.Module):
     def __init__(self, state_dim, action_dim):
         super(Critic, self).__init__()
-
+        self.leaky = nn.LeakyReLU()
         self.l1 = nn.Linear(state_dim + action_dim, 400)
         torch.nn.init.kaiming_uniform_(self.l1.weight, a=0, mode='fan_in', nonlinearity='leaky_relu')
         self.l2 = nn.Linear(400, 300)
@@ -51,11 +51,12 @@ class Critic(nn.Module):
         self.max_q_value = 0.1
 
     def forward(self, state, action):
+        # print('input to critic', torch.cat([state, action], -1))
         q = F.relu(self.l1(torch.cat([state, action], -1)))
         q = F.relu(self.l2(q))
         # print("Q Critic: {}".format(q))
-        q = F.relu(self.l3(q))
-        return -1 * q
+        q = torch.tanh(self.l3(q))
+        return q * self.max_q_value
 
 
 class DDPGfD():
@@ -64,7 +65,7 @@ class DDPGfD():
         #          expert_sampling_proportion=0.7):
         if arg_dict is None:
             print('no arg dict')
-            arg_dict = {'state_dim': 32, 'action_dim': 4, 'max_action': 1.57, 'n': 5, 'discount': 0.995, 'tau': 0.0005,
+            arg_dict = {'state_dim': 32, 'action_dim': 4, 'max_action': 1.57, 'n': 5, 'discount': 0.995, 'tau': 0.005,
                         'batch_size': 10, 'expert_sampling_proportion': 0.7}
         self.state_dim = arg_dict['state_dim']
         self.action_dim = arg_dict['action_dim']
@@ -101,6 +102,7 @@ class DDPGfD():
         self.batch_size = arg_dict['batch_size']
         self.rng = default_rng()
         self.rollout = True
+        self.u_count = 0
 
     def select_action(self, state):
         state = torch.FloatTensor(np.reshape(state, (1, -1))).to(device)
@@ -270,7 +272,7 @@ class DDPGfD():
             # Compute QN from roll reward and discounted final state
             target_QN = sum_rewards.to(device) + (self.discount**num_rewards * target_QN).detach()
 
-            target_QN = target_QN.float()
+            target_QN = (target_QN/num_rewards).float()
 
             # Get current Q estimate
             current_Q = self.critic(state, action)
@@ -285,7 +287,11 @@ class DDPGfD():
             lambda_1 = 0.5  # hyperparameter to control n loss
             critic_loss = critic_L1loss.float() + lambda_1 * critic_LNloss
 
-            # print(target_QN)
+            # print('target q and qn', target_Q[0], target_QN[0])
+            # print('current q', current_Q[0])
+            # print('reward', reward[0])
+            # # print('actors action', self.actor(state))
+            # print('critic of actors action', self.critic(state, self.actor(state))[0])
 
             # Optimize the critic
             self.critic_optimizer.zero_grad()
@@ -313,6 +319,8 @@ class DDPGfD():
             # update target networks
             if self.total_it % self.network_repl_freq == 0:
                 self.update_target()
+                self.u_count +=1
+                # print('updated ', self.u_count,' times')
                 # print('critic of state and action')
                 # print(self.critic(state, self.actor(state)))
                 # print('target q - current q')
@@ -340,6 +348,7 @@ class DDPGfD_priority(DDPGfD):
                 temp_state.extend(t_state['obj_2']['pose'][0])
                 temp_state.extend(t_state['obj_2']['pose'][1])
                 temp_state.extend([item for item in t_state['two_finger_gripper']['joint_angles'].values()])
+                temp_state.extend(t_state['obj_2']['velocity'][0])
                 #temp_state.extend(timestep.reward['goal_position'])
                 state.append(temp_state)
                 action.append(timestep.action['target_joint_angles'])
@@ -349,6 +358,7 @@ class DDPGfD_priority(DDPGfD):
                 temp_next_state.extend(t_next_state['obj_2']['pose'][0])
                 temp_next_state.extend(t_next_state['obj_2']['pose'][1])
                 temp_next_state.extend([item for item in t_next_state['two_finger_gripper']['joint_angles'].values()])
+                temp_next_state.extend(t_next_state['obj_2']['velocity'][0])
                 #temp_next_state.extend(timestep.reward['goal_position'])
                 next_state.append(temp_next_state)
             rollout_reward = []
@@ -363,6 +373,7 @@ class DDPGfD_priority(DDPGfD):
                     temp_last_state.extend(t_last_state[0]['obj_2']['pose'][1])
                     temp_last_state.extend(
                     [item for item in t_last_state[0]['two_finger_gripper']['joint_angles'].values()])
+                    temp_last_state.extend(t_last_state['obj_2']['velocity'][0])
                     #temp_last_state.extend(timestep.reward['goal_position'])
                     last_state.append(temp_last_state)
                 last_state = torch.tensor(last_state)
@@ -385,8 +396,8 @@ class DDPGfD_priority(DDPGfD):
 
         sampled_data, rollout_reward, last_state = self.collect_batch(returned_buffer)
 
-        print(sampled_data['next_state'])
-        print(torch.tensor(sampled_data['next_state']))
+        # print(sampled_data['next_state'])
+        # print(torch.tensor(sampled_data['next_state']))
 
         target_Q = self.critic_target(torch.tensor(sampled_data['next_state']), self.actor_target(torch.tensor(sampled_data['next_state'])))
 
@@ -414,7 +425,7 @@ class DDPGfD_priority(DDPGfD):
         critic_LNloss = F.mse_loss(current_Q, target_QN)
 
         # Total critic loss
-        lambda_1 = 0.5  # hyperparameter to control n loss
+        lambda_1 = 1  # hyperparameter to control n loss
         critic_loss = critic_L1loss.float() + lambda_1 * critic_LNloss
 
         # Optimize the critic

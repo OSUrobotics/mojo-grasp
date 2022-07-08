@@ -139,4 +139,5 @@ demos/full_rl_demo/*weights*
 
 demos/rl_demo/data/*
 demos/expert_demo/data/*
-demos/rl_demo/runs*
+demos/rl_demo/runs/*
+demos/rl_demo/old_runs/*

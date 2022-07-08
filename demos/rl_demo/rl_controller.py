@@ -173,7 +173,7 @@ class ExpertController():
             self.distance_count = 0
 
         # Exits if we lost contact for 5 steps, we are within .002 of our goal, or if our distance has been getting worse for 20 steps
-        if self.num_contact_loss > 5 or self.check_goal() < .002:# or self.distance_count > 20:
+        if self.num_contact_loss > 5 or self.check_goal() < .002 or self.distance_count > 20:
             self.distance_count = 0
             self.num_contact_loss = 0
             return True
@@ -455,7 +455,7 @@ class RLController(ExpertController):
             self.policy = DDPGfD(args)
         self.replay_buffer = replay_buffer
         self.max_change = 0.1
-        self.cooling_rate = 0.99
+        self.cooling_rate = 0.995
         self.rand_size = 0.1
 
     def get_next_action(self):

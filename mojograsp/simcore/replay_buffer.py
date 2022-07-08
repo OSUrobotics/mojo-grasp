@@ -12,6 +12,8 @@ import numpy as np
 from torch.utils.tensorboard import SummaryWriter
 import pandas as pd
 
+
+# Why do we save things as timesteps when there aren't any methods? Why not save as a dictionary since we need to make it a dictionary at some point down the line?
 @dataclass
 class Timestep:
     """Dataclass for holding all of the data from a timestep"""
