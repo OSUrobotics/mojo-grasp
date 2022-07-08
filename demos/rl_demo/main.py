@@ -1,3 +1,5 @@
+from multiprocessing import connection
+from operator import truediv
 import pybullet as p
 import pybullet_data
 import pathlib
@@ -91,11 +93,23 @@ manager.add_phase("manipulation", manipulation, start=True)
 #     manager.phase_manager.phase_dict['manipulation'].reset()
 
 # Run the sim
-for k in range(500):
-    manager.run()
-    # print('TRAINING NOW')
-    # manager.phase_manager.phase_dict["manipulation"].controller.train_policy()
-    manager.phase_manager.phase_dict['manipulation'].reset()
-
+done_training = False
+training_length = 500
+while not done_training:
+    for k in range(training_length):
+        manager.run()
+        # print('TRAINING NOW')
+        # manager.phase_manager.phase_dict["manipulation"].controller.train_policy()
+        manager.phase_manager.phase_dict['manipulation'].reset()
+    flag = True
+    while flag: 
+        a = input('input epochs to train for (0 for end)')
+        try:
+            training_length = int(a)
+            flag = False
+            if training_length == 0:
+                done_training = True
+        except ValueError:
+            print('input a valid number')
 
 # manager.stall()
