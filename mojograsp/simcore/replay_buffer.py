@@ -174,10 +174,10 @@ class ReplayBufferDefault:
         :param file_path: desired destination and name of the json file.
         :type file_path: str
         """
-        with open(file_path, 'w') as fout:
+        with open(file_path, 'wb') as fout:
             temp_list = list(self.buffer)
             temp_list = [asdict(x) for x in temp_list]
-            json.dump(temp_list, fout)
+            pkl.dump(temp_list, fout)
 
     def sample(self, batch_size):
         return random.sample(self.buffer, batch_size)
@@ -230,25 +230,27 @@ class ReplayBufferDefault:
         return max_reward
 
 class ReplayBufferDF(ReplayBufferDefault):
-    def __init__(self, buffer_size: int = 40000, no_delete=False, state: State = StateDefault,
+    def __init__(self, buffer_size: int = 40000, rollout_size: int = 5, state: State = StateDefault,
                 action: Action = ActionDefault, reward: Reward = RewardDefault):
-        super(ReplayBufferDF,self).__init__(buffer_size, no_delete, state, action, reward)
+        super(ReplayBufferDF,self).__init__(buffer_size, False, state, action, reward)
         self.df_buffer = None
         self.df_up_to_date = False
+        self.rollout_reward = 0
+        self.rollout_size = rollout_size
+        self.last_state = []
 
     def sample_DF(self,batch_size):
-        if not self.df_up_to_date:
-            self.make_DF()
         return self.df_buffer.sample(batch_size, weights = self.df_buffer['priority'])
 
     def sample_rollout_DF(self, batch_size, rollout_size=5):
         sample = self.sample_DF(batch_size)
 #        rewards.append(list(self.df_buffer.loc[index:rollout_end_ind]['reward']))
 #        last_next_state.append(list(self.df_buffer.loc[index:rollout_end_ind]['next_state']))
-        return sample, rewards, last_next_state
+        return sample
 
     def make_DF(self):
         self.df_buffer = pd.json_normalize(self.buffer)
+        print('made df')
         self.df_up_to_date = True
     
     def save_buffer(self, file_path: str = None):
@@ -258,8 +260,7 @@ class ReplayBufferDF(ReplayBufferDefault):
         :param file_path: desired destination and name of the pkl file.
         :type file_path: str
         """
-        if not self.df_up_to_date:
-            self.make_DF()
+        file_path = file_path[:-4] + 'pkl'
         self.df_buffer.to_pickle(file_path)
 
     def backfill(self, tstep: list):
@@ -271,15 +272,24 @@ class ReplayBufferDF(ReplayBufferDefault):
         :type tstep: Timestep()
         """
         # check if there is a previous timestep and that it is not from last episode.
-        if self.prev_timestep and self.prev_timestep != tstep['episode']:
+        if self.prev_timestep and self.prev_timestep['episode'] != tstep['episode']:
+#            print('end of episode')
             self.prev_timestep == None
+            self.rollout_reward = None
+            self.df_up_to_date = False
         # set next state of previous timestep to state of current timestep and add it to the buffer
         if self.prev_timestep:
+            self.rollout_reward = tstep['reward']['distance_to_goal']
             self.prev_timestep['next_state'] = tstep['state']
             self.buffer.append(self.prev_timestep)
             # List doesn't have max size, this enforces it if needed
             if self.buffer_size:
                 self.buffer = self.buffer[-self.buffer_size:]
+            for i in range(-min(self.rollout_size,self.prev_timestep['timestep']),0):
+                self.buffer[i]['future_rewards'].append(self.rollout_reward)
+                self.buffer[i]['last_state'] = tstep['state']
+            
+            
         # set new previous timestep to current one
         self.prev_timestep = tstep
 
@@ -296,6 +306,36 @@ class ReplayBufferDF(ReplayBufferDefault):
         state=self.state.get_state()
         action=self.action.get_action()
         reward=self.reward.get_reward()
-        tstep = {'state':state, 'action': action, 'reward':reward, 'episode':episode_num, 'timestep': timestep_num, 'priority':0.1}
+        tstep = {'state': state, 'action': action, 'reward': reward, 'episode': episode_num, 
+                 'timestep': timestep_num, 'priority': 0.1, 
+                 'future_rewards':[], 'rollout_reward':None, 'last_state':{}}
         self.backfill(tstep)
-        self.df_up_to_date = False
+
+    def __len__(self):
+        return(len(self.df_buffer))
+
+
+#TODO MAKE THESE ACTUALLY WORK
+    def get_average_reward(self, num):
+        rewards = self.buffer[-num:]
+        avg_reward = 0
+        for r in rewards:
+            avg_reward += -r['reward']['distance_to_goal']
+        avg_reward = avg_reward/len(rewards)
+        return avg_reward
+
+    def get_min_reward(self, num):
+        rewards = self.buffer[-num:]
+        reward2=[]
+        for r in rewards:
+            reward2.append(-r['reward']['distance_to_goal'])
+        min_reward = min(reward2)
+        return min_reward
+
+    def get_max_reward(self, num):
+        rewards = self.buffer[-num:]
+        reward2=[]
+        for r in rewards:
+            reward2.append(-r['reward']['distance_to_goal'])
+        max_reward = max(reward2)
+        return max_reward
