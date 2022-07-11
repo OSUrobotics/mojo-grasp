@@ -258,3 +258,6 @@ class ReplayBufferDF(ReplayBufferDefault):
         for timestep in self.buffer:
             super_list.append([timestep.episode, timestep.timestep, timestep.state, timestep.action, timestep.reward, timestep.next_state, timestep.priority, timestep.end])
         self.df_buffer = pd.DataFrame(super_list,columns=['episode','timestep','state','action','reward','next_state','priority','end'])
+
+    def get_max_reward(self, num):
+        return super().get_max_reward(num)
