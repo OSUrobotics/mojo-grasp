@@ -11,7 +11,7 @@ import pandas as pd
 from mojograsp.simcore.sim_manager import SimManagerRL
 from mojograsp.simcore.state import StateDefault
 from mojograsp.simcore.reward import RewardDefault
-from mojograsp.simcore.record_data import RecordDataJSON
+from mojograsp.simcore.record_data import RecordDataJSON, RecordDataPKL
 from mojograsp.simobjects.two_finger_gripper import TwoFingerGripper
 from mojograsp.simobjects.object_base import ObjectBase
 from mojograsp.simobjects.object_with_velocity import ObjectWithVelocity
@@ -31,6 +31,7 @@ x = df["x"]
 y = df["y"]
 y[0] = -0.055
 x[0] = 0.0
+
 # start pybullet
 # physics_client = p.connect(p.GUI)
 physics_client = p.connect(p.DIRECT)
@@ -57,6 +58,7 @@ p.resetJointState(hand_id, 3, 1.4)
 cube = ObjectWithVelocity(cube_id, path=cube_path)
 # cube = ObjectVelocityDF(cube_id, path=cube_path)
 
+
 # change visual of gripper
 p.changeVisualShape(hand_id, -1, rgbaColor=[0.3, 0.3, 0.3, 1])
 p.changeVisualShape(hand_id, 0, rgbaColor=[1, 0.5, 0, 1])
@@ -72,12 +74,13 @@ reward = rl_reward.ExpertReward()
 arg_dict = {'state_dim': 14, 'action_dim': 4, 'max_action': 1.57, 'n': 5, 'discount': 0.995, 'tau': 0.0005,
             'batch_size': 100, 'expert_sampling_proportion': 0.7}
 # data recording
-record_data = RecordDataJSON(
+record_data = RecordDataPKL(
     data_path=data_path, state=state, action=action, reward=reward, save_all=True)
 
 # replay buffer
 replay_buffer = ReplayBufferDefault(state=state, action=action, reward=reward)
 # replay_buffer = ReplayBufferDF(state=state, action=action, reward=reward)
+
 
 # environment and recording
 env = rl_env.ExpertEnv(hand=hand, obj=cube)

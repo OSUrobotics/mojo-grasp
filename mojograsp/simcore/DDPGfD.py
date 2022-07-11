@@ -332,6 +332,22 @@ class DDPGfD_priority(DDPGfD):
     def __init__(self, arg_dict: dict = None):
         super(DDPGfD_priority,self).__init__(arg_dict)
     
+    
+    def calc_roll_rewards(self,rollout_reward):
+        sum_rewards = []
+        num_rewards = []
+        for reward_set in rollout_reward:
+            temp_reward = 0
+            for count, step_reward in enumerate(reward_set):
+                temp_reward += -step_reward*self.discount**count
+            sum_rewards.append(temp_reward)
+            num_rewards.append(count+1)
+        num_rewards = torch.tensor(num_rewards).to(device)
+        num_rewards = torch.unsqueeze(num_rewards,1)
+        sum_rewards = torch.tensor(sum_rewards)
+        sum_rewards = torch.unsqueeze(sum_rewards,1)
+        return sum_rewards, num_rewards
+
     def collect_batch(self, replay_buffer):
         num_timesteps = len(replay_buffer)
         if num_timesteps < self.batch_size:
@@ -339,60 +355,92 @@ class DDPGfD_priority(DDPGfD):
             return None, None, None, None, None, None
         else:
             if self.rollout:
-                sampled_data, sampled_rewards, sampled_last_state = replay_buffer.sample_rollout_DF(self.batch_size, 5)
+                sampled_data = replay_buffer.sample_rollout_DF(self.batch_size, 5)
             else:
                 sampled_data = replay_buffer.sample_DF(self.batch_size)
             state = []
             action = []
             reward = []
             next_state = []
-            for ind, timestep in sampled_data.iterrows():
-#                print(sampled_data)
-                t_state = timestep['state']
-                temp_state = []
-                temp_state.extend(t_state['obj_2']['pose'][0])
-                temp_state.extend(t_state['obj_2']['pose'][1])
-                temp_state.extend([item for item in t_state['two_finger_gripper']['joint_angles'].values()])
-                temp_state.extend(t_state['obj_2']['velocity'][0])
-                #temp_state.extend(timestep.reward['goal_position'])
-                state.append(temp_state)
-                action.append(timestep['action']['target_joint_angles'])
-                reward.append(-timestep['reward']['distance_to_goal'])
-                t_next_state = timestep['next_state']
-                temp_next_state = []
-                temp_next_state.extend(t_next_state['obj_2']['pose'][0])
-                temp_next_state.extend(t_next_state['obj_2']['pose'][1])
-                temp_next_state.extend([item for item in t_next_state['two_finger_gripper']['joint_angles'].values()])
-                temp_next_state.extend(t_next_state['obj_2']['velocity'][0])
-                #temp_next_state.extend(timestep.reward['goal_position'])
-                next_state.append(temp_next_state)
+            state_names = ['state.obj_2.pose-position', 'state.obj_2.pose-orientation',
+                           'state.two_finger_gripper.joint_angles.l_prox_pin',
+                           'state.two_finger_gripper.joint_angles.l_distal_pin',
+                           'state.two_finger_gripper.joint_angles.r_prox_pin',
+                           'state.two_finger_gripper.joint_angles.l_distal_pin',
+                           'state.obj_2.velocity-position']
+            last_state_names = ['last_state.obj_2.pose-position', 'last_state.obj_2.pose-orientation',
+                           'last_state.two_finger_gripper.joint_angles.l_prox_pin',
+                           'last_state.two_finger_gripper.joint_angles.l_distal_pin',
+                           'last_state.two_finger_gripper.joint_angles.r_prox_pin',
+                           'last_state.two_finger_gripper.joint_angles.l_distal_pin',
+                           'last_state.obj_2.velocity-position']
+            next_state_names = ['next_state.obj_2.pose-position', 'next_state.obj_2.pose-orientation',
+                           'next_state.two_finger_gripper.joint_angles.l_prox_pin',
+                           'next_state.two_finger_gripper.joint_angles.l_distal_pin',
+                           'next_state.two_finger_gripper.joint_angles.r_prox_pin',
+                           'next_state.two_finger_gripper.joint_angles.l_distal_pin',
+                           'next_state.obj_2.velocity-position']
+            action_names = ['action.target_joint_angles']
+            reward_names = ['reward.distance_to_goal']
+            state = sampled_data[state_names]
+            next_state = sampled_data[next_state_names]
+            action = sampled_data[action_names]
+            reward = sampled_data[reward_names]
             rollout_reward = []
             last_state = []
+            state = state.values.tolist()
+            action = action.values.tolist()
+            reward = reward.values.tolist()
+            next_state = next_state.values.tolist()
+            
+            #gross
+            for i in range(len(state)):
+                t_state = []
+                t_next_state = []
+                t_state.extend(state[i][0])
+                t_state.extend(state[i][1])
+                t_state.append(state[i][2])
+                t_state.append(state[i][3])
+                t_state.append(state[i][4])
+                t_state.append(state[i][5])
+                t_state.extend(state[i][6])
+                state[i] = t_state
+                t_next_state.extend(next_state[i][0])
+                t_next_state.extend(next_state[i][1])
+                t_next_state.append(next_state[i][2])
+                t_next_state.append(next_state[i][3])
+                t_next_state.append(next_state[i][4])
+                t_next_state.append(next_state[i][5])
+                t_next_state.extend(next_state[i][6])
+                next_state[i] = t_next_state
             state = torch.tensor(state)
             action = torch.tensor(action)
             reward = torch.tensor(reward)
-            reward = torch.unsqueeze(reward, 1)
+            action = torch.squeeze(action)
+#            reward = torch.squeeze(reward)
             next_state = torch.tensor(next_state)
             state = state.to(device)
             action = action.to(device)
             next_state = next_state.to(device)
             reward = reward.to(device)
             if self.rollout:
-                for rlist in sampled_rewards:
-                    rtemp = [-r['distance_to_goal'] for r in rlist]
-                    rollout_reward.append(rtemp)
-                for t_last_state in sampled_last_state:
-                    temp_last_state = []
-                    temp_last_state.extend(t_last_state[0]['obj_2']['pose'][0])
-                    temp_last_state.extend(t_last_state[0]['obj_2']['pose'][1])
-                    temp_last_state.extend(
-                    [item for item in t_last_state[0]['two_finger_gripper']['joint_angles'].values()])
-                    temp_last_state.extend(t_last_state[0]['obj_2']['velocity'][0])
-                    #temp_last_state.extend(timestep.reward['goal_position'])
-                    last_state.append(temp_last_state)
+                rollout_reward = sampled_data['future_rewards'] 
+                rollout_reward = rollout_reward.values.tolist()
+                last_state = sampled_data[last_state_names]
+                last_state = last_state.values.tolist()
+                for i in range(len(last_state)):
+                    t_state = []
+                    t_next_state = []
+                    t_state.extend(last_state[i][0])
+                    t_state.extend(last_state[i][1])
+                    t_state.append(last_state[i][2])
+                    t_state.append(last_state[i][3])
+                    t_state.append(last_state[i][4])
+                    t_state.append(last_state[i][5])
+                    t_state.extend(last_state[i][6])
+                    last_state[i] = t_state
                 last_state = torch.tensor(last_state)
                 last_state = last_state.to(device)
-
             return state, action, next_state, reward, rollout_reward, last_state
 
     def train(self, expert_replay_buffer, replay_buffer=None, prob=0.7):
@@ -413,9 +461,9 @@ class DDPGfD_priority(DDPGfD):
         # print(sampled_data['next_state'])
         # print(torch.tensor(sampled_data['next_state']))
     
-            target_Q = self.critic_target(torch.tensor(next_state), self.actor_target(torch.tensor(next_state)))
+            target_Q = self.critic_target(next_state, self.actor_target((next_state)))
     
-            target_Q = torch.tensor(reward) + (self.discount * target_Q).detach()  # bellman equation
+            target_Q = reward + (self.discount * target_Q).detach()  # bellman equation
     
             target_Q = target_Q.float()
     
@@ -430,7 +478,7 @@ class DDPGfD_priority(DDPGfD):
             target_QN = target_QN.float()
     
             # Get current Q estimate
-            current_Q = self.critic(torch.tensor(state), torch.tensor(action))
+            current_Q = self.critic(state, action)
     
             # L_1 loss (Loss between current state, action and reward, next state, action)
             critic_L1loss = F.mse_loss(current_Q, target_Q)
@@ -448,7 +496,7 @@ class DDPGfD_priority(DDPGfD):
             self.critic_optimizer.step()
     
             # Compute actor loss
-            actor_loss = -self.critic(torch.tensor(state), torch.tensor(self.actor(state)))
+            actor_loss = -self.critic(state, self.actor(state))
             priorities = 0.0001 + actor_loss**2 + 2*(current_Q-target_Q)**2
             actor_loss = actor_loss.mean()
     
@@ -473,3 +521,12 @@ class DDPGfD_priority(DDPGfD):
                 # print(target_Q-current_Q)
 #                print('updated target')
             return actor_loss.item(), critic_loss.item(), critic_L1loss.item(), critic_LNloss.item()
+
+
+
+def unpack_arr(long_arr):
+    """
+    Unpacks an array of shape N x M x ... into array of N*M x ...
+    :param: long_arr - array to be unpacked"""
+    new_arr = [item for sublist in long_arr for item in sublist]
+    return new_arr
