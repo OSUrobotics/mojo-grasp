@@ -11,7 +11,7 @@ import random
 import numpy as np
 from torch.utils.tensorboard import SummaryWriter
 import pandas as pd
-
+import pickle as pkl
 
 # Why do we save things as timesteps when there aren't any methods? Why not save as a dictionary since we need to make it a dictionary at some point down the line?
 @dataclass
@@ -230,31 +230,72 @@ class ReplayBufferDefault:
         return max_reward
 
 class ReplayBufferDF(ReplayBufferDefault):
-    def __init__(self, buffer_size: int = 10000, no_delete=False, state: State = StateDefault,
+    def __init__(self, buffer_size: int = 40000, no_delete=False, state: State = StateDefault,
                 action: Action = ActionDefault, reward: Reward = RewardDefault):
         super(ReplayBufferDF,self).__init__(buffer_size, no_delete, state, action, reward)
         self.df_buffer = None
+        self.df_up_to_date = False
 
     def sample_DF(self,batch_size):
+        if not self.df_up_to_date:
+            self.make_DF()
         return self.df_buffer.sample(batch_size, weights = self.df_buffer['priority'])
 
     def sample_rollout_DF(self, batch_size, rollout_size=5):
         sample = self.sample_DF(batch_size)
-        rewards = []
-        last_next_state = []
-        for index, timestep in sample.iterrows():
-            temp = self.df_buffer.loc[index:index+rollout_size]
-            ep = self.df_buffer['episode'][index]
-            for rollout_end_ind, r in temp.iterrows():
-                if r['episode'] != ep:
-                    break
-            # print(index, rollout_end_ind)
-            rewards.append(list(self.df_buffer.loc[index:rollout_end_ind]['reward']))
-            last_next_state.append(list(self.df_buffer.loc[index:rollout_end_ind]['next_state']))
+#        rewards.append(list(self.df_buffer.loc[index:rollout_end_ind]['reward']))
+#        last_next_state.append(list(self.df_buffer.loc[index:rollout_end_ind]['next_state']))
         return sample, rewards, last_next_state
 
     def make_DF(self):
-        super_list = []
-        for timestep in self.buffer:
-            super_list.append([timestep.episode, timestep.timestep, timestep.state, timestep.action, timestep.reward, timestep.next_state, timestep.priority, timestep.end])
-        self.df_buffer = pd.DataFrame(super_list,columns=['episode','timestep','state','action','reward','next_state','priority','end'])
+        self.df_buffer = pd.json_normalize(self.buffer)
+        self.df_up_to_date = True
+    
+    def save_buffer(self, file_path: str = None):
+        """
+        Method saves the current replay buffer to a pkl file at the location of the given file_path.
+
+        :param file_path: desired destination and name of the pkl file.
+        :type file_path: str
+        """
+        if not self.df_up_to_date:
+            self.make_DF()
+        self.df_buffer.to_pickle(file_path)
+
+    def backfill(self, tstep: list):
+        """
+        This method fills in the previous timestep nex_state (if it exists) with the current passed
+        timestep's state. 
+
+        :param tstep: Current Timestep dataclass object
+        :type tstep: Timestep()
+        """
+        # check if there is a previous timestep and that it is not from last episode.
+        if self.prev_timestep and self.prev_timestep != tstep['episode']:
+            self.prev_timestep == None
+        # set next state of previous timestep to state of current timestep and add it to the buffer
+        if self.prev_timestep:
+            self.prev_timestep['next_state'] = tstep['state']
+            self.buffer.append(self.prev_timestep)
+            # List doesn't have max size, this enforces it if needed
+            if self.buffer_size:
+                self.buffer = self.buffer[-self.buffer_size:]
+        # set new previous timestep to current one
+        self.prev_timestep = tstep
+
+    def add_timestep(self, episode_num: int, timestep_num: int):
+        """
+        Method adds a timestep using the state, action and reward get functions given the episode_num and
+        timestep_num from the Simmanager. 
+
+        :param episode_num: Episode number.
+        :param timestep_num: Timestep number.
+        :type episode_num: int
+        :type timestep_num: int
+        """
+        state=self.state.get_state()
+        action=self.action.get_action()
+        reward=self.reward.get_reward()
+        tstep = {'state':state, 'action': action, 'reward':reward, 'episode':episode_num, 'timestep': timestep_num, 'priority':0.1}
+        self.backfill(tstep)
+        self.df_up_to_date = False

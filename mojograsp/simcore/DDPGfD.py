@@ -342,8 +342,13 @@ class DDPGfD_priority(DDPGfD):
                 sampled_data, sampled_rewards, sampled_last_state = replay_buffer.sample_rollout_DF(self.batch_size, 5)
             else:
                 sampled_data = replay_buffer.sample_DF(self.batch_size)
-            for timestep in sampled_data:
-                t_state = timestep.state
+            state = []
+            action = []
+            reward = []
+            next_state = []
+            for ind, timestep in sampled_data.iterrows():
+#                print(sampled_data)
+                t_state = timestep['state']
                 temp_state = []
                 temp_state.extend(t_state['obj_2']['pose'][0])
                 temp_state.extend(t_state['obj_2']['pose'][1])
@@ -351,9 +356,9 @@ class DDPGfD_priority(DDPGfD):
                 temp_state.extend(t_state['obj_2']['velocity'][0])
                 #temp_state.extend(timestep.reward['goal_position'])
                 state.append(temp_state)
-                action.append(timestep.action['target_joint_angles'])
-                reward.append(-timestep.reward['distance_to_goal'])
-                t_next_state = timestep.next_state
+                action.append(timestep['action']['target_joint_angles'])
+                reward.append(-timestep['reward']['distance_to_goal'])
+                t_next_state = timestep['next_state']
                 temp_next_state = []
                 temp_next_state.extend(t_next_state['obj_2']['pose'][0])
                 temp_next_state.extend(t_next_state['obj_2']['pose'][1])
@@ -363,6 +368,15 @@ class DDPGfD_priority(DDPGfD):
                 next_state.append(temp_next_state)
             rollout_reward = []
             last_state = []
+            state = torch.tensor(state)
+            action = torch.tensor(action)
+            reward = torch.tensor(reward)
+            reward = torch.unsqueeze(reward, 1)
+            next_state = torch.tensor(next_state)
+            state = state.to(device)
+            action = action.to(device)
+            next_state = next_state.to(device)
+            reward = reward.to(device)
             if self.rollout:
                 for rlist in sampled_rewards:
                     rtemp = [-r['distance_to_goal'] for r in rlist]
@@ -373,13 +387,13 @@ class DDPGfD_priority(DDPGfD):
                     temp_last_state.extend(t_last_state[0]['obj_2']['pose'][1])
                     temp_last_state.extend(
                     [item for item in t_last_state[0]['two_finger_gripper']['joint_angles'].values()])
-                    temp_last_state.extend(t_last_state['obj_2']['velocity'][0])
+                    temp_last_state.extend(t_last_state[0]['obj_2']['velocity'][0])
                     #temp_last_state.extend(timestep.reward['goal_position'])
                     last_state.append(temp_last_state)
                 last_state = torch.tensor(last_state)
                 last_state = last_state.to(device)
 
-            return sampled_data, rollout_reward, last_state
+            return state, action, next_state, reward, rollout_reward, last_state
 
     def train(self, expert_replay_buffer, replay_buffer=None, prob=0.7):
         """ Update policy based on batch of timesteps """
@@ -394,68 +408,68 @@ class DDPGfD_priority(DDPGfD):
             returned_buffer = np.random.choice(np.array([expert_replay_buffer, replay_buffer]),
                                                p=[prob, round(1. - prob, 2)])
 
-        sampled_data, rollout_reward, last_state = self.collect_batch(returned_buffer)
-
+        state, action, next_state, reward, rollout_reward, last_state = self.collect_batch(returned_buffer)
+        if state is not None:
         # print(sampled_data['next_state'])
         # print(torch.tensor(sampled_data['next_state']))
-
-        target_Q = self.critic_target(torch.tensor(sampled_data['next_state']), self.actor_target(torch.tensor(sampled_data['next_state'])))
-
-        target_Q = torch.tensor(sampled_data['reward']) + (self.discount * target_Q).detach()  # bellman equation
-
-        target_Q = target_Q.float()
-
-        # Compute the roll rewards and the number of steps forward (could be less than rollout size if timestep near end of trial)
-        sum_rewards, num_rewards = self.calc_roll_rewards(rollout_reward)
-
-        target_QN = self.critic_target(last_state, self.actor_target(last_state))
-
-        # Compute QN from roll reward and discounted final state
-        target_QN = sum_rewards.to(device) + (self.discount**num_rewards * target_QN).detach()
-
-        target_QN = target_QN.float()
-
-        # Get current Q estimate
-        current_Q = self.critic(torch.tensor(sampled_data['state']), torch.tensor(sampled_data['action']))
-
-        # L_1 loss (Loss between current state, action and reward, next state, action)
-        critic_L1loss = F.mse_loss(current_Q, target_Q)
-
-        # L_2 loss (Loss between current state, action and reward, n state, n action)
-        critic_LNloss = F.mse_loss(current_Q, target_QN)
-
-        # Total critic loss
-        lambda_1 = 1  # hyperparameter to control n loss
-        critic_loss = critic_L1loss.float() + lambda_1 * critic_LNloss
-
-        # Optimize the critic
-        self.critic_optimizer.zero_grad()
-        critic_loss.backward()
-        self.critic_optimizer.step()
-
-        # Compute actor loss
-        actor_loss = -self.critic(torch.tensor(sampled_data['state']), torch.tensor(self.actor(sampled_data['state'])))
-        priorities = 0.0001 + actor_loss**2 + 2*(current_Q-target_Q)**2
-        actor_loss = actor_loss.mean()
-
-        # Optimize the actor
-        self.actor_optimizer.zero_grad()
-        actor_loss.backward()
-        self.actor_optimizer.step()
-
-        self.writer.add_scalar('Loss/critic',critic_loss.detach(),self.total_it)
-        self.writer.add_scalar('Loss/critic_L1',critic_L1loss.detach(),self.total_it)
-        self.writer.add_scalar('Loss/critic_LN',critic_LNloss.detach(),self.total_it)
-        self.writer.add_scalar('Loss/actor',actor_loss.detach(),self.total_it)
-
-        
-
-        # update target networks
-        if self.total_it % self.network_repl_freq == 0:
-            self.update_target()
-            # print('critic of state and action')
-            # print(self.critic(state, self.actor(state)))
-            # print('target q - current q')
-            # print(target_Q-current_Q)
-            print('updated target')
-        return actor_loss.item(), critic_loss.item(), critic_L1loss.item(), critic_LNloss.item()
+    
+            target_Q = self.critic_target(torch.tensor(next_state), self.actor_target(torch.tensor(next_state)))
+    
+            target_Q = torch.tensor(reward) + (self.discount * target_Q).detach()  # bellman equation
+    
+            target_Q = target_Q.float()
+    
+            # Compute the roll rewards and the number of steps forward (could be less than rollout size if timestep near end of trial)
+            sum_rewards, num_rewards = self.calc_roll_rewards(rollout_reward)
+    
+            target_QN = self.critic_target(last_state, self.actor_target(last_state))
+    
+            # Compute QN from roll reward and discounted final state
+            target_QN = sum_rewards.to(device) + (self.discount**num_rewards * target_QN).detach()
+    
+            target_QN = target_QN.float()
+    
+            # Get current Q estimate
+            current_Q = self.critic(torch.tensor(state), torch.tensor(action))
+    
+            # L_1 loss (Loss between current state, action and reward, next state, action)
+            critic_L1loss = F.mse_loss(current_Q, target_Q)
+    
+            # L_2 loss (Loss between current state, action and reward, n state, n action)
+            critic_LNloss = F.mse_loss(current_Q, target_QN)
+    
+            # Total critic loss
+            lambda_1 = 1  # hyperparameter to control n loss
+            critic_loss = critic_L1loss.float() + lambda_1 * critic_LNloss
+    
+            # Optimize the critic
+            self.critic_optimizer.zero_grad()
+            critic_loss.backward()
+            self.critic_optimizer.step()
+    
+            # Compute actor loss
+            actor_loss = -self.critic(torch.tensor(state), torch.tensor(self.actor(state)))
+            priorities = 0.0001 + actor_loss**2 + 2*(current_Q-target_Q)**2
+            actor_loss = actor_loss.mean()
+    
+            # Optimize the actor
+            self.actor_optimizer.zero_grad()
+            actor_loss.backward()
+            self.actor_optimizer.step()
+    
+            self.writer.add_scalar('Loss/critic',critic_loss.detach(),self.total_it)
+            self.writer.add_scalar('Loss/critic_L1',critic_L1loss.detach(),self.total_it)
+            self.writer.add_scalar('Loss/critic_LN',critic_LNloss.detach(),self.total_it)
+            self.writer.add_scalar('Loss/actor',actor_loss.detach(),self.total_it)
+    
+            
+    
+            # update target networks
+            if self.total_it % self.network_repl_freq == 0:
+                self.update_target()
+                # print('critic of state and action')
+                # print(self.critic(state, self.actor(state)))
+                # print('target q - current q')
+                # print(target_Q-current_Q)
+#                print('updated target')
+            return actor_loss.item(), critic_loss.item(), critic_L1loss.item(), critic_LNloss.item()
