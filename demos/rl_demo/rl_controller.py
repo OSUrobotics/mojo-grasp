@@ -486,8 +486,9 @@ class RLController(ExpertController):
  
     def train_policy(self):
         # can flesh this out/try different training methods
-        if type(self.policy) == DDPGfD_priority:
-            self.replay_buffer.make_DF()
+        if type(self.replay_buffer) == ReplayBufferDF:
+            if not self.replay_buffer.df_up_to_date:
+                self.replay_buffer.make_DF()
         self.policy.train(None, self.replay_buffer)
         
 
