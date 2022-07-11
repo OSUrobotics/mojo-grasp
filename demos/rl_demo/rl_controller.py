@@ -467,8 +467,6 @@ class RLController(ExpertController):
         # get current contact points
         current_contact_points = self.get_current_contact_points()
 
-
-
         # if current_contact_points:
         self.get_current_cube_position()
         finger_angles = self.gripper.get_joint_angles()
