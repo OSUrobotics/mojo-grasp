@@ -22,7 +22,7 @@ current_path = str(pathlib.Path().resolve())
 hand_path = current_path+"/resources/2v2_nosensors/2v2_nosensors.urdf"
 cube_path = current_path + \
     "/resources/object_models/2v2_mod/2v2_mod_cuboid_small.urdf"
-data_path = current_path+"/data/forward/"
+data_path = current_path+"/data/right/"
 points_path = current_path+"/resources/points.csv"
 
 # Load in the cube goal positions
