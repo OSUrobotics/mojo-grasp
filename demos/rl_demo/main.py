@@ -29,8 +29,9 @@ points_path = current_path+"/resources/points.csv"
 df = pd.read_csv(points_path, index_col=False)
 x = df["x"]
 y = df["y"]
-y[0] = 0.0
-x[0] = 0.055
+y[0] = -0.055
+x[0] = 0.0
+
 # start pybullet
 # physics_client = p.connect(p.GUI)
 physics_client = p.connect(p.DIRECT)
@@ -55,7 +56,8 @@ p.resetJointState(hand_id, 3, 1.4)
 
 # Create ObjectBase for the cube object
 cube = ObjectWithVelocity(cube_id, path=cube_path)
-#cube = ObjectVelocityDF(cube_id, path=cube_path)
+# cube = ObjectVelocityDF(cube_id, path=cube_path)
+
 
 # change visual of gripper
 p.changeVisualShape(hand_id, -1, rgbaColor=[0.3, 0.3, 0.3, 1])
@@ -77,7 +79,8 @@ record_data = RecordDataPKL(
 
 # replay buffer
 replay_buffer = ReplayBufferDefault(state=state, action=action, reward=reward)
-#replay_buffer = ReplayBufferDF(state=state, action=action, reward=reward)
+# replay_buffer = ReplayBufferDF(state=state, action=action, reward=reward)
+
 
 # environment and recording
 env = rl_env.ExpertEnv(hand=hand, obj=cube)
@@ -106,8 +109,7 @@ while not done_training:
         manager.phase_manager.phase_dict['manipulation'].reset()
     flag = True
     while flag: 
-#        a = input('input epochs to train for (0 for end)')
-        a=0
+        a = 0#input('input epochs to train for (0 for end)')
         try:
             training_length = int(a)
             flag = False
