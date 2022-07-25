@@ -120,9 +120,9 @@ class SimManagerDefault(SimManager):
                         self.env.step()
                         self.phase_manager.current_phase.post_step()
                         self.record.record_timestep()
-                        img = p.getCameraImage(640, 480, renderer=p.ER_BULLET_HARDWARE_OPENGL)
-                        img = Image.fromarray(img[2])
-                        img.save('/home/mechagodzilla/mojo-grasp/demos/expert_demo/data/frame_'+str(count)+'.png')
+#                        img = p.getCameraImage(640, 480, renderer=p.ER_BULLET_HARDWARE_OPENGL)
+#                        img = Image.fromarray(img[2])
+#                        img.save('/home/mechagodzilla/mojo-grasp/demos/expert_demo/data/frame_'+str(count)+'.png')
                         count += 1
                         done = self.phase_manager.current_phase.exit_condition()
                     self.phase_manager.get_next_phase()
