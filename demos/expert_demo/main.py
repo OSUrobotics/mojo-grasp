@@ -27,6 +27,8 @@ df = pd.read_csv(points_path, index_col=False)
 x = df["x"]
 y = df["y"]
 
+y[0] = 0.055
+x[0] = 0.0
 # start pybullet
 physics_client = p.connect(p.GUI)
 p.setAdditionalSearchPath(pybullet_data.getDataPath())
