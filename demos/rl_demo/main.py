@@ -11,7 +11,7 @@ import pandas as pd
 from mojograsp.simcore.sim_manager import SimManagerRL
 from mojograsp.simcore.state import StateDefault
 from mojograsp.simcore.reward import RewardDefault
-from mojograsp.simcore.record_data import RecordDataJSON, RecordDataPKL
+from mojograsp.simcore.record_data import RecordDataJSON, RecordDataPKL,  RecordDataRLPKL
 from mojograsp.simobjects.two_finger_gripper import TwoFingerGripper
 from mojograsp.simobjects.object_base import ObjectBase
 from mojograsp.simobjects.object_with_velocity import ObjectWithVelocity
@@ -22,16 +22,16 @@ current_path = str(pathlib.Path().resolve())
 hand_path = current_path+"/resources/2v2_nosensors/2v2_nosensors_limited.urdf"
 cube_path = current_path + \
     "/resources/object_models/2v2_mod/2v2_mod_cuboid_small.urdf"
-data_path = current_path+"/data/left/limited"
+data_path = current_path+"/data/left/new-"
 points_path = current_path+"/resources/points.csv"
 
 # Load in the cube goal positions
 df = pd.read_csv(points_path, index_col=False)
 x = df["x"]
 y = df["y"]
-y[0] = -0
-x[0] = -0.055
 
+x[0] = -0.055
+y[0] = 0
 # start pybullet
 #physics_client = p.connect(p.GUI)
 physics_client = p.connect(p.DIRECT)
@@ -73,24 +73,28 @@ action = rl_action.ExpertAction()
 reward = rl_reward.ExpertReward()
 arg_dict = {'state_dim': 14, 'action_dim': 4, 'max_action': 1.57, 'n': 5, 'discount': 0.995, 'tau': 0.0005,
             'batch_size': 100, 'expert_sampling_proportion': 0.7}
-# data recording
-record_data = RecordDataPKL(
-    data_path=data_path, state=state, action=action, reward=reward, save_all=True)
+
 
 # replay buffer
-replay_buffer = ReplayBufferDefault(state=state, action=action, reward=reward)
+replay_buffer = ReplayBufferDefault(buffer_size=400000, state=state, action=action, reward=reward)
 # replay_buffer = ReplayBufferDF(state=state, action=action, reward=reward)
 
 
 # environment and recording
 env = rl_env.ExpertEnv(hand=hand, obj=cube)
 
+# Create phase
+manipulation = manipulation_phase_rl.ManipulationRL(
+    hand, cube, x, y, state, action, reward, replay_buffer=replay_buffer, args=arg_dict)
+
+# data recording
+record_data = RecordDataRLPKL(
+    data_path=data_path, state=state, action=action, reward=reward, save_all=True, controller=manipulation.controller)
+
 # sim manager
 manager = SimManagerRL(num_episodes=1, env=env, record_data=record_data, replay_buffer=replay_buffer)
 
-# Create phase and pass it to the sim manager
-manipulation = manipulation_phase_rl.ManipulationRL(
-    hand, cube, x, y, state, action, reward, replay_buffer=replay_buffer, args=arg_dict)
+# add phase to sim manager
 manager.add_phase("manipulation", manipulation, start=True)
 
 # load up replay buffer

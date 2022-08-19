@@ -465,15 +465,14 @@ class RLController(ExpertController):
         # get next cube position
         next_cube_position = self.get_next_cube_position()
         # get current contact points
-        current_contact_points = self.get_current_contact_points()
 
-        # if current_contact_points:
-        self.get_current_cube_position()
         finger_angles = self.gripper.get_joint_angles()
         object_velocity = self.cube.get_curr_velocity()
         state = self.current_cube_pose[0] + self.current_cube_pose[1] + finger_angles + object_velocity[0] # + self.goal_position
+#        print('state pre norm', state)
+#        print(type(self.policy))
         action = self.policy.select_action(state)
-        # print('action', action)
+#        print('action', action)
         rand_action = self.rand_size * (np.random.rand(4) - 0.5)
         action = (action*self.max_change + finger_angles + rand_action).tolist()
         # else:
@@ -483,6 +482,22 @@ class RLController(ExpertController):
         #     action = self.retry_contact()
         # print(action)
         return action
+    
+    def get_network_outputs(self):
+        self.get_current_cube_position()
+        # get next cube position
+        finger_angles = self.gripper.get_joint_angles()
+        object_velocity = self.cube.get_curr_velocity()
+        state = self.current_cube_pose[0] + self.current_cube_pose[1] + finger_angles + object_velocity[0] # + self.goal_position
+#        print('state pre norm', state)
+#        print(type(self.policy))
+        action = self.policy.select_action(state)
+        
+        critic_response = self.policy.grade_action(state, action)
+        
+        save_dict = {'actor_output' : action.tolist(), 'critic_output' : critic_response[0]}
+        
+        return save_dict
  
     def train_policy(self):
         # can flesh this out/try different training methods
