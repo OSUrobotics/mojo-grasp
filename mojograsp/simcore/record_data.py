@@ -256,3 +256,37 @@ class RecordDataPKL(RecordData):
             with open(file_path, 'wb') as fout:
                 self.episodes = {"episode_list": self.episode_data}
                 pkl.dump(self.episodes, fout)
+
+
+class RecordDataRLPKL(RecordDataPKL):
+
+    def __init__(self, data_path: str = None, data_prefix: str = "episode", save_all=False, save_episode=True,
+                 state: State = StateDefault(), action: Action = ActionDefault(), reward: Reward = RewardDefault(), controller = None):
+        RecordDataPKL.__init__(self, data_path, data_prefix, save_all, save_episode, state, action, reward)
+        self.controller = controller
+        
+        
+    def record_timestep(self):
+        """
+        Method called by :func:`~mojograsp.simcore.sim_manager.SimManager` every timestep. Records the user defined state, 
+        action, and reward. Saves the result to a timestep dictionary which is later used to form an episode.
+        """
+        state_reward_dict = {}
+        timestep_dict = {"number": self.timestep_num}
+        if self.state:
+            timestep_dict["state"] = self.state.get_state()
+        if self.reward:
+            timestep_dict["reward"] = self.reward.get_reward()
+        if self.action:
+            timestep_dict["action"] = self.action.get_action()
+        if self.controller:
+            timestep_dict["control"] = self.controller.get_network_outputs()
+        self.timesteps.append(timestep_dict)
+        self.timestep_num += 1
+        
+        
+        
+        
+        
+        
+        

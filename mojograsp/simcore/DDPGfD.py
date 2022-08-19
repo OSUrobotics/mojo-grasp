@@ -15,6 +15,13 @@ from torch.utils.tensorboard import SummaryWriter
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
+def simple_normalize(x_tensor):
+    # order is pos, orientation (quaternion), joint angles, velocity
+    maxes = torch.tensor([0.2, 0.35, 0.1, 1, 1, 1, 1, np.pi/2, 0, np.pi/2, np.pi, 1, 1, 1]).to(device)
+    mins = torch.tensor([-0.2, -0.05, 0.0, 0, 0, 0, 0,-np.pi/2, -np.pi, -np.pi/2, 0, 0, 0, 0]).to(device)
+    y_tensor = (x_tensor-mins)/(maxes-mins)
+    return y_tensor
+    
 
 class Actor(nn.Module):
     def __init__(self, state_dim, action_dim, max_action):
@@ -31,6 +38,7 @@ class Actor(nn.Module):
 
     def forward(self, state):
         # print("State Actor: {}\n{}".format(state.shape, state))
+        state = simple_normalize(state)
         a = F.relu(self.l1(state))
         a = F.relu(self.l2(a))
         # return self.max_action * torch.sigmoid(self.l3(a))
@@ -52,6 +60,7 @@ class Critic(nn.Module):
 
     def forward(self, state, action):
         # print('input to critic', torch.cat([state, action], -1))
+        state = simple_normalize(state)
         q = F.relu(self.l1(torch.cat([state, action], -1)))
         q = F.relu(self.l2(q))
         # print("Q Critic: {}".format(q))
@@ -110,6 +119,12 @@ class DDPGfD():
         action = self.actor(state).cpu().data.numpy().flatten()
         # print("Action: {}".format(action))
         return action
+
+    def grade_action(self, state, action):
+        state = torch.FloatTensor(np.reshape(state, (1,-1))).to(device)
+        action = torch.FloatTensor(np.reshape(action, (1,-1))).to(device)
+        grade = self.critic(state, action).cpu().data.numpy().flatten()
+        return grade
 
     def copy(self, policy_to_copy_from):
         """ Copy input policy to be set to another policy instance
@@ -182,6 +197,7 @@ class DDPGfD():
 
     def collect_batch(self, replay_buffer):
         num_timesteps = len(replay_buffer)
+
         if num_timesteps < self.batch_size:
             print('not enough datapoints for a batch')
             return None, None, None, None, None, None
@@ -314,7 +330,6 @@ class DDPGfD():
             self.writer.add_scalar('Loss/critic_LN',critic_LNloss.detach(),self.total_it)
             self.writer.add_scalar('Loss/actor',actor_loss.detach(),self.total_it)
 
-            
 
             # update target networks
             if self.total_it % self.network_repl_freq == 0:
