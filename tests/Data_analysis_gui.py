@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import matplotlib
 import numpy as np
 import json
+from PIL import ImageGrab
 
 '''
     Data Plotter
@@ -14,7 +15,16 @@ import json
     
 '''
 
-
+def save_element_as_file(element, filename):
+    """
+    Saves any element as an image file.  Element needs to have an underlyiong Widget available (almost if not all of them do)
+    :param element: The element to save
+    :param filename: The filename to save to. The extension of the filename determines the format (jpg, png, gif, ?)
+    """
+    widget = element.Widget
+    box = (widget.winfo_rootx(), widget.winfo_rooty(), widget.winfo_rootx() + widget.winfo_width(), widget.winfo_rooty() + widget.winfo_height())
+    grab = ImageGrab.grab(bbox=box)
+    grab.save(filename)
 
 class GuiBackend():
     def __init__(self, canvas):
@@ -40,8 +50,8 @@ class GuiBackend():
         self.ax.plot([trajectory_points[0,0], goal_pose[0]],[trajectory_points[0,1],goal_pose[1]])
         self.ax.set_xlim([-0.07,0.07])
         self.ax.set_ylim([0.1,0.22])
-        self.ax.set_ylabel('X pos (m)')
-        self.ax.set_xlabel('Y pos (m)')
+        self.ax.set_xlabel('X pos (m)')
+        self.ax.set_ylabel('Y pos (m)')
         self.legend.extend(['RL Trajectory - episode '+str(self.e_num), 'Ideal Path to Goal - episode '+str(self.e_num)])
         self.ax.legend(self.legend)
         self.ax.set_title('Object Path')
@@ -77,57 +87,37 @@ class GuiBackend():
         
     def draw_actor_output(self):
         data = self.data_dict['timestep_list']
-        current_angle_dict = [f['state']['two_finger_gripper']['joint_angles'] for f in data]
-        current_angle_list = []
-        for angle in current_angle_dict:
-            temp = [angs for angs in angle.values()]
-            current_angle_list.append(temp)        
-        current_action_list= [f['action']['target_joint_angles'] for f in data]
-        
-        current_angle_list=np.array(current_angle_list)
-        current_action_list=np.array(current_action_list)
-        angle_tweaks = current_angle_list#current_action_list - current_angle_list
-        if self.clear_plots | (self.curr_graph != 'actor'):
+        actor_list = [f['control']['actor_output'] for f in data]
+        actor_list = np.array(actor_list)
+        if self.clear_plots | (self.curr_graph != 'angles'):
             self.ax.cla()
             self.legend = []
-        self.ax.plot(range(len(angle_tweaks)),angle_tweaks[:,0])
-        self.ax.plot(range(len(angle_tweaks)),angle_tweaks[:,1])
-        self.ax.plot(range(len(angle_tweaks)),angle_tweaks[:,2])
-        self.ax.plot(range(len(angle_tweaks)),angle_tweaks[:,3])
-        self.legend.extend(['Angle 1', 'Angle 2', 'Angle 3', 'Angle 4'])
+        self.ax.plot(range(len(actor_list)),actor_list[:,0])
+        self.ax.plot(range(len(actor_list)),actor_list[:,1])
+        self.ax.plot(range(len(actor_list)),actor_list[:,2])
+        self.ax.plot(range(len(actor_list)),actor_list[:,3])
+        self.legend.extend(['Actor Angle 1 - episode ' + str(self.e_num), 'Actor Angle 2 - episode ' + str(self.e_num), 'Actor Angle 3 - episode ' + str(self.e_num), 'Actor Angle 4 - episode ' + str(self.e_num) ])
         self.ax.legend(self.legend)
         self.ax.set_ylabel('Angle (radians)')
         self.ax.set_xlabel('Timestep (1/240 s)')
         self.ax.set_title('Actor Output')
         self.figure_canvas_agg.draw()
-        self.curr_graph = 'actor'
+        self.curr_graph = 'angles'
 
     def draw_critic_output(self):
         data = self.data_dict['timestep_list']
-        current_angle_dict = [f['state']['two_finger_gripper']['joint_angles'] for f in data]
-        current_angle_list = []
-        for angle in current_angle_dict:
-            temp = [angs for angs in angle.values()]
-            current_angle_list.append(temp)        
-        current_action_list= [f['action']['target_joint_angles'] for f in data]
-        
-        current_angle_list=np.array(current_angle_list)
-        current_action_list=np.array(current_action_list)
-        angle_tweaks = current_angle_list#current_action_list - current_angle_list
-        if self.clear_plots | (self.curr_graph != 'critic'):
+        critic_list = [f['control']['critic_output'] for f in data]
+        if self.clear_plots | (self.curr_graph != 'rewards'):
             self.ax.cla()
             self.legend = []
-        self.ax.plot(range(len(angle_tweaks)),angle_tweaks[:,0])
-        self.ax.plot(range(len(angle_tweaks)),angle_tweaks[:,1])
-        self.ax.plot(range(len(angle_tweaks)),angle_tweaks[:,2])
-        self.ax.plot(range(len(angle_tweaks)),angle_tweaks[:,3])
-        self.legend.extend(['Angle 1', 'Angle 2', 'Angle 3', 'Angle 4'])
+        self.ax.plot(range(len(critic_list)),critic_list)
+        self.legend.extend(['Critic Output - episode ' + str(self.e_num)])
         self.ax.legend(self.legend)
-        self.ax.set_ylabel('Angle (radians)')
+        self.ax.set_ylabel('Action Value')
         self.ax.set_xlabel('Timestep (1/240 s)')
         self.ax.set_title('Critic Output')
         self.figure_canvas_agg.draw()
-        self.curr_graph = 'critic'
+        self.curr_graph = 'rewards'
     
     def draw_rewards(self):
         data = self.data_dict['timestep_list']
@@ -193,8 +183,8 @@ def main():
                     [sg.Text("Keep previous graph", size=(10, 3), key='-toggletext-'), sg.Button(image_data=toggle_btn_off, key='-TOGGLE-GRAPHIC-', button_color=(sg.theme_background_color(), sg.theme_background_color()), border_width=0, metadata=False)]]
     # define layout, show and read the window
     col = [[sg.Text(episode_files[0], size=(80, 3), key='-FILENAME-')],
-           [sg.Canvas(size=(640, 480), key='-CANVAS-')],
-           plot_buttons[0], plot_buttons[1], plot_buttons[2], plot_buttons[3],
+           [sg.Canvas(size=(1280, 960), key='-CANVAS-')],
+           plot_buttons[0], plot_buttons[1], plot_buttons[2], plot_buttons[3], [sg.B('Save Image', key='-SAVE-')],
                [sg.Text('File 1 of {}'.format(len(episode_files)), size=(15, 1), key='-FILENUM-')]]
 
     col_files = [[sg.Listbox(values=filenames_only, size=(60, 30), key='-LISTBOX-', enable_events=True)],
@@ -248,6 +238,9 @@ def main():
             window['-TOGGLE-GRAPHIC-'].metadata = not window['-TOGGLE-GRAPHIC-'].metadata
             window['-TOGGLE-GRAPHIC-'].update(image_data=toggle_btn_on if window['-TOGGLE-GRAPHIC-'].metadata else toggle_btn_off)
             backend.clear_plots = not backend.clear_plots
+        elif event == '-SAVE-':
+            filename=r'test.png'
+            save_element_as_file(window['-CANVAS-'], filename)
         # ----------------- Menu choices -----------------
         if event == 'Open Folder':
             newfolder = sg.popup_get_folder('New folder', no_window=True)

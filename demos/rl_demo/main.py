@@ -22,7 +22,7 @@ current_path = str(pathlib.Path().resolve())
 hand_path = current_path+"/resources/2v2_nosensors/2v2_nosensors_limited.urdf"
 cube_path = current_path + \
     "/resources/object_models/2v2_mod/2v2_mod_cuboid_small.urdf"
-data_path = current_path+"/data/left/new-"
+data_path = current_path+"/data/right/"
 points_path = current_path+"/resources/points.csv"
 
 # Load in the cube goal positions
@@ -30,7 +30,7 @@ df = pd.read_csv(points_path, index_col=False)
 x = df["x"]
 y = df["y"]
 
-x[0] = -0.055
+x[0] = 0.055
 y[0] = 0
 # start pybullet
 #physics_client = p.connect(p.GUI)
