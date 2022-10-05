@@ -7,6 +7,7 @@ import matplotlib
 import numpy as np
 import json
 from PIL import ImageGrab
+from scipy.stats import kde
 
 '''
     Data Plotter
@@ -36,12 +37,15 @@ class GuiBackend():
         self.clear_plots = True
         self.legend = []
         self.curr_graph = None
-        self.e_num = -1
+        self.e_num = -2
         
     def draw_path(self):
+        if self.e_num == -1:
+            print("can't draw when episode_all is selected")
+            return
         data = self.data_dict['timestep_list']
         trajectory_points = [f['state']['obj_2']['pose'][0] for f in data]
-        goal_pose = data[5]['reward']['goal_position']
+        goal_pose = data[1]['reward']['goal_position']
         trajectory_points = np.array(trajectory_points)
         if self.clear_plots | (self.curr_graph != 'path'):
             self.ax.cla()
@@ -51,7 +55,7 @@ class GuiBackend():
         self.ax.set_xlim([-0.07,0.07])
         self.ax.set_ylim([0.1,0.22])
         self.ax.set_xlabel('X pos (m)')
-        self.ax.set_ylabel('Y pos (m)')
+        self.ax.set_ylabel('Y pos (m)')                                                                                                                                                                                                                                   
         self.legend.extend(['RL Trajectory - episode '+str(self.e_num), 'Ideal Path to Goal - episode '+str(self.e_num)])
         self.ax.legend(self.legend)
         self.ax.set_title('Object Path')
@@ -59,6 +63,9 @@ class GuiBackend():
         self.curr_graph = 'path'
 
     def draw_angles(self):
+        if self.e_num == -1:
+            print("can't draw when episode_all is selected")
+            return
         data = self.data_dict['timestep_list']
         current_angle_dict = [f['state']['two_finger_gripper']['joint_angles'] for f in data]
         current_angle_list = []
@@ -86,6 +93,9 @@ class GuiBackend():
         self.curr_graph = 'angles'
         
     def draw_actor_output(self):
+        if self.e_num == -1:
+            print("can't draw when episode_all is selected")
+            return
         data = self.data_dict['timestep_list']
         actor_list = [f['control']['actor_output'] for f in data]
         actor_list = np.array(actor_list)
@@ -105,6 +115,9 @@ class GuiBackend():
         self.curr_graph = 'angles'
 
     def draw_critic_output(self):
+        if self.e_num == -1:
+            print("can't draw when episode_all is selected")
+            return
         data = self.data_dict['timestep_list']
         critic_list = [f['control']['critic_output'] for f in data]
         if self.clear_plots | (self.curr_graph != 'rewards'):
@@ -119,11 +132,14 @@ class GuiBackend():
         self.figure_canvas_agg.draw()
         self.curr_graph = 'rewards'
     
-    def draw_rewards(self):
+    def draw_distance_rewards(self):
+        if self.e_num == -1:
+            print("can't draw when episode_all is selected")
+            return
         data = self.data_dict['timestep_list']
         current_reward_dict = [-f['reward']['distance_to_goal'] for f in data]
 
-        if self.clear_plots | (self.curr_graph != 'rewards'):
+        if self.clear_plots | (self.curr_graph != 'drewards'):
             self.ax.cla()
             self.legend = []
         self.ax.plot(range(len(current_reward_dict)),current_reward_dict)
@@ -133,17 +149,138 @@ class GuiBackend():
         self.ax.set_xlabel('Timestep (1/240 s)')
         self.ax.set_title('Reward Plot')
         self.figure_canvas_agg.draw()
+        self.curr_graph = 'drewards'
+    
+    def draw_contact_rewards(self):
+        if self.e_num == -1:
+            print("can't draw when episode_all is selected")
+            return
+        data = self.data_dict['timestep_list']
+        current_reward_dict1 = [-f['reward']['f1_dist'] for f in data]
+        current_reward_dict2 = [-f['reward']['f2_dist'] for f in data]
+        if self.clear_plots | (self.curr_graph != 'crewards'):
+            self.ax.cla()
+            self.legend = []
+        self.ax.plot(range(len(current_reward_dict1)),current_reward_dict1)
+        self.ax.plot(range(len(current_reward_dict2)),current_reward_dict2)
+        self.legend.extend(['F1 Contact Reward - episode ' + str(self.e_num),'F2 Contact Reward - episode ' + str(self.e_num)])
+        self.ax.legend(self.legend)
+        self.ax.set_ylabel('Reward')
+        self.ax.set_xlabel('Timestep (1/240 s)')
+        self.ax.set_title('Contact Reward Plot')
+        self.figure_canvas_agg.draw()
+        self.curr_graph = 'crewards'
+        
+    def draw_combined_rewards(self):
+        if self.e_num == -1:
+            print("can't draw when episode_all is selected")
+            return
+        data = self.data_dict['timestep_list']
+        reward_dict_dist = [-f['reward']['distance_to_goal'] for f in data]
+        reward_dict_f1 = [-f['reward']['f1_dist'] for f in data]
+        reward_dict_f2 = [-f['reward']['f2_dist'] for f in data]
+        reward_dict_penalty = [f['reward']['end_penalty'] for f in data]
+        full_reward = []
+        for i in range(len(reward_dict_dist)):
+            full_reward.append(reward_dict_dist[i]+min(reward_dict_f1[i],reward_dict_f2[i])+reward_dict_penalty[i])
+            
+        if self.clear_plots | (self.curr_graph != 'rewards'):
+            self.ax.cla()
+            self.legend = []
+        self.ax.plot(range(len(full_reward)),full_reward)
+        self.legend.extend(['Reward - episode ' + str(self.e_num)])
+        self.ax.legend(self.legend)
+        self.ax.set_ylabel('Reward')
+        self.ax.set_xlabel('Timestep (1/240 s)')
+        self.ax.set_title('Reward Plot')
+        self.figure_canvas_agg.draw()
         self.curr_graph = 'rewards'
+        
+        
+    def draw_explored_region(self):
+        if self.e_num != -1:
+            print("can't draw explored region unless episode_all is selected")
+            return
+        datapoints = []
+        for episode in self.data_dict['episode_list']:
+            data = episode['timestep_list']
+            for timestep in data:
+                datapoints.append(timestep['state']['obj_2']['pose'][0][0:2])
+        datapoints = np.array(datapoints)
+        nbins=100
+        x = datapoints[:,0]
+        y = datapoints[:,1]
+        print('about to do the gaussian')
+        k = kde.gaussian_kde([x,y])
+        print('did the gaussian')
+        xlim = [np.min(datapoints[:,0]), np.max(datapoints[:,0])]
+        ylim = [np.min(datapoints[:,1]), np.max(datapoints[:,1])]
+        xlim = [min(xlim[0],-0.07), max(xlim[1],0.07)]
+        ylim = [min(ylim[0],0.1), max(ylim[1],0.22)]
+        xi, yi = np.mgrid[xlim[0]:xlim[1]:nbins*1j, ylim[0]:ylim[1]:nbins*1j]
+        print('did the mgrid')
+        zi = k(np.vstack([xi.flatten(), yi.flatten()]))
+        for i in range(len(zi)):
+            if zi[i] <1:
+                zi[i] = -200
+        self.ax.cla()
+        self.legend = []
+        print('about to do the colormesh')
+        c = self.ax.pcolormesh(xi, yi, zi.reshape(xi.shape), shading='auto')
+
+        self.ax.set_xlim(xlim)
+        self.ax.set_ylim(ylim)
+        self.ax.set_xlabel('X pos (m)')
+        self.ax.set_ylabel('Y pos (m)')
+        self.ax.set_title("explored object poses")
+        
+        self.fig.colorbar(c, ax=self.ax)
+        self.figure_canvas_agg.draw()
+        self.curr_graph = 'explored'
+        
+    def draw_net_reward(self):
+        if self.e_num != -1:
+            print("can't draw explored region unless episode_all is selected")
+            return
+        rewards = []
+        temp = 0
+        for episode in self.data_dict['episode_list']:
+            data = episode['timestep_list']
+            for timestep in data:
+                temp += timestep['reward']['end_penalty'] \
+                    - timestep['reward']['distance_to_goal'] \
+                        -max(timestep['reward']['f1_dist'],timestep['reward']['f2_dist'])/5
+            rewards.append(temp)
+            temp = 0
+        self.ax.cla()
+        self.legend = []
+        print('about to do the colormesh')
+        self.ax.plot(range(len(rewards)), rewards)
+        self.ax.set_xlabel('Episode Number')
+        self.ax.set_ylabel('Total Reward Over the Entire Episode')
+        self.ax.set_title("Agent Reward over Episode")
+        self.figure_canvas_agg.draw()
+        self.curr_graph = 'Group_Reward'
+
+    def show_finger_viz(self):
+        pass
 
     def load_pkl(self, filename):
+        
         with open(filename, 'rb') as pkl_file:
             self.data_dict = pkl.load(pkl_file)
-            self.e_num = self.data_dict['number']
+            if 'all' in filename:
+                self.e_num = -1
+            else:
+                self.e_num = self.data_dict['number']
     
     def load_json(self, filename):
         with open(filename) as file:
-             self.data_dict = json.load(file)
-             self.e_num = self.data_dict['number']
+            self.data_dict = json.load(file)
+            if 'all' in filename:
+                self.e_num = -1
+            else:
+                self.e_num = self.data_dict['number']
              
     def load_data(self, filename):
         try:
@@ -178,8 +315,8 @@ def main():
 
 
     plot_buttons = [[sg.Button('Object Path', size=(8, 2)), sg.Button('Finger Angles', size=(8, 2))],
-                    [sg.Button('Actor Output', size=(8, 2)), sg.Button('Critic Output', size=(8, 2)), sg.Button('Rewards', size=(8, 2))],
-                    [sg.Button('Explored Region', size=(8,2))],
+                    [sg.Button('Actor Output', size=(8, 2)), sg.Button('Critic Output', size=(8, 2)), sg.Button('Rewards', size=(8, 2), key='FullRewards'), sg.Button('Contact Rewards', key='ContactRewards',size=(8, 2)), sg.Button('Distance Rewards', key='SimpleRewards',size=(8, 2))],
+                    [sg.Button('Explored Region', size=(8,2)), sg.Button('Episode Rewards', size=(8,2))],
                     [sg.Text("Keep previous graph", size=(10, 3), key='-toggletext-'), sg.Button(image_data=toggle_btn_off, key='-TOGGLE-GRAPHIC-', button_color=(sg.theme_background_color(), sg.theme_background_color()), border_width=0, metadata=False)]]
     # define layout, show and read the window
     col = [[sg.Text(episode_files[0], size=(80, 3), key='-FILENAME-')],
@@ -230,10 +367,16 @@ def main():
             backend.draw_actor_output()
         elif event == 'Critic Output':
             backend.draw_critic_output()
-        elif event == 'Rewards':
-            backend.draw_rewards()
+        elif event == 'SimpleRewards':
+            backend.draw_distance_rewards()
+        elif event == 'ContactRewards':
+            backend.draw_contact_rewards()
+        elif event == 'FullRewards':
+            backend.draw_combined_rewards()
         elif event == 'Explored Region':
-            backend.draw_rewards()
+            backend.draw_explored_region()
+        elif event == 'Episode Rewards':
+            backend.draw_net_reward()
         elif event == '-TOGGLE-GRAPHIC-':  # if the graphical button that changes images
             window['-TOGGLE-GRAPHIC-'].metadata = not window['-TOGGLE-GRAPHIC-'].metadata
             window['-TOGGLE-GRAPHIC-'].update(image_data=toggle_btn_on if window['-TOGGLE-GRAPHIC-'].metadata else toggle_btn_off)

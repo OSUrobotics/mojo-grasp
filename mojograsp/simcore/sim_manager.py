@@ -16,6 +16,7 @@ from PIL import Image
 from torch.utils.tensorboard import SummaryWriter
 
 
+
 class SimManager(ABC):
     """SimManager Abstract Base Class"""
     @abstractmethod
@@ -221,12 +222,16 @@ class SimManagerRL(SimManager):
                         self.phase_manager.current_phase.pre_step()
                         self.phase_manager.current_phase.execute_action()
                         self.env.step()
+                        done = self.phase_manager.current_phase.exit_condition()
                         self.phase_manager.current_phase.post_step()
                         self.record.record_timestep()
                         self.replay_buffer.add_timestep(
                             episode_num=self.episode_number, timestep_num=timestep_number)
-                        done = self.phase_manager.current_phase.exit_condition()
+                        
                         self.phase_manager.current_phase.controller.train_policy()
+#                        img = p.getCameraImage(640, 480, renderer=p.ER_BULLET_HARDWARE_OPENGL)
+#                        img = Image.fromarray(img[2])
+#                        img.save('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/vizualization/episode_' + num_string(self.episode_number) + '_frame_'+ num_string(timestep_number)+'.png')
                     self.phase_manager.get_next_phase()
                 self.record.record_episode()
                 self.record.save_episode()
@@ -238,10 +243,10 @@ class SimManagerRL(SimManager):
                 self.writer.add_scalar('rewards/max reward', self.replay_buffer.get_max_reward(400),
                                        self.episode_number / self.num_episodes)
             self.record.save_all()
-            self.replay_buffer.save_buffer('./data/temp_buffer.json')
+            # self.replay_buffer.save_buffer('./data/temp_buffer.pkl')
         else:
             logging.warn("No Phases have been added")
-        print("COMPLETED")
+        # print("COMPLETED")
 
     def stall(self):
         super().stall()

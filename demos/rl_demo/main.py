@@ -5,6 +5,7 @@ import pybullet_data
 import pathlib
 import manipulation_phase_rl
 import rl_env
+from rl_state import StateRL, GoalHolder
 import rl_action
 import rl_reward
 import pandas as pd
@@ -17,21 +18,29 @@ from mojograsp.simobjects.object_base import ObjectBase
 from mojograsp.simobjects.object_with_velocity import ObjectWithVelocity
 from mojograsp.simobjects.object_for_dataframe import ObjectVelocityDF
 from mojograsp.simcore.replay_buffer import ReplayBufferDefault, ReplayBufferDF
+import numpy as np
 # resource paths
 current_path = str(pathlib.Path().resolve())
 hand_path = current_path+"/resources/2v2_nosensors/2v2_nosensors_limited.urdf"
 cube_path = current_path + \
     "/resources/object_models/2v2_mod/2v2_mod_cuboid_small.urdf"
-data_path = current_path+"/data/right/"
+data_path = current_path+"/data/test-left/"
 points_path = current_path+"/resources/points.csv"
 
 # Load in the cube goal positions
-df = pd.read_csv(points_path, index_col=False)
-x = df["x"]
-y = df["y"]
+#df = pd.read_csv(points_path, index_col=False)
+#x = df["x"]
+#y = df["y"]
+#
+#length = np.sqrt(np.random.uniform(0, 0.0036, 100))
+#angle = np.pi * np.random.uniform(0, 2, 100)
+#
+#x = length * np.cos(angle)
+#y = length * np.sin(angle)
 
-x[0] = 0.055
-y[0] = 0
+x = [-0.055]
+y = [-0.055]
+pose_list = [[i,j] for i,j in zip(x,y)]
 # start pybullet
 #physics_client = p.connect(p.GUI)
 physics_client = p.connect(p.DIRECT)
@@ -45,7 +54,6 @@ plane_id = p.loadURDF("plane.urdf")
 hand_id = p.loadURDF(hand_path, useFixedBase=True,
                      basePosition=[0.0, 0.0, 0.05])
 cube_id = p.loadURDF(cube_path, basePosition=[0.0, 0.16, .05])
-
 # Create TwoFingerGripper Object and set the initial joint positions
 hand = TwoFingerGripper(hand_id, path=hand_path)
 
@@ -67,8 +75,11 @@ p.changeVisualShape(hand_id, 2, rgbaColor=[1, 0.5, 0, 1])
 p.changeVisualShape(hand_id, 3, rgbaColor=[0.3, 0.3, 0.3, 1])
 # p.setTimeStep(1/2400)
 
+
+goal_poses = GoalHolder(pose_list)
 # state and reward
-state = StateDefault(objects=[hand, cube])
+#state = StateDefault(objects=[hand, cube])
+state = StateRL(objects=[hand, cube, goal_poses])
 action = rl_action.ExpertAction()
 reward = rl_reward.ExpertReward()
 arg_dict = {'state_dim': 14, 'action_dim': 4, 'max_action': 1.57, 'n': 5, 'discount': 0.995, 'tau': 0.0005,
@@ -92,7 +103,7 @@ record_data = RecordDataRLPKL(
     data_path=data_path, state=state, action=action, reward=reward, save_all=True, controller=manipulation.controller)
 
 # sim manager
-manager = SimManagerRL(num_episodes=1, env=env, record_data=record_data, replay_buffer=replay_buffer)
+manager = SimManagerRL(num_episodes=len(pose_list), env=env, record_data=record_data, replay_buffer=replay_buffer)
 
 # add phase to sim manager
 manager.add_phase("manipulation", manipulation, start=True)
@@ -101,10 +112,10 @@ manager.add_phase("manipulation", manipulation, start=True)
 # for i in range(4):
 #     manager.run()
 #     manager.phase_manager.phase_dict['manipulation'].reset()
-
+#print(p.getClosestPoints(cube.id, hand.id, 1, -1, 1, -1))
 # Run the sim
 done_training = False
-training_length = 1000
+training_length = 100
 while not done_training:
     for k in range(training_length):
         manager.run()
