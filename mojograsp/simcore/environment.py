@@ -32,7 +32,7 @@ class Environment(ABC):
         be done here.
         """
         p.stepSimulation()
-        time.sleep(1./240.)
+        # time.sleep(1./240.)
 
     @abstractmethod
     def reset(self):
