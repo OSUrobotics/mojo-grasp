@@ -1,0 +1,218 @@
+from abc import ABC, abstractmethod
+import json
+import logging
+from mojograsp.simcore.action import Action, ActionDefault
+from mojograsp.simcore.reward import Reward, RewardDefault
+from mojograsp.simcore.state import State, StateDefault
+from mojograsp.simcore.replay_buffer import ReplayBuffer
+import random
+import numpy as np
+from torch.utils.tensorboard import SummaryWriter
+import pandas as pd
+import pickle as pkl
+
+import operator
+import time
+
+
+class SegmentTree(object):
+    def __init__(self, capacity, operation, neutral_element):
+        """Build a Segment Tree data structure.
+        https://en.wikipedia.org/wiki/Segment_tree
+        Can be used as regular array, but with two
+        important differences:
+            a) setting item's value is slightly slower.
+               It is O(lg capacity) instead of O(1).
+            b) user has access to an efficient ( O(log segment size) )
+               `reduce` operation which reduces `operation` over
+               a contiguous subsequence of items in the array.
+        Paramters
+        ---------
+        capacity: int
+            Total size of the array - must be a power of two.
+        operation: lambda obj, obj -> obj
+            and operation for combining elements (eg. sum, max)
+            must form a mathematical group together with the set of
+            possible values for array elements (i.e. be associative)
+        neutral_element: obj
+            neutral element for the operation above. eg. float('-inf')
+            for max and 0 for sum.
+        """
+        assert capacity > 0 and capacity & (
+            capacity - 1) == 0, "capacity must be positive and a power of 2."
+        self._capacity = capacity
+        self._value = [neutral_element for _ in range(2 * capacity)]
+        self._operation = operation
+
+    def _reduce_helper(self, start, end, node, node_start, node_end):
+        if start == node_start and end == node_end:
+            return self._value[node]
+        mid = (node_start + node_end) // 2
+        if end <= mid:
+            return self._reduce_helper(start, end, 2 * node, node_start, mid)
+        else:
+            if mid + 1 <= start:
+                return self._reduce_helper(start, end, 2 * node + 1, mid + 1, node_end)
+            else:
+                return self._operation(
+                    self._reduce_helper(start, mid, 2 * node, node_start, mid),
+                    self._reduce_helper(
+                        mid + 1, end, 2 * node + 1, mid + 1, node_end)
+                )
+
+    def reduce(self, start=0, end=None):
+        """Returns result of applying `self.operation`
+        to a contiguous subsequence of the array.
+            self.operation(arr[start], operation(arr[start+1], operation(... arr[end])))
+        Parameters
+        ----------
+        start: int
+            beginning of the subsequence
+        end: int
+            end of the subsequences
+        Returns
+        -------
+        reduced: obj
+            result of reducing self.operation over the specified range of array elements.
+        """
+        if end is None:
+            end = self._capacity
+        if end < 0:
+            end += self._capacity
+        end -= 1
+        return self._reduce_helper(start, end, 1, 0, self._capacity - 1)
+
+    def __setitem__(self, idx, val):
+        # index of the leaf
+        idx += self._capacity
+        self._value[idx] = val
+        idx //= 2
+        while idx >= 1:
+            self._value[idx] = self._operation(
+                self._value[2 * idx],
+                self._value[2 * idx + 1]
+            )
+            idx //= 2
+
+    def __getitem__(self, idx):
+        assert 0 <= idx < self._capacity
+        return self._value[self._capacity + idx]
+
+
+class SumSegmentTree(SegmentTree):
+    def __init__(self, capacity):
+        super(SumSegmentTree, self).__init__(
+            capacity=capacity,
+            operation=operator.add,
+            neutral_element=0.0
+        )
+
+    def sum(self, start=0, end=None):
+        """Returns arr[start] + ... + arr[end]"""
+        return super(SumSegmentTree, self).reduce(start, end)
+
+    def find_prefixsum_idx(self, prefixsum):
+        """Find the highest index `i` in the array such that
+            sum(arr[0] + arr[1] + ... + arr[i - i]) <= prefixsum
+        if array values are probabilities, this function
+        allows to sample indexes according to the discrete
+        probability efficiently.
+        Parameters
+        ----------
+        perfixsum: float
+            upperbound on the sum of array prefix
+        Returns
+        -------
+        idx: int
+            highest index satisfying the prefixsum constraint
+        """
+        assert 0 <= prefixsum <= self.sum() + 1e-5
+        idx = 1
+        while idx < self._capacity:  # while non-leaf
+            if self._value[2 * idx] > prefixsum:
+                idx = 2 * idx
+            else:
+                prefixsum -= self._value[2 * idx]
+                idx = 2 * idx + 1
+        return idx - self._capacity
+
+
+class MinSegmentTree(SegmentTree):
+    def __init__(self, capacity):
+        super(MinSegmentTree, self).__init__(
+            capacity=capacity,
+            operation=min,
+            neutral_element=float('inf')
+        )
+
+    def min(self, start=0, end=None):
+        """Returns min(arr[start], ...,  arr[end])"""
+
+        return super(MinSegmentTree, self).reduce(start, end)
+
+
+class ReplayBufferPriority():
+    def __init__(self, buffer_size: int = 39999, alpha: float = 0.3, beta: float = 1.0):
+
+        self.buffer_memory = np.zeros(buffer_size, dtype=object)
+        pwr_sz = 1
+        while pwr_sz < buffer_size:
+            pwr_sz *= 2
+        self.buffer_prio = SumSegmentTree(pwr_sz)
+
+        self.idx = 0
+        self.sz = 0
+        self.prio_idx = 0
+        self.max_prio = 1
+        self.alpha = alpha
+        self.beta = beta
+
+        self.buffer_max = buffer_size
+
+        self.rand = np.random.RandomState(None)
+
+    def preload_buffer_PKL(self, file_name):
+        pass
+
+    def sample_rollout_proportional(self, batch_size, rollout_size):
+        # https://github.com/cychai1995/DDPGfD/blob/main/replay_memory.py#L208 using implementation here to avoid repeat sampling
+        b_size = min(self.sz, batch_size)
+        prio_sum = self.buffer_prio.sum(0, self.sz)
+        baskets = prio_sum / b_size
+        idxes = []
+        transitions = []
+        weights = []
+        for i in range(b_size):
+            r_num = self.rand.uniform(0, 1) * baskets + baskets * i
+            sample_idx = self.buffer_prio.find_prefixsum_idx(r_num)
+            idxes.append(sample_idx)
+            transitions.append(self.buffer_memory[sample_idx])
+            wt = (
+                (1/(self.buffer_prio[sample_idx] / prio_sum)) * (1/self.sz)) ** self.beta
+            weights.append(wt)
+
+            for i in range(rollout_size):
+                if sample_idx + 1 + i < self.sz:
+                    rollout_sample = self.buffer_memory[sample_idx+1 + i]
+                    if rollout_sample != 0 and rollout_sample[-1] == self.buffer_memory[sample_idx][-1]:
+                        idxes.append(sample_idx + 1 + i)
+                        transitions.append(
+                            self.buffer_memory[sample_idx + 1 + i])
+                        wt = (
+                            (1/(self.buffer_prio[sample_idx + 1 + i] / prio_sum)) * (1/self.sz)) ** self.beta
+                        weights.append(wt)
+        return transitions, weights, idxes
+
+    def update_priorities(self, idxes, priorities):
+        for i in range(len(idxes)):
+            self.buffer_prio[idxes[i]] = priorities[i] ** self.alpha
+            self.max_prio = max(priorities[i], self.max_prio)
+
+    def add_timestep(self, transition):
+        self.buffer_memory[self.idx] = transition
+        self.buffer_prio[self.idx] = (self.max_prio + .0001) ** self.alpha
+        self.idx += 1
+        self.sz += 1
+
+    def save_buffer(self, filename: str):
+        pass

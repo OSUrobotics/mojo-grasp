@@ -1,4 +1,5 @@
 # pybullet imports
+from mojograsp.simcore.state import StateDefault
 import pybullet as p
 # mojograsp module imports
 from mojograsp.simcore.environment import Environment, EnvironmentDefault
@@ -7,6 +8,9 @@ from mojograsp.simcore.episode import Episode, EpisodeDefault
 from mojograsp.simcore.record_data import RecordData, RecordDataDefault
 from mojograsp.simcore.replay_buffer import ReplayBuffer, ReplayBufferDefault
 from mojograsp.simcore.phase_manager import PhaseManager
+from mojograsp.simcore.state import State, StateDefault
+from mojograsp.simcore.reward import Reward, RewardDefault
+from mojograsp.simcore.action import Action, ActionDefault
 # python imports
 import time
 import os
@@ -148,7 +152,8 @@ class SimManagerRL(SimManager):
 
     def __init__(self, num_episodes: int = 1, env: Environment = EnvironmentDefault(),
                  episode: Episode = EpisodeDefault(), record_data: RecordData = RecordDataDefault(),
-                 replay_buffer: ReplayBuffer = ReplayBufferDefault):
+                 replay_buffer: ReplayBuffer = ReplayBufferDefault, state: State = StateDefault,
+                 action: Action = ActionDefault, reward: Reward = RewardDefault):
         """
         Constructor passes in the environment, episode and record data objects and simmanager parameters.
 
@@ -169,6 +174,9 @@ class SimManagerRL(SimManager):
         :type reward: :func:`~mojograsp.simcore.reward.Reward`
         :type replay_buffer: :func:`~mojograsp.simcore.replay_buffer.ReplayBuffer`
         """
+        self.state = state
+        self.action = action
+        self.reward = reward
         self.num_episodes = num_episodes
         self.env = env
         self.episode = episode
@@ -202,6 +210,11 @@ class SimManagerRL(SimManager):
         if len(self.phase_manager.phase_dict) > 0:
             logging.info("RUNNING PHASES: {}".format(
                 self.phase_manager.phase_dict))
+            S = None
+            A = None
+            R = None
+            S2 = None
+            E = self.episode_number
 
             for i in range(self.num_episodes):
                 self.episode_number += 1
@@ -219,12 +232,17 @@ class SimManagerRL(SimManager):
                     while not done:
                         timestep_number += 1
                         self.phase_manager.current_phase.pre_step()
+                        S = self.state.get_state()
                         self.phase_manager.current_phase.execute_action()
+                        A = self.action.get_action()
                         self.env.step()
                         self.phase_manager.current_phase.post_step()
                         self.record.record_timestep()
-                        self.replay_buffer.add_timestep(
-                            episode_num=self.episode_number, timestep_num=timestep_number)
+                        R = self.reward.get_reward()
+                        S2 = self.state.get_state()
+                        E = self.episode_number
+                        transition = (S, A, R, S2, E)
+                        self.replay_buffer.add_timestep(transition)
                         done = self.phase_manager.current_phase.exit_condition()
                         self.phase_manager.current_phase.controller.train_policy()
                     self.phase_manager.get_next_phase()
@@ -232,7 +250,8 @@ class SimManagerRL(SimManager):
                 self.record.save_episode()
                 self.episode.post_episode()
                 self.env.reset()
-                self.writer.add_scalar('rewards/average reward', self.replay_buffer.get_average_reward(400), self.episode_number/self.num_episodes)
+                self.writer.add_scalar('rewards/average reward', self.replay_buffer.get_average_reward(
+                    400), self.episode_number/self.num_episodes)
                 self.writer.add_scalar('rewards/min reward', self.replay_buffer.get_min_reward(400),
                                        self.episode_number / self.num_episodes)
                 self.writer.add_scalar('rewards/max reward', self.replay_buffer.get_max_reward(400),

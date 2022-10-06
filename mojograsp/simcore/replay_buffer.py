@@ -14,6 +14,8 @@ import pandas as pd
 import pickle as pkl
 
 # Why do we save things as timesteps when there aren't any methods? Why not save as a dictionary since we need to make it a dictionary at some point down the line?
+
+
 @dataclass
 class Timestep:
     """Dataclass for holding all of the data from a timestep"""
@@ -215,7 +217,7 @@ class ReplayBufferDefault:
 
     def get_min_reward(self, num):
         rewards = self.buffer[-num:]
-        reward2=[]
+        reward2 = []
         for r in rewards:
             reward2.append(-r.reward['distance_to_goal'])
         min_reward = min(reward2)
@@ -223,24 +225,26 @@ class ReplayBufferDefault:
 
     def get_max_reward(self, num):
         rewards = self.buffer[-num:]
-        reward2=[]
+        reward2 = []
         for r in rewards:
             reward2.append(-r.reward['distance_to_goal'])
         max_reward = max(reward2)
         return max_reward
 
+
 class ReplayBufferDF(ReplayBufferDefault):
     def __init__(self, buffer_size: int = 40000, rollout_size: int = 5, state: State = StateDefault,
-                action: Action = ActionDefault, reward: Reward = RewardDefault):
-        super(ReplayBufferDF,self).__init__(buffer_size, False, state, action, reward)
+                 action: Action = ActionDefault, reward: Reward = RewardDefault):
+        super(ReplayBufferDF, self).__init__(
+            buffer_size, False, state, action, reward)
         self.df_buffer = None
         self.df_up_to_date = False
         self.rollout_reward = 0
         self.rollout_size = rollout_size
         self.last_state = []
 
-    def sample_DF(self,batch_size):
-        return self.df_buffer.sample(batch_size, weights = self.df_buffer['priority'])
+    def sample_DF(self, batch_size):
+        return self.df_buffer.sample(batch_size, weights=self.df_buffer['priority'])
 
     def sample_rollout_DF(self, batch_size, rollout_size=5):
         sample = self.sample_DF(batch_size)
@@ -252,7 +256,7 @@ class ReplayBufferDF(ReplayBufferDefault):
         self.df_buffer = pd.json_normalize(self.buffer)
         print('made df')
         self.df_up_to_date = True
-    
+
     def save_buffer(self, file_path: str = None):
         """
         Method saves the current replay buffer to a pkl file at the location of the given file_path.
@@ -273,7 +277,7 @@ class ReplayBufferDF(ReplayBufferDefault):
         """
         # check if there is a previous timestep and that it is not from last episode.
         if self.prev_timestep and self.prev_timestep['episode'] != tstep['episode']:
-#            print('end of episode')
+            #            print('end of episode')
             self.prev_timestep == None
             self.rollout_reward = None
             self.df_up_to_date = False
@@ -285,11 +289,10 @@ class ReplayBufferDF(ReplayBufferDefault):
             # List doesn't have max size, this enforces it if needed
             if self.buffer_size:
                 self.buffer = self.buffer[-self.buffer_size:]
-            for i in range(-min(self.rollout_size,self.prev_timestep['timestep']),0):
+            for i in range(-min(self.rollout_size, self.prev_timestep['timestep']), 0):
                 self.buffer[i]['future_rewards'].append(self.rollout_reward)
                 self.buffer[i]['last_state'] = tstep['state']
-            
-            
+
         # set new previous timestep to current one
         self.prev_timestep = tstep
 
@@ -303,19 +306,21 @@ class ReplayBufferDF(ReplayBufferDefault):
         :type episode_num: int
         :type timestep_num: int
         """
-        state=self.state.get_state()
-        action=self.action.get_action()
-        reward=self.reward.get_reward()
-        tstep = {'state': state, 'action': action, 'reward': reward, 'episode': episode_num, 
-                 'timestep': timestep_num, 'priority': 0.1, 
-                 'future_rewards':[], 'rollout_reward':None, 'last_state':{}}
+        state = self.state.get_state()
+        action = self.action.get_action()
+        reward = self.reward.get_reward()
+        tstep = {'state': state, 'action': action, 'reward': reward, 'episode': episode_num,
+                 'timestep': timestep_num, 'priority': 0.1,
+                 'future_rewards': [], 'rollout_reward': None, 'last_state': {}}
         self.backfill(tstep)
 
     def __len__(self):
         return(len(self.df_buffer))
 
 
-#TODO MAKE THESE ACTUALLY WORK
+# TODO MAKE THESE ACTUALLY WORK
+
+
     def get_average_reward(self, num):
         rewards = self.buffer[-num:]
         avg_reward = 0
@@ -326,7 +331,7 @@ class ReplayBufferDF(ReplayBufferDefault):
 
     def get_min_reward(self, num):
         rewards = self.buffer[-num:]
-        reward2=[]
+        reward2 = []
         for r in rewards:
             reward2.append(-r['reward']['distance_to_goal'])
         min_reward = min(reward2)
@@ -334,7 +339,7 @@ class ReplayBufferDF(ReplayBufferDefault):
 
     def get_max_reward(self, num):
         rewards = self.buffer[-num:]
-        reward2=[]
+        reward2 = []
         for r in rewards:
             reward2.append(-r['reward']['distance_to_goal'])
         max_reward = max(reward2)
