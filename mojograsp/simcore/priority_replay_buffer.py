@@ -197,21 +197,27 @@ class ReplayBufferPriority():
         idxes = []
         transitions = []
         weights = []
-
+    
         for i in range(b_size):
             r_num = self.rand.uniform(0, prio_sum)
             sample_idx = self.buffer_prio.find_prefixsum_idx(r_num)
 
             if sample_idx not in idxes:
+                temp_idx = []
+                temp_trans = []
+                temp_w = []
                 for i in range(rollout_size):
                     if sample_idx + i < self.sz-1:
                         rollout_sample = self.buffer_memory[sample_idx + i]
                         if rollout_sample != 0 and rollout_sample[-1] == self.buffer_memory[sample_idx][-1]:
-                            idxes.append(sample_idx + i)
-                        transitions.append(self.buffer_memory[sample_idx + i])
-                        wt = (
-                            (1/(self.buffer_prio[sample_idx + i] / prio_sum)) * (1/self.sz)) ** self.beta
-                        weights.append(wt)
+                            temp_idx.append(sample_idx + i)
+                            temp_trans.append(self.buffer_memory[sample_idx + i])
+                            wt = (
+                                (1/(self.buffer_prio[sample_idx + i] / prio_sum)) * (1/self.sz)) ** self.beta
+                            temp_w.append(wt)
+                idxes.append(temp_idx)
+                transitions.append(temp_trans)
+                weights.append(temp_w)
 
         return transitions, weights, idxes
 
