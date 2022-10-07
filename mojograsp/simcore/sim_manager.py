@@ -149,7 +149,7 @@ class SimManagerRL(SimManager):
 
     def __init__(self, num_episodes: int = 1, env: Environment = EnvironmentDefault(),
                  episode: Episode = EpisodeDefault(), record_data: RecordData = RecordDataDefault(),
-                 replay_buffer: ReplayBuffer = ReplayBufferDefault):
+                 replay_buffer: ReplayBuffer = ReplayBufferDefault, TensorboardName = None):
         """
         Constructor passes in the environment, episode and record data objects and simmanager parameters.
 
@@ -177,8 +177,11 @@ class SimManagerRL(SimManager):
         self.replay_buffer = replay_buffer
         self.phase_manager = PhaseManager()
         self.episode_number = 0
-        self.writer = SummaryWriter()
-
+        if TensorboardName is None:
+            self.writer = SummaryWriter()
+        else:
+            self.writer = SummaryWriter('runs/'+TensorboardName)
+            
     def add_phase(self, phase_name: str, phase: Phase, start: bool = False):
         """
         Method takes in a phase name, phase object and a boolean to specify whether it is the starting phase.

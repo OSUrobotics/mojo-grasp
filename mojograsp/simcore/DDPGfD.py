@@ -17,8 +17,8 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 def simple_normalize(x_tensor):
     # order is pos, orientation (quaternion), joint angles, velocity
-    maxes = torch.tensor([0.2, 0.35, 0.1, 1, 1, 1, 1, np.pi/2, 0, np.pi/2, np.pi, 1, 1, 1]).to(device)
-    mins = torch.tensor([-0.2, -0.05, 0.0, 0, 0, 0, 0,-np.pi/2, -np.pi, -np.pi/2, 0, 0, 0, 0]).to(device)
+    maxes = torch.tensor([0.2, 0.35, 0.1, 1, 1, 1, 1, np.pi/2, 0, np.pi/2, np.pi, 1, 1, 1, 0.5, 0.5]).to(device)
+    mins = torch.tensor([-0.2, -0.05, 0.0, 0, 0, 0, 0,-np.pi/2, -np.pi, -np.pi/2, 0, 0, 0, 0, -0.01, -0.01]).to(device)
     y_tensor = (x_tensor-mins)/(maxes-mins)
     return y_tensor
     
@@ -27,11 +27,11 @@ class Actor(nn.Module):
     def __init__(self, state_dim, action_dim, max_action):
         super(Actor, self).__init__()
 
-        self.l1 = nn.Linear(state_dim, 400)
+        self.l1 = nn.Linear(state_dim, 100)
         torch.nn.init.kaiming_uniform_(self.l1.weight, a=0, mode='fan_in', nonlinearity='leaky_relu')
-        self.l2 = nn.Linear(400, 300)
+        self.l2 = nn.Linear(100, 50)
         torch.nn.init.kaiming_uniform_(self.l2.weight, a=0, mode='fan_in', nonlinearity='leaky_relu')
-        self.l3 = nn.Linear(300, action_dim)
+        self.l3 = nn.Linear(50, action_dim)
         torch.nn.init.kaiming_uniform_(self.l3.weight, a=0, mode='fan_in', nonlinearity='leaky_relu')
 
         self.max_action = max_action
@@ -44,16 +44,16 @@ class Actor(nn.Module):
         # return self.max_action * torch.sigmoid(self.l3(a))
         return self.max_action * torch.tanh(self.l3(a))
 
-
+# OLD PARAMS WERE 400-300, TESTING 100-50
 class Critic(nn.Module):
     def __init__(self, state_dim, action_dim):
         super(Critic, self).__init__()
         self.leaky = nn.LeakyReLU()
-        self.l1 = nn.Linear(state_dim + action_dim, 400)
+        self.l1 = nn.Linear(state_dim + action_dim, 100)
         torch.nn.init.kaiming_uniform_(self.l1.weight, a=0, mode='fan_in', nonlinearity='leaky_relu')
-        self.l2 = nn.Linear(400, 300)
+        self.l2 = nn.Linear(100, 50)
         torch.nn.init.kaiming_uniform_(self.l2.weight, a=0, mode='fan_in', nonlinearity='leaky_relu')
-        self.l3 = nn.Linear(300, 1)
+        self.l3 = nn.Linear(50, 1)
         torch.nn.init.kaiming_uniform_(self.l3.weight, a=0, mode='fan_in', nonlinearity='leaky_relu')
 
         self.max_q_value = 0.1
@@ -72,11 +72,11 @@ class AltCritic(nn.Module):
     def __init__(self, state_dim, action_dim, pred_dim):
         super(AltCritic, self).__init__()
         self.leaky = nn.LeakyReLU()
-        self.l1 = nn.Linear(state_dim + action_dim, 400)
+        self.l1 = nn.Linear(state_dim + action_dim, 100)
         torch.nn.init.kaiming_uniform_(self.l1.weight, a=0, mode='fan_in', nonlinearity='leaky_relu')
-        self.l2 = nn.Linear(400, 300)
+        self.l2 = nn.Linear(100, 50)
         torch.nn.init.kaiming_uniform_(self.l2.weight, a=0, mode='fan_in', nonlinearity='leaky_relu')
-        self.l3 = nn.Linear(300, pred_dim)
+        self.l3 = nn.Linear(50, pred_dim)
         torch.nn.init.kaiming_uniform_(self.l3.weight, a=0, mode='fan_in', nonlinearity='leaky_relu')
 
         self.max_q_value = 0.1
@@ -91,7 +91,7 @@ class AltCritic(nn.Module):
         return q * self.max_q_value
 
 class DDPGfD():
-    def __init__(self, arg_dict: dict = None):
+    def __init__(self, arg_dict: dict = None, TensorboardName = None):
         # state_path=None, state_dim=32, action_dim=4, max_action=1.57, n=5, discount=0.995, tau=0.0005, batch_size=10,
         #          expert_sampling_proportion=0.7):
         if arg_dict is None:
@@ -99,6 +99,7 @@ class DDPGfD():
             arg_dict = {'state_dim': 32, 'action_dim': 4, 'max_action': 1.57, 'n': 5, 'discount': 0.995, 'tau': 0.005,
                         'batch_size': 10, 'expert_sampling_proportion': 0.7}
         self.state_dim = arg_dict['state_dim']
+        print(self.state_dim)
         self.action_dim = arg_dict['action_dim']
         self.actor = Actor(self.state_dim, self.action_dim, arg_dict['max_action']).to(device)
         self.actor_target = copy.deepcopy(self.actor)
@@ -112,7 +113,10 @@ class DDPGfD():
         self.critic_loss = []
         self.critic_L1loss = []
         self.critic_LNloss = []
-        self.writer = SummaryWriter()
+        if TensorboardName is None:
+            self.writer = SummaryWriter()
+        else:
+            self.writer = SummaryWriter('runs/'+TensorboardName)
 
         self.discount = arg_dict['discount']
         self.tau = arg_dict['tau']
@@ -242,6 +246,7 @@ class DDPGfD():
                 temp_state.extend(t_state['obj_2']['pose'][1])
                 temp_state.extend([item for item in t_state['two_finger_gripper']['joint_angles'].values()])
                 temp_state.extend(t_state['obj_2']['velocity'][0])
+                temp_state.extend([t_state['f1_obj_dist'],t_state['f2_obj_dist']])
                 #temp_state.extend(timestep.reward['goal_position'])
                 state.append(temp_state)
                 action.append(timestep.action['target_joint_angles'])
@@ -256,6 +261,7 @@ class DDPGfD():
                 temp_next_state.extend(t_next_state['obj_2']['pose'][1])
                 temp_next_state.extend([item for item in t_next_state['two_finger_gripper']['joint_angles'].values()])
                 temp_next_state.extend(t_next_state['obj_2']['velocity'][0])
+                temp_next_state.extend([t_next_state['f1_obj_dist'],t_next_state['f2_obj_dist']])
                 #temp_next_state.extend(timestep.reward['goal_position'])
                 next_state.append(temp_next_state)
             state = torch.tensor(state)
@@ -278,6 +284,7 @@ class DDPGfD():
                     temp_last_state.extend(
                     [item for item in t_last_state['two_finger_gripper']['joint_angles'].values()])
                     temp_last_state.extend(t_last_state['obj_2']['velocity'][0])
+                    temp_last_state.extend([t_last_state['f1_obj_dist'],t_last_state['f2_obj_dist']])
                     #temp_last_state.extend(timestep.reward['goal_position'])
                     last_state.append(temp_last_state)
                 last_state = torch.tensor(last_state)
@@ -518,6 +525,7 @@ class DDPGTranslate():
                 temp_state.extend(t_state['obj_2']['pose'][1])
                 temp_state.extend([item for item in t_state['two_finger_gripper']['joint_angles'].values()])
                 temp_state.extend(timestep.reward['goal_position'])
+                temp_state.extend([t_state['f1_obj_dist'],t_state['f2_obj_dist']])
                 state.append(temp_state)
                 action.append(timestep.action['target_joint_angles'])
                 tstep_reward = timestep.reward['deltas']
@@ -532,6 +540,7 @@ class DDPGTranslate():
                 temp_next_state.extend(t_next_state['obj_2']['pose'][1])
                 temp_next_state.extend([item for item in t_next_state['two_finger_gripper']['joint_angles'].values()])
                 temp_next_state.extend(timestep.reward['goal_position'])
+                temp_next_state.extend([t_next_state['f1_obj_dist'],t_next_state['f2_obj_dist']])
                 next_state.append(temp_next_state)
             state = torch.tensor(state)
             action = torch.tensor(action)
@@ -563,8 +572,6 @@ class DDPGTranslate():
 
         state, action, next_state, reward, goal_dir, ops_dir = self.collect_batch(returned_buffer)
         if state is not None:
-            # print(state.shape)
-            # print(self.state_dim)
             # since reward is the deltas and we want to predict that, THAT is the target for the critic
             # as such, no roll rewards for you
 
@@ -803,6 +810,122 @@ class DDPGfD_priority(DDPGfD):
             return actor_loss.item(), critic_loss.item(), critic_L1loss.item(), critic_LNloss.item()
 
 
+class DDPGMultiTranslate(DDPGTranslate):
+    def __init__(self, arg_dict: dict = None):
+        # state_path=None, state_dim=32, action_dim=4, max_action=1.57, n=5, discount=0.995, tau=0.0005, batch_size=10,
+        #          expert_sampling_proportion=0.7):
+        if arg_dict is None:
+            print('no arg dict')
+            arg_dict = {'state_dim': 32, 'action_dim': 4, 'max_action': 1.57, 'n': 5, 'discount': 0.995, 'tau': 0.005,
+                        'batch_size': 10, 'expert_sampling_proportion': 0.7, 'pred_dim': 2}
+        try: 
+            self.num_actors =arg_dict['num_actors']
+        except:
+            self.num_actors = 8
+        self.state_dim = arg_dict['state_dim']
+        self.action_dim = arg_dict['action_dim']
+        self.pred_dim = arg_dict['pred_dim']
+        self.actor = [Actor(self.state_dim, self.action_dim, arg_dict['max_action']).to(device) for _ in range(self.num_actors)]
+        self.actor_target = [copy.deepcopy(i) for i in self.actor]
+        self.actor_optimizer = [torch.optim.Adam(i.parameters(), lr=1e-4) for i in self.actor]
+
+
+        self.critic = AltCritic(self.state_dim, self.action_dim, self.pred_dim).to(device)
+        self.critic_target = copy.deepcopy(self.critic)
+        self.critic_optimizer = torch.optim.Adam(self.critic.parameters(), lr=1e-4, weight_decay=1e-4)
+
+        self.actor_loss = []
+        self.critic_loss = []
+        self.critic_L1loss = []
+        self.critic_LNloss = []
+        self.writer = SummaryWriter()
+
+        self.discount = arg_dict['discount']
+        self.tau = arg_dict['tau']
+        self.n = arg_dict['n']
+        self.network_repl_freq = 2
+        self.total_it = 0
+        self.lambda_Lbc = 1
+
+        # Sample from the expert replay buffer, decaying the proportion expert-agent experience over time
+        self.initial_expert_proportion = arg_dict['expert_sampling_proportion']
+        self.current_expert_proportion = arg_dict['expert_sampling_proportion']
+        self.sampling_decay_rate = 0.2
+        self.sampling_decay_freq = 400
+
+        # Most recent evaluation reward produced by the policy within training
+        self.avg_evaluation_reward = 0
+
+        self.batch_size = arg_dict['batch_size']
+        self.rng = default_rng()
+        self.rollout = True
+        self.u_count = 0
+
+    def train(self, replay_buffer, actor_num):
+        """ Update policy based on batch of timesteps """
+        self.total_it += 1
+
+        state, action, next_state, reward, rollout_reward, last_state = self.collect_batch(replay_buffer)
+        if state is not None:
+        # print(sampled_data['next_state'])
+        # print(torch.tensor(sampled_data['next_state']))
+    
+            target_Q = self.critic_target(next_state, self.actor_target[actor_num]((next_state)))
+    
+            target_Q = reward + (self.discount * target_Q).detach()  # bellman equation
+    
+            target_Q = target_Q.float()
+    
+            # Compute the roll rewards and the number of steps forward (could be less than rollout size if timestep near end of trial)
+            sum_rewards, num_rewards = self.calc_roll_rewards(rollout_reward)
+    
+            target_QN = self.critic_target(last_state, self.actor_target[actor_num](last_state))
+    
+            # Compute QN from roll reward and discounted final state
+            target_QN = sum_rewards.to(device) + (self.discount**num_rewards * target_QN).detach()
+    
+            target_QN = target_QN.float()
+    
+            # Get current Q estimate
+            current_Q = self.critic(state, action)
+    
+            # L_1 loss (Loss between current state, action and reward, next state, action)
+            critic_L1loss = F.mse_loss(current_Q, target_Q)
+    
+            # L_2 loss (Loss between current state, action and reward, n state, n action)
+            critic_LNloss = F.mse_loss(current_Q, target_QN)
+    
+            # Total critic loss
+            lambda_1 = 1  # hyperparameter to control n loss
+            critic_loss = critic_L1loss.float() + lambda_1 * critic_LNloss
+    
+            # Optimize the critic
+            self.critic_optimizer.zero_grad()
+            critic_loss.backward()
+            self.critic_optimizer.step()
+    
+            # Compute actor loss
+            actor_loss = -self.critic(state, self.actor[actor_num](state))
+            priorities = 0.0001 + actor_loss**2 + 2*(current_Q-target_Q)**2
+            actor_loss = actor_loss.mean()
+    
+            # Optimize the actor
+            self.actor_optimizer[actor_num].zero_grad()
+            actor_loss.backward()
+            self.actor_optimizer[actor_num].step()
+    
+            self.writer.add_scalar('Loss/critic',critic_loss.detach(),self.total_it)
+            self.writer.add_scalar('Loss/critic_L1',critic_L1loss.detach(),self.total_it)
+            self.writer.add_scalar('Loss/critic_LN',critic_LNloss.detach(),self.total_it)
+            self.writer.add_scalar('Loss/actor',actor_loss.detach(),self.total_it)
+    
+            
+    
+            # update target networks
+            if self.total_it % self.network_repl_freq == 0:
+                self.update_target()
+
+            return actor_loss.item(), critic_loss.item(), critic_L1loss.item(), critic_LNloss.item()
 
 def unpack_arr(long_arr):
     """

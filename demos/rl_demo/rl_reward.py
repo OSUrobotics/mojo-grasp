@@ -20,8 +20,8 @@ class ExpertReward(Reward):
         
         self.current_reward["distance_to_goal"] = distance
         self.current_reward["goal_position"] = goal_position
-        self.current_reward["f1_dist"] = f1_dist[0][8]
-        self.current_reward["f2_dist"] = f2_dist[0][8]
+        self.current_reward["f1_dist"] = min(f1_dist[0][8], 0)
+        self.current_reward["f2_dist"] = min(f2_dist[0][8],0)
         self.current_reward["end_penalty"] = end_reward
 
     def get_reward(self) -> dict:

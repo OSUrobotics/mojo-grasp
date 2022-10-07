@@ -85,7 +85,7 @@ class ManipulationRL(Phase):
         
 class ManipulationRLTranslate(Phase):
 
-    def __init__(self, hand: TwoFingerGripper, cube: ObjectBase, x, y, state: State, action: Action, reward: Reward, replay_buffer: ReplayBufferDefault = None, args: dict = None):
+    def __init__(self, hand: TwoFingerGripper, cube: ObjectBase, x, y, state: State, action: Action, reward: Reward, replay_buffer: ReplayBufferDefault = None, args: dict = None, TensorboardName=None):
         self.name = "manipulation"
         self.hand = hand
         self.cube = cube
@@ -100,7 +100,7 @@ class ManipulationRLTranslate(Phase):
         self.target = None
         self.goal_position = None
         # create controller
-        self.controller = rl_controller.RLControllerTranslate(hand, cube, replay_buffer=replay_buffer, args=args)
+        self.controller = rl_controller.RLControllerTranslate(hand, cube, replay_buffer=replay_buffer, args=args, TensorboardName=TensorboardName)
         self.end_val = 0
         self.pre_step_location = None
         # self.controller = rl_controller.ExpertController(hand, cube)
