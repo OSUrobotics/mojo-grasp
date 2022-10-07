@@ -8,6 +8,7 @@ import numpy as np
 import json
 from PIL import ImageGrab
 from scipy.stats import kde
+import re
 
 '''
     Data Plotter
@@ -120,6 +121,7 @@ class GuiBackend():
             return
         data = self.data_dict['timestep_list']
         critic_list = [f['control']['critic_output'] for f in data]
+        print(critic_list[0])
         if self.clear_plots | (self.curr_graph != 'rewards'):
             self.ax.cla()
             self.legend = []
@@ -220,9 +222,10 @@ class GuiBackend():
         xi, yi = np.mgrid[xlim[0]:xlim[1]:nbins*1j, ylim[0]:ylim[1]:nbins*1j]
         print('did the mgrid')
         zi = k(np.vstack([xi.flatten(), yi.flatten()]))
+        term = -np.max(zi)/5
         for i in range(len(zi)):
             if zi[i] <1:
-                zi[i] = -200
+                zi[i] = term
         self.ax.cla()
         self.legend = []
         print('about to do the colormesh')
@@ -247,9 +250,10 @@ class GuiBackend():
         for episode in self.data_dict['episode_list']:
             data = episode['timestep_list']
             for timestep in data:
-                temp += timestep['reward']['end_penalty'] \
-                    - timestep['reward']['distance_to_goal'] \
+                temp += - timestep['reward']['distance_to_goal'] \
                         -max(timestep['reward']['f1_dist'],timestep['reward']['f2_dist'])/5
+                                        #timestep['reward']['end_penalty'] \
+
             rewards.append(temp)
             temp = 0
         self.ax.cla()
@@ -302,14 +306,30 @@ def main():
     # get list of pkl files in folder
     episode_files = [os.path.join(folder, f) for f in os.listdir(folder) if f.lower().endswith('.pkl')]
     filenames_only = [f for f in os.listdir(folder) if f.lower().endswith('.pkl')]
+    
+    filenums = [re.findall('\d+',f) for f in filenames_only]
+    final_filenums = []
+    for i in filenums:
+        if len(i) > 0 :
+            final_filenums.append(int(i[0]))
+        else:
+            final_filenums.append(10000000000)
     if len(episode_files) == 0:
         sg.popup('No pkl episodes in folder, using json format.')
         episode_files = [os.path.join(folder, f) for f in os.listdir(folder) if f.lower().endswith('.json')]
         filenames_only = [f for f in os.listdir(folder) if f.lower().endswith('.json')]
-    
-    episode_files.sort()
-    filenames_only.sort()
 
+    sorted_inds = np.argsort(final_filenums)
+    final_filenums = np.array(final_filenums)
+    temp = final_filenums[sorted_inds]
+    episode_files = np.array(episode_files)
+    filenames_only = np.array(filenames_only)
+
+    episode_files = episode_files[sorted_inds].tolist()
+    filenames_only = filenames_only[sorted_inds].tolist()
+    
+    
+    
     # define menu layout
     menu = [['File', ['Open Folder', 'Exit']], ['Help', ['About', ]]]
 

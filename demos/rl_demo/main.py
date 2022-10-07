@@ -24,7 +24,7 @@ current_path = str(pathlib.Path().resolve())
 hand_path = current_path+"/resources/2v2_nosensors/2v2_nosensors_limited.urdf"
 cube_path = current_path + \
     "/resources/object_models/2v2_mod/2v2_mod_cuboid_small.urdf"
-data_path = current_path+"/data/test-left/"
+data_path = current_path+"/data/finger_object_dist/"
 points_path = current_path+"/resources/points.csv"
 
 # Load in the cube goal positions
@@ -42,8 +42,8 @@ x = [-0.055]
 y = [-0.055]
 pose_list = [[i,j] for i,j in zip(x,y)]
 # start pybullet
-#physics_client = p.connect(p.GUI)
-physics_client = p.connect(p.DIRECT)
+physics_client = p.connect(p.GUI)
+# physics_client = p.connect(p.DIRECT)
 p.setAdditionalSearchPath(pybullet_data.getDataPath())
 p.setGravity(0, 0, -10)
 p.resetDebugVisualizerCamera(cameraDistance=.02, cameraYaw=0, cameraPitch=-89.9999,
@@ -82,7 +82,7 @@ goal_poses = GoalHolder(pose_list)
 state = StateRL(objects=[hand, cube, goal_poses])
 action = rl_action.ExpertAction()
 reward = rl_reward.ExpertReward()
-arg_dict = {'state_dim': 14, 'action_dim': 4, 'max_action': 1.57, 'n': 5, 'discount': 0.995, 'tau': 0.0005,
+arg_dict = {'state_dim': 16, 'action_dim': 4, 'max_action': 1.57, 'n': 5, 'discount': 0.995, 'tau': 0.0005,
             'batch_size': 100, 'expert_sampling_proportion': 0.7}
 
 
@@ -115,7 +115,7 @@ manager.add_phase("manipulation", manipulation, start=True)
 #print(p.getClosestPoints(cube.id, hand.id, 1, -1, 1, -1))
 # Run the sim
 done_training = False
-training_length = 100
+training_length = 1000
 while not done_training:
     for k in range(training_length):
         manager.run()

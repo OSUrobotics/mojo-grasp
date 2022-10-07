@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Mon Sep 26 12:19:57 2022
+Created on Fri Sep 30 14:27:04 2022
 
 @author: orochi
 """
@@ -65,7 +65,7 @@ p.changeVisualShape(hand_id, 2, rgbaColor=[1, 0.5, 0, 1])
 p.changeVisualShape(hand_id, 3, rgbaColor=[0.3, 0.3, 0.3, 1])
 for i in range(8):
     print('starting direction ', directions[i])
-    data_path = current_path+"/data/test/" + directions[i] + "/"
+    data_path = current_path+"/data/test/" + directions[i]
     
     # Load in the cube goal positions
     #df = pd.read_csv(points_path, index_col=False)
@@ -92,9 +92,9 @@ for i in range(8):
     #state = StateDefault(objects=[hand, cube])
     state = StateRL(objects=[hand, cube, goal_poses])
     action = rl_action.ExpertAction()
-    reward = rl_reward.ExpertReward()
-    arg_dict = {'state_dim': 14, 'action_dim': 4, 'max_action': 1.57, 'n': 5, 'discount': 0.995, 'tau': 0.0005,
-                'batch_size': 100, 'expert_sampling_proportion': 0.7}
+    reward = rl_reward.TranslateReward()
+    arg_dict = {'state_dim': 16, 'action_dim': 4, 'max_action': 1.57, 'n': 5, 'discount': 0.995, 'tau': 0.0005,
+                'batch_size': 100, 'expert_sampling_proportion': 0.7,  "pred_dim": 2}
     
     
     # replay buffer
@@ -106,8 +106,8 @@ for i in range(8):
     env = rl_env.ExpertEnv(hand=hand, obj=cube)
     
     # Create phase
-    manipulation = manipulation_phase_rl.ManipulationRL(
-        hand, cube, x, y, state, action, reward, replay_buffer=replay_buffer, args=arg_dict)
+    manipulation = manipulation_phase_rl.ManipulationRLTranslate(
+        hand, cube, x, y, state, action, reward, replay_buffer=replay_buffer, args=arg_dict,TensorboardName=directions[i])
     
     # data recording
     record_data = RecordDataRLPKL(
@@ -126,7 +126,7 @@ for i in range(8):
     #print(p.getClosestPoints(cube.id, hand.id, 1, -1, 1, -1))
     # Run the sim
     done_training = False
-    training_length = 5000
+    training_length = 1000
     while not done_training:
         for k in range(training_length):
             manager.run()
