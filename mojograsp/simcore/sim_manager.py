@@ -20,7 +20,6 @@ from PIL import Image
 from torch.utils.tensorboard import SummaryWriter
 
 
-
 class SimManager(ABC):
     """SimManager Abstract Base Class"""
     @abstractmethod
@@ -233,6 +232,7 @@ class SimManagerRL(SimManager):
                     while not done:
                         timestep_number += 1
                         self.phase_manager.current_phase.pre_step()
+                        self.state.set_state()
                         S = self.state.get_state()
                         self.phase_manager.current_phase.execute_action()
                         A = self.action.get_action()
@@ -240,18 +240,13 @@ class SimManagerRL(SimManager):
                         done = self.phase_manager.current_phase.exit_condition()
                         self.phase_manager.current_phase.post_step()
                         self.record.record_timestep()
-<<<<<<< HEAD
                         R = self.reward.get_reward()
+                        self.state.set_state()
                         S2 = self.state.get_state()
                         E = self.episode_number
                         transition = (S, A, R, S2, E)
                         self.replay_buffer.add_timestep(transition)
                         done = self.phase_manager.current_phase.exit_condition()
-=======
-                        self.replay_buffer.add_timestep(
-                            episode_num=self.episode_number, timestep_num=timestep_number)
-                        
->>>>>>> RL
                         self.phase_manager.current_phase.controller.train_policy()
 #                        img = p.getCameraImage(640, 480, renderer=p.ER_BULLET_HARDWARE_OPENGL)
 #                        img = Image.fromarray(img[2])

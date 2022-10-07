@@ -14,6 +14,8 @@ import pickle as pkl
 import operator
 import time
 
+# https://github.com/openai/baselines/blob/master/baselines/common/segment_tree.py using openai implementation of the segment/sum tree
+
 
 class SegmentTree(object):
     def __init__(self, capacity, operation, neutral_element):
@@ -137,23 +139,8 @@ class SumSegmentTree(SegmentTree):
         return idx - self._capacity
 
 
-class MinSegmentTree(SegmentTree):
-    def __init__(self, capacity):
-        super(MinSegmentTree, self).__init__(
-            capacity=capacity,
-            operation=min,
-            neutral_element=float('inf')
-        )
-
-    def min(self, start=0, end=None):
-        """Returns min(arr[start], ...,  arr[end])"""
-
-        return super(MinSegmentTree, self).reduce(start, end)
-
-
 class ReplayBufferPriority():
-    def __init__(self, buffer_size: int = 39999, alpha: float = 0.3, beta: float = 1.0):
-
+    def __init__(self, buffer_size: int = 39999, alpha: float = 0.3, beta: float = 1.0, max_prio: float = 1):
         self.buffer_memory = np.zeros(buffer_size, dtype=object)
         pwr_sz = 1
         while pwr_sz < buffer_size:
@@ -162,8 +149,8 @@ class ReplayBufferPriority():
 
         self.idx = 0
         self.sz = 0
-        self.prio_idx = 0
-        self.max_prio = 1
+        self.demo_sz = 0
+        self.max_prio = max_prio
         self.alpha = alpha
         self.beta = beta
 
@@ -172,47 +159,75 @@ class ReplayBufferPriority():
         self.rand = np.random.RandomState(None)
 
     def preload_buffer_PKL(self, file_name):
+        with open(file_name, 'rb') as handle:
+            b = pkl.load(handle)
+
+        prev = None
+        l = []
+        for i in b["episode_list"]:
+            for j in i["timestep_list"]:
+                if prev:
+                    if prev[-1] == i["number"]:
+                        prev[-2] = j["state"]
+                    if self.sz < self.buffer_max:
+                        self.buffer_memory[self.idx] = prev
+                        self.buffer_prio[self.idx] = self.max_prio
+                        self.idx += 1
+                        self.demo_sz += 1
+                        self.sz += 1
+                    else:
+                        print(
+                            "ERROR: REPLAY BUFFER OUT OF SPACE, TRANSITION NOT ADDED")
+                prev = (j["state"], j["action"],
+                        j["reward"], None, i["number"])
+        if self.sz < self.buffer_max:
+            self.buffer_memory[self.idx] = prev
+            self.buffer_prio[self.idx] = self.max_prio
+            self.idx += 1
+            self.demo_sz += 1
+            self.sz += 1
+        else:
+            print("ERROR: REPLAY BUFFER OUT OF SPACE, TRANSITION NOT ADDED")
         pass
 
-    def sample_rollout_proportional(self, batch_size, rollout_size):
-        # https://github.com/cychai1995/DDPGfD/blob/main/replay_memory.py#L208 using implementation here to avoid repeat sampling
-        b_size = min(self.sz, batch_size)
+    def sample_rollout(self, batch_size: int, rollout_size: int):
+        b_size = min(self.sz-1, batch_size)
         prio_sum = self.buffer_prio.sum(0, self.sz)
-        baskets = prio_sum / b_size
+
         idxes = []
         transitions = []
         weights = []
-        for i in range(b_size):
-            r_num = self.rand.uniform(0, 1) * baskets + baskets * i
-            sample_idx = self.buffer_prio.find_prefixsum_idx(r_num)
-            idxes.append(sample_idx)
-            transitions.append(self.buffer_memory[sample_idx])
-            wt = (
-                (1/(self.buffer_prio[sample_idx] / prio_sum)) * (1/self.sz)) ** self.beta
-            weights.append(wt)
 
-            for i in range(rollout_size):
-                if sample_idx + 1 + i < self.sz:
-                    rollout_sample = self.buffer_memory[sample_idx+1 + i]
-                    if rollout_sample != 0 and rollout_sample[-1] == self.buffer_memory[sample_idx][-1]:
-                        idxes.append(sample_idx + 1 + i)
-                        transitions.append(
-                            self.buffer_memory[sample_idx + 1 + i])
+        for i in range(b_size):
+            r_num = self.rand.uniform(0, prio_sum)
+            sample_idx = self.buffer_prio.find_prefixsum_idx(r_num)
+
+            if sample_idx not in idxes:
+                for i in range(rollout_size):
+                    if sample_idx + i < self.sz-1:
+                        rollout_sample = self.buffer_memory[sample_idx + i]
+                        if rollout_sample != 0 and rollout_sample[-1] == self.buffer_memory[sample_idx][-1]:
+                            idxes.append(sample_idx + i)
+                        transitions.append(self.buffer_memory[sample_idx + i])
                         wt = (
-                            (1/(self.buffer_prio[sample_idx + 1 + i] / prio_sum)) * (1/self.sz)) ** self.beta
+                            (1/(self.buffer_prio[sample_idx + i] / prio_sum)) * (1/self.sz)) ** self.beta
                         weights.append(wt)
+
         return transitions, weights, idxes
 
     def update_priorities(self, idxes, priorities):
         for i in range(len(idxes)):
             self.buffer_prio[idxes[i]] = priorities[i] ** self.alpha
-            self.max_prio = max(priorities[i], self.max_prio)
+            self.max_prio = max(self.buffer_prio[idxes[i]], self.max_prio)
 
     def add_timestep(self, transition):
-        self.buffer_memory[self.idx] = transition
-        self.buffer_prio[self.idx] = (self.max_prio + .0001) ** self.alpha
-        self.idx += 1
-        self.sz += 1
+        if self.sz < self.buffer_max:
+            self.buffer_memory[self.idx] = transition
+            self.buffer_prio[self.idx] = self.max_prio
+            self.idx += 1
+            self.sz += 1
+        else:
+            print("ERROR: REPLAY BUFFER OUT OF SPACE, TRANSITION NOT ADDED")
 
     def save_buffer(self, filename: str):
         pass
