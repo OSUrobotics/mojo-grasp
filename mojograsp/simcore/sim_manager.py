@@ -18,7 +18,7 @@ from abc import ABC, abstractmethod
 import logging
 from PIL import Image
 from torch.utils.tensorboard import SummaryWriter
-
+import matplotlib.pyplot as plt
 
 class SimManager(ABC):
     """SimManager Abstract Base Class"""
@@ -184,6 +184,7 @@ class SimManagerRL(SimManager):
         self.replay_buffer = replay_buffer
         self.phase_manager = PhaseManager()
         self.episode_number = 0
+        self.record_video = False
         if TensorboardName is None:
             self.writer = SummaryWriter()
         else:
@@ -247,24 +248,28 @@ class SimManagerRL(SimManager):
                         self.state.set_state()
                         S2 = self.state.get_state()
                         E = self.episode_number
-                        transition = (S, A, R, S2, E)
+                        # transition = {'state':S, 'action':A, 'reward':R, 'next_state':S2, 'episode':E}
+                        transition = (S,A,R,S2,E)
                         self.replay_buffer.add_timestep(transition)
-                        done = self.phase_manager.current_phase.exit_condition()
+                        # done = self.phase_manager.current_phase.exit_condition()
+                        if done:
+                            print('done')
                         self.phase_manager.current_phase.controller.train_policy()
-#                        img = p.getCameraImage(640, 480, renderer=p.ER_BULLET_HARDWARE_OPENGL)
-#                        img = Image.fromarray(img[2])
-#                        img.save('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/vizualization/episode_' + num_string(self.episode_number) + '_frame_'+ num_string(timestep_number)+'.png')
+                        if self.record_video:
+                            img = p.getCameraImage(640, 480, renderer=p.ER_BULLET_HARDWARE_OPENGL)
+                            img = Image.fromarray(img[2])
+                            img.save('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/vizualization/episode_' + str(self.episode_number) + '_frame_'+ str(timestep_number)+'.png')
                     self.phase_manager.get_next_phase()
                 self.record.record_episode()
                 self.record.save_episode()
                 self.episode.post_episode()
                 self.env.reset()
-                self.writer.add_scalar('rewards/average reward', self.replay_buffer.get_average_reward(
-                    400), self.episode_number/self.num_episodes)
-                self.writer.add_scalar('rewards/min reward', self.replay_buffer.get_min_reward(400),
-                                       self.episode_number / self.num_episodes)
-                self.writer.add_scalar('rewards/max reward', self.replay_buffer.get_max_reward(400),
-                                       self.episode_number / self.num_episodes)
+                # self.writer.add_scalar('rewards/average reward', self.replay_buffer.get_average_reward(
+                #     400), self.episode_number/self.num_episodes)
+                # self.writer.add_scalar('rewards/min reward', self.replay_buffer.get_min_reward(400),
+                #                         self.episode_number / self.num_episodes)
+                # self.writer.add_scalar('rewards/max reward', self.replay_buffer.get_max_reward(400),
+                #                         self.episode_number / self.num_episodes)
             self.record.save_all()
             # self.replay_buffer.save_buffer('./data/temp_buffer.pkl')
         else:
@@ -273,3 +278,65 @@ class SimManagerRL(SimManager):
 
     def stall(self):
         super().stall()
+
+    def evaluate(self):
+        """
+        Runs through all episodes, and the phases in each episode, continues until all episodes are completed, always using the policy
+        Calls the user defined phases and other classes inherited from the abstract base classes. Detailed diagram
+        is above of the order of operations. Episodes are not added to the replay buffer and agent is not trained
+        """
+        if len(self.phase_manager.phase_dict) > 0:
+            logging.info("RUNNING PHASES: {}".format(
+                self.phase_manager.phase_dict))
+
+            for i in range(self.num_episodes):
+                # self.episode_number += 1
+                self.episode.setup()
+                self.env.setup()
+                self.phase_manager.set_exit_flag(False)
+                self.phase_manager.setup()
+
+                timestep_number = 0
+                while self.phase_manager.get_exit_flag() == False:
+                    self.phase_manager.current_phase.setup()
+                    done = False
+                    logging.info("CURRENT PHASE: {}".format(
+                        self.phase_manager.current_phase.name))
+                    while not done:
+                        timestep_number += 1
+                        self.phase_manager.current_phase.pre_step()
+                        self.state.set_state()
+                        # S = self.state.get_state()
+                        self.phase_manager.current_phase.execute_action()
+                        # A = self.action.get_action()
+                        self.env.step()
+                        done = self.phase_manager.current_phase.exit_condition()
+                        self.phase_manager.current_phase.post_step()
+                        self.record.record_timestep()
+                        # R = self.reward.get_reward()
+                        self.state.set_state()
+                        # S2 = self.state.get_state()
+                        # E = self.episode_number
+                        # transition = (S, A, R, S2, E)
+                        # self.replay_buffer.add_timestep(transition)
+                        done = self.phase_manager.current_phase.exit_condition()
+                        # self.phase_manager.current_phase.controller.train_policy()
+                        if self.record_video:
+                            img = p.getCameraImage(640, 480, renderer=p.ER_BULLET_HARDWARE_OPENGL)
+                            img = Image.fromarray(img[2])
+                            img.save('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/vizualization/Evaluation_episode_' + str(self.episode_number) + '_frame_'+ str(timestep_number)+'.png')
+                    self.phase_manager.get_next_phase()
+                self.record.record_episode(True)
+                self.record.save_episode(True)
+                self.episode.post_episode()
+                self.env.reset()
+                # self.writer.add_scalar('rewards/average reward', self.replay_buffer.get_average_reward(
+                #     400), self.episode_number/self.num_episodes)
+                # self.writer.add_scalar('rewards/min reward', self.replay_buffer.get_min_reward(400),
+                #                         self.episode_number / self.num_episodes)
+                # self.writer.add_scalar('rewards/max reward', self.replay_buffer.get_max_reward(400),
+                #                         self.episode_number / self.num_episodes)
+            self.record.save_all()
+            # self.replay_buffer.save_buffer('./data/temp_buffer.pkl')
+        else:
+            logging.warn("No Phases have been added")

@@ -216,13 +216,17 @@ class RecordDataPKL(RecordData):
         self.timesteps.append(timestep_dict)
         self.timestep_num += 1
 
-    def record_episode(self):
+    def record_episode(self,evaluated=False):
         """
         Method called by :func:`~mojograsp.simcore.sim_manager.SimManager` after every episode. Compiles all of the 
         timestep dictionaries into a list and adds it to the episode dicionary. 
         """
-        episode = {"number": self.episode_num+1}
+        if evaluated:
+            episode = {"number": -self.episode_num}
+        else:
+            episode = {"number": self.episode_num+1}
         episode["timestep_list"] = self.timesteps
+        
         self.current_episode = episode
 
         if self.save_all_flag:
@@ -230,16 +234,20 @@ class RecordDataPKL(RecordData):
 
         self.timesteps = []
         self.timestep_num = 1
-        self.episode_num += 1
+        if not evaluated:
+            self.episode_num += 1
 
-    def save_episode(self):
+    def save_episode(self,evaluated=False):
         """
         Method called by :func:`~mojograsp.simcore.sim_manager.SimManager` after every episode. Saves the most recent
         episode dictionary to a pkl file. 
         """
         if self.save_episode_flag and self.data_path != None:
-            file_path = self.data_path + \
-                self.data_prefix + "_" + str(self.episode_num) + ".pkl"
+            if evaluated:
+                file_path = '/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/vizualization/Evaluation_episode_' + str(self.episode_num) + ".pkl"
+            else:
+                file_path = self.data_path + \
+                    self.data_prefix + "_" + str(self.episode_num) + ".pkl"
             print(file_path)
             with open(file_path, 'wb') as fout:
                 pkl.dump(self.current_episode, fout)
@@ -283,10 +291,6 @@ class RecordDataRLPKL(RecordDataPKL):
             timestep_dict["control"] = self.controller.get_network_outputs()
         self.timesteps.append(timestep_dict)
         self.timestep_num += 1
-        
-        
-        
-        
         
         
         

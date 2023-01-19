@@ -18,32 +18,25 @@ from mojograsp.simobjects.object_base import ObjectBase
 from mojograsp.simobjects.object_with_velocity import ObjectWithVelocity
 from mojograsp.simobjects.object_for_dataframe import ObjectVelocityDF
 from mojograsp.simcore.replay_buffer import ReplayBufferDefault, ReplayBufferDF
+from mojograsp.simcore.episode import EpisodeDefault
 import numpy as np
+from mojograsp.simcore.priority_replay_buffer import ReplayBufferPriority
 # resource paths
 current_path = str(pathlib.Path().resolve())
 hand_path = current_path+"/resources/2v2_nosensors/2v2_nosensors_limited.urdf"
 cube_path = current_path + \
     "/resources/object_models/2v2_mod/2v2_mod_cuboid_small.urdf"
-data_path = current_path+"/data/finger_object_dist/"
+cylinder_path = current_path + \
+    "/resources/object_models/2v2_mod/2v2_mod_cylinder_small_alt.urdf"
+data_path = current_path+"/data/critic_dominated/"
 points_path = current_path+"/resources/points.csv"
 
-# Load in the cube goal positions
-#df = pd.read_csv(points_path, index_col=False)
-#x = df["x"]
-#y = df["y"]
-#
-#length = np.sqrt(np.random.uniform(0, 0.0036, 100))
-#angle = np.pi * np.random.uniform(0, 2, 100)
-#
-#x = length * np.cos(angle)
-#y = length * np.sin(angle)
-
 x = [-0.055]
-y = [-0.055]
+y = [0.0]
 pose_list = [[i,j] for i,j in zip(x,y)]
 # start pybullet
-physics_client = p.connect(p.GUI)
-# physics_client = p.connect(p.DIRECT)
+# physics_client = p.connect(p.GUI)
+physics_client = p.connect(p.DIRECT)
 p.setAdditionalSearchPath(pybullet_data.getDataPath())
 p.setGravity(0, 0, -10)
 p.resetDebugVisualizerCamera(cameraDistance=.02, cameraYaw=0, cameraPitch=-89.9999,
@@ -54,6 +47,7 @@ plane_id = p.loadURDF("plane.urdf")
 hand_id = p.loadURDF(hand_path, useFixedBase=True,
                      basePosition=[0.0, 0.0, 0.05])
 cube_id = p.loadURDF(cube_path, basePosition=[0.0, 0.16, .05])
+# cylinder_id = p.loadURDF(cylinder_path, basePosition=[0.0, 0.16, .05])
 # Create TwoFingerGripper Object and set the initial joint positions
 hand = TwoFingerGripper(hand_id, path=hand_path)
 
@@ -64,6 +58,7 @@ p.resetJointState(hand_id, 3, 1.4)
 
 # Create ObjectBase for the cube object
 cube = ObjectWithVelocity(cube_id, path=cube_path)
+# cylinder = ObjectWithVelocity(cylinder_id, path=cylinder_path)
 # cube = ObjectVelocityDF(cube_id, path=cube_path)
 
 
@@ -78,8 +73,9 @@ p.changeVisualShape(hand_id, 3, rgbaColor=[0.3, 0.3, 0.3, 1])
 
 goal_poses = GoalHolder(pose_list)
 # state and reward
-#state = StateDefault(objects=[hand, cube])
+# state = StateDefault(objects=[hand, cube])
 state = StateRL(objects=[hand, cube, goal_poses])
+# state = StateRL(objects=[hand, cylinder, goal_poses])
 action = rl_action.ExpertAction()
 reward = rl_reward.ExpertReward()
 arg_dict = {'state_dim': 16, 'action_dim': 4, 'max_action': 1.57, 'n': 5, 'discount': 0.995, 'tau': 0.0005,
@@ -87,23 +83,25 @@ arg_dict = {'state_dim': 16, 'action_dim': 4, 'max_action': 1.57, 'n': 5, 'disco
 
 
 # replay buffer
-replay_buffer = ReplayBufferDefault(buffer_size=400000, state=state, action=action, reward=reward)
+replay_buffer = ReplayBufferPriority(buffer_size=401000)
 # replay_buffer = ReplayBufferDF(state=state, action=action, reward=reward)
 
 
 # environment and recording
 env = rl_env.ExpertEnv(hand=hand, obj=cube)
+# env = rl_env.ExpertEnv(hand=hand, obj=cylinder)
 
 # Create phase
 manipulation = manipulation_phase_rl.ManipulationRL(
     hand, cube, x, y, state, action, reward, replay_buffer=replay_buffer, args=arg_dict)
-
+# manipulation = manipulation_phase_rl.ManipulationRL(
+#     hand, cylinder, x, y, state, action, reward, replay_buffer=replay_buffer, args=arg_dict)
 # data recording
 record_data = RecordDataRLPKL(
     data_path=data_path, state=state, action=action, reward=reward, save_all=True, controller=manipulation.controller)
 
 # sim manager
-manager = SimManagerRL(num_episodes=len(pose_list), env=env, record_data=record_data, replay_buffer=replay_buffer)
+manager = SimManagerRL(num_episodes=len(pose_list), env=env, episode=EpisodeDefault(), record_data=record_data, replay_buffer=replay_buffer, state=state, action=action, reward=reward, TensorboardName='test1')
 
 # add phase to sim manager
 manager.add_phase("manipulation", manipulation, start=True)

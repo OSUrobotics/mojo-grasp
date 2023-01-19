@@ -65,7 +65,7 @@ p.changeVisualShape(hand_id, 2, rgbaColor=[1, 0.5, 0, 1])
 p.changeVisualShape(hand_id, 3, rgbaColor=[0.3, 0.3, 0.3, 1])
 for i in range(8):
     print('starting direction ', directions[i])
-    data_path = current_path+"/data/test/" + directions[i]
+    data_path = current_path+"/data/priority_replay/" + directions[i]
     
     # Load in the cube goal positions
     #df = pd.read_csv(points_path, index_col=False)
@@ -114,7 +114,7 @@ for i in range(8):
         data_path=data_path, state=state, action=action, reward=reward, save_all=True, controller=manipulation.controller)
     
     # sim manager
-    manager = SimManagerRL(num_episodes=len(pose_list), env=env, record_data=record_data, replay_buffer=replay_buffer, TensorboardName=directions[i])
+    manager = SimManagerRL(num_episodes=len(pose_list), env=env, record_data=record_data, replay_buffer=replay_buffer, TensorboardName='priority_replay_'+directions[i])
     
     # add phase to sim manager
     manager.add_phase("manipulation", manipulation, start=True)

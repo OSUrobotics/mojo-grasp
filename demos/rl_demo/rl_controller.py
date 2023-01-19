@@ -12,9 +12,11 @@ import pybullet as p
 import pandas as pd
 from math import radians
 # import Markers
-from mojograsp.simcore.DDPGfD import DDPGfD, DDPGfD_priority, DDPGTranslate, DDPGMultiTranslate
+from mojograsp.simcore.DDPGfD import DDPGfD, DDPGfD_priority
 from mojograsp.simcore.replay_buffer import ReplayBufferDefault, ReplayBufferDF
 import torch
+from mojograsp.simcore.priority_replay_buffer import ReplayBufferPriority
+
 
 class ExpertController():
     # Maximum move per step
@@ -161,8 +163,6 @@ class ExpertController():
         # Finds distance between current cube position and goal position
         distance = np.sqrt((self.goal_position[0] - self.current_cube_pose[0][0])**2 +
                            (self.goal_position[1] - self.current_cube_pose[0][1])**2)
-        if distance < 0.001:
-            print('SUCCESS')
         return distance
 
     def exit_condition(self):
@@ -178,7 +178,7 @@ class ExpertController():
             self.num_contact_loss = 0
             return True
         # sets next previous distance to current distance
-        self.prev_distance = self.check_goal()
+        self.prev_distance = self.check_goal().copy()
         return False
 
     def get_next_action(self):
@@ -209,7 +209,7 @@ class ExpertController():
 class RLController(ExpertController):
     def __init__(self, gripper: TwoFingerGripper, cube: ObjectBase, data_file: str = None, replay_buffer: ReplayBufferDefault = None, args: dict = None):
         super().__init__(gripper, cube, data_file)
-        if type(replay_buffer) == ReplayBufferDF:
+        if type(replay_buffer) == ReplayBufferDF or type(replay_buffer) == ReplayBufferPriority:
             self.policy = DDPGfD_priority(args)
         else:
             self.policy = DDPGfD(args)
@@ -230,11 +230,16 @@ class RLController(ExpertController):
 
         finger_angles = self.gripper.get_joint_angles()
         object_velocity = self.cube.get_curr_velocity()
-        f1_dist = p.getClosestPoints(self.cube.id, self.gripper.id, 1, -1, 1, -1)[0][8]
-        f2_dist = p.getClosestPoints(self.cube.id, self.gripper.id, 1, -1, 3, -1)[0][8]
-        state = self.current_cube_pose[0] + self.current_cube_pose[1] + finger_angles + object_velocity[0] + [f1_dist, f2_dist] # + self.goal_position
-
+        f1 = p.getClosestPoints(self.cube.id, self.gripper.id, 10, -1, 1, -1)[0]
+        f2 = p.getClosestPoints(self.cube.id, self.gripper.id, 10, -1, 1, -1)[0]
+        f1_loc = f1[5]
+        f2_loc = f1[5]
         
+        f1_dist = f1[8]
+        f2_dist = f2[8]
+        state = self.current_cube_pose[0] + self.current_cube_pose[1] + finger_angles + object_velocity[0] + [f1_dist, f2_dist] + list(f1_loc) + list(f2_loc)# + self.goal_position
+
+        state = self.current_cube_pose[0][0:2] + finger_angles + object_velocity[0][0:2] + [f1_dist, f2_dist] + list(f1_loc)[0:2] + list(f2_loc)[0:2] + self.goal_position[0:2]
         if not self.rand_episode:
             action = self.policy.select_action(state)
             action = (action*self.max_change + finger_angles).tolist()
@@ -248,10 +253,17 @@ class RLController(ExpertController):
         # get next cube position
         finger_angles = self.gripper.get_joint_angles()
         object_velocity = self.cube.get_curr_velocity()
-        f1_dist = p.getClosestPoints(self.cube.id, self.gripper.id, 1, -1, 1, -1)[0][8]
-        f2_dist = p.getClosestPoints(self.cube.id, self.gripper.id, 1, -1, 3, -1)[0][8]
-        state = self.current_cube_pose[0] + self.current_cube_pose[1] + finger_angles + object_velocity[0] + [f1_dist, f2_dist]# + self.goal_position
+        f1 = p.getClosestPoints(self.cube.id, self.gripper.id, 10, -1, 1, -1)[0]
+        f2 = p.getClosestPoints(self.cube.id, self.gripper.id, 10, -1, 1, -1)[0]
+        f1_loc = f1[5]
+        f2_loc = f1[5]
+        
+        f1_dist = f1[8]
+        f2_dist = f2[8]
+        state = self.current_cube_pose[0] + self.current_cube_pose[1] + finger_angles + object_velocity[0] + [f1_dist, f2_dist] + list(f1_loc) + list(f2_loc)# + self.goal_position
 
+        state = self.current_cube_pose[0][0:2] + finger_angles + object_velocity[0][0:2] + [f1_dist, f2_dist] + list(f1_loc)[0:2] + list(f2_loc)[0:2] + self.goal_position[0:2]
+        
         action = self.policy.select_action(state)
         
         critic_response = self.policy.grade_action(state, action)
@@ -265,32 +277,40 @@ class RLController(ExpertController):
         if type(self.replay_buffer) == ReplayBufferDF:
             if not self.replay_buffer.df_up_to_date:
                 self.replay_buffer.make_DF()
-        self.policy.train(None, self.replay_buffer)
+        self.policy.train(self.replay_buffer)
         
     def exit_condition(self, remaining_tstep=0):
         # checks if we are getting further from goal or closer
-        if self.prev_distance < self.check_goal():
+        goal_dist = self.check_goal()
+        if self.prev_distance <= goal_dist:
             self.distance_count += 1
         else:
             self.distance_count = 0
+            
 
         # Exits if we lost contact for 5 steps, we are within .002 of our goal, or if our distance has been getting worse for 20 steps
-        if self.check_goal() < .002:
+        if goal_dist < .002:
             self.distance_count = 0
             self.final_reward = 1
             print('exiting in rl controller because we reached the goal')
             return True
-        if self.distance_count > 20:
-            vel = np.array(self.cube.get_curr_velocity()[0])
-            pos = np.array(self.cube.get_curr_pose()[0])
-            final_pos = pos + vel * remaining_tstep
-            self.final_reward = -np.sqrt((self.goal_position[0] - final_pos[0])**2 +
-                                       (self.goal_position[1] - final_pos[1])**2)
-            print('exiting in rl controller because distance count is > 20', self.final_reward)
+        
+        if goal_dist > 0.2:
             self.distance_count = 0
+            print('exiting in rl controller because we were 0.2 m away')
             return True
+        
+        # if self.distance_count > 40:
+        #     vel = np.array(self.cube.get_curr_velocity()[0])
+        #     pos = np.array(self.cube.get_curr_pose()[0])
+        #     final_pos = pos + vel * remaining_tstep
+        #     self.final_reward = -np.sqrt((self.goal_position[0] - final_pos[0])**2 +
+        #                                 (self.goal_position[1] - final_pos[1])**2) * remaining_tstep
+        #     print('exiting in rl controller because distance count is > 40', self.final_reward)
+        #     self.distance_count = 0
+        #     return True
         # sets next previous distance to current distance
-        self.prev_distance = self.check_goal()
+        self.prev_distance = self.check_goal().copy()
         self.final_reward = 0
         return False
     
@@ -312,7 +332,7 @@ class RLController(ExpertController):
         return super().set_goal_position(position)
     
     
-
+'''
 class RLControllerTranslate(ExpertController):
     def __init__(self, gripper: TwoFingerGripper, cube: ObjectBase, data_file: str = None, replay_buffer: ReplayBufferDefault = None, args: dict = None, TensorboardName=None):
         super().__init__(gripper, cube, data_file)
@@ -432,3 +452,4 @@ class RLMultiControllerTranslate(RLControllerTranslate):
         self.epsilon = 0.7
         self.rand_episode = np.random.rand() < self.epsilon
         self.dir_num = 0
+'''
