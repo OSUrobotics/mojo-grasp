@@ -163,7 +163,6 @@ class ReplayBufferPriority():
             b = pkl.load(handle)
 
         prev = None
-        l = []
         for i in b["episode_list"]:
             for j in i["timestep_list"]:
                 if prev:
@@ -197,9 +196,9 @@ class ReplayBufferPriority():
         idxes = []
         transitions = []
         weights = []
-    
+        rnums = self.rand.uniform(0, prio_sum, b_size)
         for i in range(b_size):
-            r_num = self.rand.uniform(0, prio_sum)
+            r_num = rnums[i]
             sample_idx = self.buffer_prio.find_prefixsum_idx(r_num)
 
             if sample_idx not in idxes:
@@ -218,13 +217,12 @@ class ReplayBufferPriority():
                 idxes.append(temp_idx)
                 transitions.append(temp_trans)
                 weights.append(temp_w)
-
         return transitions, weights, idxes
 
     def update_priorities(self, idxes, priorities):
         for i in range(len(idxes)):
-            self.buffer_prio[idxes[i]] = priorities[i] ** self.alpha
-            self.max_prio = max(self.buffer_prio[idxes[i]], self.max_prio)
+            self.buffer_prio[idxes[i]] = float(priorities[i] ** self.alpha)
+            self.max_prio = min(float(self.buffer_prio[idxes[i]]), self.max_prio)
 
     def add_timestep(self, transition):
         if self.sz < self.buffer_max:
@@ -237,3 +235,6 @@ class ReplayBufferPriority():
 
     def save_buffer(self, filename: str):
         pass
+
+    def __len__(self):
+        return self.sz

@@ -69,6 +69,10 @@ class StateRL(StateDefault):
         #     self.current_state = data_dict
         # else:
         #     self.current_state = {}
-
-        self.current_state['f1_obj_dist'] = p.getClosestPoints(self.objects[1].id, self.objects[0].id, 1, -1, 1, -1)[0][8]
-        self.current_state['f2_obj_dist'] = p.getClosestPoints(self.objects[1].id, self.objects[0].id, 1, -1, 3, -1)[0][8]
+        
+        temp1 = p.getClosestPoints(self.objects[1].id, self.objects[0].id, 10, -1, 1, -1)[0]
+        temp2 = p.getClosestPoints(self.objects[1].id, self.objects[0].id, 10, -1, 3, -1)[0]
+        self.current_state['f1_pos'] = list(temp1[6])
+        self.current_state['f2_pos'] = list(temp2[6])
+        self.current_state['f1_obj_dist'] = temp1[8]
+        self.current_state['f2_obj_dist'] = temp2[8]

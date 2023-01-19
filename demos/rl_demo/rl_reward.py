@@ -15,14 +15,18 @@ class ExpertReward(Reward):
         distance = np.sqrt((goal_position[0] - current_cube_pose[0][0])**2 +
                            (goal_position[1] - current_cube_pose[0][1])**2)
         
-        f1_dist = p.getClosestPoints(cube.id, hand.id, 1, -1, 1, -1)
-        f2_dist = p.getClosestPoints(cube.id, hand.id, 1, -1, 3, -1)
-        
-        self.current_reward["distance_to_goal"] = distance
-        self.current_reward["goal_position"] = goal_position
-        self.current_reward["f1_dist"] = min(f1_dist[0][8], 0)
-        self.current_reward["f2_dist"] = min(f2_dist[0][8],0)
-        self.current_reward["end_penalty"] = end_reward
+        f1_dist = p.getClosestPoints(cube.id, hand.id, 10, -1, 1, -1)
+        f2_dist = p.getClosestPoints(cube.id, hand.id, 10, -1, 3, -1)
+        # print(f2_dist)
+        try:
+            self.current_reward["distance_to_goal"] = distance
+            self.current_reward["goal_position"] = goal_position
+            self.current_reward["f1_dist"] = max(f1_dist[0][8], 0)
+            self.current_reward["f2_dist"] = max(f2_dist[0][8],0)
+            self.current_reward["end_penalty"] = end_reward
+        except:
+            print(f2_dist)
+            
 
     def get_reward(self) -> dict:
         # print('reward', self.current_reward['distance_to_goal'])

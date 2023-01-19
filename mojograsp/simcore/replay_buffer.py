@@ -321,8 +321,6 @@ class ReplayBufferDF(ReplayBufferDefault):
 
 
 # TODO MAKE THESE ACTUALLY WORK
-
-
     def get_average_reward(self, num):
         rewards = self.buffer[-num:]
         avg_reward = 0

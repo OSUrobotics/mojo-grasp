@@ -25,7 +25,10 @@ from mojograsp.simobjects.object_base import ObjectBase
 from mojograsp.simobjects.object_with_velocity import ObjectWithVelocity
 from mojograsp.simobjects.object_for_dataframe import ObjectVelocityDF
 from mojograsp.simcore.replay_buffer import ReplayBufferDefault, ReplayBufferDF
+from mojograsp.simcore.episode import EpisodeDefault
 import numpy as np
+from mojograsp.simcore.priority_replay_buffer import ReplayBufferPriority
+
 # resource paths
 current_path = str(pathlib.Path().resolve())
 hand_path = current_path+"/resources/2v2_nosensors/2v2_nosensors_limited.urdf"
@@ -34,6 +37,8 @@ cube_path = current_path + \
 directions = ['left', 'forward_left', 'forward', 'forward_right', 'right', 'backward_right', 'backward', 'backward_left']
 coords = [[-0.055, 0.0],[-0.055, 0.055],[0.0, 0.055],[0.055, 0.0555],[0.055, 0.0],[0.055,-0.055],[0.0, -0.055],[-0.055, -0.055]]
 physics_client = p.connect(p.DIRECT)
+# physics_client = p.connect(p.GUI)
+
 p.setAdditionalSearchPath(pybullet_data.getDataPath())
 p.setGravity(0, 0, -10)
 p.resetDebugVisualizerCamera(cameraDistance=.02, cameraYaw=0, cameraPitch=-89.9999,
@@ -65,7 +70,7 @@ p.changeVisualShape(hand_id, 2, rgbaColor=[1, 0.5, 0, 1])
 p.changeVisualShape(hand_id, 3, rgbaColor=[0.3, 0.3, 0.3, 1])
 for i in range(8):
     print('starting direction ', directions[i])
-    data_path = current_path+"/data/test/" + directions[i] + "/"
+    data_path = current_path+"/data/priority_replay/" + directions[i] + "/"
     
     # Load in the cube goal positions
     #df = pd.read_csv(points_path, index_col=False)
@@ -93,12 +98,13 @@ for i in range(8):
     state = StateRL(objects=[hand, cube, goal_poses])
     action = rl_action.ExpertAction()
     reward = rl_reward.ExpertReward()
-    arg_dict = {'state_dim': 14, 'action_dim': 4, 'max_action': 1.57, 'n': 5, 'discount': 0.995, 'tau': 0.0005,
+    arg_dict = {'state_dim': 22, 'action_dim': 4, 'max_action': 1.57, 'n': 5, 'discount': 0.995, 'tau': 0.0005,
                 'batch_size': 100, 'expert_sampling_proportion': 0.7}
     
     
     # replay buffer
-    replay_buffer = ReplayBufferDefault(buffer_size=400000, state=state, action=action, reward=reward)
+    replay_buffer = ReplayBufferPriority(buffer_size=405000)
+    # replay_buffer = ReplayBufferDefault(buffer_size=400000, state=state, action=action, reward=reward)
     # replay_buffer = ReplayBufferDF(state=state, action=action, reward=reward)
     
     
@@ -114,8 +120,9 @@ for i in range(8):
         data_path=data_path, state=state, action=action, reward=reward, save_all=True, controller=manipulation.controller)
     
     # sim manager
-    manager = SimManagerRL(num_episodes=len(pose_list), env=env, record_data=record_data, replay_buffer=replay_buffer, TensorboardName=directions[i])
-    
+    # manager = SimManagerRL(num_episodes=len(pose_list), env=env, record_data=record_data, replay_buffer=replay_buffer, TensorboardName='priority_replay_'+directions[i])
+    manager = SimManagerRL(num_episodes=len(pose_list), env=env, episode=EpisodeDefault(), record_data=record_data, replay_buffer=replay_buffer, state=state, action=action, reward=reward, TensorboardName='priority_replay_' + directions[i])
+
     # add phase to sim manager
     manager.add_phase("manipulation", manipulation, start=True)
     
@@ -126,7 +133,7 @@ for i in range(8):
     #print(p.getClosestPoints(cube.id, hand.id, 1, -1, 1, -1))
     # Run the sim
     done_training = False
-    training_length = 5000
+    training_length = 1000
     while not done_training:
         for k in range(training_length):
             manager.run()

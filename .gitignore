@@ -143,3 +143,6 @@ demos/rl_demo/runs/*
 demos/rl_demo/old_runs/*
 *pickapp
 *.pkl
+*.png
+*.prof
+*.zip

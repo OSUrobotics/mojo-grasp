@@ -20,6 +20,7 @@ class ExpertEnv(Environment):
         p.resetJointState(hand_id, 1, -1.4)
         p.resetJointState(hand_id, 2, -.75)
         p.resetJointState(hand_id, 3, 1.4)
+        p.setGravity(0, 0, -10)
         obj_id = p.loadURDF(self.obj.path, basePosition=[0.0, 0.16, .05])
         # Update the object id's
         self.hand.id = hand_id

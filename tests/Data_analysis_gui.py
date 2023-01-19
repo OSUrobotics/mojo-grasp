@@ -17,6 +17,11 @@ import re
     
 '''
 
+def moving_average(a, n) :
+    ret = np.cumsum(a, dtype=float)
+    ret[n:] = ret[n:] - ret[:-n]
+    return ret[n - 1:] / n
+
 def save_element_as_file(element, filename):
     """
     Saves any element as an image file.  Element needs to have an underlyiong Widget available (almost if not all of them do)
@@ -39,6 +44,8 @@ class GuiBackend():
         self.legend = []
         self.curr_graph = None
         self.e_num = -2
+        self.all_data = None
+        self.moving_avg =1 
         
     def draw_path(self):
         if self.e_num == -1:
@@ -141,17 +148,17 @@ class GuiBackend():
         data = self.data_dict['timestep_list']
         current_reward_dict = [-f['reward']['distance_to_goal'] for f in data]
 
-        if self.clear_plots | (self.curr_graph != 'drewards'):
+        if self.clear_plots | (self.curr_graph != 'rewards'):
             self.ax.cla()
             self.legend = []
         self.ax.plot(range(len(current_reward_dict)),current_reward_dict)
-        self.legend.extend(['Reward - episode ' + str(self.e_num)])
+        self.legend.extend(['Distance Reward - episode ' + str(self.e_num)])
         self.ax.legend(self.legend)
         self.ax.set_ylabel('Reward')
         self.ax.set_xlabel('Timestep (1/240 s)')
         self.ax.set_title('Reward Plot')
         self.figure_canvas_agg.draw()
-        self.curr_graph = 'drewards'
+        self.curr_graph = 'rewards'
     
     def draw_contact_rewards(self):
         if self.e_num == -1:
@@ -160,7 +167,7 @@ class GuiBackend():
         data = self.data_dict['timestep_list']
         current_reward_dict1 = [-f['reward']['f1_dist'] for f in data]
         current_reward_dict2 = [-f['reward']['f2_dist'] for f in data]
-        if self.clear_plots | (self.curr_graph != 'crewards'):
+        if self.clear_plots | (self.curr_graph != 'rewards'):
             self.ax.cla()
             self.legend = []
         self.ax.plot(range(len(current_reward_dict1)),current_reward_dict1)
@@ -171,7 +178,7 @@ class GuiBackend():
         self.ax.set_xlabel('Timestep (1/240 s)')
         self.ax.set_title('Contact Reward Plot')
         self.figure_canvas_agg.draw()
-        self.curr_graph = 'crewards'
+        self.curr_graph = 'rewards'
         
     def draw_combined_rewards(self):
         if self.e_num == -1:
@@ -184,7 +191,7 @@ class GuiBackend():
         reward_dict_penalty = [f['reward']['end_penalty'] for f in data]
         full_reward = []
         for i in range(len(reward_dict_dist)):
-            full_reward.append(reward_dict_dist[i]+min(reward_dict_f1[i],reward_dict_f2[i])+reward_dict_penalty[i])
+            full_reward.append(max(reward_dict_dist[i]+min(reward_dict_f1[i],reward_dict_f2[i])/5,-1))
             
         if self.clear_plots | (self.curr_graph != 'rewards'):
             self.ax.cla()
@@ -200,11 +207,11 @@ class GuiBackend():
         
         
     def draw_explored_region(self):
-        if self.e_num != -1:
-            print("can't draw explored region unless episode_all is selected")
+        if self.all_data is None:
+            print('need to load in episode all first')
             return
         datapoints = []
-        for episode in self.data_dict['episode_list']:
+        for episode in self.all_data['episode_list']:
             data = episode['timestep_list']
             for timestep in data:
                 datapoints.append(timestep['state']['obj_2']['pose'][0][0:2])
@@ -242,12 +249,12 @@ class GuiBackend():
         self.curr_graph = 'explored'
         
     def draw_net_reward(self):
-        if self.e_num != -1:
-            print("can't draw explored region unless episode_all is selected")
+        if self.all_data is None:
+            print('need to load in episode all first')
             return
         rewards = []
         temp = 0
-        for episode in self.data_dict['episode_list']:
+        for episode in self.all_data['episode_list']:
             data = episode['timestep_list']
             for timestep in data:
                 temp += - timestep['reward']['distance_to_goal'] \
@@ -256,9 +263,10 @@ class GuiBackend():
 
             rewards.append(temp)
             temp = 0
+        if self.moving_avg != 1:
+            rewards = moving_average(rewards,self.moving_avg)
         self.ax.cla()
         self.legend = []
-        print('about to do the colormesh')
         self.ax.plot(range(len(rewards)), rewards)
         self.ax.set_xlabel('Episode Number')
         self.ax.set_ylabel('Total Reward Over the Entire Episode')
@@ -266,6 +274,246 @@ class GuiBackend():
         self.figure_canvas_agg.draw()
         self.curr_graph = 'Group_Reward'
 
+    def draw_finger_obj_dist_avg(self):
+        if self.all_data is None:
+            print('need to load in episode all first')
+            return
+        finger_obj_avgs = np.zeros((len(self.all_data['episode_list']),2))
+        for i, episode in enumerate(self.all_data['episode_list']):
+            data = episode['timestep_list']
+            finger_obj_dists = np.zeros((len(data),2))
+            for j, timestep in enumerate(data):
+                finger_obj_dists[j,:]=[timestep['reward']['f1_dist'],timestep['reward']['f2_dist']]
+            finger_obj_avgs[i] = np.average(finger_obj_dists, axis=0)
+        
+        if self.moving_avg != 1:
+            t1 = moving_average(finger_obj_avgs[:,0],self.moving_avg)
+            t2 = moving_average(finger_obj_avgs[:,1],self.moving_avg)
+            finger_obj_avgs = np.transpose(np.array([t1,t2]))
+        
+        if self.clear_plots | (self.curr_graph != 'fing_obj_dist'):
+            self.ax.cla()
+            self.legend = []
+                
+        self.ax.plot(range(len(finger_obj_avgs)),finger_obj_avgs[:,0])
+        self.ax.plot(range(len(finger_obj_avgs)),finger_obj_avgs[:,1])
+        self.legend.extend(['Average Finger 1 Object Distance', 'Average Finger 2 Object Distance'])
+        self.ax.legend(self.legend)
+        self.ax.set_ylabel('Finger Object Distance')
+        self.ax.set_xlabel('Episode')
+        self.ax.set_title('Finger Object Distance Per Episode')
+        self.figure_canvas_agg.draw()
+        self.curr_graph = 'fing_obj_dist'
+
+    def draw_finger_obj_dist_max(self):
+        if self.all_data is None:
+            print('need to load in episode all first')
+            return
+        finger_obj_maxs = np.zeros((len(self.all_data['episode_list']),2))
+        for i, episode in enumerate(self.all_data['episode_list']):
+            data = episode['timestep_list']
+            finger_obj_dists = np.zeros((len(data),2))
+            for j, timestep in enumerate(data):
+                finger_obj_dists[j,:]=[timestep['reward']['f1_dist'],timestep['reward']['f2_dist']]
+            finger_obj_maxs[i] = np.max(finger_obj_dists, axis=0)
+
+        if self.moving_avg != 1:
+            t1 = moving_average(finger_obj_maxs[:,0],self.moving_avg)
+            t2 = moving_average(finger_obj_maxs[:,1],self.moving_avg)
+            finger_obj_maxs = np.transpose(np.array([t1,t2]))
+        if self.clear_plots | (self.curr_graph != 'fing_obj_dist'):
+            self.ax.cla()
+            self.legend = []
+                
+        self.ax.plot(range(len(finger_obj_maxs)),finger_obj_maxs[:,0])
+        self.ax.plot(range(len(finger_obj_maxs)),finger_obj_maxs[:,1])
+        self.legend.extend(['Maximum Finger 1 Object Distance', 'Maximum Finger 2 Object Distance'])
+        self.ax.legend(self.legend)
+        self.ax.set_ylabel('Finger Object Distance')
+        self.ax.set_xlabel('Episode')
+        self.ax.set_title('Finger Object Distance Per Episode')
+        self.figure_canvas_agg.draw()
+        self.curr_graph = 'fing_obj_dist'
+        
+    def draw_timestep_bar_plot(self):
+        if self.all_data is None:
+            print('need to load in episode all first')
+            return
+        success_timesteps = []
+        fail_timesteps = []
+        for i, episode in enumerate(self.all_data['episode_list']):
+            data = episode['timestep_list']
+            num_tsteps = len(data)
+            ending_dist = data[-1]['reward']['distance_to_goal']
+            if ending_dist < 0.002:
+                success_timesteps.append([i, num_tsteps])
+            else:
+                fail_timesteps.append([i, num_tsteps])
+        
+        success_timesteps = np.array(success_timesteps)
+        fail_timesteps = np.array(fail_timesteps)
+
+        self.ax.cla()
+        self.legend = []        
+        self.ax.bar(fail_timesteps[:,0],fail_timesteps[:,1])
+        if len(success_timesteps) > 0:
+            self.ax.bar(success_timesteps[:,0],success_timesteps[:,1])
+        self.legend.extend(['Failed Runs', 'Successful Runs'])
+        self.ax.legend(self.legend)
+        self.ax.set_ylabel('Number of Timesteps')
+        self.ax.set_xlabel('Episode')
+        self.ax.set_title('Number of Timesteps per Episode')
+        self.figure_canvas_agg.draw()
+        
+    def draw_avg_actor_output(self):
+        if self.all_data is None:
+            print('need to load in episode all first')
+            return
+        
+        avg_actor_output = np.zeros((len(self.all_data['episode_list']),4))
+        avg_actor_std = np.zeros((len(self.all_data['episode_list']),4))
+        for i, episode in enumerate(self.all_data['episode_list']):
+            data = episode['timestep_list']
+            actor_list = [f['control']['actor_output'] for f in data]
+            actor_list = np.array(actor_list)
+            print(actor_list)
+            print(np.average(actor_list, axis=1))
+            avg_actor_output[i,:] = np.average(actor_list, axis = 0)
+            avg_actor_std[i,:] = np.std(actor_list, axis = 0)
+            
+        if self.moving_avg != 1:
+            t1 = moving_average(avg_actor_output[:,0],self.moving_avg)
+            t2 = moving_average(avg_actor_output[:,1],self.moving_avg)
+            t3 = moving_average(avg_actor_output[:,2],self.moving_avg)
+            t4 = moving_average(avg_actor_output[:,3],self.moving_avg)
+            avg_actor_output = np.transpose(np.array([t1,t2,t3,t4]))
+            t1 = moving_average(avg_actor_std[:,0],self.moving_avg)
+            t2 = moving_average(avg_actor_std[:,1],self.moving_avg)
+            t3 = moving_average(avg_actor_std[:,2],self.moving_avg)
+            t4 = moving_average(avg_actor_std[:,3],self.moving_avg)
+            avg_actor_std = np.transpose(np.array([t1,t2,t3,t4]))
+                        
+        
+        if self.clear_plots | (self.curr_graph != 'angles_total'):
+            self.ax.cla()
+            self.legend = []
+            
+        self.ax.errorbar(range(len(avg_actor_output)),avg_actor_output[:,0], avg_actor_std[:,0])
+        self.ax.errorbar(range(len(avg_actor_output)),avg_actor_output[:,1], avg_actor_std[:,1])
+        self.ax.errorbar(range(len(avg_actor_output)),avg_actor_output[:,2], avg_actor_std[:,2])
+        self.ax.errorbar(range(len(avg_actor_output)),avg_actor_output[:,3], avg_actor_std[:,3])
+        self.legend.extend(['Actor Angle 1 - episode ' + str(self.e_num), 'Actor Angle 2 - episode ' + str(self.e_num), 'Actor Angle 3 - episode ' + str(self.e_num), 'Actor Angle 4 - episode ' + str(self.e_num) ])
+        self.ax.legend(self.legend)
+        self.ax.set_ylabel('Angle (radians)')
+        self.ax.set_xlabel('Timestep (1/240 s)')
+        self.ax.set_title('Actor Output')
+        self.figure_canvas_agg.draw()
+        self.curr_graph = 'angles_total'    
+        
+    def generate_csv(self):
+        if self.e_num != -1:
+            print("can't generate data csv unless episode_all is selected")
+            return
+        # test_dict = {'goal':{'':[]'':[]},'no_goal':{'':[],'':[]},'success_rate':[],'':[],'action_vals':[]}
+        training_dict = {}
+        for episode in self.data_dict['episode_list']:
+            data = episode['timestep_list']
+            for timestep in data:
+                pass
+
+    def draw_shortest_goal_dist(self):
+        if self.all_data is None:
+            print('need to load in episode all first')
+            return
+        closest_dists = np.zeros((len(self.all_data['episode_list']),1))
+        for i, episode in enumerate(self.all_data['episode_list']):
+            data = episode['timestep_list']
+            goal_dist = np.zeros(len(data))
+            for j, timestep in enumerate(data):
+                goal_dist[j] = timestep['reward']['distance_to_goal']
+            closest_dists[i] = np.min(goal_dist, axis=0)
+
+        if self.moving_avg != 1:
+            closest_dists = moving_average(closest_dists,self.moving_avg)
+        if self.clear_plots | (self.curr_graph != 'goal_dist'):
+            self.ax.cla()
+            self.legend = []
+                
+        self.ax.plot(range(len(closest_dists)),closest_dists)
+        self.legend.extend(['Min Goal Distance'])
+        self.ax.legend(self.legend)
+        self.ax.set_ylabel('Goal Distance')
+        self.ax.set_xlabel('Episode')
+        self.ax.set_title('Distance to Goal Per Episode')
+        self.figure_canvas_agg.draw()
+        self.curr_graph = 'goal_dist'
+        
+        
+    def draw_ending_velocity(self):
+        pass
+
+    def draw_success_rate(self):
+        if self.all_data is None:
+            print('need to load in episode all first')
+            return
+
+        s_f = []
+        for i, episode in enumerate(self.all_data['episode_list']):
+            data = episode['timestep_list']
+            goal_dists = [f['reward']['distance_to_goal'] for f in data]
+            ending_dist = min(goal_dists)
+            if ending_dist < 0.002:
+                s_f.append(100)
+            else:
+                s_f.append(0)
+
+        if self.moving_avg != 1:
+            s_f = moving_average(s_f,self.moving_avg)
+        if self.clear_plots | (self.curr_graph != 's_f'):
+            self.ax.cla()
+            self.legend = []
+            
+        self.ax.cla()
+        self.legend = []        
+        self.ax.plot(range(len(s_f)),s_f)
+        self.legend.extend(['Success Rate'])
+        self.ax.legend(self.legend)
+        self.ax.set_ylabel('Success Percentage')
+        self.ax.set_xlabel('Episode')
+        titlething = 'Percent of Trials over ' + str(self.moving_avg)+' window that are successful'
+        self.ax.set_title(titlething)
+        self.figure_canvas_agg.draw()
+        self.curr_graph = 's_f'
+
+    def draw_path_and_action(self):
+        pass
+
+    def draw_ending_goal_dist(self):
+        if self.all_data is None:
+            print('need to load in episode all first')
+            return
+        ending_dists = np.zeros((len(self.all_data['episode_list']),1))
+        for i, episode in enumerate(self.all_data['episode_list']):
+            data = episode['timestep_list']
+            ending_dists[i] = np.max(data[-1]['reward']['distance_to_goal'], axis=0)
+
+        if self.moving_avg != 1:
+            ending_dists = moving_average(ending_dists,self.moving_avg)
+            
+        if self.clear_plots | (self.curr_graph != 'goal_dist'):
+            self.ax.cla()
+            self.legend = []
+                
+        self.ax.plot(range(len(ending_dists)),ending_dists)
+        self.legend.extend(['Ending Goal Distance'])
+        self.ax.legend(self.legend)
+        self.ax.set_ylabel('Goal Distance')
+        self.ax.set_xlabel('Episode')
+        self.ax.set_title('Distance to Goal Per Episode')
+        self.figure_canvas_agg.draw()
+        self.curr_graph = 'goal_dist'
+        
+        
     def show_finger_viz(self):
         pass
 
@@ -275,6 +523,7 @@ class GuiBackend():
             self.data_dict = pkl.load(pkl_file)
             if 'all' in filename:
                 self.e_num = -1
+                self.all_data = self.data_dict.copy()
             else:
                 self.e_num = self.data_dict['number']
     
@@ -283,6 +532,7 @@ class GuiBackend():
             self.data_dict = json.load(file)
             if 'all' in filename:
                 self.e_num = -1
+                self.all_data = self.data_dict.copy()
             else:
                 self.e_num = self.data_dict['number']
              
@@ -336,12 +586,13 @@ def main():
 
     plot_buttons = [[sg.Button('Object Path', size=(8, 2)), sg.Button('Finger Angles', size=(8, 2))],
                     [sg.Button('Actor Output', size=(8, 2)), sg.Button('Critic Output', size=(8, 2)), sg.Button('Rewards', size=(8, 2), key='FullRewards'), sg.Button('Contact Rewards', key='ContactRewards',size=(8, 2)), sg.Button('Distance Rewards', key='SimpleRewards',size=(8, 2))],
-                    [sg.Button('Explored Region', size=(8,2)), sg.Button('Episode Rewards', size=(8,2))],
-                    [sg.Text("Keep previous graph", size=(10, 3), key='-toggletext-'), sg.Button(image_data=toggle_btn_off, key='-TOGGLE-GRAPHIC-', button_color=(sg.theme_background_color(), sg.theme_background_color()), border_width=0, metadata=False)]]
+                    [sg.Button('Explored Region', size=(8,2)), sg.Button('Episode Rewards', size=(8,2)), sg.Button('Finger Object Avg', size=(8,2)), sg.Button('Finger Object Max', size=(8,2)), sg.Button('Timestep', size=(8,2)), sg.Button('Ending Goal Dist', size=(8,2))],
+                    [sg.Button('Shortest Goal Dist', size=(8,2)), sg.Button('Ending Velocity', size=(8,2)), sg.Button('Average Actor Values', size=(8,2)), sg.Button('Success Rate', size=(8,2)), sg.Button('Path + Action', size=(8,2))],
+                    [sg.Slider((1,20),10,1,1,key='moving_avg',orientation='h', size=(48,6)), sg.Text("Keep previous graph", size=(10, 3), key='-toggletext-'), sg.Button(image_data=toggle_btn_off, key='-TOGGLE-GRAPHIC-', button_color=(sg.theme_background_color(), sg.theme_background_color()), border_width=0, metadata=False)]]
     # define layout, show and read the window
     col = [[sg.Text(episode_files[0], size=(80, 3), key='-FILENAME-')],
            [sg.Canvas(size=(1280, 960), key='-CANVAS-')],
-           plot_buttons[0], plot_buttons[1], plot_buttons[2], plot_buttons[3], [sg.B('Save Image', key='-SAVE-')],
+           plot_buttons[0], plot_buttons[1], plot_buttons[2], plot_buttons[3], plot_buttons[4], [sg.B('Save Image', key='-SAVE-')],
                [sg.Text('File 1 of {}'.format(len(episode_files)), size=(15, 1), key='-FILENUM-')]]
 
     col_files = [[sg.Listbox(values=filenames_only, size=(60, 30), key='-LISTBOX-', enable_events=True)],
@@ -360,6 +611,7 @@ def main():
     while True:
 
         event, values = window.read()
+        backend.moving_avg = int(values['moving_avg'])
         # --------------------- Button & Keyboard ---------------------
         if event == sg.WIN_CLOSED:
             break
@@ -397,6 +649,25 @@ def main():
             backend.draw_explored_region()
         elif event == 'Episode Rewards':
             backend.draw_net_reward()
+        elif event == 'Finger Object Avg':
+            backend.draw_finger_obj_dist_avg()
+        elif event == 'Path + Action':
+            backend.draw_path_and_action()
+        elif event == 'Success Rate':
+            backend.draw_success_rate()
+        elif event == 'Average Actor Values':
+            backend.draw_avg_actor_output()
+        elif event == 'Ending Velocity':
+            backend.draw_ending_velocity()
+        elif event == 'Shortest Goal Dist':
+            backend.draw_shortest_goal_dist()
+        elif event == 'Finger Object Max':
+            backend.draw_finger_obj_dist_max()
+        elif event == 'Timestep':
+            backend.draw_timestep_bar_plot()
+        elif event == 'Ending Goal Dist':
+            backend.draw_ending_goal_dist()   
+            
         elif event == '-TOGGLE-GRAPHIC-':  # if the graphical button that changes images
             window['-TOGGLE-GRAPHIC-'].metadata = not window['-TOGGLE-GRAPHIC-'].metadata
             window['-TOGGLE-GRAPHIC-'].update(image_data=toggle_btn_on if window['-TOGGLE-GRAPHIC-'].metadata else toggle_btn_off)
