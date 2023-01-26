@@ -1,3 +1,10 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Tue Jan 24 13:11:51 2023
+
+@author: orochi
+"""
 from multiprocessing import connection
 from operator import truediv
 import pybullet as p
@@ -22,17 +29,20 @@ from mojograsp.simcore.episode import EpisodeDefault
 import numpy as np
 from mojograsp.simcore.priority_replay_buffer import ReplayBufferPriority
 # resource paths
+folder_name = 'linear'
 current_path = str(pathlib.Path().resolve())
 hand_path = current_path+"/resources/2v2_nosensors/2v2_nosensors_limited.urdf"
 cube_path = current_path + \
     "/resources/object_models/2v2_mod/2v2_mod_cuboid_small.urdf"
 cylinder_path = current_path + \
     "/resources/object_models/2v2_mod/2v2_mod_cylinder_small_alt.urdf"
-data_path = current_path+"/data/hmmm/"
+data_path = current_path+"/data/" + folder_name +'/'
 points_path = current_path+"/resources/points.csv"
+expert_data_path = current_path+'/resources/episode_all.pkl'
 
-x = [0.055]
-y = [0.055]
+
+x = [0,0.055, 0.055, 0.055, 0, -0.055, -0.055, -0.055]
+y = [0.055, 0.055, 0, -0.055, -0.055, -0.055, 0, 0.055]
 pose_list = [[i,j] for i,j in zip(x,y)]
 # start pybullet
 # physics_client = p.connect(p.GUI)
@@ -83,7 +93,8 @@ arg_dict = {'state_dim': 8, 'action_dim': 4, 'max_action': 1.57, 'n': 5, 'discou
 
 
 # replay buffer
-replay_buffer = ReplayBufferPriority(buffer_size=401000)
+replay_buffer = ReplayBufferPriority(buffer_size=1000000)
+replay_buffer.preload_buffer_PKL(expert_data_path)
 # replay_buffer = ReplayBufferDF(state=state, action=action, reward=reward)
 
 
@@ -93,7 +104,7 @@ env = rl_env.ExpertEnv(hand=hand, obj=cube)
 
 # Create phase
 manipulation = manipulation_phase_rl.ManipulationRL(
-    hand, cube, x, y, state, action, reward, replay_buffer=replay_buffer, args=arg_dict)
+    hand, cube, x, y, state, action, reward, replay_buffer=replay_buffer, args=arg_dict, tbname=folder_name)
 # manipulation = manipulation_phase_rl.ManipulationRL(
 #     hand, cylinder, x, y, state, action, reward, replay_buffer=replay_buffer, args=arg_dict)
 # data recording
@@ -113,7 +124,7 @@ manager.add_phase("manipulation", manipulation, start=True)
 #print(p.getClosestPoints(cube.id, hand.id, 1, -1, 1, -1))
 # Run the sim
 done_training = False
-training_length = 1000
+training_length = 200
 while not done_training:
     for k in range(training_length):
         manager.run()

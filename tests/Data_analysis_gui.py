@@ -46,6 +46,7 @@ class GuiBackend():
         self.e_num = -2
         self.all_data = None
         self.moving_avg =1 
+        self.colorbar = None
         
     def draw_path(self):
         if self.e_num == -1:
@@ -196,6 +197,7 @@ class GuiBackend():
         if self.clear_plots | (self.curr_graph != 'rewards'):
             self.ax.cla()
             self.legend = []
+
         self.ax.plot(range(len(full_reward)),full_reward)
         self.legend.extend(['Reward - episode ' + str(self.e_num)])
         self.ax.legend(self.legend)
@@ -224,8 +226,10 @@ class GuiBackend():
         print('did the gaussian')
         xlim = [np.min(datapoints[:,0]), np.max(datapoints[:,0])]
         ylim = [np.min(datapoints[:,1]), np.max(datapoints[:,1])]
-        xlim = [min(xlim[0],-0.07), max(xlim[1],0.07)]
-        ylim = [min(ylim[0],0.1), max(ylim[1],0.22)]
+        # xlim = [min(xlim[0],-0.07), max(xlim[1],0.07)]
+        # ylim = [min(ylim[0],0.1), max(ylim[1],0.22)]
+        xlim = [-0.2, 0.2]
+        ylim = [-0.04, 0.36]
         xi, yi = np.mgrid[xlim[0]:xlim[1]:nbins*1j, ylim[0]:ylim[1]:nbins*1j]
         print('did the mgrid')
         zi = k(np.vstack([xi.flatten(), yi.flatten()]))
@@ -235,6 +239,8 @@ class GuiBackend():
                 zi[i] = term
         self.ax.cla()
         self.legend = []
+        if self.colorbar:
+            self.colorbar.remove()
         print('about to do the colormesh')
         c = self.ax.pcolormesh(xi, yi, zi.reshape(xi.shape), shading='auto')
 
@@ -244,7 +250,7 @@ class GuiBackend():
         self.ax.set_ylabel('Y pos (m)')
         self.ax.set_title("explored object poses")
         
-        self.fig.colorbar(c, ax=self.ax)
+        self.colorbar = self.fig.colorbar(c, ax=self.ax)
         self.figure_canvas_agg.draw()
         self.curr_graph = 'explored'
         
@@ -376,8 +382,8 @@ class GuiBackend():
             data = episode['timestep_list']
             actor_list = [f['control']['actor_output'] for f in data]
             actor_list = np.array(actor_list)
-            print(actor_list)
-            print(np.average(actor_list, axis=1))
+            # print(actor_list)
+            # print(np.average(actor_list, axis=1))
             avg_actor_output[i,:] = np.average(actor_list, axis = 0)
             avg_actor_std[i,:] = np.std(actor_list, axis = 0)
             
@@ -450,7 +456,72 @@ class GuiBackend():
         
         
     def draw_ending_velocity(self):
-        pass
+        if self.all_data is None:
+            print('need to load in episode all first')
+            return
+
+        # thought 1
+        '''
+        velocity = np.zeros((len(self.all_data['episode_list']),2))
+        pose = np.zeros((len(self.all_data['episode_list']),2))
+        for i, episode in enumerate(self.all_data['episode_list']):
+            data = episode['timestep_list']
+            obj_poses = [f['state']['obj_2']['pose'][0] for f in data[-5:]]
+            obj_poses = np.array(obj_poses)
+            print(obj_poses)
+            try:
+                slope, _ = np.polyfit(obj_poses[:,0],obj_poses[:,1], 1)
+                print('slope',slope)
+                dx = obj_poses[-1,0] - obj_poses[0,0]
+                dy = dx * slope
+            except np.linalg.LinAlgError:
+                dx = 0.00001
+                dy = 0.00001
+            pose[i,:] = obj_poses[-1,0:2]
+            velocity[i,:] = [dx,dy]
+
+        if self.clear_plots | (self.curr_graph != 's_f'):
+            self.ax.cla()
+            self.legend = []
+            
+        topbounds = np.max(pose, axis = 1)
+        botbounds = np.min(pose, axis = 1)
+        self.ax.cla()
+        self.legend = []        
+        self.ax.quiver(pose[:,0],pose[:,1],velocity[:,0],velocity[:,1])
+        self.ax.set_ylabel('y')
+        self.ax.set_xlabel('x')
+        self.ax.set_xlim([min(-0.07,botbounds[0]),max(0.07,topbounds[0])])
+        self.ax.set_ylim([min(0.1,botbounds[1]),max(0.22,topbounds[1])])
+        self.ax.set_title("Ending Velocity")
+        self.figure_canvas_agg.draw()
+        self.curr_graph = 'vel'
+        '''
+        # thought 2
+
+        velocity = np.zeros((len(self.all_data['episode_list']),2))
+        for i, episode in enumerate(self.all_data['episode_list']):
+            data = episode['timestep_list']
+            obj_poses = [f['state']['obj_2']['pose'][0] for f in data[-5:]]
+            obj_poses = np.array(obj_poses)
+            dx = obj_poses[-1,0] - obj_poses[0,0]
+            dy = obj_poses[-1,1] - obj_poses[0,1]
+            velocity[i,:] = [dx,dy]
+
+        if self.clear_plots | (self.curr_graph != 's_f'):
+            self.ax.cla()
+            self.legend = []
+        ending_vel = np.sqrt(velocity[:,0]**2 + velocity[:,1]**2)
+        if self.moving_avg != 1:
+            ending_vel = moving_average(ending_vel,self.moving_avg)
+        self.ax.cla()
+        self.legend = []        
+        self.ax.plot(range(len(ending_vel)),ending_vel)
+        self.ax.set_ylabel('ending velocity magnitude')
+        self.ax.set_xlabel('episode')
+        self.ax.set_title("Ending Velocity")
+        self.figure_canvas_agg.draw()
+        self.curr_graph = 'vel'
 
     def draw_success_rate(self):
         if self.all_data is None:

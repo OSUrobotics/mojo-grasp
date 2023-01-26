@@ -159,6 +159,11 @@ class ExpertController():
             self.distance_count += 1
         else:
             self.distance_count = 0
+            
+        if self.num_contact_loss > 5:
+            print('ending because contact loss')
+        elif self.distance_count > 20:
+            print('ending because distance count')
 
         # Exits if we lost contact for 5 steps, we are within .001 of our goal, or if our distance has been getting worse for 20 steps
         if self.num_contact_loss > 5 or self.check_goal() < .001 or self.distance_count > 20:

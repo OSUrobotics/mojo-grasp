@@ -7,21 +7,21 @@ from mojograsp.simcore.reward import Reward
 from mojograsp.simcore.action import Action
 import rl_controller
 from mojograsp.simcore.replay_buffer import ReplayBufferDefault
-
+from numpy.random import shuffle
 
 from math import isclose
 
 
 class ManipulationRL(Phase):
 
-    def __init__(self, hand: TwoFingerGripper, cube: ObjectBase, x, y, state: State, action: Action, reward: Reward, replay_buffer: ReplayBufferDefault = None, args: dict = None):
+    def __init__(self, hand: TwoFingerGripper, cube: ObjectBase, x, y, state: State, action: Action, reward: Reward, replay_buffer: ReplayBufferDefault = None, args: dict = None, tbname = None):
         self.name = "manipulation"
         self.hand = hand
         self.cube = cube
         self.state = state
         self.action = action
         self.reward = reward
-        self.terminal_step = 400
+        self.terminal_step = 150
         self.timestep = 0
         self.episode = 0
         self.x = x
@@ -29,11 +29,12 @@ class ManipulationRL(Phase):
         self.target = None
         self.goal_position = None
         # create controller
-        self.controller = rl_controller.RLController(hand, cube, replay_buffer=replay_buffer, args=args)
+        self.controller = rl_controller.RLController(hand, cube, replay_buffer=replay_buffer, args=args, tbname=tbname)
         self.end_val = 0
         # self.controller = rl_controller.ExpertController(hand, cube)
 
     def setup(self):
+        # print('episode according to maniprl', self.episode)
         # reset timestep counter
         self.timestep = 0
         # rest contact loss counter in controller
@@ -65,7 +66,7 @@ class ManipulationRL(Phase):
 
     def exit_condition(self) -> bool:
         # If we reach 400 steps or the controller exit condition finishes we exit the phase
-        if self.timestep > self.terminal_step or self.controller.exit_condition(self.terminal_step - self.timestep):
+        if self.timestep > self.terminal_step:# or self.controller.exit_condition(self.terminal_step - self.timestep):
             self.controller.retry_count=0
             print('exitiny in manipulation phase rl', self.timestep, self.terminal_step)
             return True
@@ -79,7 +80,14 @@ class ManipulationRL(Phase):
 
     def reset(self):
         print('still reseting')
+        temp = list(range(len(self.x)))
+        
+        shuffle(temp)
+        self.x = [self.x[i] for i in temp]
+        self.y = [self.y[i] for i in temp]
+        
         self.episode = 0
+        
         self.state.reset()
         
         
