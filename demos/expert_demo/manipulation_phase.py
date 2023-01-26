@@ -21,7 +21,7 @@ class Manipulation(Phase):
         self.reward = reward
         self.terminal_step = 400
         self.timestep = 0
-        self.episode = 18
+        self.episode = 0
         self.x = x
         self.y = y
         self.target = None
@@ -56,7 +56,7 @@ class Manipulation(Phase):
 
     def post_step(self):
         # Set the reward from the given action after the step
-        self.reward.set_reward(self.goal_position, self.cube)
+        self.reward.set_reward(self.goal_position, self.cube, self.hand, 0)
 
     def exit_condition(self) -> bool:
         # If we reach 400 steps or the controller exit condition finishes we exit the phase

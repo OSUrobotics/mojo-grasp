@@ -207,12 +207,12 @@ class ExpertController():
         return goal
 
 class RLController(ExpertController):
-    def __init__(self, gripper: TwoFingerGripper, cube: ObjectBase, data_file: str = None, replay_buffer: ReplayBufferDefault = None, args: dict = None):
+    def __init__(self, gripper: TwoFingerGripper, cube: ObjectBase, data_file: str = None, replay_buffer: ReplayBufferDefault = None, args: dict = None, tbname=None):
         super().__init__(gripper, cube, data_file)
         if type(replay_buffer) == ReplayBufferDF or type(replay_buffer) == ReplayBufferPriority:
-            self.policy = DDPGfD_priority(args)
+            self.policy = DDPGfD_priority(args, tbname)
         else:
-            self.policy = DDPGfD(args)
+            self.policy = DDPGfD(args, tbname)
         self.replay_buffer = replay_buffer
         self.max_change = 0.1
         self.cooling_rate = 0.99
@@ -229,17 +229,20 @@ class RLController(ExpertController):
         self.get_current_cube_position()
 
         finger_angles = self.gripper.get_joint_angles()
-        object_velocity = self.cube.get_curr_velocity()
-        f1 = p.getClosestPoints(self.cube.id, self.gripper.id, 10, -1, 1, -1)[0]
-        f2 = p.getClosestPoints(self.cube.id, self.gripper.id, 10, -1, 1, -1)[0]
-        f1_loc = f1[5]
-        f2_loc = f1[5]
+        # object_velocity = self.cube.get_curr_velocity()
+        # f1 = p.getClosestPoints(self.cube.id, self.gripper.id, 10, -1, 1, -1)[0]
+        # f2 = p.getClosestPoints(self.cube.id, self.gripper.id, 10, -1, 3, -1)[0]
+        finger_pos1 = p.getLinkState(self.gripper.id, 1)
+        finger_pos2 = p.getLinkState(self.gripper.id, 3)
+        # f1_loc = f1[5]
+        # f2_loc = f1[5]
+        # f1_dist = f1[8]
+        # f2_dist = f2[8]
+        # state = self.current_cube_pose[0] + self.current_cube_pose[1] + finger_angles + object_velocity[0] + [f1_dist, f2_dist] + list(f1_loc) + list(f2_loc)# + self.goal_position
+        # state = self.current_cube_pose[0][0:2] + finger_angles + object_velocity[0][0:2] + [f1_dist, f2_dist] + list(f1_loc)[0:2] + list(f2_loc)[0:2] + self.goal_position[0:2]
         
-        f1_dist = f1[8]
-        f2_dist = f2[8]
-        state = self.current_cube_pose[0] + self.current_cube_pose[1] + finger_angles + object_velocity[0] + [f1_dist, f2_dist] + list(f1_loc) + list(f2_loc)# + self.goal_position
-
-        state = self.current_cube_pose[0][0:2] + finger_angles + object_velocity[0][0:2] + [f1_dist, f2_dist] + list(f1_loc)[0:2] + list(f2_loc)[0:2] + self.goal_position[0:2]
+        state = self.current_cube_pose[0][0:2] + list(finger_pos1[0])[0:2] + list(finger_pos2[0])[0:2] + self.goal_position[0:2]
+        
         if not self.rand_episode:
             action = self.policy.select_action(state)
             action = (action*self.max_change + finger_angles).tolist()
@@ -251,18 +254,22 @@ class RLController(ExpertController):
     def get_network_outputs(self):
         self.get_current_cube_position()
         # get next cube position
-        finger_angles = self.gripper.get_joint_angles()
-        object_velocity = self.cube.get_curr_velocity()
-        f1 = p.getClosestPoints(self.cube.id, self.gripper.id, 10, -1, 1, -1)[0]
-        f2 = p.getClosestPoints(self.cube.id, self.gripper.id, 10, -1, 1, -1)[0]
-        f1_loc = f1[5]
-        f2_loc = f1[5]
+        # finger_angles = self.gripper.get_joint_angles()
+        # object_velocity = self.cube.get_curr_velocity()
+        # f1 = p.getClosestPoints(self.cube.id, self.gripper.id, 10, -1, 1, -1)[0]
+        # f2 = p.getClosestPoints(self.cube.id, self.gripper.id, 10, -1, 1, -1)[0]
+        finger_pos1 = p.getLinkState(self.gripper.id, 1)
+        finger_pos2 = p.getLinkState(self.gripper.id, 3)
+        # f1_loc = f1[5]
+        # f2_loc = f1[5]
         
-        f1_dist = f1[8]
-        f2_dist = f2[8]
-        state = self.current_cube_pose[0] + self.current_cube_pose[1] + finger_angles + object_velocity[0] + [f1_dist, f2_dist] + list(f1_loc) + list(f2_loc)# + self.goal_position
+        # f1_dist = f1[8]
+        # f2_dist = f2[8]
+        # state = self.current_cube_pose[0] + self.current_cube_pose[1] + finger_angles + object_velocity[0] + [f1_dist, f2_dist] + list(f1_loc) + list(f2_loc)# + self.goal_position
 
-        state = self.current_cube_pose[0][0:2] + finger_angles + object_velocity[0][0:2] + [f1_dist, f2_dist] + list(f1_loc)[0:2] + list(f2_loc)[0:2] + self.goal_position[0:2]
+        # state = self.current_cube_pose[0][0:2] + finger_angles + object_velocity[0][0:2] + [f1_dist, f2_dist] + list(f1_loc)[0:2] + list(f2_loc)[0:2] + self.goal_position[0:2]
+        
+        state = self.current_cube_pose[0][0:2] + list(finger_pos1[0])[0:2] + list(finger_pos2[0])[0:2] + self.goal_position[0:2]
         
         action = self.policy.select_action(state)
         

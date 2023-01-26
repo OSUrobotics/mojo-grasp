@@ -164,29 +164,36 @@ class ReplayBufferPriority():
 
         prev = None
         for i in b["episode_list"]:
+            # print('replay buffer size', self.sz)
             for j in i["timestep_list"]:
                 if prev:
-                    if prev[-1] == i["number"]:
-                        prev[-2] = j["state"]
-                    if self.sz < self.buffer_max:
-                        self.buffer_memory[self.idx] = prev
-                        self.buffer_prio[self.idx] = self.max_prio
-                        self.idx += 1
-                        self.demo_sz += 1
-                        self.sz += 1
-                    else:
-                        print(
-                            "ERROR: REPLAY BUFFER OUT OF SPACE, TRANSITION NOT ADDED")
+                    # print(i['number'])
+                    if prev[-2] == i["number"]:
+                        # print(prev)
+                        temp = list(prev)
+                        temp[-3] = j["state"]
+                        prev = tuple(temp)
+                        # print(prev[3])
+                        if self.sz < self.buffer_max:
+                            self.buffer_memory[self.idx] = prev
+                            self.buffer_prio[self.idx] = self.max_prio
+                            self.idx += 1
+                            self.demo_sz += 1
+                            self.sz += 1
+                        else:
+                            print(
+                                "ERROR: REPLAY BUFFER OUT OF SPACE, TRANSITION NOT ADDED")
                 prev = (j["state"], j["action"],
-                        j["reward"], None, i["number"])
-        if self.sz < self.buffer_max:
-            self.buffer_memory[self.idx] = prev
-            self.buffer_prio[self.idx] = self.max_prio
-            self.idx += 1
-            self.demo_sz += 1
-            self.sz += 1
-        else:
-            print("ERROR: REPLAY BUFFER OUT OF SPACE, TRANSITION NOT ADDED")
+                        j["reward"], None, i["number"], 1)
+                
+        # if self.sz < self.buffer_max:
+        #     self.buffer_memory[self.idx] = prev
+        #     self.buffer_prio[self.idx] = self.max_prio
+        #     self.idx += 1
+        #     self.demo_sz += 1
+        #     self.sz += 1
+        # else:
+        #     print("ERROR: REPLAY BUFFER OUT OF SPACE, TRANSITION NOT ADDED")
         pass
 
     def sample_rollout(self, batch_size: int, rollout_size: int):

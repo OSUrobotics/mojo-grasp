@@ -9,10 +9,10 @@ import pandas as pd
 from mojograsp.simcore.sim_manager import SimManagerDefault
 from mojograsp.simcore.state import StateDefault
 from mojograsp.simcore.reward import RewardDefault
-from mojograsp.simcore.record_data import RecordDataJSON
+from mojograsp.simcore.record_data import RecordDataJSON, RecordDataPKL
 from mojograsp.simobjects.two_finger_gripper import TwoFingerGripper
 from mojograsp.simobjects.object_base import ObjectBase
-
+from demos.rl_demo.rl_state import StateRL
 
 # resource paths
 current_path = str(pathlib.Path().resolve())
@@ -23,12 +23,12 @@ data_path = current_path+"/data/"
 points_path = current_path+"/resources/points.csv"
 
 # Load in the cube goal positions
-df = pd.read_csv(points_path, index_col=False)
-x = df["x"]
-y = df["y"]
+# df = pd.read_csv(points_path, index_col=False)
+# x = df["x"]
+# y = df["y"]
 
-y[0] = 0.055
-x[0] = 0.0
+x = [0,0.055, 0.055, 0.055, 0, -0.055, -0.055, -0.055]
+y = [0.055, 0.055, 0, -0.055, -0.055, -0.055, 0, 0.055]
 # start pybullet
 physics_client = p.connect(p.GUI)
 p.setAdditionalSearchPath(pybullet_data.getDataPath())
@@ -62,12 +62,12 @@ p.changeVisualShape(hand_id, 3, rgbaColor=[0.3, 0.3, 0.3, 1])
 # p.setTimeStep(1/2400)
 
 # state and reward
-state = StateDefault(objects=[hand, cube])
+state = StateRL(objects=[hand, cube])
 action = expert_action.ExpertAction()
 reward = expert_reward.ExpertReward()
 
 # data recording
-record_data = RecordDataJSON(
+record_data = RecordDataPKL(
     data_path=data_path, state=state, action=action, reward=reward, save_all=True)
 
 # environment and recording

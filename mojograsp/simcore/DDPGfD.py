@@ -19,8 +19,11 @@ def simple_normalize(x_tensor):
     # order is pos, orientation (quaternion), joint angles, velocity
     # maxes = torch.tensor([0.2, 0.35, 0.1, 1, 1, 1, 1, np.pi/2, 0, np.pi/2, np.pi, 1, 1, 1, 0.5, 0.5, 1, 1, 1, 1, 1, 1]).to(device)
     # mins = torch.tensor([-0.2, -0.05, 0.0, 0, 0, 0, 0,-np.pi/2, -np.pi, -np.pi/2, 0, 0, 0, 0, -0.01, -0.01, -1, -1, -1, -1, -1, -1]).to(device)
-    maxes = torch.tensor([0.2, 0.35, np.pi/2, 0, np.pi/2, np.pi, 1, 1, 0.2, 0.2, 0.2, 0.35, 0.2, 0.35, 0.055, 0.055]).to(device)
-    mins = torch.tensor([-0.2, -0.05,-np.pi/2, -np.pi, -np.pi/2, 0, -1, -1, -0.01, -0.01, -0.2, -0.05, -0.2, -0.05, -0.055, -0.055]).to(device)
+    # maxes = torch.tensor([0.2, 0.35, np.pi/2, 0, np.pi/2, np.pi, 1, 1, 0.2, 0.2, 0.2, 0.35, 0.2, 0.35, 0.055, 0.055]).to(device)
+    # mins = torch.tensor([-0.2, -0.05,-np.pi/2, -np.pi, -np.pi/2, 0, -1, -1, -0.01, -0.01, -0.2, -0.05, -0.2, -0.05, -0.055, -0.055]).to(device)
+    maxes = torch.tensor([0.2, 0.35, 0.2, 0.35, 0.2, 0.35, 0.055, 0.055]).to(device)
+    mins = torch.tensor([-0.2, -0.05, -0.2, -0.05, -0.2, -0.05, -0.055, -0.055]).to(device)
+
     y_tensor = ((x_tensor-mins)/(maxes-mins)-0.5) *2
     return y_tensor
     
@@ -44,7 +47,8 @@ class Actor(nn.Module):
         a = F.relu(self.l1(state))
         a = F.relu(self.l2(a))
         # return self.max_action * torch.sigmoid(self.l3(a))
-        return self.max_action * torch.tanh(self.l3(a))
+        # return self.max_action * torch.tanh(self.l3(a))
+        return self.l3(a)
 
 # OLD PARAMS WERE 400-300, TESTING 100-50
 class Critic(nn.Module):
@@ -66,7 +70,8 @@ class Critic(nn.Module):
         q = F.relu(self.l1(torch.cat([state, action], -1)))
         q = F.relu(self.l2(q))
         # print("Q Critic: {}".format(q))
-        q = -torch.sigmoid(self.l3(q))
+        # q = -torch.sigmoid(self.l3(q))
+        q = torch.tanh(self.l3(q))
         return q * self.max_q_value
 
 
@@ -242,7 +247,7 @@ class DDPGfD():
                     state.append(temp_state)
                     action.append(timestep[0][1]['target_joint_angles'])
                     tstep_reward = max(-timestep[0][2]['distance_to_goal'] \
-                        - max(timestep[0][2]['f1_dist'],timestep[0][2]['f2_dist'])/5,-1)
+                        - max(timestep[0][2]['f1_dist'],timestep[0][2]['f2_dist'])/5,-0.4)
                         # + timestep[0][2]['end_penalty']/10
                          #change min to max
     #                reward.append(-timestep.reward['distance_to_goal'])
@@ -380,7 +385,7 @@ class DDPGfD_priority():
             arg_dict = {'state_dim': 32, 'action_dim': 4, 'max_action': 1.57, 'n': 5, 'discount': 0.995, 'tau': 0.005,
                         'batch_size': 20, 'expert_sampling_proportion': 0.7}
         self.state_dim = arg_dict['state_dim']
-        print(self.state_dim)
+        print('Saving to tensorboard file', TensorboardName)
         self.action_dim = arg_dict['action_dim']
         self.actor = Actor(self.state_dim, self.action_dim, arg_dict['max_action']).to(device)
         self.actor_target = copy.deepcopy(self.actor)
@@ -394,7 +399,7 @@ class DDPGfD_priority():
         self.critic_loss = []
         self.critic_L1loss = []
         self.critic_LNloss = []
-        TensorboardName = 'critic_dominated'
+        # TensorboardName = 'expert_trimmed'
         if TensorboardName is None:
             self.writer = SummaryWriter()
         else:
@@ -510,8 +515,9 @@ class DDPGfD_priority():
         # also talk to kegan about expert control
         # print('aaaaaAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA')
         num_timesteps = len(replay_buffer)
+        # print(num_timesteps)
         if num_timesteps < self.batch_size * 20:
-            return None, None, None, None, None, None, None, None, None
+            return None, None, None, None, None, None, None, None, None, None
         else:
             if self.rollout:
                 sampled_data, transition_weight, indxs = replay_buffer.sample_rollout(self.batch_size, 5)
@@ -525,6 +531,7 @@ class DDPGfD_priority():
             rollout_reward = []
             last_state = []
             rollout_discount = []
+            expert_status = []
             for i, timestep_series in enumerate(sampled_data):
                 if len(timestep_series) > 0:
                     rtemp = 0
@@ -533,9 +540,9 @@ class DDPGfD_priority():
                     temp_state = []
                     temp_state.extend(t_state['obj_2']['pose'][0][0:2])
                     # temp_state.extend(t_state['obj_2']['pose'][1])
-                    temp_state.extend([item for item in t_state['two_finger_gripper']['joint_angles'].values()])
-                    temp_state.extend(t_state['obj_2']['velocity'][0][0:2])
-                    temp_state.extend([t_state['f1_obj_dist'],t_state['f2_obj_dist']])
+                    # temp_state.extend([item for item in t_state['two_finger_gripper']['joint_angles'].values()])
+                    # temp_state.extend(t_state['obj_2']['velocity'][0][0:2])
+                    # temp_state.extend([t_state['f1_obj_dist'],t_state['f2_obj_dist']])
                     temp_state.extend(t_state['f1_pos'][0:2])
                     temp_state.extend(t_state['f2_pos'][0:2])               
                     temp_state.extend(timestep[2]['goal_position'][0:2])
@@ -547,15 +554,17 @@ class DDPGfD_priority():
                     reward.append(tstep_reward)
                     t_next_state = timestep[3]
                     temp_next_state = []
+                    # print(t_next_state)
                     temp_next_state.extend(t_next_state['obj_2']['pose'][0][0:2])
                     # temp_next_state.extend(t_next_state['obj_2']['pose'][1])
-                    temp_next_state.extend([item for item in t_next_state['two_finger_gripper']['joint_angles'].values()])
-                    temp_next_state.extend(t_next_state['obj_2']['velocity'][0][0:2])
-                    temp_next_state.extend([t_next_state['f1_obj_dist'],t_next_state['f2_obj_dist']])
+                    # temp_next_state.extend([item for item in t_next_state['two_finger_gripper']['joint_angles'].values()])
+                    # temp_next_state.extend(t_next_state['obj_2']['velocity'][0][0:2])
+                    # temp_next_state.extend([t_next_state['f1_obj_dist'],t_next_state['f2_obj_dist']])
                     temp_next_state.extend(t_next_state['f1_pos'][0:2])
                     temp_next_state.extend(t_next_state['f2_pos'][0:2])
                     temp_next_state.extend(timestep[2]['goal_position'][0:2])
                     next_state.append(temp_next_state)
+                    expert_status.append(timestep[-1])
                     if self.rollout:
                         j =0
                         for j, timestep in enumerate(timestep_series[1:]):
@@ -566,17 +575,17 @@ class DDPGfD_priority():
                         rollout_discount.append(j+1)
                         temp_last_state.extend(t_last_state['obj_2']['pose'][0][0:2])
                         # temp_last_state.extend(t_last_state['obj_2']['pose'][1])
-                        temp_last_state.extend(
-                        [item for item in t_last_state['two_finger_gripper']['joint_angles'].values()])
-                        temp_last_state.extend(t_last_state['obj_2']['velocity'][0][0:2])
-                        temp_last_state.extend([t_last_state['f1_obj_dist'],t_last_state['f2_obj_dist']])
+                        # temp_last_state.extend(
+                        # [item for item in t_last_state['two_finger_gripper']['joint_angles'].values()])
+                        # temp_last_state.extend(t_last_state['obj_2']['velocity'][0][0:2])
+                        # temp_last_state.extend([t_last_state['f1_obj_dist'],t_last_state['f2_obj_dist']])
                         temp_last_state.extend(t_last_state['f1_pos'][0:2])
                         temp_last_state.extend(t_last_state['f2_pos'][0:2])
                         temp_last_state.extend(timestep_series[0][2]['goal_position'][0:2])
                         last_state.append(temp_last_state)
                         rollout_reward.append(rtemp)
             state = torch.tensor(state)
-            
+            # print(reward)
             action = torch.tensor(action)
             reward = torch.tensor(reward)
             reward = torch.unsqueeze(reward, 1)
@@ -585,19 +594,21 @@ class DDPGfD_priority():
             rollout_reward = torch.unsqueeze(rollout_reward, 1)
             rollout_discount = torch.tensor(rollout_discount)
             rollout_discount = torch.unsqueeze(rollout_discount, 1)
+            expert_status = torch.tensor(expert_status)
+            expert_status = torch.unsqueeze(expert_status, 1)
             last_state = torch.tensor(last_state)
-            # print(state.shape)
-            # print(next_state.shape)
             state = state.to(device)
             action = action.to(device)
             next_state = next_state.to(device)
             reward = reward.to(device)
             rollout_reward = rollout_reward.to(device)
             rollout_discount = rollout_discount.to(device)
+            expert_status = expert_status.to(device)
             last_state = last_state.to(device)
-            # print(last_state.shape)
+            # print(expert_status.shape)
             trimmed_weight = []
             trimmed_idxs = []
+            
             # print('bruh')
             for tw, inds in zip(transition_weight, indxs):
                 if len(tw) > 0:
@@ -617,13 +628,13 @@ class DDPGfD_priority():
             trimmed_weight = trimmed_weight.to(device)
             # print(rollout_reward)
             # print(rollout_discount)
-            return state, action, next_state, reward, rollout_reward, rollout_discount, last_state, trimmed_weight, trimmed_idxs
+            return state, action, next_state, reward, rollout_reward, rollout_discount, last_state, trimmed_weight, trimmed_idxs, expert_status
 
     def train(self, replay_buffer, prob=0.7):
         """ Update policy based on full trajectory of one episode """
         self.total_it += 1
 
-        state, action, next_state, reward, sum_rewards, num_rewards, last_state, transition_weight, indxs = self.collect_batch(replay_buffer)
+        state, action, next_state, reward, sum_rewards, num_rewards, last_state, transition_weight, indxs, expert_status = self.collect_batch(replay_buffer)
         if state is not None:
             target_Q = self.critic_target(next_state, self.actor_target(next_state))
 
@@ -668,23 +679,31 @@ class DDPGfD_priority():
             self.critic_optimizer.step()
 
             # Compute actor loss
-            individual_actor_loss = -self.critic(state, self.actor(state))
+            actor_action = self.actor(state)
+            individual_actor_loss = -self.critic(state, actor_action)
             # input(actor_loss)
             # print('actor_output', self.actor(state).shape)
             # print(action.shape)
             # print(state.shape)
             # print(state)
             
-            priorities = 0.0001 + 0.25*individual_actor_loss**2 + 2*(current_Q-target_Q)**2
+            
+            
+            # print('average without expert status', torch.mean(0.0001 + 0.25*individual_actor_loss**2 + 2*(current_Q-target_Q)**2))
+            # print('percent expert', torch.mean(expert_status.float()))
             # print('start')
-            # print(priorities[0])
-            # print(0.25*(individual_actor_loss[0])**2)
-            # print(2*(current_Q[0]-target_Q[0])**2)
-            priorities = priorities.cpu().detach().numpy()
+            # print(0.25*(individual_actor_loss)**2)
+            # print(2*(current_Q[0]-target_Q)**2)
+            # print(priorities)
+
             actor_loss = individual_actor_loss.mean()
-            temp = individual_actor_loss.shape
+            # temp = individual_actor_loss.shape
             # priorities = np.ones(temp)
             # Optimize the actor
+            # TODO check the new priority method and make sure its sound
+            priorities = expert_status*0.5 + 0.5
+            # priorities = expert_status*0.5 + 0.0001 + 0.25*actor_action.grad**2 + 2*(current_Q-target_Q)**2
+            priorities = priorities.cpu().detach().numpy()
             self.actor_optimizer.zero_grad()
             actor_loss.backward()
             nn.utils.clip_grad_value_(self.actor.parameters(), 0.5)
