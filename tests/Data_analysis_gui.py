@@ -193,17 +193,19 @@ class GuiBackend():
         full_reward = []
         for i in range(len(reward_dict_dist)):
             full_reward.append(max(reward_dict_dist[i]+min(reward_dict_f1[i],reward_dict_f2[i])/5,-1))
+        net_reward = sum(full_reward)
             
         if self.clear_plots | (self.curr_graph != 'rewards'):
             self.ax.cla()
             self.legend = []
-
+        
+        title = 'Net Reward: ' + str(net_reward)
         self.ax.plot(range(len(full_reward)),full_reward)
         self.legend.extend(['Reward - episode ' + str(self.e_num)])
         self.ax.legend(self.legend)
         self.ax.set_ylabel('Reward')
         self.ax.set_xlabel('Timestep (1/240 s)')
-        self.ax.set_title('Reward Plot')
+        self.ax.set_title(title)
         self.figure_canvas_agg.draw()
         self.curr_graph = 'rewards'
         
@@ -253,6 +255,51 @@ class GuiBackend():
         self.colorbar = self.fig.colorbar(c, ax=self.ax)
         self.figure_canvas_agg.draw()
         self.curr_graph = 'explored'
+
+    def draw_end_region(self):
+        if self.all_data is None:
+            print('need to load in episode all first')
+            return
+        datapoints = []
+        for episode in self.all_data['episode_list']:
+            data = episode['timestep_list']
+            datapoints.append(data[-1]['state']['obj_2']['pose'][0][0:2])
+        datapoints = np.array(datapoints)
+        nbins=100
+        x = datapoints[:,0]
+        y = datapoints[:,1]
+        print('about to do the gaussian')
+        k = kde.gaussian_kde([x,y])
+        print('did the gaussian')
+        xlim = [np.min(datapoints[:,0]), np.max(datapoints[:,0])]
+        ylim = [np.min(datapoints[:,1]), np.max(datapoints[:,1])]
+        # xlim = [min(xlim[0],-0.07), max(xlim[1],0.07)]
+        # ylim = [min(ylim[0],0.1), max(ylim[1],0.22)]
+        xlim = [-0.2, 0.2]
+        ylim = [-0.04, 0.36]
+        xi, yi = np.mgrid[xlim[0]:xlim[1]:nbins*1j, ylim[0]:ylim[1]:nbins*1j]
+        print('did the mgrid')
+        zi = k(np.vstack([xi.flatten(), yi.flatten()]))
+        term = -np.max(zi)/5
+        for i in range(len(zi)):
+            if zi[i] <1:
+                zi[i] = term
+        self.ax.cla()
+        self.legend = []
+        if self.colorbar:
+            self.colorbar.remove()
+        print('about to do the colormesh')
+        c = self.ax.pcolormesh(xi, yi, zi.reshape(xi.shape), shading='auto')
+
+        self.ax.set_xlim(xlim)
+        self.ax.set_ylim(ylim)
+        self.ax.set_xlabel('X pos (m)')
+        self.ax.set_ylabel('Y pos (m)')
+        self.ax.set_title("Ending Object Poses")
+        
+        self.colorbar = self.fig.colorbar(c, ax=self.ax)
+        self.figure_canvas_agg.draw()
+        self.curr_graph = 'ending_explored'
         
     def draw_net_reward(self):
         if self.all_data is None:
@@ -655,10 +702,10 @@ def main():
     menu = [['File', ['Open Folder', 'Exit']], ['Help', ['About', ]]]
 
 
-    plot_buttons = [[sg.Button('Object Path', size=(8, 2)), sg.Button('Finger Angles', size=(8, 2))],
-                    [sg.Button('Actor Output', size=(8, 2)), sg.Button('Critic Output', size=(8, 2)), sg.Button('Rewards', size=(8, 2), key='FullRewards'), sg.Button('Contact Rewards', key='ContactRewards',size=(8, 2)), sg.Button('Distance Rewards', key='SimpleRewards',size=(8, 2))],
-                    [sg.Button('Explored Region', size=(8,2)), sg.Button('Episode Rewards', size=(8,2)), sg.Button('Finger Object Avg', size=(8,2)), sg.Button('Finger Object Max', size=(8,2)), sg.Button('Timestep', size=(8,2)), sg.Button('Ending Goal Dist', size=(8,2))],
-                    [sg.Button('Shortest Goal Dist', size=(8,2)), sg.Button('Ending Velocity', size=(8,2)), sg.Button('Average Actor Values', size=(8,2)), sg.Button('Success Rate', size=(8,2)), sg.Button('Path + Action', size=(8,2))],
+    plot_buttons = [[sg.Button('Object Path', size=(8, 2)), sg.Button('Finger Angles', size=(8, 2)),sg.Button('Rewards', size=(8, 2), key='FullRewards'), sg.Button('Contact Rewards', key='ContactRewards',size=(8, 2)), sg.Button('Distance Rewards', key='SimpleRewards',size=(8, 2))],
+                    [sg.Button('Explored Region', size=(8,2)), sg.Button('Actor Output', size=(8, 2)), sg.Button('Critic Output', size=(8, 2)),  sg.Button('Timestep', size=(8,2)),],
+                    [sg.Button('End Region', size=(8,2)), sg.Button('Average Actor Values', size=(8,2)), sg.Button('Episode Rewards', size=(8,2)), sg.Button('Finger Object Avg', size=(8,2)), sg.Button('Shortest Goal Dist', size=(8,2))],
+                    [sg.Button('Path + Action', size=(8,2)), sg.Button('Success Rate', size=(8,2)), sg.Button('Ending Velocity', size=(8,2)), sg.Button('Finger Object Max', size=(8,2)), sg.Button('Ending Goal Dist', size=(8,2))],
                     [sg.Slider((1,20),10,1,1,key='moving_avg',orientation='h', size=(48,6)), sg.Text("Keep previous graph", size=(10, 3), key='-toggletext-'), sg.Button(image_data=toggle_btn_off, key='-TOGGLE-GRAPHIC-', button_color=(sg.theme_background_color(), sg.theme_background_color()), border_width=0, metadata=False)]]
     # define layout, show and read the window
     col = [[sg.Text(episode_files[0], size=(80, 3), key='-FILENAME-')],
@@ -737,8 +784,9 @@ def main():
         elif event == 'Timestep':
             backend.draw_timestep_bar_plot()
         elif event == 'Ending Goal Dist':
-            backend.draw_ending_goal_dist()   
-            
+            backend.draw_ending_goal_dist()  
+        elif event == 'End Region':
+            backend.draw_end_region()
         elif event == '-TOGGLE-GRAPHIC-':  # if the graphical button that changes images
             window['-TOGGLE-GRAPHIC-'].metadata = not window['-TOGGLE-GRAPHIC-'].metadata
             window['-TOGGLE-GRAPHIC-'].update(image_data=toggle_btn_on if window['-TOGGLE-GRAPHIC-'].metadata else toggle_btn_off)
