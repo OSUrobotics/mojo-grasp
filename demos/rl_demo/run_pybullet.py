@@ -29,9 +29,9 @@ from mojograsp.simcore.episode import EpisodeDefault
 import numpy as np
 from mojograsp.simcore.priority_replay_buffer import ReplayBufferPriority
 # resource paths
-folder_name = 'HER7'
+folder_name = 'aaaa'
 current_path = str(pathlib.Path().resolve())
-hand_path = current_path+"/resources/2v2_nosensors/2v2_nosensors_limited.urdf"
+hand_path = current_path+"/resources/2v2_nosensors/2v2_nosensors_tip.urdf"
 cube_path = current_path + \
     "/resources/object_models/2v2_mod/2v2_mod_cuboid_small.urdf"
 cylinder_path = current_path + \
@@ -45,8 +45,8 @@ x = [0,0.055, 0.055, 0.055, 0, -0.055, -0.055, -0.055]
 y = [0.055, 0.055, 0, -0.055, -0.055, -0.055, 0, 0.055]
 pose_list = [[i,j] for i,j in zip(x,y)]
 # start pybullet
-# physics_client = p.connect(p.GUI)
-physics_client = p.connect(p.DIRECT)
+physics_client = p.connect(p.GUI)
+# physics_client = p.connect(p.DIRECT)
 p.setAdditionalSearchPath(pybullet_data.getDataPath())
 p.setGravity(0, 0, -10)
 p.resetDebugVisualizerCamera(cameraDistance=.02, cameraYaw=0, cameraPitch=-89.9999,
@@ -63,8 +63,8 @@ hand = TwoFingerGripper(hand_id, path=hand_path)
 
 p.resetJointState(hand_id, 0, .75)
 p.resetJointState(hand_id, 1, -1.4)
-p.resetJointState(hand_id, 2, -.75)
-p.resetJointState(hand_id, 3, 1.4)
+p.resetJointState(hand_id, 3, -.75)
+p.resetJointState(hand_id, 4, 1.4)
 
 # Create ObjectBase for the cube object
 cube = ObjectWithVelocity(cube_id, path=cube_path)
@@ -77,9 +77,9 @@ p.changeVisualShape(hand_id, -1, rgbaColor=[0.3, 0.3, 0.3, 1])
 p.changeVisualShape(hand_id, 0, rgbaColor=[1, 0.5, 0, 1])
 p.changeVisualShape(hand_id, 1, rgbaColor=[0.3, 0.3, 0.3, 1])
 p.changeVisualShape(hand_id, 2, rgbaColor=[1, 0.5, 0, 1])
-p.changeVisualShape(hand_id, 3, rgbaColor=[0.3, 0.3, 0.3, 1])
+p.changeVisualShape(hand_id, 4, rgbaColor=[0.3, 0.3, 0.3, 1])
 # p.setTimeStep(1/2400)
-
+# print(p.getLinkState(hand_id,2))
 
 goal_poses = GoalHolder(pose_list)
 # state and reward
@@ -93,8 +93,8 @@ arg_dict = {'state_dim': 8, 'action_dim': 4, 'max_action': 1.57, 'n': 5, 'discou
 
 
 # replay buffer
-replay_buffer = ReplayBufferPriority(buffer_size=5408000)
-replay_buffer.preload_buffer_PKL(expert_data_path)
+replay_buffer = ReplayBufferPriority(buffer_size=1000000)
+# replay_buffer.preload_buffer_PKL(expert_data_path)
 # replay_buffer = ReplayBufferDF(state=state, action=action, reward=reward)
 
 
@@ -124,10 +124,10 @@ manager.add_phase("manipulation", manipulation, start=True)
 #print(p.getClosestPoints(cube.id, hand.id, 1, -1, 1, -1))
 # Run the sim
 done_training = False
-training_length = 400
+training_length = 1
 while not done_training:
     for k in range(training_length):
-        manager.run()
+        manager.evaluate()
         # print('TRAINING NOW')
         # manager.phase_manager.phase_dict["manipulation"].controller.train_policy()
         manager.phase_manager.phase_dict['manipulation'].reset()

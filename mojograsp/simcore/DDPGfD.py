@@ -47,8 +47,8 @@ class Actor(nn.Module):
         a = F.relu(self.l1(state))
         a = F.relu(self.l2(a))
         # return self.max_action * torch.sigmoid(self.l3(a))
-        # return self.max_action * torch.tanh(self.l3(a))
-        return self.l3(a)
+        return self.max_action * torch.tanh(self.l3(a))
+        # return self.l3(a)
 
 # OLD PARAMS WERE 400-300, TESTING 100-50
 class Critic(nn.Module):
@@ -71,8 +71,9 @@ class Critic(nn.Module):
         q = F.relu(self.l2(q))
         # print("Q Critic: {}".format(q))
         # q = -torch.sigmoid(self.l3(q))
-        q = torch.tanh(self.l3(q))
-        return q * self.max_q_value
+        # q = torch.tanh(self.l3(q))
+        q = self.l3(q)
+        return q# * self.max_q_value
 
 
 class DDPGfD():
@@ -680,6 +681,7 @@ class DDPGfD_priority():
 
             # Compute actor loss
             actor_action = self.actor(state)
+            actor_action.retain_grad()
             individual_actor_loss = -self.critic(state, actor_action)
             # input(actor_loss)
             # print('actor_output', self.actor(state).shape)
@@ -702,10 +704,17 @@ class DDPGfD_priority():
             # Optimize the actor
             # TODO check the new priority method and make sure its sound
             priorities = expert_status*0.5 + 0.5
-            # priorities = expert_status*0.5 + 0.0001 + 0.25*actor_action.grad**2 + 2*(current_Q-target_Q)**2
-            priorities = priorities.cpu().detach().numpy()
+
             self.actor_optimizer.zero_grad()
             actor_loss.backward()
+            # print(actor_action.grad)
+            # actor_component = actor_action.grad.mean(1,True)
+            # print(actor_component.shape)
+            # print(expert_status.shape)
+            # priorities = expert_status*0.5 + 0.0001 + 2500000*actor_component**2 + 2*(current_Q-target_Q)**2
+            # print('actor portion', (2500000*actor_component**2).mean())
+            # print('critic portion', (2*(current_Q-target_Q)**2).mean())
+            priorities = priorities.cpu().detach().numpy()
             nn.utils.clip_grad_value_(self.actor.parameters(), 0.5)
             self.actor_optimizer.step()
 

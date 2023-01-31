@@ -80,11 +80,11 @@ class ManipulationRL(Phase):
 
     def reset(self):
         print('still reseting')
-        temp = list(range(len(self.x)))
+        # temp = list(range(len(self.x)))
         
-        shuffle(temp)
-        self.x = [self.x[i] for i in temp]
-        self.y = [self.y[i] for i in temp]
+        # shuffle(temp)
+        # self.x = [self.x[i] for i in temp]
+        # self.y = [self.y[i] for i in temp]
         
         self.episode = 0
         
