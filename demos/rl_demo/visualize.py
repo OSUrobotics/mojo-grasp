@@ -31,7 +31,7 @@ from mojograsp.simcore.priority_replay_buffer import ReplayBufferPriority
 # resource paths
 folder_name = 'IKTest'
 current_path = str(pathlib.Path().resolve())
-hand_path = current_path+"/resources/2v2_nosensors/2v2_nosensors_limited.urdf"
+hand_path = current_path+"/resources/2v2_nosensors_keegan/2v2_nosensors/2v2_nosensors_limited.urdf"
 cube_path = current_path + \
     "/resources/object_models/2v2_mod/2v2_mod_cuboid_small.urdf"
 cylinder_path = current_path + \
@@ -59,28 +59,40 @@ p.resetDebugVisualizerCamera(cameraDistance=.02, cameraYaw=0, cameraPitch=-89.99
 plane_id = p.loadURDF("plane.urdf")
 hand_id = p.loadURDF(hand_path, useFixedBase=True,
                      basePosition=[0.0, 0.0, 0.05])
-cube_id = p.loadURDF(cube_path, basePosition=[0.0, 0.16, .05])
+cube_id = p.loadURDF(cube_path, basePosition=[0.0, 0.15, .05])
 # cylinder_id = p.loadURDF(cylinder_path, basePosition=[0.0, 0.16, .05])
 # Create TwoFingerGripper Object and set the initial joint positions
 hand = TwoFingerGripper(hand_id, path=hand_path)
 
 p.resetJointState(hand_id, 0, .75)
 p.resetJointState(hand_id, 1, -1.4)
-p.resetJointState(hand_id, 2, -.75)
-p.resetJointState(hand_id, 3, 1.4)
+p.resetJointState(hand_id, 3, -.75)
+p.resetJointState(hand_id, 4, 1.4)
+
+link1_pose = p.getLinkState(hand_id, 2)
+# p.get
+link2_pose = p.getLinkState(hand_id, 5)
+
+
+        
+p.addUserDebugLine([0,0,1],link1_pose[0],[0,0,1],0.1,0)
+p.addUserDebugLine([0,0,1],link2_pose[0],[1,0,0],0.1,0)
+
 
 # Create ObjectBase for the cube object
 cube = ObjectWithVelocity(cube_id, path=cube_path)
+obj_pose = p.getBasePositionAndOrientation(cube_id)
+p.addUserDebugLine([0,1,0],obj_pose[0],[0,1,0],0.1,0)
 # cylinder = ObjectWithVelocity(cylinder_id, path=cylinder_path)
 # cube = ObjectVelocityDF(cube_id, path=cube_path)
-
+print('link_poses', link1_pose[0], link2_pose[0] )
 
 # change visual of gripper
-p.changeVisualShape(hand_id, -1, rgbaColor=[0.3, 0.3, 0.3, 1])
-p.changeVisualShape(hand_id, 0, rgbaColor=[1, 0.5, 0, 1])
-p.changeVisualShape(hand_id, 1, rgbaColor=[0.3, 0.3, 0.3, 1])
-p.changeVisualShape(hand_id, 2, rgbaColor=[1, 0.5, 0, 1])
-p.changeVisualShape(hand_id, 3, rgbaColor=[0.3, 0.3, 0.3, 1])
+# p.changeVisualShape(hand_id, -1, rgbaColor=[0.3, 0.3, 0.3, 1])
+# p.changeVisualShape(hand_id, 0, rgbaColor=[1, 0.5, 0, 1])
+# p.changeVisualShape(hand_id, 1, rgbaColor=[0.3, 0.3, 0.3, 1])
+# p.changeVisualShape(hand_id, 2, rgbaColor=[1, 0.5, 0, 1])
+# p.changeVisualShape(hand_id, 3, rgbaColor=[0.3, 0.3, 0.3, 1])
 # p.setTimeStep(1/2400)
 
 
@@ -126,24 +138,24 @@ manager.add_phase("manipulation", manipulation, start=True)
 #     manager.run()
 #     manager.phase_manager.phase_dict['manipulation'].reset()
 #print(p.getClosestPoints(cube.id, hand.id, 1, -1, 1, -1))
-# Run the sim
-done_training = False
-training_length = 8
-while not done_training:
-    for k in range(training_length):
-        manager.run()
-        # print('TRAINING NOW')
-        # manager.phase_manager.phase_dict["manipulation"].controller.train_policy()
-        manager.phase_manager.phase_dict['manipulation'].reset()
-    flag = True
-    while flag: 
-        a = 0#input('input epochs to train for (0 for end)')
-        try:
-            training_length = int(a)
-            flag = False
-            if training_length == 0:
-                done_training = True
-        except ValueError:
-            print('input a valid number')
+# # Run the sim
+# done_training = False
+# training_length = 8
+# while not done_training:
+#     for k in range(training_length):
+#         manager.run()
+#         # print('TRAINING NOW')
+#         # manager.phase_manager.phase_dict["manipulation"].controller.train_policy()
+#         manager.phase_manager.phase_dict['manipulation'].reset()
+#     flag = True
+#     while flag: 
+#         a = 0#input('input epochs to train for (0 for end)')
+#         try:
+#             training_length = int(a)
+#             flag = False
+#             if training_length == 0:
+#                 done_training = True
+#         except ValueError:
+#             print('input a valid number')
 
-# manager.stall()
+manager.stall()

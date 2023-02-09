@@ -230,8 +230,8 @@ class GuiBackend():
         ylim = [np.min(datapoints[:,1]), np.max(datapoints[:,1])]
         # xlim = [min(xlim[0],-0.07), max(xlim[1],0.07)]
         # ylim = [min(ylim[0],0.1), max(ylim[1],0.22)]
-        xlim = [-0.2, 0.2]
-        ylim = [-0.04, 0.36]
+        xlim = [-0.1, 0.1]
+        ylim = [0.06, 0.26]
         xi, yi = np.mgrid[xlim[0]:xlim[1]:nbins*1j, ylim[0]:ylim[1]:nbins*1j]
         print('did the mgrid')
         zi = k(np.vstack([xi.flatten(), yi.flatten()]))
@@ -275,8 +275,8 @@ class GuiBackend():
         ylim = [np.min(datapoints[:,1]), np.max(datapoints[:,1])]
         # xlim = [min(xlim[0],-0.07), max(xlim[1],0.07)]
         # ylim = [min(ylim[0],0.1), max(ylim[1],0.22)]
-        xlim = [-0.2, 0.2]
-        ylim = [-0.04, 0.36]
+        xlim = [-0.1, 0.1]
+        ylim = [0.06, 0.26]
         xi, yi = np.mgrid[xlim[0]:xlim[1]:nbins*1j, ylim[0]:ylim[1]:nbins*1j]
         print('did the mgrid')
         zi = k(np.vstack([xi.flatten(), yi.flatten()]))
@@ -632,6 +632,60 @@ class GuiBackend():
         self.curr_graph = 'goal_dist'
         
         
+    def draw_goal_rewards(self):
+        if self.all_data is None:
+            print('need to load in episode all first')
+            return
+        
+        keylist = ['forward','backward', 'forwardleft', 'backwardleft','forwardright', 'backwardright', 'left', 'right']
+        rewards = {'forward':[[0.0, 0.215],[]],'backward':[[0.0, 0.105],[]],'forwardleft':[[-0.055, 0.215],[]],'backwardleft':[[-0.055,0.105],[]],
+                   'forwardright':[[0.055,0.215],[]],'backwardright':[[0.055, 0.105],[]],'left':[[-0.055, 0.16],[]],'right':[[0.055,0.16],[]]}
+        # sucessful_dirs = []
+        for i, episode in enumerate(self.all_data['episode_list']):
+            data = episode['timestep_list']
+            goal_pose = data[1]['reward']['goal_position'][0:2]
+            temp = 0
+            for j, timestep in enumerate(data):
+                temp += - timestep['reward']['distance_to_goal'] \
+                        -max(timestep['reward']['f1_dist'],timestep['reward']['f2_dist'])/5
+                                        #timestep['reward']['end_penalty'] \
+            for i, v in rewards.items():
+                if np.isclose(goal_pose, v[0]).all():
+                    v[1].append(temp)
+                    
+        
+        # s = np.unique(sucessful_dirs)
+        # print('succesful directions', s)
+        maxes = []
+        for name, v in rewards.items():
+            print(name, max(v[1]))
+            maxes.append(max(v[1]))
+        print('showing best and worse ones')
+        best = np.argmax(maxes)
+        worst = np.argmin(maxes)
+        
+        # if self.moving_avg != 1:
+        #     closest_dists = moving_average(closest_dists,self.moving_avg)
+        if self.clear_plots | (self.curr_graph != 'goal_dist'):
+            self.ax.cla()
+            self.legend = []
+            
+        self.ax.plot(range(len(rewards[keylist[best]][1])),rewards[keylist[best]][1])
+        self.ax.plot(range(len(rewards[keylist[worst]][1])),rewards[keylist[worst]][1])
+        self.legend.extend(['Best Direction: ' + keylist[best], 'Worst Direction: ' + keylist[worst]])
+        self.ax.legend(self.legend)
+        self.ax.set_ylabel('Net Reward')
+        self.ax.set_xlabel('Episode')
+        self.ax.set_title('Net Reward By Direction')
+        self.figure_canvas_agg.draw()
+        self.curr_graph = 'direction_reward_thing'   
+    
+    def check_all_data(self):
+        num_episodes = len(self.all_data['episode_list'])
+        for i in range(num_episodes):
+            # print(self.all_data['episode_list'][i]['number'])
+            assert i+1 == self.all_data['episode_list'][i]['number']
+            
     def show_finger_viz(self):
         pass
 
@@ -639,16 +693,17 @@ class GuiBackend():
         
         with open(filename, 'rb') as pkl_file:
             self.data_dict = pkl.load(pkl_file)
-            if 'all' in filename:
+            if 'all.' in filename:
                 self.e_num = -1
                 self.all_data = self.data_dict.copy()
+                self.check_all_data()
             else:
                 self.e_num = self.data_dict['number']
     
     def load_json(self, filename):
         with open(filename) as file:
             self.data_dict = json.load(file)
-            if 'all' in filename:
+            if 'all.' in filename:
                 self.e_num = -1
                 self.all_data = self.data_dict.copy()
             else:
@@ -659,6 +714,8 @@ class GuiBackend():
             self.load_pkl(filename)
         except:
             self.load_json(filename)
+            
+            
 
 
 def main():
@@ -703,7 +760,7 @@ def main():
 
 
     plot_buttons = [[sg.Button('Object Path', size=(8, 2)), sg.Button('Finger Angles', size=(8, 2)),sg.Button('Rewards', size=(8, 2), key='FullRewards'), sg.Button('Contact Rewards', key='ContactRewards',size=(8, 2)), sg.Button('Distance Rewards', key='SimpleRewards',size=(8, 2))],
-                    [sg.Button('Explored Region', size=(8,2)), sg.Button('Actor Output', size=(8, 2)), sg.Button('Critic Output', size=(8, 2)),  sg.Button('Timestep', size=(8,2)),],
+                    [sg.Button('Explored Region', size=(8,2)), sg.Button('Actor Output', size=(8, 2)), sg.Button('Critic Output', size=(8, 2)), sg.Button('RewardSplit',size=(8, 2)), sg.Button('Timestep', size=(8,2))],
                     [sg.Button('End Region', size=(8,2)), sg.Button('Average Actor Values', size=(8,2)), sg.Button('Episode Rewards', size=(8,2)), sg.Button('Finger Object Avg', size=(8,2)), sg.Button('Shortest Goal Dist', size=(8,2))],
                     [sg.Button('Path + Action', size=(8,2)), sg.Button('Success Rate', size=(8,2)), sg.Button('Ending Velocity', size=(8,2)), sg.Button('Finger Object Max', size=(8,2)), sg.Button('Ending Goal Dist', size=(8,2))],
                     [sg.Slider((1,20),10,1,1,key='moving_avg',orientation='h', size=(48,6)), sg.Text("Keep previous graph", size=(10, 3), key='-toggletext-'), sg.Button(image_data=toggle_btn_off, key='-TOGGLE-GRAPHIC-', button_color=(sg.theme_background_color(), sg.theme_background_color()), border_width=0, metadata=False)]]
@@ -787,6 +844,8 @@ def main():
             backend.draw_ending_goal_dist()  
         elif event == 'End Region':
             backend.draw_end_region()
+        elif event == 'RewardSplit':
+            backend.draw_goal_rewards()
         elif event == '-TOGGLE-GRAPHIC-':  # if the graphical button that changes images
             window['-TOGGLE-GRAPHIC-'].metadata = not window['-TOGGLE-GRAPHIC-'].metadata
             window['-TOGGLE-GRAPHIC-'].update(image_data=toggle_btn_on if window['-TOGGLE-GRAPHIC-'].metadata else toggle_btn_off)

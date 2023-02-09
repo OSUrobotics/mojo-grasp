@@ -1,0 +1,131 @@
+<?xml version="1.0" ?>
+<robot name="2v2_nosensors">
+
+    <link name="body_palm_lpinvrpin">
+        <visual>
+            <origin rpy="0 1.5707963267948966 0" xyz="0 0 0"/>
+            <geometry>
+                <mesh filename="obj_files/body_palm_lpinvrpin.obj" scale="1 1 1"/>
+            </geometry>
+        </visual>
+        <collision>
+            <origin rpy="0 1.5707963267948966 0" xyz="0 0 0"/>
+            <geometry>
+                <mesh filename="obj_files/body_palm_lpinvrpin_collision.obj" scale="1 1 1"/>
+            </geometry>
+        </collision>
+        <inertial>
+            <mass value="1"/>
+            <inertia ixx="0.4" ixy="0.0" ixz="0.0" iyy="0.4" iyz="0.0" izz="0.2"/>
+        </inertial>
+    </link>
+
+    <joint name="l_prox_pin" type="revolute">
+        <parent link="body_palm_lpinvrpin"/>
+        <child link="body_l_prox_pinvpin"/>
+        <origin rpy="0 0 0" xyz="-0.02675 0.053 0"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="1000.0" lower="-3.14" upper="3.14" velocity="0.5"/>
+    </joint>
+
+    <link name="body_l_prox_pinvpin">
+        <visual>
+            <origin rpy="0 1.5707963267948966 0" xyz="0 0 0"/>
+            <geometry>
+                <mesh filename="obj_files/body_l_prox_pinvpin.obj" scale="1 1 1"/>
+            </geometry>
+        </visual>
+        <collision>
+            <origin rpy="0 1.5707963267948966 0" xyz="0 0 0"/>
+            <geometry>
+                <mesh filename="obj_files/body_l_prox_pinvpin_collision.obj" scale="1 1 1"/>
+            </geometry>
+        </collision>
+        <inertial>
+            <mass value="0.1"/>
+            <inertia ixx="0.4" ixy="0.0" ixz="0.0" iyy="0.4" iyz="0.0" izz="0.2"/>
+        </inertial>
+    </link>
+
+    <joint name="l_distal_pin" type="revolute">
+        <parent link="body_l_prox_pinvpin"/>
+        <child link="body_l_distal_pinvround"/>
+        <origin rpy="0 0 0" xyz="0 0.072 0"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="1000.0" lower="-3.14" upper="3.14" velocity="0.5"/>
+    </joint>
+
+    <link name="body_l_distal_pinvround">
+        <visual>
+            <origin rpy="0 1.5707963267948966 0" xyz="0 0 0"/>
+            <geometry>
+                <mesh filename="obj_files/body_l_distal_pinvround.obj" scale="1 1 1"/>
+            </geometry>
+        </visual>
+        <collision>
+            <origin rpy="0 1.5707963267948966 0" xyz="0 0 0"/>
+            <geometry>
+                <mesh filename="obj_files/body_l_distal_pinvround_collision.obj" scale="1 1 1"/>
+            </geometry>
+        </collision>
+        <inertial>
+            <mass value="0.1"/>
+            <inertia ixx="0.4" ixy="0.0" ixz="0.0" iyy="0.4" iyz="0.0" izz="0.2"/>
+        </inertial>
+    </link>
+
+    <joint name="r_prox_pin" type="revolute">
+        <parent link="body_palm_lpinvrpin"/>
+        <child link="body_r_prox_pinvpin"/>
+        <origin rpy="0 0 0" xyz="0.02675 0.053 0"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="1000.0" lower="-3.14" upper="3.14" velocity="0.5"/>
+    </joint>
+
+    <link name="body_r_prox_pinvpin">
+        <visual>
+            <origin rpy="0 1.5707963267948966 0" xyz="0 0 0"/>
+            <geometry>
+                <mesh filename="obj_files/body_r_prox_pinvpin.obj" scale="1 1 1"/>
+            </geometry>
+        </visual>
+        <collision>
+            <origin rpy="0 1.5707963267948966 0" xyz="0 0 0"/>
+            <geometry>
+                <mesh filename="obj_files/body_r_prox_pinvpin_collision.obj" scale="1 1 1"/>
+            </geometry>
+        </collision>
+        <inertial>
+            <mass value="0.1"/>
+            <inertia ixx="0.4" ixy="0.0" ixz="0.0" iyy="0.4" iyz="0.0" izz="0.2"/>
+        </inertial>
+    </link>
+
+    <joint name="r_distal_pin" type="revolute">
+        <parent link="body_r_prox_pinvpin"/>
+        <child link="body_r_distal_pinvround"/>
+        <origin rpy="0 0 0" xyz="0 0.072 0"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="1000.0" lower="-3.14" upper="3.14" velocity="0.5"/>
+    </joint>
+
+    <link name="body_r_distal_pinvround">
+        <visual>
+            <origin rpy="0 1.5707963267948966 0" xyz="0 0 0"/>
+            <geometry>
+                <mesh filename="obj_files/body_r_distal_pinvround.obj" scale="1 1 1"/>
+            </geometry>
+        </visual>
+        <collision>
+            <origin rpy="0 1.5707963267948966 0" xyz="0 0 0"/>
+            <geometry>
+                <mesh filename="obj_files/body_r_distal_pinvround_collision.obj" scale="1 1 1"/>
+            </geometry>
+        </collision>
+        <inertial>
+            <mass value="0.1"/>
+            <inertia ixx="0.4" ixy="0.0" ixz="0.0" iyy="0.4" iyz="0.0" izz="0.2"/>
+        </inertial>
+    </link>
+
+</robot>

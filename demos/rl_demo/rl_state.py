@@ -71,10 +71,10 @@ class StateRL(StateDefault):
         #     self.current_state = {}
         
         temp1 = p.getClosestPoints(self.objects[1].id, self.objects[0].id, 10, -1, 1, -1)[0]
-        temp2 = p.getClosestPoints(self.objects[1].id, self.objects[0].id, 10, -1, 3, -1)[0]
-        link1_pose = p.getLinkState(self.objects[0].id, 1)
+        temp2 = p.getClosestPoints(self.objects[1].id, self.objects[0].id, 10, -1, 4, -1)[0]
+        link1_pose = p.getLinkState(self.objects[0].id, 2)
         # p.get
-        link2_pose = p.getLinkState(self.objects[0].id, 3)
+        link2_pose = p.getLinkState(self.objects[0].id, 5)
         # print(list(link1_pose[0]))
         # print(list(temp1[6]))
         self.current_state['f1_pos'] = list(link1_pose[0])
