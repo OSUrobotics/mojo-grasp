@@ -69,7 +69,7 @@ class SimManagerRLHER(SimManager):
         self.record = record_data
         self.replay_buffer = replay_buffer
         self.phase_manager = PhaseManager()
-        self.episode_number = 8
+        self.episode_number = 0
         self.record_video = False
         if TensorboardName is None:
             self.writer = SummaryWriter()
@@ -112,7 +112,7 @@ class SimManagerRLHER(SimManager):
                 self.env.setup()
                 self.phase_manager.set_exit_flag(False)
                 self.phase_manager.setup()
-                print('goal pose', self.phase_manager.current_phase.goal_position)
+                print('Episode ',self.episode_number,' goal pose', self.phase_manager.current_phase.goal_position)
                 timestep_number = 0
                 transition_list = []
                 while self.phase_manager.get_exit_flag() == False:
@@ -159,7 +159,7 @@ class SimManagerRLHER(SimManager):
                 #                         self.episode_number / self.num_episodes)
                 # self.writer.add_scalar('rewards/max reward', self.replay_buffer.get_max_reward(400),
                 #                         self.episode_number / self.num_episodes)
-            self.record.save_all()
+            # self.record.save_all()
             # self.replay_buffer.save_buffer('./data/temp_buffer.pkl')
         else:
             logging.warn("No Phases have been added")
@@ -168,7 +168,7 @@ class SimManagerRLHER(SimManager):
     def add_hindsight(self,transitions):
         goal_position = transitions[-1][0]['obj_2']['pose'][0][0:2]
         end_goal = goal_position.copy()
-        end_goal[1] = end_goal[1] -0.16 
+        end_goal[1] = end_goal[1] - 0.16 
         for transition in transitions:
             transition[0]['goal_pose']['goal_pose'] = end_goal
             transition[2]['goal_position'] = goal_position
@@ -238,7 +238,70 @@ class SimManagerRLHER(SimManager):
                 #                         self.episode_number / self.num_episodes)
                 # self.writer.add_scalar('rewards/max reward', self.replay_buffer.get_max_reward(400),
                 #                         self.episode_number / self.num_episodes)
-            self.record.save_all()
+            # self.record.save_all()
+            # self.replay_buffer.save_buffer('./data/temp_buffer.pkl')
+        else:
+            logging.warn("No Phases have been added")
+            
+    def replay(self, action_list):
+        """
+        Runs through a single episode following the actions in the action list
+        Calls the user defined phases and other classes inherited from the abstract base classes. Detailed diagram
+        is above of the order of operations. Episodes are not added to the replay buffer and agent is not trained
+        """
+        if len(self.phase_manager.phase_dict) > 0:
+            logging.info("RUNNING PHASES: {}".format(
+                self.phase_manager.phase_dict))
+
+            for i in range(self.num_episodes):
+                # self.episode_number += 1
+                self.episode.setup()
+                self.env.setup()
+                self.phase_manager.set_exit_flag(False)
+                self.phase_manager.setup()
+
+                timestep_number = 0
+                while self.phase_manager.get_exit_flag() == False:
+                    self.phase_manager.current_phase.setup()
+                    done = False
+                    logging.info("CURRENT PHASE: {}".format(
+                        self.phase_manager.current_phase.name))
+                    while not done:
+                        
+                        self.phase_manager.current_phase.pre_step()
+                        self.state.set_state()
+                        # S = self.state.get_state()
+                        self.phase_manager.current_phase.execute_action(action_list[timestep_number])
+                        timestep_number += 1
+                        # A = self.action.get_action()
+                        self.env.step()
+                        done = self.phase_manager.current_phase.exit_condition()
+                        self.phase_manager.current_phase.post_step()
+                        self.record.record_timestep()
+                        # R = self.reward.get_reward()
+                        self.state.set_state()
+                        # S2 = self.state.get_state()
+                        # E = self.episode_number
+                        # transition = (S, A, R, S2, E)
+                        # self.replay_buffer.add_timestep(transition)
+                        done = self.phase_manager.current_phase.exit_condition()
+                        # self.phase_manager.current_phase.controller.train_policy()
+                        if self.record_video:
+                            img = p.getCameraImage(640, 480, renderer=p.ER_BULLET_HARDWARE_OPENGL)
+                            img = Image.fromarray(img[2])
+                            img.save('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/vizualization/Evaluation_episode_' + str(self.episode_number) + '_frame_'+ str(timestep_number)+'.png')
+                    self.phase_manager.get_next_phase()
+                self.record.record_episode(True)
+                self.record.save_episode(True)
+                self.episode.post_episode()
+                self.env.reset()
+                # self.writer.add_scalar('rewards/average reward', self.replay_buffer.get_average_reward(
+                #     400), self.episode_number/self.num_episodes)
+                # self.writer.add_scalar('rewards/min reward', self.replay_buffer.get_min_reward(400),
+                #                         self.episode_number / self.num_episodes)
+                # self.writer.add_scalar('rewards/max reward', self.replay_buffer.get_max_reward(400),
+                #                         self.episode_number / self.num_episodes)
+            # self.record.save_all()
             # self.replay_buffer.save_buffer('./data/temp_buffer.pkl')
         else:
             logging.warn("No Phases have been added")

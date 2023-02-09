@@ -16,7 +16,7 @@ class ExpertReward(Reward):
                            (goal_position[1] - current_cube_pose[0][1])**2)
         
         f1_dist = p.getClosestPoints(cube.id, hand.id, 10, -1, 1, -1)
-        f2_dist = p.getClosestPoints(cube.id, hand.id, 10, -1, 3, -1)
+        f2_dist = p.getClosestPoints(cube.id, hand.id, 10, -1, 4, -1)
         # print(f2_dist)
         try:
             self.current_reward["distance_to_goal"] = distance
@@ -42,7 +42,7 @@ class TranslateReward(Reward):
         current_cube_pose = cube.get_curr_pose()
         # Finds distance between current cube position and goal position
         f1_dist = p.getClosestPoints(cube.id, hand.id, 1, -1, 1, -1)
-        f2_dist = p.getClosestPoints(cube.id, hand.id, 1, -1, 3, -1)
+        f2_dist = p.getClosestPoints(cube.id, hand.id, 1, -1, 4, -1)
         
 
         distance = np.sqrt((goal_position[0] - current_cube_pose[0][0])**2 +

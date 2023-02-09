@@ -28,10 +28,11 @@ from mojograsp.simcore.replay_buffer import ReplayBufferDefault, ReplayBufferDF
 from mojograsp.simcore.episode import EpisodeDefault
 import numpy as np
 from mojograsp.simcore.priority_replay_buffer import ReplayBufferPriority
+from mojograsp.simcore.data_combination import data_processor
 # resource paths
-folder_name = 'IKTest'
+folder_name = 'general_backwards_her_sparse'
 current_path = str(pathlib.Path().resolve())
-hand_path = current_path+"/resources/2v2_nosensors/2v2_nosensors_limited.urdf"
+hand_path = current_path+"/resources/2v2_nosensors_keegan/2v2_nosensors/2v2_nosensors_limited.urdf"
 cube_path = current_path + \
     "/resources/object_models/2v2_mod/2v2_mod_cuboid_small.urdf"
 cylinder_path = current_path + \
@@ -40,16 +41,24 @@ data_path = current_path+"/data/" + folder_name +'/'
 points_path = current_path+"/resources/points.csv"
 expert_data_path = current_path+'/resources/episode_all.pkl'
 
-df = pd.read_csv(points_path, index_col=False)
-x = df["x"]
-y = df["y"]
+# expert_angles
+# [-.695, 1.487, 0.695, -1.487]
+
+# expert object pose
+# [0.0, .1067, .05]
+# df = pd.read_csv(points_path, index_col=False)
+# x = df["x"]
+# y = df["y"]
 # x = [0,0.055, 0.055, 0.055, 0, -0.055, -0.055, -0.055]
 # y = [0.055, 0.055, 0, -0.055, -0.055, -0.055, 0, 0.055]
-print(len(x))
+x = [0.0, 0.03, -0.03]
+y = [-0.04, -0.03, -0.03]
+# print(len(x))
 pose_list = [[i,j] for i,j in zip(x,y)]
 # start pybullet
-physics_client = p.connect(p.GUI)
-# physics_client = p.connect(p.DIRECT)
+
+# physics_client = p.connect(p.GUI)
+physics_client = p.connect(p.DIRECT)
 p.setAdditionalSearchPath(pybullet_data.getDataPath())
 p.setGravity(0, 0, -10)
 p.resetDebugVisualizerCamera(cameraDistance=.02, cameraYaw=0, cameraPitch=-89.9999,
@@ -60,29 +69,35 @@ plane_id = p.loadURDF("plane.urdf")
 hand_id = p.loadURDF(hand_path, useFixedBase=True,
                      basePosition=[0.0, 0.0, 0.05])
 cube_id = p.loadURDF(cube_path, basePosition=[0.0, 0.16, .05])
+
+# cube_id = p.loadURDF(cube_path, basePosition=[0.0, 0.1067, .05])
 # cylinder_id = p.loadURDF(cylinder_path, basePosition=[0.0, 0.16, .05])
 # Create TwoFingerGripper Object and set the initial joint positions
 hand = TwoFingerGripper(hand_id, path=hand_path)
 
 p.resetJointState(hand_id, 0, .75)
 p.resetJointState(hand_id, 1, -1.4)
-p.resetJointState(hand_id, 2, -.75)
-p.resetJointState(hand_id, 3, 1.4)
+p.resetJointState(hand_id, 3, -.75)
+p.resetJointState(hand_id, 4, 1.4)
 
-# Create ObjectBase for the cube object
-cube = ObjectWithVelocity(cube_id, path=cube_path)
+# p.resetJointState(hand_id, 0, .695)
+# p.resetJointState(hand_id, 1, -1.487)
+# p.resetJointState(hand_id, 3, -.695)
+# p.resetJointState(hand_id, 4, 1.487)
+
 # cylinder = ObjectWithVelocity(cylinder_id, path=cylinder_path)
 # cube = ObjectVelocityDF(cube_id, path=cube_path)
 
 
 # change visual of gripper
-p.changeVisualShape(hand_id, -1, rgbaColor=[0.3, 0.3, 0.3, 1])
-p.changeVisualShape(hand_id, 0, rgbaColor=[1, 0.5, 0, 1])
-p.changeVisualShape(hand_id, 1, rgbaColor=[0.3, 0.3, 0.3, 1])
-p.changeVisualShape(hand_id, 2, rgbaColor=[1, 0.5, 0, 1])
+p.changeVisualShape(hand_id, 0, rgbaColor=[0.3, 0.3, 0.3, 1])
+p.changeVisualShape(hand_id, 1, rgbaColor=[1, 0.5, 0, 1])
 p.changeVisualShape(hand_id, 3, rgbaColor=[0.3, 0.3, 0.3, 1])
+p.changeVisualShape(hand_id, 4, rgbaColor=[1, 0.5, 0, 1])
+p.changeVisualShape(hand_id, -1, rgbaColor=[0.3, 0.3, 0.3, 1])
 # p.setTimeStep(1/2400)
 
+cube = ObjectWithVelocity(cube_id, path=cube_path)
 
 goal_poses = GoalHolder(pose_list)
 # state and reward
@@ -91,13 +106,13 @@ state = StateRL(objects=[hand, cube, goal_poses])
 # state = StateRL(objects=[hand, cylinder, goal_poses])
 action = rl_action.ExpertAction()
 reward = rl_reward.ExpertReward()
-# arg_dict = {'state_dim': 8, 'action_dim': 4, 'max_action': 1.57, 'n': 5, 'discount': 0.995, 'tau': 0.0005,
+arg_dict = {'state_dim': 8, 'action_dim': 4, 'max_action': 1.57, 'n': 5, 'discount': 0.995, 'tau': 0.0005,
+            'batch_size': 100, 'expert_sampling_proportion': 0.5}
+# arg_dict = {'state_dim': 8, 'action_dim': 4, 'max_action': 0.005, 'n': 5, 'discount': 0.995, 'tau': 0.0005,
 #             'batch_size': 100, 'expert_sampling_proportion': 0.7}
-arg_dict = {'state_dim': 8, 'action_dim': 4, 'max_action': 0.001, 'n': 5, 'discount': 0.995, 'tau': 0.0005,
-            'batch_size': 100, 'expert_sampling_proportion': 0.7}
 
 # replay buffer
-replay_buffer = ReplayBufferPriority(buffer_size=5408000)
+replay_buffer = ReplayBufferPriority(buffer_size=4080000)
 # replay_buffer.preload_buffer_PKL(expert_data_path)
 # replay_buffer = ReplayBufferDF(state=state, action=action, reward=reward)
 
@@ -113,7 +128,7 @@ manipulation = manipulation_phase_rl.ManipulationRL(
 #     hand, cylinder, x, y, state, action, reward, replay_buffer=replay_buffer, args=arg_dict)
 # data recording
 record_data = RecordDataRLPKL(
-    data_path=data_path, state=state, action=action, reward=reward, save_all=True, controller=manipulation.controller)
+    data_path=data_path, state=state, action=action, reward=reward, save_all=False, controller=manipulation.controller)
 
 # sim manager
 manager = SimManagerRLHER(num_episodes=len(pose_list), env=env, episode=EpisodeDefault(), record_data=record_data, replay_buffer=replay_buffer, state=state, action=action, reward=reward, TensorboardName='test1')
@@ -128,22 +143,16 @@ manager.add_phase("manipulation", manipulation, start=True)
 #print(p.getClosestPoints(cube.id, hand.id, 1, -1, 1, -1))
 # Run the sim
 done_training = False
-training_length = 8
-while not done_training:
-    for k in range(training_length):
-        manager.run()
-        # print('TRAINING NOW')
-        # manager.phase_manager.phase_dict["manipulation"].controller.train_policy()
-        manager.phase_manager.phase_dict['manipulation'].reset()
-    flag = True
-    while flag: 
-        a = 0#input('input epochs to train for (0 for end)')
-        try:
-            training_length = int(a)
-            flag = False
-            if training_length == 0:
-                done_training = True
-        except ValueError:
-            print('input a valid number')
-
+training_length = 2000
+for k in range(training_length):
+    manager.run()
+    # print('TRAINING NOW')
+    # manager.phase_manager.phase_dict["manipulation"].controller.train_policy()
+    manager.phase_manager.phase_dict['manipulation'].reset()
+        
+    
+print('training done, creating episode_all')
+d = data_processor(data_path)
+d.load_data()
+d.save_all()
 # manager.stall()

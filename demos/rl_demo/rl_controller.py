@@ -12,7 +12,7 @@ import pybullet as p
 import pandas as pd
 from math import radians
 # import Markers
-from mojograsp.simcore.DDPGfD import DDPGfD, DDPGfD_priority
+from mojograsp.simcore.DDPGfD import DDPGfD_priority
 from mojograsp.simcore.replay_buffer import ReplayBufferDefault, ReplayBufferDF
 import torch
 from mojograsp.simcore.priority_replay_buffer import ReplayBufferPriority
@@ -211,15 +211,21 @@ class RLController(ExpertController):
         super().__init__(gripper, cube, data_file)
         if type(replay_buffer) == ReplayBufferDF or type(replay_buffer) == ReplayBufferPriority:
             self.policy = DDPGfD_priority(args, tbname)
-        else:
-            self.policy = DDPGfD(args, tbname)
         self.replay_buffer = replay_buffer
-        self.max_change = 0.1
-        self.cooling_rate = 0.99
-        self.rand_size = 0.1
-        self.rand_portion = np.array([0,0,0,0])
-        self.final_reward = 0
-        self.epsilon = 0.7
+        try:
+            self.max_change = 0.1
+            self.cooling_rate = 0.995
+            self.rand_portion = np.array([0,0,0,0])
+            self.final_reward = 0
+            self.epsilon = 0.7
+        except:
+            print('no config given, using baseline parameters')
+            self.max_change = 0.1
+            self.cooling_rate = args['edecay']
+            # self.rand_size = 0.1
+            self.rand_portion = np.array([0,0,0,0])
+            self.final_reward = 0
+            self.epsilon = args['epsilon']
         self.rand_episode = np.random.rand() < self.epsilon
 
 
@@ -232,8 +238,11 @@ class RLController(ExpertController):
         # object_velocity = self.cube.get_curr_velocity()
         # f1 = p.getClosestPoints(self.cube.id, self.gripper.id, 10, -1, 1, -1)[0]
         # f2 = p.getClosestPoints(self.cube.id, self.gripper.id, 10, -1, 3, -1)[0]
-        finger_pos1 = p.getLinkState(self.gripper.id, 1)
-        finger_pos2 = p.getLinkState(self.gripper.id, 3)
+        # finger_pos1 = p.getLinkState(self.gripper.id, 1)
+        # finger_pos2 = p.getLinkState(self.gripper.id, 3)
+        # For new Configuration
+        finger_pos1 = p.getLinkState(self.gripper.id, 2)
+        finger_pos2 = p.getLinkState(self.gripper.id, 5)
         # f1_loc = f1[5]
         # f2_loc = f1[5]
         # f1_dist = f1[8]
@@ -244,10 +253,54 @@ class RLController(ExpertController):
         state = self.current_cube_pose[0][0:2] + list(finger_pos1[0])[0:2] + list(finger_pos2[0])[0:2] + self.goal_position[0:2]
         
         if not self.rand_episode:
-            action = self.policy.select_action(state)
-            action = (action*self.max_change + finger_angles).tolist()
+            actor_portion = self.policy.select_action(state)
+            
+            action = ((actor_portion+(np.random.rand(4)-0.5)/2 * self.epsilon)*self.max_change + finger_angles).tolist()
+        else:
+            actor_portion = self.rand_portion + (np.random.rand(4)-0.5)/2
+            action = (self.max_change*(actor_portion) + finger_angles).tolist()
+        
+        return action, actor_portion
+    
+    def get_next_IK_action(self):
+        # get current cube position
+        self.get_current_cube_position()
+
+        finger_angles = self.gripper.get_joint_angles()
+        # object_velocity = self.cube.get_curr_velocity()
+        # f1 = p.getClosestPoints(self.cube.id, self.gripper.id, 10, -1, 1, -1)[0]
+        # f2 = p.getClosestPoints(self.cube.id, self.gripper.id, 10, -1, 3, -1)[0]
+        # finger_pos1 = p.getLinkState(self.gripper.id, 1)
+        # finger_pos2 = p.getLinkState(self.gripper.id, 3)
+        # For new Configuration
+        finger_pos1 = p.getLinkState(self.gripper.id, 2)
+        finger_pos2 = p.getLinkState(self.gripper.id, 5)
+        # f1_loc = f1[5]
+        # f2_loc = f1[5]
+        # f1_dist = f1[8]
+        # f2_dist = f2[8]
+        # state = self.current_cube_pose[0] + self.current_cube_pose[1] + finger_angles + object_velocity[0] + [f1_dist, f2_dist] + list(f1_loc) + list(f2_loc)# + self.goal_position
+        # state = self.current_cube_pose[0][0:2] + finger_angles + object_velocity[0][0:2] + [f1_dist, f2_dist] + list(f1_loc)[0:2] + list(f2_loc)[0:2] + self.goal_position[0:2]
+        
+        state = self.current_cube_pose[0][0:2] + list(finger_pos1[0])[0:2] + list(finger_pos2[0])[0:2] + self.goal_position[0:2]
+        
+        if not self.rand_episode:           
+            finger_deltas = self.policy.select_action(state)
+            # print(finger_deltas)
+            new_finger_poses = [finger_pos1[0][0] + finger_deltas[0],finger_pos1[0][1] + finger_deltas[1],finger_pos2[0][0] + finger_deltas[2],finger_pos2[0][1] + finger_deltas[3]]
+            # action = (action*self.max_change + finger_angles).tolist()
+            # print(new_finger_poses)
+            # p.calculateInverseKinematic
+            finger_1_angs = p.calculateInverseKinematics(self.gripper.id,2,[new_finger_poses[0], new_finger_poses[1], finger_pos1[0][2]])
+            finger_2_angs = p.calculateInverseKinematics(self.gripper.id,5,[new_finger_poses[2], new_finger_poses[3], finger_pos2[0][2]])
+            # print(np.array(finger_1_angs) - np.array(finger_angles), np.array(finger_2_angs) - np.array(finger_angles))
+            action = [finger_1_angs[0],finger_1_angs[1],finger_2_angs[2],finger_2_angs[3]]
+            # print('current finger poses', finger_pos1[0][0:2], finger_pos2[0][0:2])
+            # print('desired new finger poses', new_finger_poses)
+            # print('ik angle change', np.array(action) - np.array(finger_angles))
         else:
             action = (self.rand_portion + self.max_change*(np.random.rand(4)-0.5)/2 + finger_angles).tolist()
+            # print('random angle change',np.array(action) - np.array(finger_angles))
         
         return action
     
@@ -258,8 +311,11 @@ class RLController(ExpertController):
         # object_velocity = self.cube.get_curr_velocity()
         # f1 = p.getClosestPoints(self.cube.id, self.gripper.id, 10, -1, 1, -1)[0]
         # f2 = p.getClosestPoints(self.cube.id, self.gripper.id, 10, -1, 1, -1)[0]
-        finger_pos1 = p.getLinkState(self.gripper.id, 1)
-        finger_pos2 = p.getLinkState(self.gripper.id, 3)
+        # finger_pos1 = p.getLinkState(self.gripper.id, 1)
+        # finger_pos2 = p.getLinkState(self.gripper.id, 3)
+        # For new Configuration
+        finger_pos1 = p.getLinkState(self.gripper.id, 2)
+        finger_pos2 = p.getLinkState(self.gripper.id, 5)
         # f1_loc = f1[5]
         # f2_loc = f1[5]
         
@@ -326,7 +382,8 @@ class RLController(ExpertController):
         # self.rand_size = self.rand_size*self.cooling_rate
         # self.rand_portion = self.rand_size * (np.random.rand(4) - 0.5)
         
-        self.rand_portion = self.rand_size * (np.random.rand(4) - 0.5)
+        self.rand_portion = 0.5 * (np.random.rand(4) - 0.5)
+        # print(self.rand_portion)
         self.epsilon = self.epsilon * self.cooling_rate
         self.rand_episode = np.random.rand() < self.epsilon
         if self.rand_episode:
@@ -338,125 +395,3 @@ class RLController(ExpertController):
         self.update_random_size()
         return super().set_goal_position(position)
     
-    
-'''
-class RLControllerTranslate(ExpertController):
-    def __init__(self, gripper: TwoFingerGripper, cube: ObjectBase, data_file: str = None, replay_buffer: ReplayBufferDefault = None, args: dict = None, TensorboardName=None):
-        super().__init__(gripper, cube, data_file)
-        if type(replay_buffer) == ReplayBufferDF:
-            self.policy = DDPGfD_priority(args, TensorboardName)
-        else:
-            self.policy = DDPGTranslate(args, TensorboardName)
-        self.replay_buffer = replay_buffer
-        self.max_change = 0.1
-        self.cooling_rate = 0.993
-        self.rand_size = 0.1
-        self.rand_portion = np.array([0,0,0,0])
-        self.final_reward = 0
-        self.epsilon = 0.7
-        self.rand_episode = np.random.rand() < self.epsilon
-
-    def get_next_action(self):
-
-        # get current cube position
-        self.get_current_cube_position()
-
-        finger_angles = self.gripper.get_joint_angles()
-        object_velocity = self.cube.get_curr_velocity()
-        f1_dist = p.getClosestPoints(self.cube.id, self.gripper.id, 1, -1, 1, -1)[0][8]
-        f2_dist = p.getClosestPoints(self.cube.id, self.gripper.id, 1, -1, 3, -1)[0][8]
-        state = self.current_cube_pose[0] + self.current_cube_pose[1] + finger_angles + object_velocity[0] + [f1_dist, f2_dist]  # + self.goal_position
-
-        
-        if not self.rand_episode:
-            action = self.policy.select_action(state)
-            action = (action*self.max_change + finger_angles).tolist()
-        else:
-            action = (self.rand_portion + self.max_change*(np.random.rand(4)-0.5)/2 + finger_angles).tolist()
-        
-        return action
-    
-    def get_network_outputs(self):
-        self.get_current_cube_position()
-        # get next cube position
-        finger_angles = self.gripper.get_joint_angles()
-        object_velocity = self.cube.get_curr_velocity()
-        f1_dist = p.getClosestPoints(self.cube.id, self.gripper.id, 1, -1, 1, -1)[0][8]
-        f2_dist = p.getClosestPoints(self.cube.id, self.gripper.id, 1, -1, 3, -1)[0][8]
-        state = self.current_cube_pose[0] + self.current_cube_pose[1] + finger_angles + object_velocity[0] + [f1_dist, f2_dist] # + self.goal_position
-
-        action = self.policy.select_action(state)
-        
-        critic_response = self.policy.grade_action(state, action)
-        
-        save_dict = {'actor_output' : action.tolist(), 'critic_output' : critic_response[0]}
-        
-        return save_dict
-
-    def train_policy(self):
-        # can flesh this out/try different training methods
-        if type(self.replay_buffer) == ReplayBufferDF:
-            if not self.replay_buffer.df_up_to_date:
-                self.replay_buffer.make_DF()
-        self.policy.train(None, self.replay_buffer)
-        
-    def exit_condition(self, remaining_tstep=0):
-        # checks if we are getting further from goal or closer
-        if self.prev_distance < self.check_goal():
-            self.distance_count += 1
-        else:
-            self.distance_count = 0
-
-        # Exits if we lost contact for 5 steps, we are within .002 of our goal, or if our distance has been getting worse for 20 steps
-        if self.check_goal() < .002:
-            self.distance_count = 0
-            self.final_reward = 1
-            print('exiting in rl controller because we reached the goal')
-            return True
-        if self.distance_count > 20:
-            vel = np.array(self.cube.get_curr_velocity()[0])
-            pos = np.array(self.cube.get_curr_pose()[0])
-            final_pos = pos + vel * remaining_tstep
-            self.final_reward = -np.sqrt((self.goal_position[0] - final_pos[0])**2 +
-                                       (self.goal_position[1] - final_pos[1])**2)
-            print('exiting in rl controller because distance count is > 20', self.final_reward)
-            self.distance_count = 0
-            return True
-        # sets next previous distance to current distance
-        self.prev_distance = self.check_goal()
-        self.final_reward = 0
-        return False
-    
-    
-    def update_random_size(self):
-        # self.rand_size = self.rand_size*self.cooling_rate
-        self.rand_portion = self.rand_size * (np.random.rand(4) - 0.5)
-        self.epsilon = self.epsilon * self.cooling_rate
-        self.rand_episode = np.random.rand() < self.epsilon
-        if self.rand_episode:
-            print('NEXT EPISODE WILL BE RANDOM')
-        else:
-            print('NEXT EPISODE WILL BE POLICY BASED')
-
-    def set_goal_position(self, position: List[float]):
-        self.update_random_size()
-        return super().set_goal_position(position)
-    
-
-class RLMultiControllerTranslate(RLControllerTranslate):
-    def __init__(self, gripper: TwoFingerGripper, cube: ObjectBase, data_file: str = None, replay_buffer: ReplayBufferDefault = None, args: dict = None):
-        super().__init__(gripper, cube, data_file)
-        if type(replay_buffer) == ReplayBufferDF:
-            self.policy = DDPGfD_priority(args)
-        else:
-            self.policy = DDPGMultiTranslate(args)
-        self.replay_buffer = replay_buffer
-        self.max_change = 0.1
-        self.cooling_rate = 0.999
-        self.rand_size = 0.1
-        self.rand_portion = np.array([0,0,0,0])
-        self.final_reward = 0
-        self.epsilon = 0.7
-        self.rand_episode = np.random.rand() < self.epsilon
-        self.dir_num = 0
-'''

@@ -38,6 +38,7 @@ def label_images(image_path):
         tnum = int(parts[4].split('.')[0]) - 1
         # print(tnum)
         # print(enum)
+        # print(data_list.keys())
         relevant_dict = data_list[-enum]['timestep_list'][tnum]
         # print(relevant_dict['reward'])
         # ADD IN CRITIC SO WE CAN SEE WHERE IT THINKS THE STATE IS GOOD

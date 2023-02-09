@@ -1,0 +1,279 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Sun Aug 28 14:21:38 2022
+
+@author: Nigel Swenson
+"""
+
+import PySimpleGUI as sg
+import os
+import pickle as pkl
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+import matplotlib
+import numpy as np
+import json
+from PIL import ImageGrab
+from scipy.stats import kde
+import csv
+import torch
+import numpy as np
+
+import argparse
+from torch.utils.data import TensorDataset, DataLoader
+
+import numpy as np
+import matplotlib.pyplot as plt
+import torch
+import pickle as pkl
+import time
+import argparse
+# from itertools import islice
+import os
+from sklearn.ensemble import RandomForestClassifier
+from sklearn import metrics
+import datetime
+from copy import deepcopy
+import threading
+from mojograsp.simcore.run_from_file import run_pybullet
+import pathlib
+'''
+    Data Plotter
+    
+    This is based on the Demo_PNG_Viewer by PySimpleGUI
+    
+'''
+
+def save_element_as_file(element, filename):
+    """
+    Saves any element as an image file.  Element needs to have an underlyiong Widget available (almost if not all of them do)
+    :param element: The element to save
+    :param filename: The filename to save to. The extension of the filename determines the format (jpg, png, gif, ?)
+    """
+    widget = element.Widget
+    box = (widget.winfo_rootx(), widget.winfo_rooty(), widget.winfo_rootx() + widget.winfo_width(), widget.winfo_rooty() + widget.winfo_height())
+    grab = ImageGrab.grab(bbox=box)
+    grab.save(filename)
+
+class RNNGui():
+    def __init__(self):
+        self.toggle_btn_off = b'iVBORw0KGgoAAAANSUhEUgAAACgAAAAoCAYAAACM/rhtAAAABmJLR0QA/wD/AP+gvaeTAAAED0lEQVRYCe1WTWwbRRR+M/vnv9hO7BjHpElMKSlpqBp6gRNHxAFVcKM3qgohQSqoqhQ45YAILUUVDRxAor2VAweohMSBG5ciodJUSVqa/iikaePEP4nj2Ovdnd1l3qqJksZGXscVPaylt7Oe/d6bb9/svO8BeD8vA14GvAx4GXiiM0DqsXv3xBcJU5IO+RXpLQvs5yzTijBmhurh3cyLorBGBVokQG9qVe0HgwiXLowdy9aKsY3g8PA5xYiQEUrsk93JTtjd1x3siIZBkSWQudUK4nZO1w3QuOWXV+HuP/fL85klAJuMCUX7zPj4MW1zvC0Ej4yMp/w++K2rM9b70sHBYCjo34x9bPelsgp/XJksZ7KFuwZjr3732YcL64ttEDw6cq5bVuCvgy/sje7rT0sI8PtkSHSEIRIKgCQKOAUGM6G4VoGlwiqoVd2Za9Vl8u87bGJqpqBqZOj86eEHGNch+M7otwHJNq4NDexJD+59RiCEQG8qzslFgN8ibpvZNsBifgXmFvJg459tiOYmOElzYvr2bbmkD509e1ylGEZk1Y+Ssfan18n1p7vgqVh9cuiDxJPxKPT3dfGXcN4Tp3dsg/27hUQs0qMGpRMYjLz38dcxS7Dm3nztlUAb38p0d4JnLozPGrbFfBFm79c8hA3H2AxcXSvDz7/+XtZE1kMN23hjV7LTRnKBh9/cZnAj94mOCOD32gi2EUw4FIRUMm6LGhyiik86nO5NBdGRpxYH14bbjYfJteN/OKR7UiFZVg5T27QHYu0RBxoONV9W8KQ7QVp0iXdE8fANUGZa0QAvfhhXlkQcmjJZbt631oIBnwKmacYoEJvwiuFgWncWnXAtuVBBEAoVVXWCaQZzxmYuut68b631KmoVBEHMUUrJjQLXRAQVSxUcmrKVHfjWWjC3XOT1FW5QrWpc5IJdQhDKVzOigEqS5dKHMVplnNOqrmsXqUSkn+YzWaHE9RW1FeXL7SKZXBFUrXW6jIV6YTEvMAUu0W/G3kcxPXP5ylQZs4fa6marcWvvZfJu36kuHjlc/nMSuXz+/ejxgqPFpuQ/xVude9eu39Jxu27OLvBGoMjrUN04zrNMbgVmOBZ96iPdPZmYntH5Ls76KuxL9NyoLA/brav7n382emDfHqeooXyhQmARVhSnAwNNMx5bu3V1+habun5nWdXhwJZ2C5mirTesyUR738sv7g88UQ0rEkTDlp+1wwe8Pf0klegUenYlgyg7bby75jUTITs2rhCAXXQ2vwxz84vlB0tZ0wL4NEcLX/04OrrltG1s8aOrHhk51SaK0us+n/K2xexBxljcsm1n6x/Fuv1PCWGiKOaoQCY1Vb9gWPov50+fdEqd21ge3suAlwEvA14G/ucM/AuppqNllLGPKwAAAABJRU5ErkJggg=='
+        self.toggle_btn_on = b'iVBORw0KGgoAAAANSUhEUgAAACgAAAAoCAYAAACM/rhtAAAABmJLR0QA/wD/AP+gvaeTAAAD+UlEQVRYCe1XzW8bVRCffbvrtbP+2NhOD7GzLm1VoZaPhvwDnKBUKlVyqAQ3/gAkDlWgPeVQEUCtEOIP4AaHSI0CqBWCQyXOdQuRaEFOk3g3IMWO46+tvZ+PeZs6apq4ipON1MNafrvreTPzfvub92bGAOEnZCBkIGQgZOClZoDrh25y5pdjruleEiX+A+rCaQo05bpuvJ/+IHJCSJtwpAHA/e269g8W5RbuzF6o7OVjF8D3Pr4tSSkyjcqfptPDMDKSleW4DKIggIAD5Yf+Oo4DNg6jbUBlvWLUNutAwZu1GnDjzrcXzGcX2AHw/emFUV6Sfk0pqcKpEydkKSo9q3tkz91uF5aWlo1Gs/mYc+i7tz4//19vsW2AU9O381TiioVCQcnlRsWeQhD3bJyH1/MiFLICyBHiuzQsD1arDvypW7DR9nzZmq47q2W95prm+I9fXfqXCX2AF2d+GhI98Y8xVX0lnxvl2UQQg0csb78ag3NjEeD8lXZ7pRTgftmCu4864OGzrq+5ZU0rCa3m+NzXlzvoAoB3+M+SyWQuaHBTEzKMq/3BMbgM+FuFCDBd9kK5XI5PJBKqLSev+POTV29lKB8rT0yMD0WjUSYLZLxzNgZvIHODOHuATP72Vwc6nQ4Uiw8MUeBU4nHS5HA6TYMEl02wPRcZBJuv+ya+UCZOIBaLwfCwQi1Mc4QXhA+PjWRkXyOgC1uIhW5Qd8yG2TK7kSweLcRGKKVnMNExWWBDTQsH9qVmtmzjiThQDs4Qz/OUSGTwcLwIQTLW58i+yOjpXDLqn1tgmDzXzRCk9eDenjo9yhvBmlizrB3V5dDrNTuY0A7opdndStqmaQLPC1WCGfShYRgHdLe32UrV3ntiH9LliuNrsToNlD4kruN8v75eafnSgC6Luo2+B3fGKskilj5muV6pNhk2Qqg5v7lZ51nBZhNBjGrbxfI1+La5t2JCzfD8RF1HTBGJXyDzs1MblONulEqPDVYXgwDIfNx91IUVbAbY837GMur+/k/XZ75UWmJ77ou5mfM1/0x7vP1ls9XQdF2z9uNsPzosXPNFA5m0/EX72TBSiqsWzN8z/GZB08pWq9VeEZ+0bjKb7RTD2i1P4u6r+bwypo5tZUumEcDAmuC3W8ezIqSGfE6g/sTd1W5p5bKjaWubrmWd29Fu9TD0GlYlmTx+8tTJoZeqYe2BZC1/JEU+wQR5TVEUPptJy3Fs+Vkzgf8lemqHumP1AnYoMZSwsVEz6o26i/G9Lgitb+ZmLu/YZtshfn5FZDPBCcJFQRQ+8ih9DctOFvdLIKHH6uUQnq9yhFu0bec7znZ+xpAGmuqef5/wd8hAyEDIQMjAETHwP7nQl2WnYk4yAAAAAElFTkSuQmCC'
+        self.data_dict = {'train': {'state':[],'label':[]}, 'validation':{'state':[],'label':[]}, 'test': {'state':[],'label':[]}}
+        # define menu layout
+        self.menu = [['File', ['Open Folder', 'Exit']], ['Help', ['About', ]]]
+        self.args = {}
+        self.shuffle_type = 'Episode'
+        self.save_path = '/'
+        self.expert_path = '/'
+        self.built = False
+        self.train_dataset, self.validation_dataset = None, None
+        
+#        plot_buttons = [[sg.Button('Object Path', size=(8, 2)), sg.Button('Finger Angles', size=(8, 2))],
+#                        [sg.Button('Actor Output', size=(8, 2)), sg.Button('Critic Output', size=(8, 2)), sg.Button('Rewards', size=(8, 2))],
+#                        [sg.Button('Explored Region', size=(8,2))],
+#                        [sg.Text("Keep previous graph", size=(10, 3), key='-toggletext-'), sg.Button(image_data=toggle_btn_off, key='-TOGGLE--', button_color=(sg.theme_background_color(), sg.theme_background_color()), border_width=0, metadata=False)]]
+        # define layout, show and read the window
+        
+        data_layout =  [ [sg.Text('Model Type'), sg.OptionMenu(values=('DDPG', 'DDPGFD','DDPG+HER', 'DDPGFD+HER'),  k='-model', default_value='DDPG')],
+                         [sg.Text('Path to Expert Data if using FD')],
+                         [sg.Button("Browse",key='-browse-expert',button_color='DarkBlue'),sg.Text("/", key='-expert-path')],
+                         [sg.Text('Path to Save Data')],
+                         [sg.Button("Browse",key='-browse-save',button_color='DarkBlue'),sg.Text("/", key='-save-path')],
+                         [sg.Text('Object'), sg.OptionMenu(values=('Cube', 'Cylinder'), k='-object', default_value='Cube')],
+                         [sg.Text('Hand'), sg.OptionMenu(values=('2v2', 'Other - add later'), k='-hand', default_value='2v2')],
+                         [sg.Text("Task"), sg.OptionMenu(values=('asterisk','random','forward','backward','left','right'), k='-task', default_value='asterisk')],
+                         [sg.Text('Replay Buffer Sampling'), sg.OptionMenu(values=('priority','random','random+expert'), k='-sampling', default_value='random')]]
+        
+        
+        model_layout = [ [sg.Text('Num Epochs'), sg.Input(1000, key='-epochs'), sg.Text('Batch Size'), sg.Input(100, key='-batch-size')],
+                         [sg.Text('Learning Rate'), sg.Input(0.0001,key='-learning'), sg.Text('Discount Factor'), sg.Input(0.995, key='-df')],
+                         [sg.Text('Starting Epsilon'), sg.Input(0.7,key='-epsilon'), sg.Text('Epsilon Decay Rate'), sg.Input(0.995, key='-edecay')],
+                         [sg.Text('Evaluation Period'), sg.Input(100,key='-eval')]]
+        
+        plotting_layout = [[sg.Text('Model Title')],
+                       [sg.Input(key='-Title-')],
+                       [sg.Text("State")],
+                       [sg.Checkbox('Finger Tip Position', default=True, k='-ftp')],
+                       [sg.Checkbox('Finger Base Position', default=False, k='-fbp')],
+                       [sg.Checkbox('Joint Angle', default=False, k='-ja')],
+                       [sg.Checkbox('Object Position', default=True, k='-op')],
+                       [sg.Checkbox('Finger Object Distance', default=False, k='-fod')],
+                       [sg.Checkbox('Goal Position',default=True, k='-gp')],
+                       [sg.Text("Reward"), sg.OptionMenu(values=('Sparse','Distance','Distance + Finger'), k='-reward',default_value='Distance + Finger')],
+                       [sg.Text("Action"), sg.OptionMenu(values=('Joint Velocity','Finger Tip Position'), k='-action',default_value='Joint Velocity')],
+                       [sg.Button('Begin Training', key='-train', bind_return_key=True)],
+                       [sg.Text('Work progress'), sg.ProgressBar(100, size=(20, 20), orientation='h', key='-PROG-')]]
+
+        layout = [[sg.TabGroup([[sg.Tab('Task and General parameters', data_layout, key='-mykey-'),
+                                sg.Tab('Hyperparameters', model_layout),
+                                sg.Tab('State, Action, Reward', plotting_layout)]], key='-group1-', tab_location='top', selected_title_color='purple')]]
+            
+        self.data_type = None
+        self.window = sg.Window('RNN Gui', layout, return_keyboard_events=True, use_default_focus=False, finalize=True)
+
+    def build_args(self, values):
+        self.built = False
+        print('building RL arglist')
+        self.args = {'epochs': values['-epochs'],
+                     'batch_size': values['-batch-size'],
+                     'model': values['-model'],
+                     'learning_rate': values['-learning'],
+                     'discount': values['-df'],
+                     'epsilon': values['-epsilon'],
+                     'edecay': values['-edecay'],
+                     'object': values['-object'],
+                     'hand': values['-hand'],
+                     'task': values['-task'],
+                     'evaluate': values['-eval'],
+                     'sampling': values['-sampling'],
+                     'reward': values['-reward'],
+                     'action': values['-action']}
+        state_len = 0
+        state_mins = []
+        state_maxes = []
+        if values['-ftp']:
+            state_mins.extend([0.2, 0.35, 0.2, 0.35])
+            state_maxes.extend([-0.2, -0.05, -0.2, -0.05])
+            state_len += 4
+        if values['-fbp']:
+            state_mins.extend([0.2, 0.35, 0.2, 0.35])
+            state_maxes.extend([-0.2, -0.05, -0.2, -0.05])
+            state_len += 4
+        if values['-op']:
+            state_mins.extend([0.2, 0.35])
+            state_maxes.extend([-0.2, -0.05])
+            state_len += 2
+        if values['-ja']:
+            state_mins.extend([np.pi/2, 0, np.pi/2, np.pi])
+            state_maxes.extend([-np.pi/2, -np.pi, -np.pi/2])
+            state_len += 4
+        if values['-fod']:
+            state_mins.extend([0.2, 0.2])
+            state_maxes.extend([-0.001, -0.001])
+            state_len += 2
+        if values['-gp']:
+            state_mins.extend([0.055, 0.215])
+            state_maxes.extend([-0.055, 0.105])
+            state_len += 2
+        if state_len == 0:
+            print('No selected state space')
+            return False
+        if (self.args['task'] == 'asterisk') or (self.args['task'] == 'random'):
+            if not values['-gp']:
+                print('Goal position needed for multigoal tasks')
+                return False
+        self.args['state_dim'] = state_len
+        self.args['state_mins'] = state_mins
+        self.args['state_maxes'] = state_maxes
+
+        if 'FD' in self.args['model']:
+            exists = os.path.isfile(self.expert_path + 'episode_all.pkl')
+            if not exists:
+                print('Selected FD model but no expert data loaded')
+                return False
+            else:
+                self.args['edata'] = values['-browse-expert'] + 'episode_all.pkl'
+        if os.path.isdir(self.save_path) and self.save_path != '/':
+            self.args['save_path'] = self.save_path
+        else:
+            print('save path is not a valid directory')
+            return False
+        test_path = pathlib.Path(__file__).parent.resolve()
+        overall_path = test_path.parent.resolve()
+        resource_path = overall_path.joinpath('demos/rl_demo/resources')
+        if values['-hand'] == '2v2':
+            self.args['hand_path'] = str(resource_path.joinpath('2v2_nosensors_keegan/2v2_nosensors/2v2_nosensors_limited.urdf'))
+        if values['-object'] == 'Cube':
+            self.args['object_path'] = str(resource_path.joinpath('/object_models/2v2_mod/2v2_mod_cuboid_small.urdf'))
+        elif values['-object'] == 'Cylinder':
+            self.args['object_path'] = str(resource_path.joinpath('/resources/object_models/2v2_mod/2v2_mod_cylinder_small_alt.urdf'))
+        if values['-action'] == 'Joint Velocity':
+            self.args['max_action'] = 1.57
+        elif values['-action'] == 'Finger Tip Position':
+            self.args['max_action'] = 0.01
+        
+        
+        self.built = True
+        return True
+        
+    def train(self):
+        run_pybullet(self.args['save_path'] + '/experiment_config.pkl')
+        print('model finished, saving now')
+
+    def log_params(self):
+        if self.built:
+            print('saving configuration')
+            with open(self.args['save_path'] + '/experiment_config.pkl', 'wb') as conf_file:
+                pkl.dump(self.args,conf_file)
+        else:
+            print('config not built, parameters not saved')
+
+    def run_gui(self):
+        while True:
+
+            event, values = self.window.read()
+            print(values.keys())
+            # --------------------- Button & Keyboard ---------------------
+            if event == sg.WIN_CLOSED:
+                break
+            elif event == 'shuffle-type':
+                self.shuffle_type = values['shuffle-type']
+            elif event == '-load-model':
+                newfolder = sg.popup_get_file('Select Model File', no_window=True)
+                if newfolder is None:
+                    continue
+                if newfolder.lower().endswith('.pt'):
+                    self.model_path = newfolder
+
+            elif event == 'Exit':
+                break
+            # ----------------- Menu choices -----------------
+            if event == '-browse-expert':
+                newfolder = sg.popup_get_folder('Select Folder Containing Expert Data', no_window=True)
+                if newfolder is None:
+                    continue
+    
+                folder = newfolder
+                print(type(folder))
+                self.expert_path = folder
+    
+                self.window.refresh()
+            
+            elif event == '-browse-save':
+                newfolder = sg.popup_get_folder('Select Follder To Save Data In', no_window=True)
+                if newfolder is None:
+                    continue
+    
+                folder = newfolder
+                print(type(folder))
+                self.save_path = folder
+    
+                self.window.refresh()
+                
+            elif event == '-train':
+                ready = self.build_args(values)
+                if ready:
+                    self.log_params()
+                    thread = threading.Thread(target=self.train, daemon=True)
+                    thread.start()
+                else:
+                    print('Parameters incorrect, cant start training')
+    
+            elif event == 'About':
+                sg.popup('Why you click me?',
+                         'Go harrass Nigel with questions. swensoni@oregonstate.edu')
+            self.window['-save-path'].update(self.save_path)
+            self.window['-expert-path'].update(self.expert_path)
+        self.window.close()
+        
+
+def main():
+
+
+    backend = RNNGui()
+    backend.run_gui()
+
+
+if __name__ == '__main__':
+    main()
