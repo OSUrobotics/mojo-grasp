@@ -48,7 +48,8 @@ class Actor(nn.Module):
         a = F.relu(self.l1(state))
         a = F.relu(self.l2(a))
         # return self.max_action * torch.sigmoid(self.l3(a))
-        return self.max_action * torch.tanh(self.l3(a))
+        # return self.max_action * torch.tanh(self.l3(a))
+        return torch.tanh(self.l3(a))
         # return self.l3(a)
 
 # OLD PARAMS WERE 400-300, TESTING 100-50
@@ -246,10 +247,10 @@ class DDPGfD_priority():
                     action.append(timestep[1]['actor_output'])
                     # print(temp_state.type)
                     # print(timestep[1]['actor_output'].type)
-                    # tstep_reward = max(-timestep[2]['distance_to_goal'] \
-                    #     - max(timestep[2]['f1_dist'],timestep[2]['f2_dist'])/5,-1)
+                    tstep_reward = max(-timestep[2]['distance_to_goal'] \
+                        - max(timestep[2]['f1_dist'],timestep[2]['f2_dist'])/5,-1)
                     # reward.append(-timestep_series.reward['distance_to_goal'])
-                    tstep_reward = timestep[2]['distance_to_goal'] < 0.002
+                    # tstep_reward = timestep[2]['distance_to_goal'] < 0.002
     
                     reward.append(tstep_reward)
                     t_next_state = timestep[3]
@@ -268,8 +269,8 @@ class DDPGfD_priority():
                     if self.rollout:
                         j =0
                         for j, timestep in enumerate(timestep_series[1:]):
-                            # rtemp += -timestep[2]['distance_to_goal'] - max(timestep[2]['f1_dist'],timestep[2]['f2_dist'])/5* self.discount ** (j+1)
-                            rtemp += (timestep[2]['distance_to_goal'] < 0.002) * self.discount ** (j+1)
+                            rtemp += -timestep[2]['distance_to_goal'] - max(timestep[2]['f1_dist'],timestep[2]['f2_dist'])/5* self.discount ** (j+1)
+                            # rtemp += (timestep[2]['distance_to_goal'] < 0.002) * self.discount ** (j+1)
                         rtemp = max(rtemp, -1)
                         temp_last_state = []
                         t_last_state = timestep_series[-1][0]

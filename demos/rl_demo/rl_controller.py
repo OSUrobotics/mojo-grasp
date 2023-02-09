@@ -285,9 +285,9 @@ class RLController(ExpertController):
         state = self.current_cube_pose[0][0:2] + list(finger_pos1[0])[0:2] + list(finger_pos2[0])[0:2] + self.goal_position[0:2]
         
         if not self.rand_episode:           
-            finger_deltas = self.policy.select_action(state)
+            actor_portion = self.policy.select_action(state) * 0.01
             # print(finger_deltas)
-            new_finger_poses = [finger_pos1[0][0] + finger_deltas[0],finger_pos1[0][1] + finger_deltas[1],finger_pos2[0][0] + finger_deltas[2],finger_pos2[0][1] + finger_deltas[3]]
+            new_finger_poses = [finger_pos1[0][0] + actor_portion[0],finger_pos1[0][1] + actor_portion[1],finger_pos2[0][0] + actor_portion[2],finger_pos2[0][1] + actor_portion[3]]
             # action = (action*self.max_change + finger_angles).tolist()
             # print(new_finger_poses)
             # p.calculateInverseKinematic
@@ -299,10 +299,16 @@ class RLController(ExpertController):
             # print('desired new finger poses', new_finger_poses)
             # print('ik angle change', np.array(action) - np.array(finger_angles))
         else:
-            action = (self.rand_portion + self.max_change*(np.random.rand(4)-0.5)/2 + finger_angles).tolist()
+            
+            actor_portion = (self.rand_portion + np.random.rand(4)-0.5) * 0.01
+            new_finger_poses = [finger_pos1[0][0] + actor_portion[0],finger_pos1[0][1] + actor_portion[1],finger_pos2[0][0] + actor_portion[2],finger_pos2[0][1] + actor_portion[3]]
+            # p.calculateInverseKinematic
+            finger_1_angs = p.calculateInverseKinematics(self.gripper.id,2,[new_finger_poses[0], new_finger_poses[1], finger_pos1[0][2]])
+            finger_2_angs = p.calculateInverseKinematics(self.gripper.id,5,[new_finger_poses[2], new_finger_poses[3], finger_pos2[0][2]])
+            action = [finger_1_angs[0],finger_1_angs[1],finger_2_angs[2],finger_2_angs[3]]
             # print('random angle change',np.array(action) - np.array(finger_angles))
         
-        return action
+        return action, actor_portion
     
     def get_network_outputs(self):
         self.get_current_cube_position()

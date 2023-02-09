@@ -29,7 +29,7 @@ class ManipulationRL(Phase):
         try:
             self.use_ik = args['ik_flag']
         except:
-            self.use_ik = False
+            self.use_ik = True
         # print('x and y', x,y)
         
         self.target = None

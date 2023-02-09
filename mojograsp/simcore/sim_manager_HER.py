@@ -148,7 +148,7 @@ class SimManagerRLHER(SimManager):
                             img = Image.fromarray(img[2])
                             img.save('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/vizualization/episode_' + str(self.episode_number) + '_frame_'+ str(timestep_number)+'.png')
                     self.phase_manager.get_next_phase()
-                    self.add_hindsight(transition_list)
+                    # self.add_hindsight(transition_list)
                 self.record.record_episode()
                 self.record.save_episode()
                 self.episode.post_episode()

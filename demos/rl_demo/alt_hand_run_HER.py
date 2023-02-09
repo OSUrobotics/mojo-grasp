@@ -30,7 +30,7 @@ import numpy as np
 from mojograsp.simcore.priority_replay_buffer import ReplayBufferPriority
 from mojograsp.simcore.data_combination import data_processor
 # resource paths
-folder_name = 'general_backwards_her_sparse'
+folder_name = 'IK_backwards2'
 current_path = str(pathlib.Path().resolve())
 hand_path = current_path+"/resources/2v2_nosensors_keegan/2v2_nosensors/2v2_nosensors_limited.urdf"
 cube_path = current_path + \
@@ -106,7 +106,7 @@ state = StateRL(objects=[hand, cube, goal_poses])
 # state = StateRL(objects=[hand, cylinder, goal_poses])
 action = rl_action.ExpertAction()
 reward = rl_reward.ExpertReward()
-arg_dict = {'state_dim': 8, 'action_dim': 4, 'max_action': 1.57, 'n': 5, 'discount': 0.995, 'tau': 0.0005,
+arg_dict = {'state_dim': 8, 'action_dim': 4, 'max_action': 0.01, 'n': 5, 'discount': 0.995, 'tau': 0.0005,
             'batch_size': 100, 'expert_sampling_proportion': 0.5}
 # arg_dict = {'state_dim': 8, 'action_dim': 4, 'max_action': 0.005, 'n': 5, 'discount': 0.995, 'tau': 0.0005,
 #             'batch_size': 100, 'expert_sampling_proportion': 0.7}
