@@ -35,6 +35,7 @@ def save_element_as_file(element, filename):
 
 class GuiBackend():
     def __init__(self, canvas):
+        self.folder = None
         self.data_type = None
         self.fig, self.ax = plt.subplots()
         self.figure_canvas_agg = FigureCanvasTkAgg(self.fig, canvas)
@@ -47,6 +48,7 @@ class GuiBackend():
         self.all_data = None
         self.moving_avg =1 
         self.colorbar = None
+        self.big_data = False
         
     def draw_path(self):
         if self.e_num == -1:
@@ -70,7 +72,100 @@ class GuiBackend():
         self.ax.set_title('Object Path')
         self.figure_canvas_agg.draw()
         self.curr_graph = 'path'
+        print('big data switch', self.big_data)
 
+    def draw_asterisk(self):
+        # print('need to load in episode all first')
+        # print('this will be slow, and we both know it')
+        
+        # get list of pkl files in folder
+        if self.all_data is None:
+            # print('need to load in episode all first')
+            print('this will be slow, and we both know it')
+            episode_files = [os.path.join(self.folder, f) for f in os.listdir(self.folder) if f.lower().endswith('.pkl')]
+            filenames_only = [f for f in os.listdir(self.folder) if f.lower().endswith('.pkl')]
+            
+            filenums = [re.findall('\d+',f) for f in filenames_only]
+            final_filenums = []
+            for i in filenums:
+                if len(i) > 0 :
+                    final_filenums.append(int(i[0]))
+            
+            
+            sorted_inds = np.argsort(final_filenums)
+            final_filenums = np.array(final_filenums)
+            temp = final_filenums[sorted_inds]
+            episode_files = np.array(episode_files)
+            filenames_only = np.array(filenames_only)
+    
+            episode_files = episode_files[sorted_inds].tolist()
+            # filenames_only = filenames_only[sorted_inds].tolist()
+    
+            goals = []
+            trajectories = []
+            for episode_file in episode_files[-8:]:
+                with open(episode_file, 'rb') as ef:
+                    tempdata = pkl.load(ef)
+                print(episode_file)
+                data = tempdata['timestep_list']
+                trajectory_points = [f['state']['obj_2']['pose'][0] for f in data]
+                goal = data[1]['reward']['goal_position']
+                goals.append(str(np.round(goal[0:2],2)))
+                trajectories.append(np.array(trajectory_points))
+        else:
+            goals = []
+            trajectories = []
+            for episode in self.all_data['episode_list'][-8:]:
+                data = episode['timestep_list']
+                trajectory_points = [f['state']['obj_2']['pose'][0] for f in data]
+                goal = data[1]['reward']['goal_position']
+                goals.append(str(np.round(goal[0:2],2)))
+                trajectories.append(np.array(trajectory_points))
+        if self.clear_plots | (self.curr_graph != 'path'):
+            self.ax.cla()
+            self.legend = []
+        
+        self.ax.plot(trajectories[0][:,0], trajectories[0][:,1])
+        self.ax.plot(trajectories[1][:,0], trajectories[1][:,1])
+        self.ax.plot(trajectories[2][:,0], trajectories[2][:,1])
+        self.ax.plot(trajectories[3][:,0], trajectories[3][:,1])
+        self.ax.plot(trajectories[4][:,0], trajectories[4][:,1])
+        self.ax.plot(trajectories[5][:,0], trajectories[5][:,1])
+        self.ax.plot(trajectories[6][:,0], trajectories[6][:,1])
+        self.ax.plot(trajectories[7][:,0], trajectories[7][:,1])
+        self.ax.set_xlim([-0.07,0.07])
+        self.ax.set_ylim([0.1,0.22])
+        self.ax.set_xlabel('X pos (m)')
+        self.ax.set_ylabel('Y pos (m)')                                                                                                                                                                                                                                   
+        self.legend = goals
+        self.ax.legend(self.legend)
+        self.ax.set_title('Object Paths')
+        self.figure_canvas_agg.draw()
+        self.curr_graph = 'path'
+        print('big data switch', self.big_data)
+
+
+    def draw_error(self):
+        
+        data = self.data_dict['timestep_list']
+        actor_output = np.array([f['action']['actor_output'] for f in data])
+        f1_positions = np.array([f['state']['f1_pos'] for f in data])
+        f2_positions = np.array([f['state']['f2_pos'] for f in data])
+        
+        actual_pos = [np.array([f1_positions[i+1][0],f1_positions[i+1][1],f2_positions[i+1][0],f2_positions[i+1][1]]) for i in range(len(f1_positions)-1)]
+        
+        ap = actor_output * 0.01       
+        
+        desired_pos = np.zeros(np.shape(actor_output))
+        desired_pos[:,0:2] = f1_positions[:,0:2] + ap[:,0:2]
+        desired_pos[:,2:4] = f2_positions[:,0:2] + ap[:,0:2]
+        
+        # actual_pos = np.array(actual_pos)
+        errors = np.array([0,0,0,0])
+        for i,poses in enumerate(actual_pos):
+            errors += poses - desired_pos[i]
+        print(errors)    
+        
     def draw_angles(self):
         if self.e_num == -1:
             print("can't draw when episode_all is selected")
@@ -95,6 +190,7 @@ class GuiBackend():
         self.ax.plot(range(len(angle_tweaks)),angle_tweaks[:,3])
         self.legend.extend(['Angle 1 - episode '+str(self.e_num), 'Angle 2 - episode '+str(self.e_num), 'Angle 3 - episode '+str(self.e_num), 'Angle 4 - episode '+str(self.e_num)])
         self.ax.legend(self.legend)
+        self.ax.grid()
         self.ax.set_ylabel('Angle (radians)')
         self.ax.set_xlabel('Timestep (1/240 s)')
         self.ax.set_title('Joint Angles')
@@ -115,9 +211,10 @@ class GuiBackend():
         self.ax.plot(range(len(actor_list)),actor_list[:,1])
         self.ax.plot(range(len(actor_list)),actor_list[:,2])
         self.ax.plot(range(len(actor_list)),actor_list[:,3])
-        self.legend.extend(['Actor Angle 1 - episode ' + str(self.e_num), 'Actor Angle 2 - episode ' + str(self.e_num), 'Actor Angle 3 - episode ' + str(self.e_num), 'Actor Angle 4 - episode ' + str(self.e_num) ])
+        self.legend.extend(['Actor 1 - episode ' + str(self.e_num), 'Actor 2 - episode ' + str(self.e_num), 'Actor 3 - episode ' + str(self.e_num), 'Actor 4 - episode ' + str(self.e_num) ])
         self.ax.legend(self.legend)
-        self.ax.set_ylabel('Angle (radians)')
+        self.ax.grid()
+        self.ax.set_ylabel('Actor Output')
         self.ax.set_xlabel('Timestep (1/240 s)')
         self.ax.set_title('Actor Output')
         self.figure_canvas_agg.draw()
@@ -136,12 +233,13 @@ class GuiBackend():
         self.ax.plot(range(len(critic_list)),critic_list)
         self.legend.extend(['Critic Output - episode ' + str(self.e_num)])
         self.ax.legend(self.legend)
+        self.ax.grid()
         self.ax.set_ylabel('Action Value')
         self.ax.set_xlabel('Timestep (1/240 s)')
         self.ax.set_title('Critic Output')
         self.figure_canvas_agg.draw()
         self.curr_graph = 'rewards'
-    
+
     def draw_distance_rewards(self):
         if self.e_num == -1:
             print("can't draw when episode_all is selected")
@@ -155,6 +253,7 @@ class GuiBackend():
         self.ax.plot(range(len(current_reward_dict)),current_reward_dict)
         self.legend.extend(['Distance Reward - episode ' + str(self.e_num)])
         self.ax.legend(self.legend)
+        self.ax.grid()
         self.ax.set_ylabel('Reward')
         self.ax.set_xlabel('Timestep (1/240 s)')
         self.ax.set_title('Reward Plot')
@@ -175,6 +274,7 @@ class GuiBackend():
         self.ax.plot(range(len(current_reward_dict2)),current_reward_dict2)
         self.legend.extend(['F1 Contact Reward - episode ' + str(self.e_num),'F2 Contact Reward - episode ' + str(self.e_num)])
         self.ax.legend(self.legend)
+        self.ax.grid()
         self.ax.set_ylabel('Reward')
         self.ax.set_xlabel('Timestep (1/240 s)')
         self.ax.set_title('Contact Reward Plot')
@@ -206,6 +306,7 @@ class GuiBackend():
         self.ax.set_ylabel('Reward')
         self.ax.set_xlabel('Timestep (1/240 s)')
         self.ax.set_title(title)
+        self.ax.grid()
         self.figure_canvas_agg.draw()
         self.curr_graph = 'rewards'
         
@@ -296,26 +397,64 @@ class GuiBackend():
         self.ax.set_xlabel('X pos (m)')
         self.ax.set_ylabel('Y pos (m)')
         self.ax.set_title("Ending Object Poses")
-        
+        # self.ax.grid()
         self.colorbar = self.fig.colorbar(c, ax=self.ax)
         self.figure_canvas_agg.draw()
         self.curr_graph = 'ending_explored'
         
     def draw_net_reward(self):
         if self.all_data is None:
-            print('need to load in episode all first')
-            return
-        rewards = []
-        temp = 0
-        for episode in self.all_data['episode_list']:
-            data = episode['timestep_list']
-            for timestep in data:
-                temp += - timestep['reward']['distance_to_goal'] \
-                        -max(timestep['reward']['f1_dist'],timestep['reward']['f2_dist'])/5
-                                        #timestep['reward']['end_penalty'] \
+            # print('need to load in episode all first')
+            print('this will be slow, and we both know it')
+            
+            # get list of pkl files in folder
+            episode_files = [os.path.join(self.folder, f) for f in os.listdir(self.folder) if f.lower().endswith('.pkl')]
+            filenames_only = [f for f in os.listdir(self.folder) if f.lower().endswith('.pkl')]
+            
+            filenums = [re.findall('\d+',f) for f in filenames_only]
+            final_filenums = []
+            for i in filenums:
+                if len(i) > 0 :
+                    final_filenums.append(int(i[0]))
+            
+            
+            sorted_inds = np.argsort(final_filenums)
+            final_filenums = np.array(final_filenums)
+            temp = final_filenums[sorted_inds]
+            episode_files = np.array(episode_files)
+            filenames_only = np.array(filenames_only)
 
-            rewards.append(temp)
+            episode_files = episode_files[sorted_inds].tolist()
+            # filenames_only = filenames_only[sorted_inds].tolist()
+            rewards = []
             temp = 0
+            count = 0
+            for episode_file in episode_files:
+                with open(episode_file, 'rb') as ef:
+                    tempdata = pkl.load(ef)
+
+                data = tempdata['timestep_list']
+                for timestep in data:
+                    temp += - timestep['reward']['distance_to_goal'] \
+                            -max(timestep['reward']['f1_dist'],timestep['reward']['f2_dist'])/5
+                rewards.append(temp)
+                temp = 0
+                if count% 100 ==0:
+                    print('count = ', count)
+                count +=1
+        
+        else: 
+            rewards = []
+            temp = 0
+            for episode in self.all_data['episode_list']:
+                data = episode['timestep_list']
+                for timestep in data:
+                    temp += - timestep['reward']['distance_to_goal'] \
+                            -max(timestep['reward']['f1_dist'],timestep['reward']['f2_dist'])/5
+                                            #timestep['reward']['end_penalty'] \
+    
+                rewards.append(temp)
+                temp = 0
         if self.moving_avg != 1:
             rewards = moving_average(rewards,self.moving_avg)
         self.ax.cla()
@@ -324,6 +463,8 @@ class GuiBackend():
         self.ax.set_xlabel('Episode Number')
         self.ax.set_ylabel('Total Reward Over the Entire Episode')
         self.ax.set_title("Agent Reward over Episode")
+        self.ax.set_ylim([-12, -2])
+        self.ax.grid()
         self.figure_canvas_agg.draw()
         self.curr_graph = 'Group_Reward'
 
@@ -354,6 +495,7 @@ class GuiBackend():
         self.ax.legend(self.legend)
         self.ax.set_ylabel('Finger Object Distance')
         self.ax.set_xlabel('Episode')
+        self.ax.grid()
         self.ax.set_title('Finger Object Distance Per Episode')
         self.figure_canvas_agg.draw()
         self.curr_graph = 'fing_obj_dist'
@@ -382,6 +524,7 @@ class GuiBackend():
         self.ax.plot(range(len(finger_obj_maxs)),finger_obj_maxs[:,1])
         self.legend.extend(['Maximum Finger 1 Object Distance', 'Maximum Finger 2 Object Distance'])
         self.ax.legend(self.legend)
+        self.ax.grid()
         self.ax.set_ylabel('Finger Object Distance')
         self.ax.set_xlabel('Episode')
         self.ax.set_title('Finger Object Distance Per Episode')
@@ -455,10 +598,11 @@ class GuiBackend():
         self.ax.errorbar(range(len(avg_actor_output)),avg_actor_output[:,1], avg_actor_std[:,1])
         self.ax.errorbar(range(len(avg_actor_output)),avg_actor_output[:,2], avg_actor_std[:,2])
         self.ax.errorbar(range(len(avg_actor_output)),avg_actor_output[:,3], avg_actor_std[:,3])
-        self.legend.extend(['Actor Angle 1 - episode ' + str(self.e_num), 'Actor Angle 2 - episode ' + str(self.e_num), 'Actor Angle 3 - episode ' + str(self.e_num), 'Actor Angle 4 - episode ' + str(self.e_num) ])
+        self.legend.extend(['Actor 1 - episode ' + str(self.e_num), 'Actor 2 - episode ' + str(self.e_num), 'Actor 3 - episode ' + str(self.e_num), 'Actor 4 - episode ' + str(self.e_num) ])
         self.ax.legend(self.legend)
-        self.ax.set_ylabel('Angle (radians)')
-        self.ax.set_xlabel('Timestep (1/240 s)')
+        self.ax.set_ylabel('Actor Output')
+        self.ax.set_xlabel('Episode')
+        self.ax.grid()
         self.ax.set_title('Actor Output')
         self.figure_canvas_agg.draw()
         self.curr_graph = 'angles_total'    
@@ -497,6 +641,7 @@ class GuiBackend():
         self.ax.legend(self.legend)
         self.ax.set_ylabel('Goal Distance')
         self.ax.set_xlabel('Episode')
+        self.ax.grid()
         self.ax.set_title('Distance to Goal Per Episode')
         self.figure_canvas_agg.draw()
         self.curr_graph = 'goal_dist'
@@ -566,24 +711,59 @@ class GuiBackend():
         self.ax.plot(range(len(ending_vel)),ending_vel)
         self.ax.set_ylabel('ending velocity magnitude')
         self.ax.set_xlabel('episode')
+        self.ax.grid()
         self.ax.set_title("Ending Velocity")
         self.figure_canvas_agg.draw()
         self.curr_graph = 'vel'
 
     def draw_success_rate(self):
         if self.all_data is None:
-            print('need to load in episode all first')
-            return
+            print('this will be slow, and we both know it')
+            
+            # get list of pkl files in folder
+            episode_files = [os.path.join(self.folder, f) for f in os.listdir(self.folder) if f.lower().endswith('.pkl')]
+            filenames_only = [f for f in os.listdir(self.folder) if f.lower().endswith('.pkl')]
+            
+            filenums = [re.findall('\d+',f) for f in filenames_only]
+            final_filenums = []
+            for i in filenums:
+                if len(i) > 0 :
+                    final_filenums.append(int(i[0]))
+            
+            
+            sorted_inds = np.argsort(final_filenums)
+            final_filenums = np.array(final_filenums)
+            temp = final_filenums[sorted_inds]
+            episode_files = np.array(episode_files)
+            filenames_only = np.array(filenames_only)
 
-        s_f = []
-        for i, episode in enumerate(self.all_data['episode_list']):
-            data = episode['timestep_list']
-            goal_dists = [f['reward']['distance_to_goal'] for f in data]
-            ending_dist = min(goal_dists)
-            if ending_dist < 0.002:
-                s_f.append(100)
-            else:
-                s_f.append(0)
+            episode_files = episode_files[sorted_inds].tolist()
+            
+        
+            s_f = []
+            for i, episode_file in enumerate(episode_files):
+                with open(episode_file, 'rb') as ef:
+                    tempdata = pkl.load(ef)
+
+                data = tempdata['timestep_list']
+                goal_dists = [f['reward']['distance_to_goal'] for f in data]
+                ending_dist = min(goal_dists)
+                if ending_dist < 0.002:
+                    s_f.append(100)
+                else:
+                    s_f.append(0)
+                if i % 100 ==0:
+                    print('count = ',i)
+        else:
+            s_f = []
+            for i, episode in enumerate(self.all_data['episode_list']):
+                data = episode['timestep_list']
+                goal_dists = [f['reward']['distance_to_goal'] for f in data]
+                ending_dist = min(goal_dists)
+                if ending_dist < 0.002:
+                    s_f.append(100)
+                else:
+                    s_f.append(0)
 
         if self.moving_avg != 1:
             s_f = moving_average(s_f,self.moving_avg)
@@ -598,8 +778,10 @@ class GuiBackend():
         self.ax.legend(self.legend)
         self.ax.set_ylabel('Success Percentage')
         self.ax.set_xlabel('Episode')
+        self.ax.set_ylim([-1,101])
         titlething = 'Percent of Trials over ' + str(self.moving_avg)+' window that are successful'
         self.ax.set_title(titlething)
+        self.ax.grid()
         self.figure_canvas_agg.draw()
         self.curr_graph = 's_f'
 
@@ -628,6 +810,7 @@ class GuiBackend():
         self.ax.set_ylabel('Goal Distance')
         self.ax.set_xlabel('Episode')
         self.ax.set_title('Distance to Goal Per Episode')
+        self.ax.grid()
         self.figure_canvas_agg.draw()
         self.curr_graph = 'goal_dist'
         
@@ -635,6 +818,7 @@ class GuiBackend():
     def draw_goal_rewards(self):
         if self.all_data is None:
             print('need to load in episode all first')
+            # print('this will be slow, and we both know it')
             return
         
         keylist = ['forward','backward', 'forwardleft', 'backwardleft','forwardright', 'backwardright', 'left', 'right']
@@ -677,6 +861,7 @@ class GuiBackend():
         self.ax.set_ylabel('Net Reward')
         self.ax.set_xlabel('Episode')
         self.ax.set_title('Net Reward By Direction')
+        self.ax.grid()
         self.figure_canvas_agg.draw()
         self.curr_graph = 'direction_reward_thing'   
     
@@ -690,7 +875,7 @@ class GuiBackend():
         pass
 
     def load_pkl(self, filename):
-        
+        self.folder = os.path.dirname(filename)
         with open(filename, 'rb') as pkl_file:
             self.data_dict = pkl.load(pkl_file)
             if 'all.' in filename:
@@ -763,11 +948,12 @@ def main():
                     [sg.Button('Explored Region', size=(8,2)), sg.Button('Actor Output', size=(8, 2)), sg.Button('Critic Output', size=(8, 2)), sg.Button('RewardSplit',size=(8, 2)), sg.Button('Timestep', size=(8,2))],
                     [sg.Button('End Region', size=(8,2)), sg.Button('Average Actor Values', size=(8,2)), sg.Button('Episode Rewards', size=(8,2)), sg.Button('Finger Object Avg', size=(8,2)), sg.Button('Shortest Goal Dist', size=(8,2))],
                     [sg.Button('Path + Action', size=(8,2)), sg.Button('Success Rate', size=(8,2)), sg.Button('Ending Velocity', size=(8,2)), sg.Button('Finger Object Max', size=(8,2)), sg.Button('Ending Goal Dist', size=(8,2))],
-                    [sg.Slider((1,20),10,1,1,key='moving_avg',orientation='h', size=(48,6)), sg.Text("Keep previous graph", size=(10, 3), key='-toggletext-'), sg.Button(image_data=toggle_btn_off, key='-TOGGLE-GRAPHIC-', button_color=(sg.theme_background_color(), sg.theme_background_color()), border_width=0, metadata=False)]]
+                    [sg.Slider((1,20),10,1,1,key='moving_avg',orientation='h', size=(48,6)), sg.Text("Keep previous graph", size=(10, 3), key='-toggletext-'), sg.Button(image_data=toggle_btn_off, key='-TOGGLE-GRAPHIC-', button_color=(sg.theme_background_color(), sg.theme_background_color()), border_width=0, metadata=False)],
+                    [sg.Text("Data Too Large to Make Episode All", size=(20, 3), key='-BEEG-'), sg.Button(image_data=toggle_btn_off, key='-BIG-DATA-', button_color=(sg.theme_background_color(), sg.theme_background_color()), border_width=0, metadata=False)]]
     # define layout, show and read the window
     col = [[sg.Text(episode_files[0], size=(80, 3), key='-FILENAME-')],
            [sg.Canvas(size=(1280, 960), key='-CANVAS-')],
-           plot_buttons[0], plot_buttons[1], plot_buttons[2], plot_buttons[3], plot_buttons[4], [sg.B('Save Image', key='-SAVE-')],
+           plot_buttons[0], plot_buttons[1], plot_buttons[2], plot_buttons[3], plot_buttons[4], plot_buttons[5], [sg.B('Save Image', key='-SAVE-')],
                [sg.Text('File 1 of {}'.format(len(episode_files)), size=(15, 1), key='-FILENUM-')]]
 
     col_files = [[sg.Listbox(values=filenames_only, size=(60, 30), key='-LISTBOX-', enable_events=True)],
@@ -787,6 +973,7 @@ def main():
 
         event, values = window.read()
         backend.moving_avg = int(values['moving_avg'])
+        
         # --------------------- Button & Keyboard ---------------------
         if event == sg.WIN_CLOSED:
             break
@@ -827,7 +1014,7 @@ def main():
         elif event == 'Finger Object Avg':
             backend.draw_finger_obj_dist_avg()
         elif event == 'Path + Action':
-            backend.draw_path_and_action()
+            backend.draw_asterisk()
         elif event == 'Success Rate':
             backend.draw_success_rate()
         elif event == 'Average Actor Values':
@@ -850,6 +1037,10 @@ def main():
             window['-TOGGLE-GRAPHIC-'].metadata = not window['-TOGGLE-GRAPHIC-'].metadata
             window['-TOGGLE-GRAPHIC-'].update(image_data=toggle_btn_on if window['-TOGGLE-GRAPHIC-'].metadata else toggle_btn_off)
             backend.clear_plots = not backend.clear_plots
+        elif event =='-BIG-DATA-':
+            window['-BIG-DATA-'].metadata = not window['-BIG-DATA-'].metadata
+            window['-BIG-DATA-'].update(image_data=toggle_btn_on if window['-BIG-DATA-'].metadata else toggle_btn_off)
+            backend.big_data = not backend.big_data
         elif event == '-SAVE-':
             filename=r'test.png'
             save_element_as_file(window['-CANVAS-'], filename)

@@ -146,3 +146,5 @@ demos/rl_demo/old_runs/*
 *.png
 *.prof
 *.zip
+tests/runs/*
+tests/no/*

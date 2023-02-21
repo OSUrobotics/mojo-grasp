@@ -8,6 +8,7 @@ import numpy as np
 from numpy.random import default_rng
 import matplotlib.pyplot as plt
 from torch.utils.tensorboard import SummaryWriter
+# import os
 
 # Implementation of Deep Deterministic Policy Gradients (DDPG)
 # Paper: https://arxiv.org/abs/1509.02971
@@ -21,9 +22,10 @@ def simple_normalize(x_tensor):
     # mins = torch.tensor([-0.2, -0.05, 0.0, 0, 0, 0, 0,-np.pi/2, -np.pi, -np.pi/2, 0, 0, 0, 0, -0.01, -0.01, -1, -1, -1, -1, -1, -1]).to(device)
     # maxes = torch.tensor([0.2, 0.35, np.pi/2, 0, np.pi/2, np.pi, 1, 1, 0.2, 0.2, 0.2, 0.35, 0.2, 0.35, 0.055, 0.055]).to(device)
     # mins = torch.tensor([-0.2, -0.05,-np.pi/2, -np.pi, -np.pi/2, 0, -1, -1, -0.01, -0.01, -0.2, -0.05, -0.2, -0.05, -0.055, -0.055]).to(device)
-    maxes = torch.tensor([0.2, 0.35, 0.2, 0.35, 0.2, 0.35, 0.055, 0.215]).to(device)
-    mins = torch.tensor([-0.2, -0.05, -0.2, -0.05, -0.2, -0.05, -0.055, 0.105]).to(device)
-
+    maxes = torch.tensor([0.072, 0.232, 0.072, 0.232, 0.072, 0.232, 0.072, 0.232]).to(device)
+    mins = torch.tensor([-0.072, 0.088, -0.072, 0.088, -0.072, 0.088, -0.072, 0.088]).to(device)
+    maxes = torch.tensor([0.072, 0.232, 0.072, 0.232,0.072, 0.232, 0.072, 0.232, 0.072, 0.232, 0.072, 0.232]).to(device)
+    mins = torch.tensor([-0.072, 0.088, -0.072, 0.088, -0.072, 0.088, -0.072, 0.088, -0.072, 0.088, -0.072, 0.088]).to(device)
     y_tensor = ((x_tensor-mins)/(maxes-mins)-0.5) *2
     # print('normalized tensor', y_tensor)
     return y_tensor
@@ -78,15 +80,16 @@ class Critic(nn.Module):
         return q# * self.max_q_value
 
 class DDPGfD_priority():
-    def __init__(self, arg_dict: dict = None, TensorboardName = None):
+    def __init__(self, arg_dict: dict = None):
         # state_path=None, state_dim=32, action_dim=4, max_action=1.57, n=5, discount=0.995, tau=0.0005, batch_size=10,
         #          expert_sampling_proportion=0.7):
+        
         if arg_dict is None:
             print('no arg dict')
             arg_dict = {'state_dim': 32, 'action_dim': 4, 'max_action': 1.57, 'n': 5, 'discount': 0.995, 'tau': 0.005,
-                        'batch_size': 20}
+                        'batch_size': 20, 'tname':'test1'}
         self.state_dim = arg_dict['state_dim']
-        print('Saving to tensorboard file', TensorboardName)
+        print('Saving to tensorboard file', arg_dict['tname'])
         self.action_dim = arg_dict['action_dim']
         self.actor = Actor(self.state_dim, self.action_dim, arg_dict['max_action']).to(device)
         self.actor_target = copy.deepcopy(self.actor)
@@ -100,11 +103,19 @@ class DDPGfD_priority():
         self.critic_loss = []
         self.critic_L1loss = []
         self.critic_LNloss = []
-        # TensorboardName = 'expert_trimmed'
-        if TensorboardName is None:
-            self.writer = SummaryWriter()
+        if arg_dict['reward'] == 'Sparse':
+            self.sparse_reward = True
         else:
-            self.writer = SummaryWriter('runs/'+TensorboardName)
+            self.sparse_reward = False
+            
+        if 'HER' in arg_dict['model']:
+            self.use_HER = True
+        else:
+            self.use_HER = False
+        print('USING SPARSE REWARDS:', self.sparse_reward)
+        # TensorboardName = 'expert_trimmed'
+
+        self.writer = SummaryWriter(arg_dict['tname'])
 
         self.discount = arg_dict['discount']
         self.tau = arg_dict['tau']
@@ -113,10 +124,6 @@ class DDPGfD_priority():
         self.total_it = 0
         self.lambda_Lbc = 1
 
-        # Sample from the expert replay buffer, decaying the proportion expert-agent experience over time
-        self.sampling_decay_rate = 0.2
-        self.sampling_decay_freq = 400
-
         # Most recent evaluation reward produced by the policy within training
         self.avg_evaluation_reward = 0
 
@@ -124,6 +131,9 @@ class DDPGfD_priority():
         self.rng = default_rng()
         self.rollout = True
         self.u_count = 0
+        
+        self.actor_component = 10000
+        self.critic_component = 1
 
     def select_action(self, state):
         state = torch.FloatTensor(np.reshape(state, (1, -1))).to(device)
@@ -133,11 +143,17 @@ class DDPGfD_priority():
         return action
 
     def grade_action(self, state, action):
-        state = torch.FloatTensor(np.reshape(state, (1,-1))).to(device)
-        action = torch.FloatTensor(np.reshape(action, (1,-1))).to(device)
-        grade = self.critic(state, action).cpu().data.numpy().flatten()
-        return grade
-
+        state = torch.tensor(np.reshape(state, (1,-1)), dtype=float).to(device)
+        action = torch.tensor(np.reshape(action, (1,-1)), dtype=float, requires_grad=True).to(device)
+        state=state.float()
+        action=action.float()
+        action.retain_grad()
+        g = self.critic(state, action)
+        g.backward()
+        grade = g.cpu().data.numpy().flatten()
+        
+        # print(action.grad)
+        return grade, action.grad.cpu().data.numpy()
     def copy(self, policy_to_copy_from):
         """ Copy input policy to be set to another policy instance
 		policy_to_copy_from: policy that will be copied from
@@ -242,13 +258,18 @@ class DDPGfD_priority():
                     # temp_state.extend([t_state['f1_obj_dist'],t_state['f2_obj_dist']])
                     temp_state.extend(t_state['f1_pos'][0:2])
                     temp_state.extend(t_state['f2_pos'][0:2])               
+                    temp_state.extend(t_state['f1_base'][0:2])
+                    temp_state.extend(t_state['f2_base'][0:2])         
                     temp_state.extend(timestep[2]['goal_position'][0:2])
                     state.append(temp_state)
                     action.append(timestep[1]['actor_output'])
                     # print(temp_state.type)
                     # print(timestep[1]['actor_output'].type)
-                    tstep_reward = max(-timestep[2]['distance_to_goal'] \
-                        - max(timestep[2]['f1_dist'],timestep[2]['f2_dist'])/5,-1)
+                    if self.sparse_reward:
+                        tstep_reward = timestep[2]['distance_to_goal'] < 0.002
+                    else:
+                        tstep_reward = max(-timestep[2]['distance_to_goal'] \
+                            - max(timestep[2]['f1_dist'],timestep[2]['f2_dist'])/5,-1)
                     # reward.append(-timestep_series.reward['distance_to_goal'])
                     # tstep_reward = timestep[2]['distance_to_goal'] < 0.002
     
@@ -263,14 +284,19 @@ class DDPGfD_priority():
                     # temp_next_state.extend([t_next_state['f1_obj_dist'],t_next_state['f2_obj_dist']])
                     temp_next_state.extend(t_next_state['f1_pos'][0:2])
                     temp_next_state.extend(t_next_state['f2_pos'][0:2])
+                    temp_next_state.extend(t_next_state['f1_base'][0:2])
+                    temp_next_state.extend(t_next_state['f2_base'][0:2])
                     temp_next_state.extend(timestep[2]['goal_position'][0:2])
                     next_state.append(temp_next_state)
                     expert_status.append(timestep[-1])
                     if self.rollout:
                         j =0
                         for j, timestep in enumerate(timestep_series[1:]):
-                            rtemp += -timestep[2]['distance_to_goal'] - max(timestep[2]['f1_dist'],timestep[2]['f2_dist'])/5* self.discount ** (j+1)
-                            # rtemp += (timestep[2]['distance_to_goal'] < 0.002) * self.discount ** (j+1)
+                            if self.sparse_reward:
+                                rtemp += (timestep[2]['distance_to_goal'] < 0.002) * self.discount ** (j+1)
+                            else:
+                                rtemp += -timestep[2]['distance_to_goal'] - max(timestep[2]['f1_dist'],timestep[2]['f2_dist'])/5* self.discount ** (j+1)
+                            # 
                         rtemp = max(rtemp, -1)
                         temp_last_state = []
                         t_last_state = timestep_series[-1][0]
@@ -283,6 +309,8 @@ class DDPGfD_priority():
                         # temp_last_state.extend([t_last_state['f1_obj_dist'],t_last_state['f2_obj_dist']])
                         temp_last_state.extend(t_last_state['f1_pos'][0:2])
                         temp_last_state.extend(t_last_state['f2_pos'][0:2])
+                        temp_last_state.extend(t_last_state['f1_base'][0:2])
+                        temp_last_state.extend(t_last_state['f2_base'][0:2])
                         temp_last_state.extend(timestep_series[0][2]['goal_position'][0:2])
                         last_state.append(temp_last_state)
                         rollout_reward.append(rtemp)
@@ -415,9 +443,15 @@ class DDPGfD_priority():
             # actor_component = actor_action.grad.mean(1,True)
             # print(actor_component.shape)
             # print(expert_status.shape)
-            # priorities = expert_status*0.5 + 0.0001 + 2500000*actor_component**2 + 2*(current_Q-target_Q)**2
+            # cpart = (current_Q-target_Q)**2
+            # apart = actor_component**2
+            # priorities = expert_status*0.5 + 0.0001 + self.actor_component*apart + self.critic_component*cpart
             # print('actor portion', (2500000*actor_component**2).mean())
-            # print('critic portion', (2*(current_Q-target_Q)**2).mean())
+            
+            # self.critic_component = 0.001 * 0.5/cpart.mean() + 0.999 * self.critic_component
+            # self.actor_component = 0.001 * 0.5/apart.mean() + 0.999 * self.actor_component
+            # print('actor part', self.actor_component)
+            # print('critic part', self.critic_component)
             priorities = priorities.cpu().detach().numpy()
             nn.utils.clip_grad_value_(self.actor.parameters(), 0.5)
             self.actor_optimizer.step()

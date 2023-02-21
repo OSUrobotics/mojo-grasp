@@ -64,10 +64,15 @@ cube_id = p.loadURDF(cube_path, basePosition=[0.0, 0.15, .05])
 # Create TwoFingerGripper Object and set the initial joint positions
 hand = TwoFingerGripper(hand_id, path=hand_path)
 
-p.resetJointState(hand_id, 0, .75)
-p.resetJointState(hand_id, 1, -1.4)
-p.resetJointState(hand_id, 3, -.75)
-p.resetJointState(hand_id, 4, 1.4)
+# p.resetJointState(hand_id, 0, .75)
+# p.resetJointState(hand_id, 1, -1.4)
+# p.resetJointState(hand_id, 3, -.75)
+# p.resetJointState(hand_id, 4, 1.4)
+
+p.resetJointState(hand_id, 0, 0)
+p.resetJointState(hand_id, 1, 0)
+p.resetJointState(hand_id, 3, 0)
+p.resetJointState(hand_id, 4, 0)
 
 link1_pose = p.getLinkState(hand_id, 2)
 # p.get

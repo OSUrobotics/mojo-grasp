@@ -30,7 +30,8 @@ class ExpertEnv(Environment):
         p.resetJointState(hand_id, 1, -1.4)
         p.resetJointState(hand_id, 3, -.75)
         p.resetJointState(hand_id, 4, 1.4)
-        
+        p.changeDynamics(plane_id,-1,lateralFriction=0.05, spinningFriction=0.05, rollingFriction=0.05)
+
         # p.resetJointState(hand_id, 0, .695)
         # p.resetJointState(hand_id, 1, -1.487)
         # p.resetJointState(hand_id, 3, -.695)
