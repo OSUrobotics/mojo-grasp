@@ -30,6 +30,17 @@ from torch.utils.tensorboard import SummaryWriter
 import matplotlib.pyplot as plt
 import numpy as np
 
+def calc_finger_poses(angles):
+    x0 = [-0.02675, 0.02675]
+    y0 = [0.053, 0.053]
+    # print('angles', angles)
+    f1x = x0[0] - np.sin(angles[0])*0.072 - np.sin(angles[0] + angles[1])*0.072
+    f2x = x0[1] - np.sin(angles[2])*0.072 - np.sin(angles[2] + angles[3])*0.072
+    f1y = y0[0] + np.cos(angles[0])*0.072 + np.cos(angles[0] + angles[1])*0.072
+    f2y = y0[1] + np.cos(angles[2])*0.072 + np.cos(angles[2] + angles[3])*0.072
+    return [f1x, f1y, f2x, f2y]
+    
+
 class SimManagerRLHER(SimManager):
     """
     SimManagerRL class, runs through all episodes and uses the passed in
@@ -39,7 +50,7 @@ class SimManagerRLHER(SimManager):
     def __init__(self, num_episodes: int = 1, env: Environment = EnvironmentDefault(),
                  episode: Episode = EpisodeDefault(), record_data: RecordData = RecordDataDefault(),
                  replay_buffer: ReplayBuffer = ReplayBufferDefault, state: State = StateDefault,
-                 action: Action = ActionDefault, reward: Reward = RewardDefault, TensorboardName = None):
+                 action: Action = ActionDefault, reward: Reward = RewardDefault, args=None):
         """
         Constructor passes in the environment, episode and record data objects and simmanager parameters.
 
@@ -71,10 +82,12 @@ class SimManagerRLHER(SimManager):
         self.phase_manager = PhaseManager()
         self.episode_number = 0
         self.record_video = False
-        if TensorboardName is None:
-            self.writer = SummaryWriter()
+        if args['model'] == 'DDPG+HER':
+            self.use_HER = True
         else:
-            self.writer = SummaryWriter('runs/'+TensorboardName)
+            self.use_HER = False
+        print('USING HER:', self.use_HER)
+        self.writer = SummaryWriter(args['tname'])
             
     def add_phase(self, phase_name: str, phase: Phase, start: bool = False):
         """
@@ -97,6 +110,8 @@ class SimManagerRLHER(SimManager):
         Calls the user defined phases and other classes inherited from the abstract base classes. Detailed diagram
         is above of the order of operations.
         """
+        
+        test_flag = False
         if len(self.phase_manager.phase_dict) > 0:
             logging.info("RUNNING PHASES: {}".format(
                 self.phase_manager.phase_dict))
@@ -115,8 +130,11 @@ class SimManagerRLHER(SimManager):
                 print('Episode ',self.episode_number,' goal pose', self.phase_manager.current_phase.goal_position)
                 timestep_number = 0
                 transition_list = []
+                diff_max = 0
                 while self.phase_manager.get_exit_flag() == False:
+                    self.phase_manager.current_phase.train()
                     self.phase_manager.current_phase.setup()
+                    
                     done = False
                     logging.info("CURRENT PHASE: {}".format(
                         self.phase_manager.current_phase.name))
@@ -125,8 +143,18 @@ class SimManagerRLHER(SimManager):
                         self.phase_manager.current_phase.pre_step()
                         self.state.set_state()
                         S = self.state.get_state()
+                        if timestep_number > 1 and test_flag:
+                            assert S==S2, 'This state and previous next state dont match'
+                            angles = [i for i in S['two_finger_gripper']['joint_angles'].values()]
+                            finger_pos = calc_finger_poses(angles)
+                            S_finger_pos = [S['f1_pos'][0], S['f1_pos'][1], S['f2_pos'][0], S['f2_pos'][1]]
+                            print(angles)
+                            # assert np.isclose(finger_pos, S_finger_pos, atol=0.001).all(), 'calculated finger pose and pybullet finger pose dont match'
                         self.phase_manager.current_phase.execute_action()
                         A = self.action.get_action()
+                        if test_flag:
+                            acts = np.array(A['actor_output']) * 0.001
+                            assert (np.abs(A['actor_output'])<=1).all(), 'The actor output isnt between -1 and 1'
                         self.env.step()
                         done = self.phase_manager.current_phase.exit_condition()
                         self.phase_manager.current_phase.post_step()
@@ -134,6 +162,15 @@ class SimManagerRLHER(SimManager):
                         R = self.reward.get_reward()
                         self.state.set_state()
                         S2 = self.state.get_state()
+
+                        if test_flag:
+                            S_finger_pos = np.array([S['f1_pos'][0], S['f1_pos'][1], S['f2_pos'][0], S['f2_pos'][1]])
+                            S2_finger_pos = np.array([S2['f1_pos'][0], S2['f1_pos'][1], S2['f2_pos'][0], S2['f2_pos'][1]])
+                            finger_pos_change = np.linalg.norm(S_finger_pos - S2_finger_pos)
+                            diff_max = max(diff_max,finger_pos_change)
+                            obj_pos = S2['obj_2']['pose'][0][0:2]
+                            goal_diff = [obj_pos[0]-S2['goal_pose']['goal_pose'][0],obj_pos[1]-(S2['goal_pose']['goal_pose'][1]+0.16)]
+                            assert R['distance_to_goal'] == np.linalg.norm(goal_diff), 'goal dists not aligned'
                         E = self.episode_number
                         # transition = {'state':S, 'action':A, 'reward':R, 'next_state':S2, 'episode':E}
                         transition = (S,A,R,S2,E,0)
@@ -148,11 +185,13 @@ class SimManagerRLHER(SimManager):
                             img = Image.fromarray(img[2])
                             img.save('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/vizualization/episode_' + str(self.episode_number) + '_frame_'+ str(timestep_number)+'.png')
                     self.phase_manager.get_next_phase()
-                    # self.add_hindsight(transition_list)
+                    if self.use_HER:
+                        self.add_hindsight(transition_list)
                 self.record.record_episode()
                 self.record.save_episode()
                 self.episode.post_episode()
                 self.env.reset()
+                # print('BEST DIFF MAX', diff_max)
                 # self.writer.add_scalar('rewards/average reward', self.replay_buffer.get_average_reward(
                 #     400), self.episode_number/self.num_episodes)
                 # self.writer.add_scalar('rewards/min reward', self.replay_buffer.get_min_reward(400),
@@ -190,8 +229,10 @@ class SimManagerRLHER(SimManager):
         if len(self.phase_manager.phase_dict) > 0:
             logging.info("RUNNING PHASES: {}".format(
                 self.phase_manager.phase_dict))
-
+            end_dists = []
+            
             for i in range(self.num_episodes):
+                print('recording to episode', i)
                 # self.episode_number += 1
                 self.episode.setup()
                 self.env.setup()
@@ -200,7 +241,9 @@ class SimManagerRLHER(SimManager):
 
                 timestep_number = 0
                 while self.phase_manager.get_exit_flag() == False:
+                    self.phase_manager.current_phase.evaluate()
                     self.phase_manager.current_phase.setup()
+                    
                     done = False
                     logging.info("CURRENT PHASE: {}".format(
                         self.phase_manager.current_phase.name))
@@ -215,7 +258,7 @@ class SimManagerRLHER(SimManager):
                         done = self.phase_manager.current_phase.exit_condition()
                         self.phase_manager.current_phase.post_step()
                         self.record.record_timestep()
-                        # R = self.reward.get_reward()
+                        R = self.reward.get_reward()
                         self.state.set_state()
                         # S2 = self.state.get_state()
                         # E = self.episode_number
@@ -223,11 +266,14 @@ class SimManagerRLHER(SimManager):
                         # self.replay_buffer.add_timestep(transition)
                         done = self.phase_manager.current_phase.exit_condition()
                         # self.phase_manager.current_phase.controller.train_policy()
+                        # print(self.record_video)
                         if self.record_video:
+                            
                             img = p.getCameraImage(640, 480, renderer=p.ER_BULLET_HARDWARE_OPENGL)
                             img = Image.fromarray(img[2])
-                            img.save('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/vizualization/Evaluation_episode_' + str(self.episode_number) + '_frame_'+ str(timestep_number)+'.png')
+                            img.save('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/vizualization/Evaluation_episode_' + str(i) + '_frame_'+ str(timestep_number)+'.png')
                     self.phase_manager.get_next_phase()
+                    end_dists.append(R['distance_to_goal'])
                 self.record.record_episode(True)
                 self.record.save_episode(True)
                 self.episode.post_episode()
@@ -240,9 +286,16 @@ class SimManagerRLHER(SimManager):
                 #                         self.episode_number / self.num_episodes)
             # self.record.save_all()
             # self.replay_buffer.save_buffer('./data/temp_buffer.pkl')
+            avg_dist = np.mean(end_dists)
+            avg_dist_err = np.std(end_dists)
+            print(end_dists)
+            print(f'evaluated, average ending distance was {avg_dist} +/- {avg_dist_err}')
         else:
             logging.warn("No Phases have been added")
-            
+    
+    def save_network(self, filename):
+        self.phase_manager.current_phase.controller.policy.save(filename)
+    
     def replay(self, action_list):
         """
         Runs through a single episode following the actions in the action list

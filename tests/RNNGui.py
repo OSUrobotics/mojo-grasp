@@ -92,7 +92,7 @@ class RNNGui():
                          [sg.Text('Evaluation Period'), sg.Input(100,key='-eval')]]
         
         plotting_layout = [[sg.Text('Model Title')],
-                       [sg.Input(key='-Title-')],
+                       [sg.Input('test1',key='-title')],
                        [sg.Text("State")],
                        [sg.Checkbox('Finger Tip Position', default=True, k='-ftp')],
                        [sg.Checkbox('Finger Base Position', default=False, k='-fbp')],
@@ -103,6 +103,7 @@ class RNNGui():
                        [sg.Text("Reward"), sg.OptionMenu(values=('Sparse','Distance','Distance + Finger'), k='-reward',default_value='Distance + Finger')],
                        [sg.Text("Action"), sg.OptionMenu(values=('Joint Velocity','Finger Tip Position'), k='-action',default_value='Joint Velocity')],
                        [sg.Button('Begin Training', key='-train', bind_return_key=True)],
+                       [sg.Button('Build Config File WITHOUT Training', key='-build')],
                        [sg.Text('Work progress'), sg.ProgressBar(100, size=(20, 20), orientation='h', key='-PROG-')]]
 
         layout = [[sg.TabGroup([[sg.Tab('Task and General parameters', data_layout, key='-mykey-'),
@@ -115,20 +116,20 @@ class RNNGui():
     def build_args(self, values):
         self.built = False
         print('building RL arglist')
-        self.args = {'epochs': values['-epochs'],
-                     'batch_size': values['-batch-size'],
+        self.args = {'epochs': int(values['-epochs']),
+                     'batch_size': int(values['-batch-size']),
                      'model': values['-model'],
-                     'learning_rate': values['-learning'],
-                     'discount': values['-df'],
-                     'epsilon': values['-epsilon'],
-                     'edecay': values['-edecay'],
+                     'learning_rate': float(values['-learning']),
+                     'discount': float(values['-df']),
+                     'epsilon': float(values['-epsilon']),
+                     'edecay': float(values['-edecay']),
                      'object': values['-object'],
                      'hand': values['-hand'],
                      'task': values['-task'],
-                     'evaluate': values['-eval'],
+                     'evaluate': int(values['-eval']),
                      'sampling': values['-sampling'],
                      'reward': values['-reward'],
-                     'action': values['-action']}
+                     'action': values['-action'],}
         state_len = 0
         state_mins = []
         state_maxes = []
@@ -175,30 +176,32 @@ class RNNGui():
             else:
                 self.args['edata'] = values['-browse-expert'] + 'episode_all.pkl'
         if os.path.isdir(self.save_path) and self.save_path != '/':
-            self.args['save_path'] = self.save_path
+            self.args['save_path'] = self.save_path + '/'
         else:
             print('save path is not a valid directory')
             return False
         test_path = pathlib.Path(__file__).parent.resolve()
         overall_path = test_path.parent.resolve()
         resource_path = overall_path.joinpath('demos/rl_demo/resources')
+        run_path = overall_path.joinpath('demos/rl_demo/runs')
+        self.args['tname'] = str(run_path.joinpath(values['-title']))
         if values['-hand'] == '2v2':
             self.args['hand_path'] = str(resource_path.joinpath('2v2_nosensors_keegan/2v2_nosensors/2v2_nosensors_limited.urdf'))
         if values['-object'] == 'Cube':
-            self.args['object_path'] = str(resource_path.joinpath('/object_models/2v2_mod/2v2_mod_cuboid_small.urdf'))
+            self.args['object_path'] = str(resource_path.joinpath('object_models/2v2_mod/2v2_mod_cuboid_small.urdf'))
         elif values['-object'] == 'Cylinder':
-            self.args['object_path'] = str(resource_path.joinpath('/resources/object_models/2v2_mod/2v2_mod_cylinder_small_alt.urdf'))
+            self.args['object_path'] = str(resource_path.joinpath('resources/object_models/2v2_mod/2v2_mod_cylinder_small_alt.urdf'))
         if values['-action'] == 'Joint Velocity':
             self.args['max_action'] = 1.57
         elif values['-action'] == 'Finger Tip Position':
             self.args['max_action'] = 0.01
-        
+        self.args['points_path'] = str(resource_path.joinpath('points.csv'))
         
         self.built = True
         return True
         
     def train(self):
-        run_pybullet(self.args['save_path'] + '/experiment_config.pkl')
+        run_pybullet(self.args['save_path'] + '/experiment_config.pkl', self.window)
         print('model finished, saving now')
 
     def log_params(self):
@@ -213,7 +216,7 @@ class RNNGui():
         while True:
 
             event, values = self.window.read()
-            print(values.keys())
+            # print(values.keys())
             # --------------------- Button & Keyboard ---------------------
             if event == sg.WIN_CLOSED:
                 break
@@ -259,7 +262,18 @@ class RNNGui():
                     thread.start()
                 else:
                     print('Parameters incorrect, cant start training')
-    
+
+            elif event == '-build':
+                ready = self.build_args(values)        
+                if ready:
+                    self.log_params()
+                    print('Build Successful')
+                else:
+                    print('Build Not Successful')
+                
+            # elif event == '-update':
+            #     print(values['-update'])
+                
             elif event == 'About':
                 sg.popup('Why you click me?',
                          'Go harrass Nigel with questions. swensoni@oregonstate.edu')

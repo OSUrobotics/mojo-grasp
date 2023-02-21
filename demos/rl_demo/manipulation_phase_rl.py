@@ -5,16 +5,16 @@ from mojograsp.simobjects.object_base import ObjectBase
 from mojograsp.simcore.state import State
 from mojograsp.simcore.reward import Reward
 from mojograsp.simcore.action import Action
-import rl_controller
+from demos.rl_demo import rl_controller
 from mojograsp.simcore.replay_buffer import ReplayBufferDefault
 from numpy.random import shuffle
-
 from math import isclose
+
 
 
 class ManipulationRL(Phase):
 
-    def __init__(self, hand: TwoFingerGripper, cube: ObjectBase, x, y, state: State, action: Action, reward: Reward, replay_buffer: ReplayBufferDefault = None, args: dict = None, tbname = None):
+    def __init__(self, hand: TwoFingerGripper, cube: ObjectBase, x, y, state: State, action: Action, reward: Reward, replay_buffer: ReplayBufferDefault = None, args: dict = None):
         self.name = "manipulation"
         self.hand = hand
         self.cube = cube
@@ -26,16 +26,13 @@ class ManipulationRL(Phase):
         self.episode = 0
         self.x = x
         self.y = y
-        try:
-            self.use_ik = args['ik_flag']
-        except:
-            self.use_ik = True
-        # print('x and y', x,y)
+        self.use_ik = args['ik_flag']
+        print('ARE WE USING IK', self.use_ik)
         
         self.target = None
         self.goal_position = None
         # create controller
-        self.controller = rl_controller.RLController(hand, cube, replay_buffer=replay_buffer, args=args, tbname=tbname)
+        self.controller = rl_controller.RLController(hand, cube, replay_buffer=replay_buffer, args=args)
         self.end_val = 0
         # self.controller = rl_controller.ExpertController(hand, cube)
 
@@ -69,12 +66,14 @@ class ManipulationRL(Phase):
 
     def execute_action(self, action_to_execute=None):
         # Execute the target that we got from the controller in pre_step()
+        # print('GGGGGG')
         if action_to_execute:
+            # print('ye haw')
             p.setJointMotorControlArray(self.hand.id, jointIndices=self.hand.get_joint_numbers(),
                                         controlMode=p.POSITION_CONTROL, targetPositions=action_to_execute)
         else:
             p.setJointMotorControlArray(self.hand.id, jointIndices=self.hand.get_joint_numbers(),
-                                        controlMode=p.POSITION_CONTROL, targetPositions=self.target)
+                                        controlMode=p.POSITION_CONTROL, targetPositions=self.target, positionGains=[0.8,0.8,0.8,0.8])
         self.timestep += 1
 
     def post_step(self):
@@ -107,3 +106,12 @@ class ManipulationRL(Phase):
         self.episode = 0
         
         self.state.reset()
+
+    def load_policy(self, filename):
+        self.controller.load_policy(filename)
+        
+    def evaluate(self):
+        self.controller.evaluate()
+        
+    def train(self):
+        self.controller.train()

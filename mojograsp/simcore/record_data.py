@@ -199,6 +199,7 @@ class RecordDataPKL(RecordData):
         self.episode_data = []
         self.current_episode = None
         self.episodes = {}
+        self.eval_num = 0
 
     def record_timestep(self):
         """
@@ -236,6 +237,7 @@ class RecordDataPKL(RecordData):
         self.timestep_num = 1
         if not evaluated:
             self.episode_num += 1
+            self.eval_num = self.episode_num
 
     def save_episode(self,evaluated=False):
         """
@@ -244,11 +246,14 @@ class RecordDataPKL(RecordData):
         """
         if self.save_episode_flag and self.data_path != None:
             if evaluated:
-                file_path = '/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/vizualization/Evaluation_episode_' + str(self.episode_num) + ".pkl"
+                file_path = '/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/vizualization/Evaluation_episode_' + str(self.eval_num) + ".pkl"
+                self.eval_num +=1
+                print('save episode evaluated', self.eval_num)
             else:
                 file_path = self.data_path + \
                     self.data_prefix + "_" + str(self.episode_num) + ".pkl"
             print(file_path)
+            
             with open(file_path, 'wb') as fout:
                 pkl.dump(self.current_episode, fout)
         self.current_episode = {}

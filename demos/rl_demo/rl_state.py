@@ -63,7 +63,7 @@ class StateRL(StateDefault):
         super().set_state()
         
         # if self.objects:
-        #     data_dict = {}
+        #     data_dict = {}0
         #     for i in self.objects:
         #         data_dict[i.name] = i.get_data()
         #     self.current_state = data_dict
@@ -75,11 +75,23 @@ class StateRL(StateDefault):
         link1_pose = p.getLinkState(self.objects[0].id, 2)
         # p.get
         link2_pose = p.getLinkState(self.objects[0].id, 5)
+        link1_base = p.getLinkState(self.objects[0].id, 1)
+        # p.get
+        link2_base = p.getLinkState(self.objects[0].id, 4)
         # print(list(link1_pose[0]))
         # print(list(temp1[6]))
         self.current_state['f1_pos'] = list(link1_pose[0])
         self.current_state['f2_pos'] = list(link2_pose[0])
+        self.current_state['f1_base'] = list(link1_base[0])
+        self.current_state['f2_base'] = list(link2_base[0])
         # self.current_state['f1_pos'] = list(temp1[6])
         # self.current_state['f2_pos'] = list(temp2[6])
         self.current_state['f1_obj_dist'] = temp1[8]
         self.current_state['f2_obj_dist'] = temp2[8]
+        
+    def __eq__(self, o):
+        # Doesnt check that the objects are the same or that the run number is the same,
+        # only checks that the values saved in state are the same
+        if isinstance(o, StateRL):
+            return self.current_state == o.current_state
+        return False
