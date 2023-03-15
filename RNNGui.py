@@ -9,31 +9,12 @@ Created on Sun Aug 28 14:21:38 2022
 import PySimpleGUI as sg
 import os
 import pickle as pkl
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-import matplotlib
 import numpy as np
 import json
 from PIL import ImageGrab
-from scipy.stats import kde
-import csv
-import torch
-import numpy as np
 
-import argparse
-from torch.utils.data import TensorDataset, DataLoader
 
-import numpy as np
-import matplotlib.pyplot as plt
-import torch
-import pickle as pkl
-import time
-import argparse
 # from itertools import islice
-import os
-from sklearn.ensemble import RandomForestClassifier
-from sklearn import metrics
-import datetime
-from copy import deepcopy
 import threading
 from mojograsp.simcore.run_from_file import run_pybullet
 import pathlib
@@ -89,7 +70,8 @@ class RNNGui():
         model_layout = [ [sg.Text('Num Epochs'), sg.Input(1000, key='-epochs'), sg.Text('Batch Size'), sg.Input(100, key='-batch-size')],
                          [sg.Text('Learning Rate'), sg.Input(0.0001,key='-learning'), sg.Text('Discount Factor'), sg.Input(0.995, key='-df')],
                          [sg.Text('Starting Epsilon'), sg.Input(0.7,key='-epsilon'), sg.Text('Epsilon Decay Rate'), sg.Input(0.995, key='-edecay')],
-                         [sg.Text('Evaluation Period'), sg.Input(100,key='-eval')]]
+                         [sg.Text('Rollout Size'), sg.Input(5,key='-rollout_size'), sg.Text('Rollout Weight'), sg.Input(0.5, key='-rollout_weight')],
+                         [sg.Text('Evaluation Period'), sg.Input(100,key='-eval'), sg.Text('Tau'), sg.Input(0.0005, key='-tau')]]
         
         plotting_layout = [[sg.Text('Model Title')],
                        [sg.Input('test1',key='-title')],
@@ -129,34 +111,44 @@ class RNNGui():
                      'evaluate': int(values['-eval']),
                      'sampling': values['-sampling'],
                      'reward': values['-reward'],
-                     'action': values['-action'],}
+                     'action': values['-action'],
+                     'rollout_size': int(values['-rollout_size']),
+                     'rollout_weight': float(values['-rollout_weight']),
+                     'tau': float(values['-tau'])}
         state_len = 0
         state_mins = []
         state_maxes = []
+        state_list = []
         if values['-ftp']:
-            state_mins.extend([0.2, 0.35, 0.2, 0.35])
-            state_maxes.extend([-0.2, -0.05, -0.2, -0.05])
+            state_mins.extend([-0.072, 0.088, -0.072, 0.088])
+            state_maxes.extend([0.072, 0.232, 0.072, 0.232])
             state_len += 4
+            state_list.append('ftp')
         if values['-fbp']:
-            state_mins.extend([0.2, 0.35, 0.2, 0.35])
-            state_maxes.extend([-0.2, -0.05, -0.2, -0.05])
+            state_mins.extend([-0.072, 0.088, -0.072, 0.088])
+            state_maxes.extend([0.072, 0.232, 0.072, 0.232])
             state_len += 4
+            state_list.append('fbp')
         if values['-op']:
-            state_mins.extend([0.2, 0.35])
-            state_maxes.extend([-0.2, -0.05])
+            state_mins.extend([-0.072, 0.088])
+            state_maxes.extend([0.072, 0.232])
             state_len += 2
+            state_list.append('op')
         if values['-ja']:
             state_mins.extend([np.pi/2, 0, np.pi/2, np.pi])
             state_maxes.extend([-np.pi/2, -np.pi, -np.pi/2])
             state_len += 4
+            state_list.append('ja')
         if values['-fod']:
-            state_mins.extend([0.2, 0.2])
+            state_mins.extend([0.072, 0.072])
             state_maxes.extend([-0.001, -0.001])
             state_len += 2
+            state_list.append('fod')
         if values['-gp']:
-            state_mins.extend([0.055, 0.215])
-            state_maxes.extend([-0.055, 0.105])
+            state_mins.extend([-0.07, -0.07])
+            state_maxes.extend([0.07, 0.07])
             state_len += 2
+            state_list.append('gp')
         if state_len == 0:
             print('No selected state space')
             return False
@@ -167,6 +159,10 @@ class RNNGui():
         self.args['state_dim'] = state_len
         self.args['state_mins'] = state_mins
         self.args['state_maxes'] = state_maxes
+        self.args['state_list'] = state_list
+
+        if self.args['action'] =='Joint Velocity' or self.args['action'] =='Finger Tip Position':
+            self.args['action_dim'] = 4
 
         if 'FD' in self.args['model']:
             exists = os.path.isfile(self.expert_path + 'episode_all.pkl')
@@ -180,8 +176,7 @@ class RNNGui():
         else:
             print('save path is not a valid directory')
             return False
-        test_path = pathlib.Path(__file__).parent.resolve()
-        overall_path = test_path.parent.resolve()
+        overall_path = pathlib.Path(__file__).parent.resolve()
         resource_path = overall_path.joinpath('demos/rl_demo/resources')
         run_path = overall_path.joinpath('demos/rl_demo/runs')
         self.args['tname'] = str(run_path.joinpath(values['-title']))
@@ -201,14 +196,15 @@ class RNNGui():
         return True
         
     def train(self):
-        run_pybullet(self.args['save_path'] + '/experiment_config.pkl', self.window)
+        run_pybullet(self.args['save_path'] + 'experiment_config.json', self.window)
         print('model finished, saving now')
 
     def log_params(self):
         if self.built:
             print('saving configuration')
-            with open(self.args['save_path'] + '/experiment_config.pkl', 'wb') as conf_file:
-                pkl.dump(self.args,conf_file)
+            
+            with open(self.args['save_path'] + '/experiment_config.json', 'w') as conf_file:
+                json.dump(self.args, conf_file)
         else:
             print('config not built, parameters not saved')
 

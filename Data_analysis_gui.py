@@ -202,7 +202,7 @@ class GuiBackend():
             print("can't draw when episode_all is selected")
             return
         data = self.data_dict['timestep_list']
-        actor_list = [f['control']['actor_output'] for f in data]
+        actor_list = [f['action']['actor_output'] for f in data]
         actor_list = np.array(actor_list)
         if self.clear_plots | (self.curr_graph != 'angles'):
             self.ax.cla()

@@ -293,7 +293,7 @@ class RecordDataRLPKL(RecordDataPKL):
         if self.action:
             timestep_dict["action"] = self.action.get_action()
         if self.controller:
-            timestep_dict["control"] = self.controller.get_network_outputs()
+            timestep_dict["control"] = self.controller.get_network_outputs(self.state.get_state())
         self.timesteps.append(timestep_dict)
         self.timestep_num += 1
         
