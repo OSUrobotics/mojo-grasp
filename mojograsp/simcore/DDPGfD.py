@@ -9,9 +9,9 @@ from numpy.random import default_rng
 import matplotlib.pyplot as plt
 from torch.utils.tensorboard import SummaryWriter
 # import os
-from priority_replay_buffer import ReplayBufferPriority
-from state import State
-from reward import Reward
+from mojograsp.simcore.priority_replay_buffer import ReplayBufferPriority
+from mojograsp.simcore.state import State
+from mojograsp.simcore.reward import Reward
 # Implementation of Deep Deterministic Policy Gradients (DDPG)
 # Paper: https://arxiv.org/abs/1509.02971
 # [Not the implementation used in the TD3 paper]
