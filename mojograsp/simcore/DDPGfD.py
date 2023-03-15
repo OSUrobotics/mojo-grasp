@@ -9,7 +9,9 @@ from numpy.random import default_rng
 import matplotlib.pyplot as plt
 from torch.utils.tensorboard import SummaryWriter
 # import os
-
+from priority_replay_buffer import ReplayBufferPriority
+from state import State
+from reward import Reward
 # Implementation of Deep Deterministic Policy Gradients (DDPG)
 # Paper: https://arxiv.org/abs/1509.02971
 # [Not the implementation used in the TD3 paper]
@@ -17,17 +19,23 @@ from torch.utils.tensorboard import SummaryWriter
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 def simple_normalize(x_tensor, mins, maxes):
-    # order is pos, orientation (quaternion), joint angles, velocity
-    # print(x_tensor)
+    """
+    normalizes a numpy array to -1 and 1 using provided maximums and minimums
+    :param x_tensor: - array to be normalized
+    :param mins: - array containing minimum values for the parameters in x_tensor
+    :param maxes: - array containing maximum values for the parameters in x_tensor
+    """
     y_tensor = ((x_tensor-mins)/(maxes-mins)-0.5) *2
-    # print('normalized tensor', y_tensor)
     return y_tensor
     
 
 class Actor(nn.Module):
-    def __init__(self, state_dim, action_dim, max_action, state_mins, state_maxes):
+    def __init__(self, state_dim:int, action_dim:int, max_action:float, state_mins:list, state_maxes:list):
+        """
+        Constructor initializes actor network with input dimension 'state_dim' 
+        and output dimension 'action_dim'. State mins and maxes saved for normalization
+        """
         super(Actor, self).__init__()
-
         self.l1 = nn.Linear(state_dim, 400)
         torch.nn.init.kaiming_uniform_(self.l1.weight, a=0, mode='fan_in', nonlinearity='leaky_relu')
         self.l2 = nn.Linear(400, 300)
@@ -38,20 +46,21 @@ class Actor(nn.Module):
         self.MINS = torch.tensor(state_mins).to(device)
         self.max_action = max_action
 
-    def forward(self, state):
-        # print("State Actor: {}\n{}".format(state.shape, state))
-        # print('input to actor')
+    def forward(self, state:torch.Tensor):
+        """
+        Runs state through actor network to get action associated with state
+        """
         state = simple_normalize(state, self.MINS, self.MAXES)
         a = F.relu(self.l1(state))
         a = F.relu(self.l2(a))
-        # return self.max_action * torch.sigmoid(self.l3(a))
-        # return self.max_action * torch.tanh(self.l3(a))
         return torch.tanh(self.l3(a))
-        # return self.l3(a)
 
-# OLD PARAMS WERE 400-300, TESTING 100-50
 class Critic(nn.Module):
-    def __init__(self, state_dim, action_dim, state_mins, state_maxes):
+    def __init__(self, state_dim:int, action_dim:int, state_mins:list, state_maxes:list):
+        """
+        Constructor initializes actor network with input dimension 'state_dim'+'action_dim' 
+        and output dimension 1. State mins and maxes saved for normalization
+        """
         super(Critic, self).__init__()
         self.leaky = nn.LeakyReLU()
         self.l1 = nn.Linear(state_dim + action_dim, 400)
@@ -64,27 +73,23 @@ class Critic(nn.Module):
         self.MINS = torch.tensor(state_mins).to(device)
         self.max_q_value = 1
 
-    def forward(self, state, action):
-        # print('input to critic', torch.cat([state, action], -1))
+    def forward(self, state:torch.Tensor, action:torch.Tensor):
+        """
+        Concatenates state and action and runs through critic network to return
+        q-value associated with state-action pair
+        """
         state = simple_normalize(state, self.MINS, self.MAXES)
         q = F.relu(self.l1(torch.cat([state, action], -1)))
         q = F.relu(self.l2(q))
-        # print("Q Critic: {}".format(q))
-        # q = -torch.sigmoid(self.l3(q))
-        # q = torch.tanh(self.l3(q))
         q = self.l3(q)
         return q# * self.max_q_value
 
 class DDPGfD_priority():
-    def __init__(self, arg_dict: dict = None):
-        # state_path=None, state_dim=32, action_dim=4, max_action=1.57, n=5, discount=0.995, tau=0.0005, batch_size=10,
-        #          expert_sampling_proportion=0.7):
-        
-        if arg_dict is None:
-            print('no arg dict')
-            arg_dict = {'state_dim': 32, 'action_dim': 4, 'max_action': 1.57, 'n': 5, 'discount': 0.995, 'tau': 0.005,
-                        'batch_size': 20, 'tname':'test1'}
-        # print(arg_dict)
+    def __init__(self, arg_dict: dict):
+        """
+        Constructor initializes the actor and critic network and use an argument
+        dictionary to initialize hyperparameters
+        """
         self.STATE_DIM = arg_dict['state_dim']
         self.REWARD_TYPE = arg_dict['reward']
         self.SAMPLING_STRATEGY = arg_dict['sampling']
@@ -109,13 +114,11 @@ class DDPGfD_priority():
             self.USE_HER = True
         else:
             self.USE_HER = False
-        # TensorboardName = 'expert_trimmed'
 
         self.writer = SummaryWriter(arg_dict['tname'])
 
         self.DISCOUNT = arg_dict['discount']
         self.TAU = arg_dict['tau']
-        # print(type(self.TAU))
         self.NETWORK_REPL_FREQ = 2
         self.total_it = 0
         self.LAMBDA_LBC = 1
@@ -132,26 +135,39 @@ class DDPGfD_priority():
         self.critic_component = 1
         self.state_list = arg_dict['state_list']
 
-    def select_action(self, state):
+    def select_action(self, state: State):
+        """
+        Method takes in a State object
+        Runs state through actor network to get action from policy in numpy array
+
+        :param state: :func:`~mojograsp.simcore.state.State` object.
+        :type state: :func:`~mojograsp.simcore.state.State`
+        """
         lstate = self.build_state(state)
         lstate = torch.FloatTensor(np.reshape(lstate, (1, -1))).to(device)
-        # print("TYPE:", type(state), state)
         action = self.actor(lstate).cpu().data.numpy().flatten()
         return action
 
-    def grade_action(self, state, action):
+    def grade_action(self, state: State, action: np.ndarray):
+        """
+        Method takes in a State object and numpy array containing a policy action
+        Runs state and action through critic network to return state-action
+        q-value (as float) and gradient of q-value relative to the action (as numpy array)
+
+        :param state: :func:`~mojograsp.simcore.state.State` object.
+        :param action: :func:`~np.ndarray` containing action
+        :type state: :func:`~mojograsp.simcore.state.State`
+        :type action: :func:`~np.ndarray` 
+        """
         lstate = self.build_state(state)
         lstate = torch.FloatTensor(np.reshape(lstate, (1, -1))).to(device)
-        # state = torch.tensor(np.reshape(state, (1,-1)), dtype=float).to(device)
         action = torch.tensor(np.reshape(action, (1,-1)), dtype=float, requires_grad=True).to(device)
-        # state=state.float()
         action=action.float()
         action.retain_grad()
         g = self.critic(lstate, action)
         g.backward()
         grade = g.cpu().data.numpy().flatten()
         
-        # print(action.grad)
         return grade, action.grad.cpu().data.numpy()
     
     def copy(self, policy_to_copy_from):
@@ -181,6 +197,9 @@ class DDPGfD_priority():
         self.BATCH_SIZE = policy_to_copy_from.BATCH_SIZE
 
     def save(self, filename):
+        """ Save current policy to given filename
+		filename: filename to save policy to
+        """
         torch.save(self.critic.state_dict(), filename + "_critic")
         torch.save(self.critic_target.state_dict(), filename + "_critic_target")
         torch.save(self.critic_optimizer.state_dict(), filename + "_critic_optimizer")
@@ -190,6 +209,9 @@ class DDPGfD_priority():
         np.save(filename + "avg_evaluation_reward", np.array([self.avg_evaluation_reward]))
 
     def load(self, filename):
+        """ Load input policy from given filename
+		filename: filename to load policy from
+        """
         self.critic.load_state_dict(torch.load(filename + "_critic", map_location=device))
         self.critic_optimizer.load_state_dict(torch.load(filename + "_critic_optimizer", map_location=device))
         self.actor.load_state_dict(torch.load(filename + "_actor", map_location=device))
@@ -199,30 +221,23 @@ class DDPGfD_priority():
         self.actor_target = copy.deepcopy(self.actor)
 
     def update_target(self):
-        # Update the frozen target models
+        """ Update frozen target networks to be closer to current networks
+        """
         for param, target_param in zip(self.critic.parameters(), self.critic_target.parameters()):
             target_param.data.copy_(self.TAU * param.data + (1 - self.TAU) * target_param.data)
 
         for param, target_param in zip(self.actor.parameters(), self.actor_target.parameters()):
             target_param.data.copy_(self.TAU * param.data + (1 - self.TAU) * target_param.data)
 
-    def calc_roll_rewards(self,rollout_reward):
-        sum_rewards = []
-        num_rewards = []
-        for reward_set in rollout_reward:
-            temp_reward = 0
-            for count, step_reward in enumerate(reward_set):
-                temp_reward += step_reward*self.DISCOUNT**count
-            sum_rewards.append(temp_reward)
-            num_rewards.append(count+1)
-        num_rewards = torch.tensor(num_rewards).to(device)
-        num_rewards = torch.unsqueeze(num_rewards,1)
-        sum_rewards = torch.tensor(sum_rewards)
-        sum_rewards = torch.unsqueeze(sum_rewards,1)
-        return sum_rewards, num_rewards
+    def build_state(self, state_container: State):
+        """
+        Method takes in a State object
+        Extracts state information from state_container and returns it as a list based on
+        current used states contained in self.state_list
 
-    def build_state(self, state_container):
-        # print('before', state_container)
+        :param state: :func:`~mojograsp.simcore.phase.State` object.
+        :type state: :func:`~mojograsp.simcore.phase.State`
+        """
         state = []
         for key in self.state_list:
             if key == 'op':
@@ -237,10 +252,17 @@ class DDPGfD_priority():
                 state.extend([item for item in state_container['two_finger_gripper']['joint_angles'].values()])
             elif key == 'gp':
                 state.extend(state_container['goal_pose']['goal_pose'])
-        # print('after', state_container)
         return state
 
-    def build_reward(self, reward_container):
+    def build_reward(self, reward_container: Reward):
+        """
+        Method takes in a Reward object
+        Extracts reward information from state_container and returns it as a float
+        based on the reward structure contained in self.REWARD_TYPE
+
+        :param state: :func:`~mojograsp.simcore.reward.Reward` object.
+        :type state: :func:`~mojograsp.simcore.reward.Reward`
+        """
         if self.REWARD_TYPE == 'Sparse':
             tstep_reward = reward_container['distance_to_goal'] < 0.002
         elif self.REWARD_TYPE == 'Distance':
@@ -252,14 +274,29 @@ class DDPGfD_priority():
     
     
     
-    def collect_batch(self, replay_buffer):
-        types = []
-        #TODO: normalize the rewards within the batch to -1,1
-        #also change replay buffer termination to have nasty negative reward if we terminate early from failing
-        # also talk to kegan about expert control
-        # print('aaaaaAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA')
+    def collect_batch(self, replay_buffer: ReplayBufferPriority):
+        """
+        Method takes in a ReplayBufferPriority object
+        Extracts BATCH_SIZE transitions and associated priority information from 
+        replay buffer and returns them as tensors for training 
+
+        :param state: :func:`~mojograsp.simcore.priority_replay_buffer.ReplayBufferPriority' object.
+        :type state: :func:`~mojograsp.simcore.priority_replay_buffer.ReplayBufferPriority
+        :return state:  state information as tensor
+        :return action: action information as tensor
+        :return next_state: next_state information as tensor
+        :return reward: reward information as tensor
+        :return rollout_reward: rollout reward as tensor
+        :return rollout_discount: discount factor to be applied to last state after rollout reward as tensor
+        :return last_state: resulting state after rollout as tensor
+        :return trimmed_weight: priority of sampled transitions
+        :return trimmed_idxs: index in priority queue of sampled transitions
+        :return expert_status: bool containing if associated transition is from expert sample
+        The name of the next phase or None
+        :rtype: str or None
+        """
+        
         num_timesteps = len(replay_buffer)
-        # print(num_timesteps)
         if num_timesteps < self.BATCH_SIZE * 20:
             return None, None, None, None, None, None, None, None, None, None
         else:
@@ -330,7 +367,7 @@ class DDPGfD_priority():
             return state, action, next_state, reward, rollout_reward, rollout_discount, last_state, trimmed_weight, trimmed_idxs, expert_status
 
     def train(self, replay_buffer, prob=0.7):
-        """ Update policy based on full trajectory of one episode """
+        """ Update policy based on sample of timesteps from replay buffer"""
         self.total_it += 1
 
         state, action, next_state, reward, sum_rewards, num_rewards, last_state, transition_weight, indxs, expert_status = self.collect_batch(replay_buffer)
@@ -359,16 +396,13 @@ class DDPGfD_priority():
             scaled_QN = target_QN * transition_weight
             
             # L_1 loss (Loss between current state, action and reward, next state, action)
-            # critic_L1loss = F.mse_loss(current_Q, target_Q)
             critic_L1loss = F.mse_loss(scaled_Q, scaled_target)
 
             # L_2 loss (Loss between current state, action and reward, n state, n action)
-            # critic_LNloss = F.mse_loss(current_Q, target_QN)
             critic_LNloss = F.mse_loss(scaled_Q, scaled_QN)
 
 
             # Total critic loss
-              # hyperparameter to control n loss
             critic_loss = critic_L1loss.float() + self.LAMBDA_1 * critic_LNloss
 
             # Optimize the critic
@@ -383,12 +417,8 @@ class DDPGfD_priority():
             individual_actor_loss = -self.critic(state, actor_action)
 
             actor_loss = individual_actor_loss.mean()
-            # temp = individual_actor_loss.shape
-            # priorities = np.ones(temp)
+            
             # Optimize the actor
-            # TODO check the new priority method and make sure its sound
-
-                
             self.actor_optimizer.zero_grad()
             actor_loss.backward()
             
