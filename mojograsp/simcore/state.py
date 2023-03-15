@@ -76,4 +76,4 @@ class StateDefault(State):
         :return: Dictionary containing the representation of the current simulator state or an empty dictionary.
         :rtype: dict
         """
-        return self.current_state
+        return self.current_state.copy()

@@ -229,7 +229,7 @@ class ReplayBufferPriority():
     def update_priorities(self, idxes, priorities):
         for i in range(len(idxes)):
             self.buffer_prio[idxes[i]] = float(priorities[i] ** self.alpha)
-            self.max_prio = min(float(self.buffer_prio[idxes[i]]), self.max_prio)
+            self.buffer_prio[idxes[i]] = min(float(self.buffer_prio[idxes[i]]), self.max_prio)
 
     def add_timestep(self, transition):
         if self.sz < self.buffer_max:

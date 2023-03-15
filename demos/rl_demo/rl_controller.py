@@ -26,6 +26,7 @@ def calc_finger_poses(angles):
     f1y = y0[0] + np.cos(angles[0])*0.072 + np.cos(angles[0] + angles[1])*0.072
     f2y = y0[1] + np.cos(angles[2])*0.072 + np.cos(angles[2] + angles[3])*0.072
     return [f1x, f1y, f2x, f2y]
+
 class ExpertController():
     # Maximum move per step
     MAX_MOVE = .01
@@ -220,93 +221,52 @@ class RLController(ExpertController):
         if type(replay_buffer) == ReplayBufferDF or type(replay_buffer) == ReplayBufferPriority:
             self.policy = DDPGfD_priority(args)
         self.replay_buffer = replay_buffer
-        try:
-            self.max_change = 0.1
-            self.cooling_rate = args['edecay']
-            self.rand_portion = np.array([0,0,0,0])
-            self.final_reward = 0
-            self.epsilon = args['epsilon']
-            self.old_epsilon = self.epsilon
-        except:
-            print('no config given, using baseline parameters')
-            self.max_change = 0.1
-            self.cooling_rate = args['edecay']
-            # self.rand_size = 0.1
-            self.rand_portion = np.array([0,0,0,0])
-            self.final_reward = 0
-            self.epsilon = args['epsilon']
-            self.old_epsilon = self.epsilon
-        print('epsilon and edecay', self.epsilon, self.cooling_rate)
+        self.train_flag = False
+        self.MAX_ANGLE_CHANGE = 0.1
+        self.MAX_DISTANCE_CHANGE = 0.001
+        self.epsilon = args['epsilon']
+        self.COOLING_RATE = args['edecay']
+        self.rand_portion = np.array([0,0,0,0])
+        self.final_reward = 0
+        
+        self.old_epsilon = self.epsilon
+        print('epsilon and edecay', self.epsilon, self.COOLING_RATE)
         self.rand_episode = np.random.rand() < self.epsilon
         # self.eval_flag = False
 
     def load_policy(self,filename):
         self.policy.load(filename)
 
-    def get_next_action(self):
+    def get_next_action(self, state):
 
         # get current cube position
         self.get_current_cube_position()
 
         finger_angles = self.gripper.get_joint_angles()
-        # object_velocity = self.cube.get_curr_velocity()
-        # f1 = p.getClosestPoints(self.cube.id, self.gripper.id, 10, -1, 1, -1)[0]
-        # f2 = p.getClosestPoints(self.cube.id, self.gripper.id, 10, -1, 3, -1)[0]
-        # finger_pos1 = p.getLinkState(self.gripper.id, 1)
-        # finger_pos2 = p.getLinkState(self.gripper.id, 3)
-        # For new Configuration
-        finger_pos1 = p.getLinkState(self.gripper.id, 2)
-        finger_pos2 = p.getLinkState(self.gripper.id, 5)
-        # f1_loc = f1[5]
-        # f2_loc = f1[5]
-        # f1_dist = f1[8]
-        # f2_dist = f2[8]
-        # state = self.current_cube_pose[0] + self.current_cube_pose[1] + finger_angles + object_velocity[0] + [f1_dist, f2_dist] + list(f1_loc) + list(f2_loc)# + self.goal_position
-        # state = self.current_cube_pose[0][0:2] + finger_angles + object_velocity[0][0:2] + [f1_dist, f2_dist] + list(f1_loc)[0:2] + list(f2_loc)[0:2] + self.goal_position[0:2]
-        
-        state = self.current_cube_pose[0][0:2] + list(finger_pos1[0])[0:2] + list(finger_pos2[0])[0:2] + self.goal_position[0:2]
-        
+
         if not self.rand_episode:
             actor_portion = self.policy.select_action(state)+(np.random.rand(4)-0.5)/2 * self.epsilon
             
-            action = ((actor_portion)*self.max_change + finger_angles).tolist()
-            # print(action)
+            action = ((actor_portion)*self.MAX_ANGLE_CHANGE + finger_angles).tolist()
         else:
             actor_portion = self.rand_portion + (np.random.rand(4)-0.5)/2
             actor_portion = np.ones(4)
-            action = (self.max_change*(actor_portion) + finger_angles).tolist()
+            action = (self.MAX_ANGLE_CHANGE*(actor_portion) + finger_angles).tolist()
         
         return action, actor_portion
     
-    def get_next_IK_action(self):
+    def get_next_IK_action(self, state):
         # get current cube position
         self.get_current_cube_position()
 
-        # finger_angles = self.gripper.get_joint_angles()
-        # object_velocity = self.cube.get_curr_velocity()
-        # f1 = p.getClosestPoints(self.cube.id, self.gripper.id, 10, -1, 1, -1)[0]
-        # f2 = p.getClosestPoints(self.cube.id, self.gripper.id, 10, -1, 3, -1)[0]
-        # finger_pos1 = p.getLinkState(self.gripper.id, 1)
-        # finger_pos2 = p.getLinkState(self.gripper.id, 3)
-        # For new Configuration
         finger_pos1 = p.getLinkState(self.gripper.id, 2)
         finger_pos2 = p.getLinkState(self.gripper.id, 5)
-        finger_base1 = p.getLinkState(self.gripper.id, 1)
-        finger_base2 = p.getLinkState(self.gripper.id, 4)
 
-        # f1_loc = f1[5]
-        # f2_loc = f1[5]
-        # f1_dist = f1[8]
-        # f2_dist = f2[8]
-        # state = self.current_cube_pose[0] + self.current_cube_pose[1] + finger_angles + object_velocity[0] + [f1_dist, f2_dist] + list(f1_loc) + list(f2_loc)# + self.goal_position
-        # state = self.current_cube_pose[0][0:2] + finger_angles + object_velocity[0][0:2] + [f1_dist, f2_dist] + list(f1_loc)[0:2] + list(f2_loc)[0:2] + self.goal_position[0:2]
-        
-        state = self.current_cube_pose[0][0:2] + list(finger_pos1[0])[0:2] + list(finger_pos2[0])[0:2] + list(finger_base1[0])[0:2] + list(finger_base2[0])[0:2] + self.goal_position[0:2]
-        # print(state)
         if not self.rand_episode:           
             actor_portion = self.policy.select_action(state) + (np.random.rand(4)-0.5)/2 * self.epsilon
-            ap = actor_portion * 0.001
-            # print(finger_deltas)
+            actor_portion = np.clip(actor_portion,-1,1)
+            ap = actor_portion * self.MAX_DISTANCE_CHANGE
+            # print('start of controller',actor_portion)
             new_finger_poses = [finger_pos1[0][0] + ap[0], finger_pos1[0][1] + ap[1], finger_pos2[0][0] + ap[2], finger_pos2[0][1] + ap[3]]
             # action = (action*self.max_change + finger_angles).tolist()
             # print(new_finger_poses)
@@ -322,9 +282,9 @@ class RLController(ExpertController):
             # print('ik angle change', np.array(action) - np.array(finger_angles))
         else:
             
-            actor_portion = (self.rand_portion + np.random.rand(4)-0.5)
-            
-            ap = actor_portion* 0.001
+            actor_portion = (self.rand_portion + (np.random.rand(4)-0.5)/2)
+            actor_portion = np.clip(actor_portion,-1,1)
+            ap = actor_portion* self.MAX_DISTANCE_CHANGE
             new_finger_poses = [finger_pos1[0][0] + ap[0],finger_pos1[0][1] + ap[1],finger_pos2[0][0] + ap[2],finger_pos2[0][1] + ap[3]]
             # p.calculateInverseKinematic
             finger_1_angs = p.calculateInverseKinematics(self.gripper.id,2,[new_finger_poses[0], new_finger_poses[1], finger_pos1[0][2]],maxNumIterations=3000)
@@ -333,34 +293,12 @@ class RLController(ExpertController):
             # print('random angle change',np.array(action) - np.array(finger_angles))
             finger_pose_from_action = calc_finger_poses(action)
             # assert np.isclose(finger_pose_from_action,new_finger_poses,atol=0.0001).all(), 'action does not result in desired pose, random'   
-        # print(action)
+        # print('end of controller',actor_1portion)
         return action, actor_portion
     
-    def get_network_outputs(self):
+    def get_network_outputs(self, state):
         self.get_current_cube_position()
-        # get next cube position
-        # finger_angles = self.gripper.get_joint_angles()
-        # object_velocity = self.cube.get_curr_velocity()
-        # f1 = p.getClosestPoints(self.cube.id, self.gripper.id, 10, -1, 1, -1)[0]
-        # f2 = p.getClosestPoints(self.cube.id, self.gripper.id, 10, -1, 1, -1)[0]
-        # finger_pos1 = p.getLinkState(self.gripper.id, 1)
-        # finger_pos2 = p.getLinkState(self.gripper.id, 3)
-        # For new Configuration
-        finger_pos1 = p.getLinkState(self.gripper.id, 2)
-        finger_pos2 = p.getLinkState(self.gripper.id, 5)
-        finger_base1 = p.getLinkState(self.gripper.id, 1)
-        finger_base2 = p.getLinkState(self.gripper.id, 4)
-        # f1_loc = f1[5]
-        # f2_loc = f1[5]
-        
-        # f1_dist = f1[8]
-        # f2_dist = f2[8]
-        # state = self.current_cube_pose[0] + self.current_cube_pose[1] + finger_angles + object_velocity[0] + [f1_dist, f2_dist] + list(f1_loc) + list(f2_loc)# + self.goal_position
 
-        # state = self.current_cube_pose[0][0:2] + finger_angles + object_velocity[0][0:2] + [f1_dist, f2_dist] + list(f1_loc)[0:2] + list(f2_loc)[0:2] + self.goal_position[0:2]
-        
-        state = self.current_cube_pose[0][0:2] + list(finger_pos1[0])[0:2] + list(finger_pos2[0])[0:2] + list(finger_base1[0])[0:2] + list(finger_base2[0])[0:2] + self.goal_position[0:2]
-        
         action = self.policy.select_action(state)
         
         critic_response = self.policy.grade_action(state, action)
@@ -413,12 +351,12 @@ class RLController(ExpertController):
     
     
     def update_random_size(self):
-        # self.rand_size = self.rand_size*self.cooling_rate
+        # self.rand_size = self.rand_size*self.COOLING_RATE
         # self.rand_portion = self.rand_size * (np.random.rand(4) - 0.5)
         
         self.rand_portion = 0.5 * (np.random.rand(4) - 0.5)
         # print(self.rand_portion)
-        self.epsilon = self.epsilon * self.cooling_rate
+        self.epsilon = self.epsilon * self.COOLING_RATE
         self.rand_episode = np.random.rand() < self.epsilon
         if self.rand_episode:
             print('NEXT EPISODE WILL BE RANDOM')
@@ -432,7 +370,10 @@ class RLController(ExpertController):
     def evaluate(self):
         self.old_epsilon = self.epsilon
         self.epsilon = 0
+        self.train_flag = True
     
     def train(self):
         # self.old_epsilon = self.epsilon
-        self.epsilon = self.old_epsilon
+        if self.train_flag:
+            self.train_flag=False
+            self.epsilon = self.old_epsilon

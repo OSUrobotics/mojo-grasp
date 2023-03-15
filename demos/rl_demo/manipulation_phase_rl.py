@@ -51,13 +51,16 @@ class ManipulationRL(Phase):
         # print(self.goal_position)
         # set the new goal position for the controller
         self.controller.set_goal_position(self.goal_position)
+        self.state.set_state()
 
     def pre_step(self):
         # Get the target action
+        S = self.state.get_state()
         if self.use_ik:
-            self.target, self.actor_portion = self.controller.get_next_IK_action()
+            self.target, self.actor_portion = self.controller.get_next_IK_action(S)
+            # print('manipulation phase rl',self.actor_portion)
         else:
-            self.target, self.actor_portion = self.controller.get_next_action()
+            self.target, self.actor_portion = self.controller.get_next_action(S)
 
         # Set the next action before the sim is stepped for Action (Done so that replay buffer and record data work)
         self.action.set_action(self.target, self.actor_portion)

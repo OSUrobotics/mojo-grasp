@@ -69,7 +69,9 @@ class StateRL(StateDefault):
         #     self.current_state = data_dict
         # else:
         #     self.current_state = {}
-        
+        # print(self.objects[0].id)
+        # print(self.objects[1].id)
+        # print(p.getClosestPoints(self.objects[1].id, self.objects[0].id, 10, -1, 1, -1))
         temp1 = p.getClosestPoints(self.objects[1].id, self.objects[0].id, 10, -1, 1, -1)[0]
         temp2 = p.getClosestPoints(self.objects[1].id, self.objects[0].id, 10, -1, 4, -1)[0]
         link1_pose = p.getLinkState(self.objects[0].id, 2)

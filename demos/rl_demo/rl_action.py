@@ -10,6 +10,7 @@ class ExpertAction(Action):
         self.current_action['actor_output'] = actor_output
 
     def get_action(self) -> dict:
+        # print('action from get action', self.current_action)
         return self.current_action.copy()
 
 class IKAction(Action):
@@ -21,4 +22,5 @@ class IKAction(Action):
         
 
     def get_action(self) -> dict:
+        # print('action from get action but the other one', self.current_action)
         return self.current_action.copy()
