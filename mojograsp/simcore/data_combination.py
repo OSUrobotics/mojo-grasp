@@ -31,6 +31,7 @@ class data_processor():
                 print('Folder already has episode all. Data not loaded')
                 self.episode_data = []
                 self.save_all_flag = False
+                return
             elif '.pkl' in name and 'config' not in name:
                 pkl_names.append(name)
                 # print(name)
