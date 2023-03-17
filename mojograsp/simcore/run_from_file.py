@@ -72,7 +72,6 @@ def run_pybullet(filepath, window=None, runtype='run'):
     p.resetJointState(hand_id, 3, -.75)
     p.resetJointState(hand_id, 4, 1.4)
     
-    
     # change visual of gripper
     p.changeVisualShape(hand_id, 0, rgbaColor=[0.3, 0.3, 0.3, 1])
     p.changeVisualShape(hand_id, 1, rgbaColor=[1, 0.5, 0, 1])
@@ -144,7 +143,7 @@ def run_pybullet(filepath, window=None, runtype='run'):
         manager.save_network(args['save_path']+'policy_2')
 
 def main():
-    run_pybullet('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/new_priority/experiment_config.json',runtype='run')
+    run_pybullet('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/new_priority_hard/experiment_config.json',runtype='run')
     
 if __name__ == '__main__':
     main()

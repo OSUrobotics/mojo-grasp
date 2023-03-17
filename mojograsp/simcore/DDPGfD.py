@@ -231,7 +231,7 @@ class DDPGfD_priority():
 
     def build_state(self, state_container: State):
         """
-        Method takes in a State object
+        Method takes in a State object 
         Extracts state information from state_container and returns it as a list based on
         current used states contained in self.state_list
 

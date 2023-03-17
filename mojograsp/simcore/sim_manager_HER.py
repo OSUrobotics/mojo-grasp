@@ -140,13 +140,10 @@ class SimManagerRLHER(SimManager):
                     logging.info("CURRENT PHASE: {}".format(
                         self.phase_manager.current_phase.name))
                     while not done:
-                        # print(type(self.state))
-                        # print('1st num bodies',  p.getNumBodies())
                         timestep_number += 1
                         self.phase_manager.current_phase.pre_step()
-                        self.state.set_state()
+                        # self.state.set_state()
                         S = self.state.get_state()
-                        # print('2nd num bodies',p.getNumBodies())
                         if timestep_number > 1 and test_flag:
                             assert S==S2, 'This state and previous next state dont match'
                             angles = [i for i in S['two_finger_gripper']['joint_angles'].values()]
@@ -155,26 +152,19 @@ class SimManagerRLHER(SimManager):
                             print(angles)
                             # assert np.isclose(finger_pos, S_finger_pos, atol=0.001).all(), 'calculated finger pose and pybullet finger pose dont match'
                         self.phase_manager.current_phase.execute_action()
-                        # print('3rd num bodies',p.getNumBodies())
                         A = self.action.get_action()
-                        # print(A['actor_output'])
                         if test_flag:
                             acts = np.array(A['actor_output']) * 0.001
                             assert (np.abs(A['actor_output'])<=1).all(), 'The actor output isnt between -1 and 1'
-                        # self.state.set_state()
                         self.env.step()
                         
                         done = self.phase_manager.current_phase.exit_condition()
-                        # print('4th num bodies', p.getNumBodies())
                         
                         self.phase_manager.current_phase.post_step()
                         
                         self.record.record_timestep()
                         R = self.reward.get_reward()
-                        # print('5th num bodies', p.getNumBodies())
-                        # print(self.state)
                         self.state.set_state()
-                        # print('s2')
                         S2 = self.state.get_state()
 
                         if test_flag:
@@ -225,11 +215,8 @@ class SimManagerRLHER(SimManager):
         for transition in transitions:
             transition[0]['goal_pose']['goal_pose'] = end_goal
             transition[2]['goal_position'] = goal_position
-            # print('goal pose', goal_position)
-            # print('obj_pose', transition[0]['obj_2']['pose'][0])
             transition[2]['distance_to_goal'] = np.sqrt((goal_position[0]-transition[0]['obj_2']['pose'][0][0])**2+(goal_position[1]-transition[0]['obj_2']['pose'][0][1])**2)
             self.replay_buffer.add_timestep(transition)
-            # print(transition[2]['distance_to_goal'])
         # 
     def stall(self):
         super().stall()
