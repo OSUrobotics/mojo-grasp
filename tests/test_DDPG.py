@@ -17,7 +17,7 @@ def compare_models(model_1, model_2):
             return False
     return True
         
-
+# TODO replace with Mock object since i just found out about those
 class FakeReplay():
     def __init__(self,data):
         self.data = data
