@@ -157,6 +157,7 @@ class ReplayBufferPriority():
         self.buffer_max = buffer_size
 
         self.rand = np.random.RandomState(None)
+        self.sampled_indexes = []
 
     def preload_buffer_PKL(self, file_name):
         with open(file_name, 'rb') as handle:
@@ -207,15 +208,16 @@ class ReplayBufferPriority():
         for i in range(b_size):
             r_num = rnums[i]
             sample_idx = self.buffer_prio.find_prefixsum_idx(r_num)
-
+            
             if sample_idx not in idxes:
                 temp_idx = []
                 temp_trans = []
                 temp_w = []
+                # self.sampled_indexes.append(sample_idx)
                 for i in range(rollout_size):
-                    if sample_idx + i < self.sz-1:
+                    if sample_idx + i <= self.sz-1:
                         rollout_sample = self.buffer_memory[sample_idx + i]
-                        if rollout_sample != 0 and rollout_sample[-1] == self.buffer_memory[sample_idx][-1]:
+                        if rollout_sample != 0 and rollout_sample[4] == self.buffer_memory[sample_idx][4]:
                             temp_idx.append(sample_idx + i)
                             temp_trans.append(self.buffer_memory[sample_idx + i])
                             wt = (
@@ -225,6 +227,50 @@ class ReplayBufferPriority():
                 transitions.append(temp_trans)
                 weights.append(temp_w)
         return transitions, weights, idxes
+
+    def sample_sequence_rollout(self, batch_size: int, prestep_size: int, rollout_size: int):
+        b_size = min(self.sz-1, batch_size)
+        prio_sum = self.buffer_prio.sum(0, self.sz)
+
+        idxes = []
+        transitions = []
+        weights = []
+        lookback = []
+        
+        rnums = self.rand.uniform(0, prio_sum, b_size)
+        for i in range(b_size):
+            r_num = rnums[i]
+            sample_idx = self.buffer_prio.find_prefixsum_idx(r_num)
+            
+            if sample_idx not in idxes:
+                temp_idx = []
+                temp_trans = []
+                temp_w = []
+                temp_prevs = []
+                episode_num = self.buffer_memory[sample_idx][4]
+                earliest_transition = self.buffer_memory[sample_idx]
+                for i in range(1,prestep_size+1):
+                    rollout_sample = self.buffer_memory[sample_idx - i]
+                    if rollout_sample != 0 and rollout_sample[4] == episode_num:
+                        temp_prevs.append(self.buffer_memory[sample_idx - i])
+                        earliest_transition = self.buffer_memory[sample_idx - i]
+                    else:
+                        temp_prevs.append(earliest_transition)
+                for i in range(rollout_size):
+                    if sample_idx + i <= self.sz-1:
+                        rollout_sample = self.buffer_memory[sample_idx + i]
+                        if rollout_sample != 0 and rollout_sample[4] == self.buffer_memory[sample_idx][4]:
+                            temp_idx.append(sample_idx + i)
+                            temp_trans.append(self.buffer_memory[sample_idx + i])
+                            wt = (
+                                (1/(self.buffer_prio[sample_idx + i] / prio_sum)) * (1/self.sz)) ** self.beta
+                            temp_w.append(wt)
+                idxes.append(temp_idx)
+                transitions.append(temp_trans)
+                weights.append(temp_w)
+                lookback.append(temp_prevs)
+        return transitions, weights, idxes, lookback
+
 
     def update_priorities(self, idxes, priorities):
         for i in range(len(idxes)):
@@ -242,6 +288,10 @@ class ReplayBufferPriority():
 
     def save_buffer(self, filename: str):
         pass
+
+    def save_sampling(self, filename: str):
+        with open(filename+'.pkl', 'wb') as file:
+            pkl.dump(self.sampled_indexes, file)
 
     def __len__(self):
         return self.sz

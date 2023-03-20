@@ -33,12 +33,13 @@ from mojograsp.simcore.data_combination import data_processor
 import pickle as pkl
 from mojograsp.simcore.DDPGfD import DDPGfD_priority
 import matplotlib.pyplot as plt
+import json
 
 class policy_Futzer():
     def __init__(self, filepath):
         
-        with open(filepath+'experiment_config.pkl', 'rb') as conf:
-            args = pkl.load(conf)
+        with open(filepath+'experiment_config.json', 'r') as conf:
+            args = json.load(conf)
         if args['action'] == 'Joint Velocity':
             ik_flag = False
         else:
@@ -47,7 +48,7 @@ class policy_Futzer():
                     'n': 5, 'discount': args['discount'], 'tau': 0.0005,'batch_size': args['batch_size'], 
                     'epsilon':args['epsilon'], 'edecay': args['edecay'], 'ik_flag': ik_flag,
                     'reward':args['reward'], 'model':args['model'], 'tname':'no'}
-        self.policy = DDPGfD_priority(arg_dict)
+        self.policy = DDPGfD_priority(args)
         self.policy.load(filepath+'policy')
         self.filepath = filepath
     
@@ -65,7 +66,7 @@ class policy_Futzer():
             state.extend(t_state['f2_pos'][0:2])               
             state.extend(timestep['reward']['goal_position'][0:2])
             action = timestep['action']['actor_output']
-            cval, cgrad = self.policy.grade_action(state, action)
+            cval, cgrad = self.policy.grade_action(t_state, action)
             critic_vals.append(cval)
             critic_grads.append(cgrad)
             tstep_reward = max(-timestep['reward']['distance_to_goal'] \
@@ -93,17 +94,15 @@ class policy_Futzer():
         
         plt.xlabel('timesteps')
         plt.ylabel('action gradient')
-        plt.legend(['F1 x', 'F1 Y', 'F2 x', 'F2 Y'])
+        plt.legend(['F1 X', 'F1 Y', 'F2 X', 'F2 Y'])
         
         plt.show()
-
-
 
 
 def main():
 
 
-    aaaa = policy_Futzer('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/IK_Gain_norm/')
+    aaaa = policy_Futzer('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/new_rollout/')
     aaaa.draw_critic_gradient('5000')
 
 

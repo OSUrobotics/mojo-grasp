@@ -122,11 +122,12 @@ def run_pybullet(filepath, window=None, runtype='run'):
         for k in range(int(args['epochs']/len(x))):
             manager.run()
             manager.phase_manager.phase_dict['manipulation'].reset()
+        manager.save_network(args['save_path']+'policy')
+        # replay_buffer.save_sampling('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/hard_random_sampling/sampling')
         print('training done, creating episode_all')
         d = data_processor(args['save_path'])
         d.load_data()
         d.save_all()
-        manager.save_network(args['save_path']+'policy')
     elif runtype == 'eval':
         manipulation.load_policy(args['save_path']+'policy')
         manager.evaluate()
@@ -136,14 +137,16 @@ def run_pybullet(filepath, window=None, runtype='run'):
         for k in range(int(args['epochs']/len(x))):
             manager.run()
             manager.phase_manager.phase_dict['manipulation'].reset()
+        manager.save_network(args['save_path']+'policy_2')
         print('training done, creating episode_all')
         d = data_processor(args['save_path'])
         d.load_data()
         d.save_all()
-        manager.save_network(args['save_path']+'policy_2')
+        
+        
 
 def main():
-    run_pybullet('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/new_priority_hard/experiment_config.json',runtype='run')
+    run_pybullet('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/hard_with_sampling_data/experiment_config.json',runtype='run')
     
 if __name__ == '__main__':
     main()

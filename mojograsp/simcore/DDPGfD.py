@@ -29,6 +29,14 @@ def simple_normalize(x_tensor, mins, maxes):
     return y_tensor
     
 
+def unpack_arr(long_arr):
+    """
+    Unpacks an array of shape N x M x ... into array of N*M x ...
+    :param: long_arr - array to be unpacked"""
+    new_arr = [item for sublist in long_arr for item in sublist]
+    return new_arr
+
+
 class Actor(nn.Module):
     def __init__(self, state_dim:int, action_dim:int, max_action:float, state_mins:list, state_maxes:list):
         """
@@ -99,11 +107,11 @@ class DDPGfD_priority():
         self.ACTION_DIM = arg_dict['action_dim']
         self.actor = Actor(self.STATE_DIM, self.ACTION_DIM, arg_dict['max_action'], arg_dict['state_mins'], arg_dict['state_maxes']).to(device)
         self.actor_target = copy.deepcopy(self.actor)
-        self.actor_optimizer = torch.optim.Adam(self.actor.parameters(), lr=1e-4, weight_decay=1e-4)
+        self.actor_optimizer = torch.optim.Adam(self.actor.parameters(), lr=arg_dict['learning_rate'], weight_decay=1e-4)
 
         self.critic = Critic(self.STATE_DIM, self.ACTION_DIM, arg_dict['state_mins'], arg_dict['state_maxes']).to(device)
         self.critic_target = copy.deepcopy(self.critic)
-        self.critic_optimizer = torch.optim.Adam(self.critic.parameters(), lr=1e-4, weight_decay=1e-4)
+        self.critic_optimizer = torch.optim.Adam(self.critic.parameters(), lr=arg_dict['learning_rate'], weight_decay=1e-4)
 
         self.actor_loss = []
         self.critic_loss = []
@@ -121,7 +129,7 @@ class DDPGfD_priority():
         self.TAU = arg_dict['tau']
         self.NETWORK_REPL_FREQ = 2
         self.total_it = 0
-        self.LAMBDA_LBC = 1
+        self.LOOKBACK_SIZE = 4 # TODO, make this a hyperparameter in the config file
 
         # Most recent evaluation reward produced by the policy within training
         self.avg_evaluation_reward = 0
@@ -182,19 +190,21 @@ class DDPGfD_priority():
         self.critic = copy.deepcopy(policy_to_copy_from.critic)
         self.critic_target = copy.deepcopy(policy_to_copy_from.critic_target)
         self.critic_optimizer = copy.deepcopy(policy_to_copy_from.critic_optimizer)
-
-        self.DISCOUNT = policy_to_copy_from.DISCOUNT
-        self.TAU = policy_to_copy_from.TAU
-        self.ROLLOUT_SIZE = policy_to_copy_from.ROLLOUT_SIZE
-        self.NETWORK_REPL_FREQ = policy_to_copy_from.NETWORK_REPL_FREQ
+        our_dir = vars(self)
+        for key,value in vars(policy_to_copy_from).items():
+            if key.isupper():
+                our_dir[key] = value
+        # self.DISCOUNT = policy_to_copy_from.DISCOUNT
+        # self.TAU = policy_to_copy_from.TAU
+        # self.ROLLOUT_SIZE = policy_to_copy_from.ROLLOUT_SIZE
+        # self.NETWORK_REPL_FREQ = policy_to_copy_from.NETWORK_REPL_FREQ
         self.total_it = policy_to_copy_from.total_it
-        self.LAMBDA_LBC = policy_to_copy_from.LAMBDA_LBC
         self.avg_evaluation_reward = policy_to_copy_from.avg_evaluation_reward
 
         # Sample from the expert replay buffer, decaying the proportion expert-agent experience over time
         self.sampling_decay_rate = policy_to_copy_from.sampling_decay_rate
         self.sampling_decay_freq = policy_to_copy_from.sampling_decay_freq
-        self.BATCH_SIZE = policy_to_copy_from.BATCH_SIZE
+        # self.BATCH_SIZE = policy_to_copy_from.BATCH_SIZE
 
     def save(self, filename):
         """ Save current policy to given filename
@@ -216,9 +226,11 @@ class DDPGfD_priority():
         self.critic_optimizer.load_state_dict(torch.load(filename + "_critic_optimizer", map_location=device))
         self.actor.load_state_dict(torch.load(filename + "_actor", map_location=device))
         self.actor_optimizer.load_state_dict(torch.load(filename + "_actor_optimizer", map_location=device))
+        self.critic_target.load_state_dict(torch.load(filename + "_critic_target", map_location=device)) 
+        self.actor_target.load_state_dict(torch.load(filename + "_actor_target", map_location=device)) 
 
-        self.critic_target = copy.deepcopy(self.critic)
-        self.actor_target = copy.deepcopy(self.actor)
+        # self.critic_target = copy.deepcopy(self.critic)
+        # self.actor_target = copy.deepcopy(self.actor)
 
     def update_target(self):
         """ Update frozen target networks to be closer to current networks
@@ -252,6 +264,8 @@ class DDPGfD_priority():
                 state.extend([item for item in state_container['two_finger_gripper']['joint_angles'].values()])
             elif key == 'gp':
                 state.extend(state_container['goal_pose']['goal_pose'])
+            else:
+                raise Exception('key does not match list of known keys')
         return state
 
     def build_reward(self, reward_container: Reward):
@@ -269,12 +283,11 @@ class DDPGfD_priority():
             tstep_reward = max(-reward_container['distance_to_goal'],-1)
         elif self.REWARD_TYPE == 'Distance + Finger':
             tstep_reward = max(-reward_container['distance_to_goal'] -max(reward_container['f1_dist'],reward_container['f2_dist'])/5,-1)
-            
-        return tstep_reward
+        else:
+            raise Exception('reward type does not match list of known reward types')
+        return float(tstep_reward)
     
-    
-    
-    def collect_batch(self, replay_buffer: ReplayBufferPriority):
+    def collect_batch_multistep(self, replay_buffer: ReplayBufferPriority):
         """
         Method takes in a ReplayBufferPriority object
         Extracts BATCH_SIZE transitions and associated priority information from 
@@ -300,11 +313,8 @@ class DDPGfD_priority():
         if num_timesteps < self.BATCH_SIZE * 20:
             return None, None, None, None, None, None, None, None, None, None
         else:
-            if self.ROLLOUT:
-                sampled_data, transition_weight, indxs = replay_buffer.sample_rollout(self.BATCH_SIZE, self.ROLLOUT_SIZE)
-            else:
-                sampled_data = replay_buffer.sample(self.BATCH_SIZE)
-
+            sampled_data, transition_weight, indxs, lookback = replay_buffer.sample_rollout(self.BATCH_SIZE, self.ROLLOUT_SIZE, self.LOOKBACK_SIZE) 
+            
             state = []
             action = []
             reward = []
@@ -333,6 +343,8 @@ class DDPGfD_priority():
                         rollout_discount.append(j+1)
                         last_state.append(self.build_state(t_last_state))
                         rollout_reward.append(rtemp)
+                else:
+                    print(timestep_series, transition_weight, indxs)
             state = torch.tensor(state)
             action = torch.tensor(action)
             action = action.float()
@@ -356,7 +368,6 @@ class DDPGfD_priority():
             last_state = last_state.to(device)
             trimmed_weight = []
             trimmed_idxs = []
-            
             for tw, inds in zip(transition_weight, indxs):
                 if len(tw) > 0:
                     trimmed_weight.append(tw[0]) 
@@ -365,27 +376,119 @@ class DDPGfD_priority():
             trimmed_weight = torch.unsqueeze(trimmed_weight, 1)
             trimmed_weight = trimmed_weight.to(device)
             return state, action, next_state, reward, rollout_reward, rollout_discount, last_state, trimmed_weight, trimmed_idxs, expert_status
+        
+    def collect_batch(self, replay_buffer: ReplayBufferPriority):
+        """
+        Method takes in a ReplayBufferPriority object
+        Extracts BATCH_SIZE transitions and associated priority information from 
+        replay buffer and returns them as tensors for training 
 
-    def train(self, replay_buffer, prob=0.7):
+        :param state: :func:`~mojograsp.simcore.priority_replay_buffer.ReplayBufferPriority' object.
+        :type state: :func:`~mojograsp.simcore.priority_replay_buffer.ReplayBufferPriority
+        :return state:  state information as tensor
+        :return action: action information as tensor
+        :return next_state: next_state information as tensor
+        :return reward: reward information as tensor
+        :return rollout_reward: rollout reward as tensor
+        :return rollout_discount: discount factor to be applied to last state after rollout reward as tensor
+        :return last_state: resulting state after rollout as tensor
+        :return trimmed_weight: priority of sampled transitions
+        :return trimmed_idxs: index in priority queue of sampled transitions
+        :return expert_status: bool containing if associated transition is from expert sample
+        The name of the next phase or None
+        :rtype: str or None
+        """
+        
+        num_timesteps = len(replay_buffer)
+        if num_timesteps < self.BATCH_SIZE * 20:
+            return None, None, None, None, None, None, None, None, None, None
+        else:
+            sampled_data, transition_weight, indxs = replay_buffer.sample_rollout(self.BATCH_SIZE, self.ROLLOUT_SIZE)
+
+            state = []
+            action = []
+            reward = []
+            next_state = []
+            rollout_reward = []
+            last_state = []
+            rollout_discount = []
+            expert_status = []
+            for i, timestep_series in enumerate(sampled_data):
+                if len(timestep_series) > 0:
+                    
+                    timestep = timestep_series[0]
+                    t_state = timestep[0]
+                    state.append(self.build_state(t_state))
+                    action.append(list(timestep[1]['actor_output']))
+                    rtemp = self.build_reward(timestep[2])
+                    reward.append(rtemp)
+                    t_next_state = timestep[3]
+
+                    next_state.append(self.build_state(t_next_state))
+                    expert_status.append(timestep[-1])
+                    if self.ROLLOUT:
+                        series_len = len(timestep_series)
+                        for j, timestep in enumerate(timestep_series[1:]):
+                            rtemp += self.build_reward(timestep[2]) * self.DISCOUNT ** (j+1)
+                        t_last_state = timestep_series[-1][3]
+                        rollout_discount.append(series_len)
+                        last_state.append(self.build_state(t_last_state))
+                        rollout_reward.append(rtemp)
+                        # print(rtemp)
+                else:
+                    print(timestep_series, transition_weight, indxs)
+            state = torch.tensor(state)
+            action = torch.tensor(action)
+            action = action.float()
+            reward = torch.tensor(reward)
+            reward = torch.unsqueeze(reward, 1)
+            next_state = torch.tensor(next_state)
+            rollout_reward = torch.tensor(rollout_reward)
+            rollout_reward = torch.unsqueeze(rollout_reward, 1)
+            rollout_discount = torch.tensor(rollout_discount)
+            rollout_discount = torch.unsqueeze(rollout_discount, 1)
+            expert_status = torch.tensor(expert_status)
+            expert_status = torch.unsqueeze(expert_status, 1)
+            last_state = torch.tensor(last_state)
+            state = state.to(device)
+            action = action.to(device)
+            next_state = next_state.to(device)
+            reward = reward.to(device)
+            rollout_reward = rollout_reward.to(device)
+            rollout_discount = rollout_discount.to(device)
+            expert_status = expert_status.to(device)
+            last_state = last_state.to(device)
+            trimmed_weight = []
+            trimmed_idxs = []
+            for tw, inds in zip(transition_weight, indxs):
+                if len(tw) > 0:
+                    trimmed_weight.append(tw[0]) 
+                    trimmed_idxs.append(inds[0])
+            trimmed_weight = torch.tensor(trimmed_weight)
+            trimmed_weight = torch.unsqueeze(trimmed_weight, 1)
+            trimmed_weight = trimmed_weight.to(device)
+            # print(last_state == next_state)
+            return state, action, next_state, reward, rollout_reward, rollout_discount, last_state, trimmed_weight, trimmed_idxs, expert_status
+
+    def train(self, replay_buffer):
         """ Update policy based on sample of timesteps from replay buffer"""
         self.total_it += 1
 
         state, action, next_state, reward, sum_rewards, num_rewards, last_state, transition_weight, indxs, expert_status = self.collect_batch(replay_buffer)
         if state is not None:
-            target_Q = self.critic_target(next_state, self.actor_target(next_state))
+            next_state_val = self.critic_target(next_state, self.actor_target(next_state))
 
-            target_Q = reward + (self.DISCOUNT * target_Q).detach()  # bellman equation
+            target_Q = (reward + (self.DISCOUNT * next_state_val).detach()).float()  # bellman equation
 
-            target_Q = target_Q.float()
+
 
             # Compute the roll rewards and the number of steps forward (could be less than rollout size if timestep near end of trial)
-            target_QN = self.critic_target(last_state, self.actor_target(last_state))
+            super_next_state_val = self.critic_target(last_state, self.actor_target(last_state))
 
             # Compute QN from roll reward and discounted final state
-            target_QN = sum_rewards.to(device) + (self.DISCOUNT**num_rewards * target_QN).detach()
-
-            target_QN = (target_QN/num_rewards).float()
-
+            target_QN = ((sum_rewards.to(device) + (self.DISCOUNT**num_rewards * super_next_state_val).detach())/num_rewards).float()
+            
+            # print(target_Q == target_QN)
             # Get current Q estimate
             current_Q = self.critic(state, action)
 
@@ -450,10 +553,3 @@ class DDPGfD_priority():
             return actor_loss.item(), critic_loss.item(), critic_L1loss.item(), critic_LNloss.item()
 
 
-
-def unpack_arr(long_arr):
-    """
-    Unpacks an array of shape N x M x ... into array of N*M x ...
-    :param: long_arr - array to be unpacked"""
-    new_arr = [item for sublist in long_arr for item in sublist]
-    return new_arr
