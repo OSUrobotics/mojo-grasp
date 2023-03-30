@@ -140,6 +140,7 @@ class SimManagerRLHER(SimManager):
                     logging.info("CURRENT PHASE: {}".format(
                         self.phase_manager.current_phase.name))
                     while not done:
+                        # print('new timestep')
                         timestep_number += 1
                         self.phase_manager.current_phase.pre_step()
                         # self.state.set_state()

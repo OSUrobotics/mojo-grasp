@@ -49,6 +49,7 @@ class GuiBackend():
         self.moving_avg =1 
         self.colorbar = None
         self.big_data = False
+        self.succcess_range = 0.002
         
     def draw_path(self):
         if self.e_num == -1:
@@ -309,8 +310,7 @@ class GuiBackend():
         self.ax.grid()
         self.figure_canvas_agg.draw()
         self.curr_graph = 'rewards'
-        
-        
+         
     def draw_explored_region(self):
         if self.all_data is None:
             print('need to load in episode all first')
@@ -645,8 +645,7 @@ class GuiBackend():
         self.ax.set_title('Distance to Goal Per Episode')
         self.figure_canvas_agg.draw()
         self.curr_graph = 'goal_dist'
-        
-        
+            
     def draw_ending_velocity(self):
         if self.all_data is None:
             print('need to load in episode all first')
@@ -748,7 +747,7 @@ class GuiBackend():
                 data = tempdata['timestep_list']
                 goal_dists = [f['reward']['distance_to_goal'] for f in data]
                 ending_dist = min(goal_dists)
-                if ending_dist < 0.002:
+                if ending_dist < self.succcess_range:
                     s_f.append(100)
                 else:
                     s_f.append(0)
@@ -760,19 +759,17 @@ class GuiBackend():
                 data = episode['timestep_list']
                 goal_dists = [f['reward']['distance_to_goal'] for f in data]
                 ending_dist = min(goal_dists)
-                if ending_dist < 0.002:
+                if ending_dist < self.succcess_range:
                     s_f.append(100)
                 else:
                     s_f.append(0)
-
+        
         if self.moving_avg != 1:
             s_f = moving_average(s_f,self.moving_avg)
         if self.clear_plots | (self.curr_graph != 's_f'):
             self.ax.cla()
             self.legend = []
             
-        self.ax.cla()
-        self.legend = []        
         self.ax.plot(range(len(s_f)),s_f)
         self.legend.extend(['Success Rate'])
         self.ax.legend(self.legend)
@@ -814,7 +811,6 @@ class GuiBackend():
         self.figure_canvas_agg.draw()
         self.curr_graph = 'goal_dist'
         
-        
     def draw_goal_rewards(self):
         if self.all_data is None:
             print('need to load in episode all first')
@@ -822,8 +818,8 @@ class GuiBackend():
             return
         
         keylist = ['forward','backward', 'forwardleft', 'backwardleft','forwardright', 'backwardright', 'left', 'right']
-        rewards = {'forward':[[0.0, 0.215],[]],'backward':[[0.0, 0.105],[]],'forwardleft':[[-0.055, 0.215],[]],'backwardleft':[[-0.055,0.105],[]],
-                   'forwardright':[[0.055,0.215],[]],'backwardright':[[0.055, 0.105],[]],'left':[[-0.055, 0.16],[]],'right':[[0.055,0.16],[]]}
+        rewards = {'forward':[[0.0, 0.2],[]],'backward':[[0.0, 0.12],[]],'forwardleft':[[-0.03, 0.19],[]],'backwardleft':[[-0.03,0.13],[]],
+                   'forwardright':[[0.03,0.19],[]],'backwardright':[[0.03, 0.13],[]],'left':[[-0.04, 0.16],[]],'right':[[0.04,0.16],[]]}
         # sucessful_dirs = []
         for i, episode in enumerate(self.all_data['episode_list']):
             data = episode['timestep_list']
@@ -857,6 +853,53 @@ class GuiBackend():
         self.ax.plot(range(len(rewards[keylist[best]][1])),rewards[keylist[best]][1])
         self.ax.plot(range(len(rewards[keylist[worst]][1])),rewards[keylist[worst]][1])
         self.legend.extend(['Best Direction: ' + keylist[best], 'Worst Direction: ' + keylist[worst]])
+        self.ax.legend(self.legend)
+        self.ax.set_ylabel('Net Reward')
+        self.ax.set_xlabel('Episode')
+        self.ax.set_title('Net Reward By Direction')
+        self.ax.grid()
+        self.figure_canvas_agg.draw()
+        self.curr_graph = 'direction_success_thing' 
+        
+    def draw_goal_s_f(self):
+        if self.all_data is None:
+            print('need to load in episode all first')
+            # print('this will be slow, and we both know it')
+            return
+        
+        keylist = ['forward','backward', 'forwardleft', 'backwardleft','forwardright', 'backwardright', 'left', 'right']
+        rewards = {'forward':[[0.0, 0.2],[]],'backward':[[0.0, 0.12],[]],'forwardleft':[[-0.03, 0.19],[]],'backwardleft':[[-0.03,0.13],[]],
+                   'forwardright':[[0.03,0.19],[]],'backwardright':[[0.03, 0.13],[]],'left':[[-0.04, 0.16],[]],'right':[[0.04,0.16],[]]}
+        # sucessful_dirs = []
+        for i, episode in enumerate(self.all_data['episode_list']):
+            data = episode['timestep_list']
+            goal_dists = [f['reward']['distance_to_goal'] for f in data]
+            ending_dist = min(goal_dists)
+            goal_pose = data[1]['reward']['goal_position'][0:2]
+            if ending_dist < self.succcess_range:
+                temp = 100
+            else:
+                temp = 0
+            for i, v in rewards.items():
+                if np.isclose(goal_pose, v[0]).all():
+                    v[1].append(temp)
+
+        
+        # s = np.unique(sucessful_dirs)
+        # print('succesful directions', s)
+
+        # if self.moving_avg != 1:
+        #     closest_dists = moving_average(closest_dists,self.moving_avg)
+        sf = []
+        if self.moving_avg != 1:
+            for i in keylist:
+                sf.append(moving_average(rewards[i][1],self.moving_avg))
+        if self.clear_plots | (self.curr_graph != 's_f'):
+            self.ax.cla()
+            self.legend = []
+        for i,yax in enumerate(sf):
+            self.ax.plot(range(len(yax)),yax)
+            self.legend.extend([keylist[i]])
         self.ax.legend(self.legend)
         self.ax.set_ylabel('Net Reward')
         self.ax.set_xlabel('Episode')
@@ -949,7 +992,7 @@ def main():
                     [sg.Button('End Region', size=(8,2)), sg.Button('Average Actor Values', size=(8,2)), sg.Button('Episode Rewards', size=(8,2)), sg.Button('Finger Object Avg', size=(8,2)), sg.Button('Shortest Goal Dist', size=(8,2))],
                     [sg.Button('Path + Action', size=(8,2)), sg.Button('Success Rate', size=(8,2)), sg.Button('Ending Velocity', size=(8,2)), sg.Button('Finger Object Max', size=(8,2)), sg.Button('Ending Goal Dist', size=(8,2))],
                     [sg.Slider((1,20),10,1,1,key='moving_avg',orientation='h', size=(48,6)), sg.Text("Keep previous graph", size=(10, 3), key='-toggletext-'), sg.Button(image_data=toggle_btn_off, key='-TOGGLE-GRAPHIC-', button_color=(sg.theme_background_color(), sg.theme_background_color()), border_width=0, metadata=False)],
-                    [sg.Text("Data Too Large to Make Episode All", size=(20, 3), key='-BEEG-'), sg.Button(image_data=toggle_btn_off, key='-BIG-DATA-', button_color=(sg.theme_background_color(), sg.theme_background_color()), border_width=0, metadata=False)]]
+                    [sg.Slider((1,20),2,1,1,key='success_range',orientation='h', size=(48,6)),sg.Text("Data Too Large to Make Episode All", size=(20, 3), key='-BEEG-'), sg.Button(image_data=toggle_btn_off, key='-BIG-DATA-', button_color=(sg.theme_background_color(), sg.theme_background_color()), border_width=0, metadata=False)]]
     # define layout, show and read the window
     col = [[sg.Text(episode_files[0], size=(80, 3), key='-FILENAME-')],
            [sg.Canvas(size=(1280, 960), key='-CANVAS-')],
@@ -973,6 +1016,7 @@ def main():
 
         event, values = window.read()
         backend.moving_avg = int(values['moving_avg'])
+        backend.succcess_range = int(values['success_range']) * 0.001
         
         # --------------------- Button & Keyboard ---------------------
         if event == sg.WIN_CLOSED:
@@ -1026,7 +1070,7 @@ def main():
         elif event == 'Finger Object Max':
             backend.draw_finger_obj_dist_max()
         elif event == 'Timestep':
-            backend.draw_timestep_bar_plot()
+            backend.draw_goal_s_f()
         elif event == 'Ending Goal Dist':
             backend.draw_ending_goal_dist()  
         elif event == 'End Region':

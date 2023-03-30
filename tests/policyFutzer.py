@@ -102,8 +102,8 @@ class policy_Futzer():
 def main():
 
 
-    aaaa = policy_Futzer('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/new_rollout/')
-    aaaa.draw_critic_gradient('5000')
+    aaaa = policy_Futzer('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/hard_with_sampling_data/')
+    aaaa.draw_critic_gradient('4996')
 
 
 if __name__ == '__main__':

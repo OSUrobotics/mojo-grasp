@@ -82,6 +82,7 @@ class RNNGui():
                        [sg.Checkbox('Object Position', default=True, k='-op')],
                        [sg.Checkbox('Finger Object Distance', default=False, k='-fod')],
                        [sg.Checkbox('Goal Position',default=True, k='-gp')],
+                       [sg.Text('Num Previous States'),sg.Input('0', k='-pv')],
                        [sg.Text("Reward"), sg.OptionMenu(values=('Sparse','Distance','Distance + Finger'), k='-reward',default_value='Distance + Finger')],
                        [sg.Text("Action"), sg.OptionMenu(values=('Joint Velocity','Finger Tip Position'), k='-action',default_value='Joint Velocity')],
                        [sg.Button('Begin Training', key='-train', bind_return_key=True)],
@@ -114,7 +115,8 @@ class RNNGui():
                      'action': values['-action'],
                      'rollout_size': int(values['-rollout_size']),
                      'rollout_weight': float(values['-rollout_weight']),
-                     'tau': float(values['-tau'])}
+                     'tau': float(values['-tau']),
+                     'pv': int(values['-pv'])}
         state_len = 0
         state_mins = []
         state_maxes = []
@@ -149,6 +151,13 @@ class RNNGui():
             state_maxes.extend([0.07, 0.07])
             state_len += 2
             state_list.append('gp')
+        if self.args['pv'] > 0:
+            state_len += state_len * self.args['pv']
+            temp_mins = state_mins.copy()
+            temp_maxes = state_maxes.copy()
+            for i in range(self.args['pv']):
+                state_mins.extend(temp_mins)
+                state_maxes.extend(temp_maxes)
         if state_len == 0:
             print('No selected state space')
             return False
