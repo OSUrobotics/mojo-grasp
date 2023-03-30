@@ -32,7 +32,7 @@ class data_processor():
                 self.episode_data = []
                 self.save_all_flag = False
                 return
-            elif '.pkl' in name and 'config' not in name:
+            elif '.pkl' in name and 'sampling' not in name:
                 pkl_names.append(name)
                 # print(name)
                 temp = re.search('\d+',name)
@@ -44,7 +44,7 @@ class data_processor():
             new_pkl_names.append(pkl_names[ind])
         print('found names: ', len(new_pkl_names))
         for name in new_pkl_names:
-            print(name)
+            # print(name)
             with open(self.data_path + name, 'rb') as datafile: 
                 self.episode_data.append(pkl.load(datafile))
         # print(data_list.keys())

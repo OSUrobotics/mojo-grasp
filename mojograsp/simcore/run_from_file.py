@@ -85,7 +85,7 @@ def run_pybullet(filepath, window=None, runtype='run'):
     goal_poses = GoalHolder(pose_list)
 
     # state, action and reward
-    state = StateRL(objects=[hand, obj, goal_poses])
+    state = StateRL(objects=[hand, obj, goal_poses], prev_len=args['pv'])
     action = rl_action.ExpertAction()
     reward = rl_reward.ExpertReward()
     
@@ -146,7 +146,7 @@ def run_pybullet(filepath, window=None, runtype='run'):
         
 
 def main():
-    run_pybullet('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/hard_with_sampling_data/experiment_config.json',runtype='run')
+    run_pybullet('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/4_prev_timesteps_priority/experiment_config.json',runtype='run')
     
 if __name__ == '__main__':
     main()
