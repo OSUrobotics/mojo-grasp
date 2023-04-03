@@ -771,7 +771,7 @@ class GuiBackend():
             self.legend = []
             
         self.ax.plot(range(len(s_f)),s_f)
-        self.legend.extend(['Success Rate'])
+        self.legend.extend(['Success Rate (' + str(self.succcess_range*1000) + ' mm tolerance)'])
         self.ax.legend(self.legend)
         self.ax.set_ylabel('Success Percentage')
         self.ax.set_xlabel('Episode')
@@ -891,15 +891,16 @@ class GuiBackend():
         # if self.moving_avg != 1:
         #     closest_dists = moving_average(closest_dists,self.moving_avg)
         sf = []
+        reduced_key_list = ['forward','backward','left','right']
         if self.moving_avg != 1:
-            for i in keylist:
+            for i in reduced_key_list:
                 sf.append(moving_average(rewards[i][1],self.moving_avg))
         if self.clear_plots | (self.curr_graph != 's_f'):
             self.ax.cla()
             self.legend = []
         for i,yax in enumerate(sf):
             self.ax.plot(range(len(yax)),yax)
-            self.legend.extend([keylist[i]])
+            self.legend.extend([reduced_key_list[i]])
         self.ax.legend(self.legend)
         self.ax.set_ylabel('Net Reward')
         self.ax.set_xlabel('Episode')
@@ -988,7 +989,7 @@ def main():
 
 
     plot_buttons = [[sg.Button('Object Path', size=(8, 2)), sg.Button('Finger Angles', size=(8, 2)),sg.Button('Rewards', size=(8, 2), key='FullRewards'), sg.Button('Contact Rewards', key='ContactRewards',size=(8, 2)), sg.Button('Distance Rewards', key='SimpleRewards',size=(8, 2))],
-                    [sg.Button('Explored Region', size=(8,2)), sg.Button('Actor Output', size=(8, 2)), sg.Button('Critic Output', size=(8, 2)), sg.Button('RewardSplit',size=(8, 2)), sg.Button('Timestep', size=(8,2))],
+                    [sg.Button('Explored Region', size=(8,2)), sg.Button('Actor Output', size=(8, 2)), sg.Button('Critic Output', size=(8, 2)), sg.Button('RewardSplit',size=(8, 2)), sg.Button('Asterisk Success', size=(8,2))],
                     [sg.Button('End Region', size=(8,2)), sg.Button('Average Actor Values', size=(8,2)), sg.Button('Episode Rewards', size=(8,2)), sg.Button('Finger Object Avg', size=(8,2)), sg.Button('Shortest Goal Dist', size=(8,2))],
                     [sg.Button('Path + Action', size=(8,2)), sg.Button('Success Rate', size=(8,2)), sg.Button('Ending Velocity', size=(8,2)), sg.Button('Finger Object Max', size=(8,2)), sg.Button('Ending Goal Dist', size=(8,2))],
                     [sg.Slider((1,20),10,1,1,key='moving_avg',orientation='h', size=(48,6)), sg.Text("Keep previous graph", size=(10, 3), key='-toggletext-'), sg.Button(image_data=toggle_btn_off, key='-TOGGLE-GRAPHIC-', button_color=(sg.theme_background_color(), sg.theme_background_color()), border_width=0, metadata=False)],
@@ -1069,7 +1070,7 @@ def main():
             backend.draw_shortest_goal_dist()
         elif event == 'Finger Object Max':
             backend.draw_finger_obj_dist_max()
-        elif event == 'Timestep':
+        elif event == 'Asterisk Success':
             backend.draw_goal_s_f()
         elif event == 'Ending Goal Dist':
             backend.draw_ending_goal_dist()  

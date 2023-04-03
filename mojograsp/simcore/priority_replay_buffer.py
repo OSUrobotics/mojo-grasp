@@ -222,7 +222,9 @@ class ReplayBufferPriority():
                             temp_trans.append(self.buffer_memory[sample_idx + i])
                             wt = (
                                 (1/(self.buffer_prio[sample_idx + i] / prio_sum)) * (1/self.sz)) ** self.beta
+                            # print(type(wt),wt)
                             temp_w.append(wt)
+                # print('temp w type', type(temp_w), type(temp_w[0]))
                 idxes.append(temp_idx)
                 transitions.append(temp_trans)
                 weights.append(temp_w)
@@ -267,6 +269,7 @@ class ReplayBufferPriority():
                             temp_w.append(wt)
                 idxes.append(temp_idx)
                 transitions.append(temp_trans)
+                
                 weights.append(temp_w)
                 lookback.append(temp_prevs)
         return transitions, weights, idxes, lookback
@@ -275,8 +278,10 @@ class ReplayBufferPriority():
     def update_priorities(self, idxes, priorities):
         for i in range(len(idxes)):
             self.buffer_prio[idxes[i]] = float(priorities[i] ** self.alpha)
+            
             # self.buffer_prio[idxes[i]] = float(self.buffer_prio[idxes[i]])
-            self.max_prio = max(priorities[i], self.max_prio)
+            self.max_prio = float(max(priorities[i], self.max_prio))
+            
 
     def add_timestep(self, transition):
         if self.sz < self.buffer_max:

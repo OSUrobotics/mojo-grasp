@@ -48,11 +48,13 @@ def run_pybullet(filepath, window=None, runtype='run'):
         y = df["y"]
         
     pose_list = [[i,j] for i,j in zip(x,y)]
-    # start pybullet
+    
     print(args)
     
-    # physics_client = p.connect(p.GUI)
-    physics_client = p.connect(p.DIRECT)
+    if args['viz']:
+        physics_client = p.connect(p.GUI)
+    else:
+        physics_client = p.connect(p.DIRECT)
     p.setAdditionalSearchPath(pybullet_data.getDataPath())
     p.setGravity(0, 0, -10)
     p.resetDebugVisualizerCamera(cameraDistance=.02, cameraYaw=0, cameraPitch=-89.9999,
@@ -146,7 +148,7 @@ def run_pybullet(filepath, window=None, runtype='run'):
         
 
 def main():
-    run_pybullet('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/4_prev_timesteps_priority/experiment_config.json',runtype='run')
+    run_pybullet('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/4_hard_priority/experiment_config.json',runtype='run')
     
 if __name__ == '__main__':
     main()
