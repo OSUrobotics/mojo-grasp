@@ -60,3 +60,4 @@ class data_processor():
             with open(file_path, 'wb') as fout:
                 self.episodes = {"episode_list": self.episode_data}
                 pkl.dump(self.episodes, fout)
+        print('save completed')

@@ -50,12 +50,7 @@ class RNNGui():
         self.built = False
         self.train_dataset, self.validation_dataset = None, None
         
-#        plot_buttons = [[sg.Button('Object Path', size=(8, 2)), sg.Button('Finger Angles', size=(8, 2))],
-#                        [sg.Button('Actor Output', size=(8, 2)), sg.Button('Critic Output', size=(8, 2)), sg.Button('Rewards', size=(8, 2))],
-#                        [sg.Button('Explored Region', size=(8,2))],
-#                        [sg.Text("Keep previous graph", size=(10, 3), key='-toggletext-'), sg.Button(image_data=toggle_btn_off, key='-TOGGLE--', button_color=(sg.theme_background_color(), sg.theme_background_color()), border_width=0, metadata=False)]]
         # define layout, show and read the window
-        
         data_layout =  [ [sg.Text('Model Type'), sg.OptionMenu(values=('DDPG', 'DDPGFD','DDPG+HER', 'DDPGFD+HER'),  k='-model', default_value='DDPG')],
                          [sg.Text('Path to Expert Data if using FD')],
                          [sg.Button("Browse",key='-browse-expert',button_color='DarkBlue'),sg.Text("/", key='-expert-path')],
@@ -85,6 +80,7 @@ class RNNGui():
                        [sg.Text('Num Previous States'),sg.Input('0', k='-pv')],
                        [sg.Text("Reward"), sg.OptionMenu(values=('Sparse','Distance','Distance + Finger'), k='-reward',default_value='Distance + Finger')],
                        [sg.Text("Action"), sg.OptionMenu(values=('Joint Velocity','Finger Tip Position'), k='-action',default_value='Joint Velocity')],
+                       [sg.Checkbox('Vizualize Simulation',default=True, k='-viz')],
                        [sg.Button('Begin Training', key='-train', bind_return_key=True)],
                        [sg.Button('Build Config File WITHOUT Training', key='-build')],
                        [sg.Text('Work progress'), sg.ProgressBar(100, size=(20, 20), orientation='h', key='-PROG-')]]
@@ -116,7 +112,8 @@ class RNNGui():
                      'rollout_size': int(values['-rollout_size']),
                      'rollout_weight': float(values['-rollout_weight']),
                      'tau': float(values['-tau']),
-                     'pv': int(values['-pv'])}
+                     'pv': int(values['-pv']),
+                     'viz': int(values['-viz'])}
         state_len = 0
         state_mins = []
         state_maxes = []

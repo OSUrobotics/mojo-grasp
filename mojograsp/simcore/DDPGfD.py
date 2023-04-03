@@ -497,6 +497,8 @@ class DDPGfD_priority():
             trimmed_idxs = []
             for tw, inds in zip(transition_weight, indxs):
                 if len(tw) > 0:
+                    
+                    # print(tw[0])
                     trimmed_weight.append(tw[0]) 
                     trimmed_idxs.append(inds[0])
             trimmed_weight = torch.tensor(trimmed_weight, device=device)
@@ -576,14 +578,12 @@ class DDPGfD_priority():
                 priorities = expert_status*0.5 + 0.0001 + self.actor_component*apart + self.critic_component*cpart
                 priorities = priorities.cpu().detach().numpy()
                 replay_buffer.update_priorities(indxs,priorities)
-                # print('looking at priorities')
-                # print(max(priorities))
-                # print(max(self.critic_component*cpart.cpu().detach().numpy()))
-                # print(max(self.actor_component*apart.cpu().detach().numpy()))
-                # print(max(expert_status))
-                self.writer.add_scalar('priorities/average',np.average(priorities),self.total_it)
-                self.writer.add_scalar('priorities/critic_portion',self.critic_component*np.average(cpart.cpu().detach().numpy()),self.total_it)
-                self.writer.add_scalar('priorities/actor_portion',self.actor_component*np.average(apart.cpu().detach().numpy()),self.total_it)
+                self.writer.add_scalar('priorities/sum_priorities', replay_buffer.buffer_prio.sum(0, replay_buffer.sz),self.total_it)
+                self.writer.add_scalar('priorities/replay_buffer_size', replay_buffer.sz,self.total_it)
+                self.writer.add_scalar('priorities/weights', np.average(transition_weight.cpu().detach().numpy()),self.total_it)
+                self.writer.add_scalar('priorities/average', np.average(priorities),self.total_it)
+                self.writer.add_scalar('priorities/critic_portion', self.critic_component*np.average(cpart.cpu().detach().numpy()),self.total_it)
+                self.writer.add_scalar('priorities/actor_portion', self.actor_component*np.average(apart.cpu().detach().numpy()),self.total_it)
             nn.utils.clip_grad_value_(self.actor.parameters(), 0.5)
             self.actor_optimizer.step()
 
