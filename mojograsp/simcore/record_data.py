@@ -246,7 +246,8 @@ class RecordDataPKL(RecordData):
         """
         if self.save_episode_flag and self.data_path != None:
             if evaluated:
-                file_path = '/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/vizualization/Evaluation_episode_' + str(self.eval_num) + ".pkl"
+                file_path =file_path = self.data_path + \
+                    "Evaluation_episode_" + str(self.eval_num) + ".pkl" 
                 self.eval_num +=1
                 print('save episode evaluated', self.eval_num)
             else:

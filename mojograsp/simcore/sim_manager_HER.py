@@ -104,14 +104,14 @@ class SimManagerRLHER(SimManager):
 
         self.phase_manager.add_phase(phase_name, phase, start)
 
-    def run(self):
+    def run(self, test_flag = False):
         """
         Runs through all episodes, and the phases in each episode, continues until all episodes are completed.
         Calls the user defined phases and other classes inherited from the abstract base classes. Detailed diagram
         is above of the order of operations.
         """
         
-        test_flag = False
+        
         if len(self.phase_manager.phase_dict) > 0:
             logging.info("RUNNING PHASES: {}".format(
                 self.phase_manager.phase_dict))
@@ -128,6 +128,7 @@ class SimManagerRLHER(SimManager):
                 self.phase_manager.set_exit_flag(False)
                 self.phase_manager.setup()
                 print('Episode ',self.episode_number,' goal pose', self.phase_manager.current_phase.goal_position)
+                print('Epsilon ', self.phase_manager.current_phase.controller.epsilon)
                 timestep_number = 0
                 transition_list = []
                 diff_max = 0
@@ -150,7 +151,6 @@ class SimManagerRLHER(SimManager):
                             angles = [i for i in S['two_finger_gripper']['joint_angles'].values()]
                             finger_pos = calc_finger_poses(angles)
                             S_finger_pos = [S['f1_pos'][0], S['f1_pos'][1], S['f2_pos'][0], S['f2_pos'][1]]
-                            print(angles)
                             # assert np.isclose(finger_pos, S_finger_pos, atol=0.001).all(), 'calculated finger pose and pybullet finger pose dont match'
                         self.phase_manager.current_phase.execute_action()
                         A = self.action.get_action()
@@ -252,12 +252,12 @@ class SimManagerRLHER(SimManager):
                     while not done:
                         timestep_number += 1
                         self.phase_manager.current_phase.pre_step()
-                        self.state.set_state()
+                        # self.state.set_state()
                         # S = self.state.get_state()
                         self.phase_manager.current_phase.execute_action()
                         # A = self.action.get_action()
                         self.env.step()
-                        done = self.phase_manager.current_phase.exit_condition()
+                        done = self.phase_manager.current_phase.exit_condition(True)
                         self.phase_manager.current_phase.post_step()
                         self.record.record_timestep()
                         R = self.reward.get_reward()
@@ -266,7 +266,7 @@ class SimManagerRLHER(SimManager):
                         # E = self.episode_number
                         # transition = (S, A, R, S2, E)
                         # self.replay_buffer.add_timestep(transition)
-                        done = self.phase_manager.current_phase.exit_condition()
+                        # done = self.phase_manager.current_phase.exit_condition()
                         # self.phase_manager.current_phase.controller.train_policy()
                         # print(self.record_video)
                         if self.record_video:
@@ -339,7 +339,7 @@ class SimManagerRLHER(SimManager):
                         # E = self.episode_number
                         # transition = (S, A, R, S2, E)
                         # self.replay_buffer.add_timestep(transition)
-                        done = self.phase_manager.current_phase.exit_condition()
+                        # done = self.phase_manager.current_phase.exit_condition()
                         # self.phase_manager.current_phase.controller.train_policy()
                         if self.record_video:
                             img = p.getCameraImage(640, 480, renderer=p.ER_BULLET_HARDWARE_OPENGL)

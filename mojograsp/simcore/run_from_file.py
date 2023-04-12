@@ -5,6 +5,7 @@ Created on Tue Jan 24 13:11:51 2023
 
 @author: orochi
 """
+
 from multiprocessing import connection
 from operator import truediv
 import pybullet as p
@@ -38,7 +39,7 @@ def run_pybullet(filepath, window=None, runtype='run'):
     with open(filepath, 'r') as argfile:
         args = json.load(argfile)
     
-    if args['task'] == 'asterisk':
+    if (args['task'] == 'asterisk')|(runtype=='eval'):
         x = [0.03, 0, -0.03, -0.04, -0.03, 0, 0.03, 0.04]
         y = [-0.03, -0.04, -0.03, 0, 0.03, 0.04, 0.03, 0]
     elif args['task'] == 'random':
@@ -50,21 +51,23 @@ def run_pybullet(filepath, window=None, runtype='run'):
     pose_list = [[i,j] for i,j in zip(x,y)]
     
     print(args)
-    
-    if args['viz']:
+    try:
+        if (args['viz']) | (runtype=='eval'):
+            physics_client = p.connect(p.GUI)
+        else:
+            physics_client = p.connect(p.DIRECT)
+    except KeyError:
         physics_client = p.connect(p.GUI)
-    else:
-        physics_client = p.connect(p.DIRECT)
     p.setAdditionalSearchPath(pybullet_data.getDataPath())
     p.setGravity(0, 0, -10)
     p.resetDebugVisualizerCamera(cameraDistance=.02, cameraYaw=0, cameraPitch=-89.9999,
                                  cameraTargetPosition=[0, 0.1, 0.5])
     
     # load objects into pybullet
-    plane_id = p.loadURDF("plane.urdf")
+    plane_id = p.loadURDF("plane.urdf", flags=p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
     hand_id = p.loadURDF(args['hand_path'], useFixedBase=True,
-                         basePosition=[0.0, 0.0, 0.05])
-    obj_id = p.loadURDF(args['object_path'], basePosition=[0.0, 0.16, .05])
+                         basePosition=[0.0, 0.0, 0.05], flags=p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
+    obj_id = p.loadURDF(args['object_path'], basePosition=[0.0, 0.16, .05], flags=p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
     
     # Create TwoFingerGripper Object and set the initial joint positions
     hand = TwoFingerGripper(hand_id, path=args['hand_path'])
@@ -124,12 +127,20 @@ def run_pybullet(filepath, window=None, runtype='run'):
         for k in range(int(args['epochs']/len(x))):
             manager.run()
             manager.phase_manager.phase_dict['manipulation'].reset()
+            '''
+            if k % args['evaluate'] == 0:
+                manager.evaluate()
+                manager.phase_manager.phase_dict['manipulation'].reset()
+                # manager.train()
+            '''
+                
         manager.save_network(args['save_path']+'policy')
         # replay_buffer.save_sampling('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/hard_random_sampling/sampling')
         print('training done, creating episode_all')
         d = data_processor(args['save_path'])
         d.load_data()
         d.save_all()
+        manager.phase_manager.phase_dict['manipulation'].controller.policy.save_sampling()
     elif runtype == 'eval':
         manipulation.load_policy(args['save_path']+'policy')
         manager.evaluate()
@@ -144,11 +155,19 @@ def run_pybullet(filepath, window=None, runtype='run'):
         d = data_processor(args['save_path'])
         d.load_data()
         d.save_all()
-        
-        
-
+    elif runtype == 'transfer':
+        manipulation.load_policy(args['load_path']+'policy')
+        manager.evaluate()
+        manager.phase_manager.phase_dict['manipulation'].reset()
+        for k in range(int(args['epochs']/len(x))):
+            manager.run()
+            manager.phase_manager.phase_dict['manipulation'].reset()
+            if k % 10 == 9:
+                manager.evaluate()
+                manager.phase_manager.phase_dict['manipulation'].reset()
+                
 def main():
-    run_pybullet('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/4_hard_priority/experiment_config.json',runtype='run')
-    
+    run_pybullet('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/3_finger_pos_new_ik/experiment_config.json',runtype='run')
+    # run_pybullet('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/4_hard_priority/experiment_config.json',runtype='eval')
 if __name__ == '__main__':
     main()

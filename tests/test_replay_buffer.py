@@ -18,13 +18,14 @@ from scipy.stats import chi2
 import matplotlib.pyplot as plt
 
 
-class TestDDPG(unittest.TestCase):
+class TestReplayBuffer(unittest.TestCase):
 
     def setUp(self):
         with open('./test_configs/episode_all.pkl','rb') as configfile:
             self.preload_data = pkl.load(configfile)
         self.replay_buffer = ReplayBufferPriority(buffer_size=4080000)
         self.replay_buffer.preload_buffer_PKL('./test_configs/episode_all.pkl')
+        print('setting up the test')
 
     def test_preload_buffer(self):
         print('testing the preloading')

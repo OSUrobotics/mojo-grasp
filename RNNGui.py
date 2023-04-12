@@ -66,7 +66,8 @@ class RNNGui():
                          [sg.Text('Learning Rate'), sg.Input(0.0001,key='-learning'), sg.Text('Discount Factor'), sg.Input(0.995, key='-df')],
                          [sg.Text('Starting Epsilon'), sg.Input(0.7,key='-epsilon'), sg.Text('Epsilon Decay Rate'), sg.Input(0.995, key='-edecay')],
                          [sg.Text('Rollout Size'), sg.Input(5,key='-rollout_size'), sg.Text('Rollout Weight'), sg.Input(0.5, key='-rollout_weight')],
-                         [sg.Text('Evaluation Period'), sg.Input(100,key='-eval'), sg.Text('Tau'), sg.Input(0.0005, key='-tau')]]
+                         [sg.Text('Evaluation Period'), sg.Input(100,key='-eval'), sg.Text('Tau'), sg.Input(0.0005, key='-tau')],
+                         [sg.Text('Timesteps per Episode'), sg.Input(150,key='-tsteps'), sg.Text('Timesteps in Evaluation'), sg.Input(150,key='-eval-tsteps')]]
         
         plotting_layout = [[sg.Text('Model Title')],
                        [sg.Input('test1',key='-title')],
@@ -78,7 +79,7 @@ class RNNGui():
                        [sg.Checkbox('Finger Object Distance', default=False, k='-fod')],
                        [sg.Checkbox('Goal Position',default=True, k='-gp')],
                        [sg.Text('Num Previous States'),sg.Input('0', k='-pv')],
-                       [sg.Text("Reward"), sg.OptionMenu(values=('Sparse','Distance','Distance + Finger'), k='-reward',default_value='Distance + Finger')],
+                       [sg.Text("Reward"), sg.OptionMenu(values=('Sparse','Distance','Distance + Finger', 'Hinge Distance + Finger'), k='-reward',default_value='Distance + Finger'), sg.Text('Success Radius (mm)'), sg.Input(2, key='-sr'),],
                        [sg.Text("Action"), sg.OptionMenu(values=('Joint Velocity','Finger Tip Position'), k='-action',default_value='Joint Velocity')],
                        [sg.Checkbox('Vizualize Simulation',default=True, k='-viz')],
                        [sg.Button('Begin Training', key='-train', bind_return_key=True)],
@@ -113,7 +114,10 @@ class RNNGui():
                      'rollout_weight': float(values['-rollout_weight']),
                      'tau': float(values['-tau']),
                      'pv': int(values['-pv']),
-                     'viz': int(values['-viz'])}
+                     'viz': int(values['-viz']),
+                     'sr': int(values['-sr']),
+                     'tsteps': int(values['-tsteps']),
+                     'eval-tsteps':int(values['-eval-tsteps'])}
         state_len = 0
         state_mins = []
         state_maxes = []
@@ -134,8 +138,8 @@ class RNNGui():
             state_len += 2
             state_list.append('op')
         if values['-ja']:
-            state_mins.extend([np.pi/2, 0, np.pi/2, np.pi])
-            state_maxes.extend([-np.pi/2, -np.pi, -np.pi/2])
+            state_mins.extend([-np.pi/2, -np.pi, -np.pi/2, 0])
+            state_maxes.extend([np.pi/2, 0, np.pi/2, np.pi])
             state_len += 4
             state_list.append('ja')
         if values['-fod']:
@@ -179,6 +183,7 @@ class RNNGui():
                 self.args['edata'] = values['-browse-expert'] + 'episode_all.pkl'
         if os.path.isdir(self.save_path) and self.save_path != '/':
             self.args['save_path'] = self.save_path + '/'
+            self.args['load_path'] = str(pathlib.Path(self.save_path).parent.resolve()) + '/'
         else:
             print('save path is not a valid directory')
             return False
