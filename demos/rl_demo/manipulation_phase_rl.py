@@ -21,7 +21,11 @@ class ManipulationRL(Phase):
         self.state = state
         self.action = action
         self.reward = reward
-        self.terminal_step = 150
+        try:
+            self.terminal_step = args['tsteps']
+            self.eval_terminal_step = args['eval-tsteps']
+        except KeyError:
+            self.terminal_step = 150
         self.timestep = 0
         self.episode = 0
         self.x = x
@@ -84,12 +88,18 @@ class ManipulationRL(Phase):
         self.reward.set_reward(self.goal_position, self.cube, self.hand, self.controller.final_reward)
 
 
-    def exit_condition(self) -> bool:
+    def exit_condition(self, eval_exit=False) -> bool:
         # If we reach 400 steps or the controller exit condition finishes we exit the phase
-        if self.timestep > self.terminal_step:# or self.controller.exit_condition(self.terminal_step - self.timestep):
-            self.controller.retry_count=0
-            print('exitiny in manipulation phase rl', self.timestep, self.terminal_step)
-            return True
+        if eval_exit:
+            if self.timestep > self.eval_terminal_step:
+                self.controller.retry_count=0
+                print('exitiny in manipulation phase rl', self.timestep, self.terminal_step)
+                return True
+        else:
+            if self.timestep > self.terminal_step:# or self.controller.exit_condition(self.terminal_step - self.timestep):
+                self.controller.retry_count=0
+                print('exitiny in manipulation phase rl', self.timestep, self.terminal_step)
+                return True
         return False
 
     def next_phase(self) -> str:

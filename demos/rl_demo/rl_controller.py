@@ -16,6 +16,8 @@ from mojograsp.simcore.DDPGfD import DDPGfD_priority
 from mojograsp.simcore.replay_buffer import ReplayBufferDefault, ReplayBufferDF
 import torch
 from mojograsp.simcore.priority_replay_buffer import ReplayBufferPriority
+from mojograsp.simcore.jacobianIK.jacobian_IK import JacobianIK
+from copy import deepcopy
 
 def calc_finger_poses(angles):
     x0 = [-0.02675, 0.02675]
@@ -46,6 +48,14 @@ class ExpertController():
         self.prev_distance = 0
         self.distance_count = 0
         self.retry_count = 0
+        hand_info = {"finger1": {"name": "body_l", "num_links": 2, "link_lengths": [[0, .072, 0], [0, .072, 0]]},
+                     "finger2": {"name": "body_r", "num_links": 2, "link_lengths": [[0, .072, 0], [0, .072, 0]]}}
+
+        self.ik_f1 = JacobianIK(gripper.id,deepcopy(hand_info['finger1']))
+        
+        self.ik_f2 = JacobianIK(gripper.id,deepcopy(hand_info['finger2']))
+        self.ik_f1.finger_fk.update_angles_from_sim()
+        self.ik_f2.finger_fk.update_angles_from_sim()
 
     def get_current_cube_position(self):
         self.current_cube_pose = self.cube.get_curr_pose()
@@ -167,6 +177,8 @@ class ExpertController():
     def set_goal_position(self, position: List[float]):
         # world coordinates
         self.goal_position = position
+        self.ik_f1.finger_fk.update_angles_from_sim()
+        self.ik_f2.finger_fk.update_angles_from_sim()
 
     def check_goal(self):
         # Finds distance between current cube position and goal position
@@ -222,7 +234,7 @@ class RLController(ExpertController):
             self.policy = DDPGfD_priority(args)
         self.replay_buffer = replay_buffer
         self.train_flag = False
-        self.MAX_ANGLE_CHANGE = 0.1
+        self.MAX_ANGLE_CHANGE = 0.01
         self.MAX_DISTANCE_CHANGE = 0.001
         self.epsilon = args['epsilon']
         self.COOLING_RATE = args['edecay']
@@ -246,13 +258,13 @@ class RLController(ExpertController):
 
         if not self.rand_episode:
             actor_portion = self.policy.select_action(state)+(np.random.rand(4)-0.5)/2 * self.epsilon
-            
+            actor_portion = np.clip(actor_portion,-1,1)
             action = ((actor_portion)*self.MAX_ANGLE_CHANGE + finger_angles).tolist()
         else:
             actor_portion = self.rand_portion + (np.random.rand(4)-0.5)/2
-            actor_portion = np.ones(4)
+            actor_portion = np.clip(actor_portion,-1,1)
             action = (self.MAX_ANGLE_CHANGE*(actor_portion) + finger_angles).tolist()
-        
+        actor_portion = actor_portion.tolist()
         return action, actor_portion
     
     def get_next_IK_action(self, state):
@@ -261,8 +273,9 @@ class RLController(ExpertController):
 
         finger_pos1 = p.getLinkState(self.gripper.id, 2)
         finger_pos2 = p.getLinkState(self.gripper.id, 5)
-
+        # finger_angles = self.gripper.get_joint_angles()
         if not self.rand_episode:           
+            # print(self.epsilon)
             actor_portion = self.policy.select_action(state) + (np.random.rand(4)-0.5)/2 * self.epsilon
             actor_portion = np.clip(actor_portion,-1,1)
             ap = actor_portion * self.MAX_DISTANCE_CHANGE
@@ -271,10 +284,14 @@ class RLController(ExpertController):
             # action = (action*self.max_change + finger_angles).tolist()
             # print(new_finger_poses)
             # p.calculateInverseKinematic
+            '''
             finger_1_angs = p.calculateInverseKinematics(self.gripper.id,2,[new_finger_poses[0], new_finger_poses[1], finger_pos1[0][2]],maxNumIterations=3000)
             finger_2_angs = p.calculateInverseKinematics(self.gripper.id,5,[new_finger_poses[2], new_finger_poses[3], finger_pos2[0][2]],maxNumIterations=3000)
+            '''
+            found1, finger_1_angs, it1 = self.ik_f1.calculate_ik(target=new_finger_poses[:2], ee_location=None)
+            found2, finger_2_angs, it12 = self.ik_f1.calculate_ik(target=new_finger_poses[2:], ee_location=None)
             # print(np.array(finger_1_angs) - np.array(finger_angles), np.array(finger_2_angs) - np.array(finger_angles))
-            action = [finger_1_angs[0],finger_1_angs[1],finger_2_angs[2],finger_2_angs[3]]
+            action = [finger_1_angs[0],finger_1_angs[1],finger_2_angs[0],finger_2_angs[1]]
             finger_pose_from_action = calc_finger_poses(action)
             # assert np.isclose(finger_pose_from_action,new_finger_poses,atol=0.0001).all(), 'action does not result in desired pose, policy'
             # print('current finger poses', finger_pos1[0][0:2], finger_pos2[0][0:2])
@@ -287,11 +304,14 @@ class RLController(ExpertController):
             ap = actor_portion* self.MAX_DISTANCE_CHANGE
             new_finger_poses = [finger_pos1[0][0] + ap[0],finger_pos1[0][1] + ap[1],finger_pos2[0][0] + ap[2],finger_pos2[0][1] + ap[3]]
             # p.calculateInverseKinematic
-            finger_1_angs = p.calculateInverseKinematics(self.gripper.id,2,[new_finger_poses[0], new_finger_poses[1], finger_pos1[0][2]],maxNumIterations=3000)
-            finger_2_angs = p.calculateInverseKinematics(self.gripper.id,5,[new_finger_poses[2], new_finger_poses[3], finger_pos2[0][2]],maxNumIterations=3000)
-            action = [finger_1_angs[0],finger_1_angs[1],finger_2_angs[2],finger_2_angs[3]]
+            found1, finger_1_angs, it1 = self.ik_f1.calculate_ik(target=new_finger_poses[:2], ee_location=None)
+            found2, finger_2_angs, it12 = self.ik_f1.calculate_ik(target=new_finger_poses[2:], ee_location=None)
+            # finger_1_angs = p.calculateInverseKinematics(self.gripper.id,2,[new_finger_poses[0], new_finger_poses[1], finger_pos1[0][2]],maxNumIterations=3000)
+            # finger_2_angs = p.calculateInverseKinematics(self.gripper.id,5,[new_finger_poses[2], new_finger_poses[3], finger_pos2[0][2]],maxNumIterations=3000)
+            action = [finger_1_angs[0],finger_1_angs[1],finger_2_angs[0],finger_2_angs[1]]
             # print('random angle change',np.array(action) - np.array(finger_angles))
             finger_pose_from_action = calc_finger_poses(action)
+        actor_portion = actor_portion.tolist()
             # assert np.isclose(finger_pose_from_action,new_finger_poses,atol=0.0001).all(), 'action does not result in desired pose, random'   
         # print('end of controller',actor_1portion)
         return action, actor_portion
@@ -356,7 +376,8 @@ class RLController(ExpertController):
         
         self.rand_portion = 0.5 * (np.random.rand(4) - 0.5)
         # print(self.rand_portion)
-        self.epsilon = self.epsilon * self.COOLING_RATE
+        if not self.train_flag:
+            self.epsilon = self.epsilon * self.COOLING_RATE
         self.rand_episode = np.random.rand() < self.epsilon
         if self.rand_episode:
             print('NEXT EPISODE WILL BE RANDOM')
@@ -368,12 +389,13 @@ class RLController(ExpertController):
         return super().set_goal_position(position)
     
     def evaluate(self):
-        self.old_epsilon = self.epsilon
-        self.epsilon = 0
-        self.train_flag = True
-    
+        if not self.train_flag:
+            self.old_epsilon = self.epsilon
+            self.epsilon = 0
+            self.train_flag = True
+        
     def train(self):
-        # self.old_epsilon = self.epsilon
+        
         if self.train_flag:
             self.train_flag=False
             self.epsilon = self.old_epsilon

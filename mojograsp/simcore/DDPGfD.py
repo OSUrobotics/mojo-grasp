@@ -12,7 +12,8 @@ from torch.utils.tensorboard import SummaryWriter
 from mojograsp.simcore.priority_replay_buffer import ReplayBufferPriority
 from mojograsp.simcore.state import State
 from mojograsp.simcore.reward import Reward
-
+from csv import writer
+import pickle as pkl
 # Implementation of Deep Deterministic Policy Gradients (DDPG)
 # Paper: https://arxiv.org/abs/1509.02971
 # [Not the implementation used in the TD3 paper]
@@ -144,6 +145,15 @@ class DDPGfD_priority():
         self.actor_component = 100000
         self.critic_component = 10
         self.state_list = arg_dict['state_list']
+        self.sampled_positions = np.zeros((100,100))
+        self.position_xlims = np.linspace(-0.1, 0.1,100)
+        self.position_ylims = np.linspace(0.06,0.26,100)
+        self.sampled_file = arg_dict['save_path'] + 'sampled_positions.pkl'
+        
+        try:
+            self.SUCCESS_THRESHOLD = arg_dict['sr']/1000
+        except KeyError:
+            self.SUCCESS_THRESHOLD = 0.002
 
     def select_action(self, state: State):
         """
@@ -220,6 +230,11 @@ class DDPGfD_priority():
         torch.save(self.actor_optimizer.state_dict(), filename + "_actor_optimizer")
         np.save(filename + "avg_evaluation_reward", np.array([self.avg_evaluation_reward]))
 
+    def save_sampling(self):
+        with open(self.sampled_file, 'wb') as f_obj:
+            # print(self.sampled_positions)
+            pkl.dump(self.sampled_positions, f_obj)
+            
     def load(self, filename):
         """ Load input policy from given filename
 		filename: filename to load policy from
@@ -282,6 +297,7 @@ class DDPGfD_priority():
                 state.extend(state_container['f2_base'][0:2])
             elif key == 'ja':
                 state.extend([item for item in state_container['two_finger_gripper']['joint_angles'].values()])
+                # print(state)
             elif key == 'gp':
                 state.extend(state_container['goal_pose']['goal_pose'])
             else:
@@ -298,11 +314,13 @@ class DDPGfD_priority():
         :type state: :func:`~mojograsp.simcore.reward.Reward`
         """
         if self.REWARD_TYPE == 'Sparse':
-            tstep_reward = reward_container['distance_to_goal'] < 0.002
+            tstep_reward = reward_container['distance_to_goal'] < self.SUCCESS_THRESHOLD
         elif self.REWARD_TYPE == 'Distance':
             tstep_reward = max(-reward_container['distance_to_goal'],-1)
         elif self.REWARD_TYPE == 'Distance + Finger':
             tstep_reward = max(-reward_container['distance_to_goal'] - max(reward_container['f1_dist'],reward_container['f2_dist'])/5,-1)
+        elif self.REWARD_TYPE == 'Hinge Distance + Finger':
+            tstep_reward = reward_container['distance_to_goal'] < self.SUCCESS_THRESHOLD + max(-reward_container['distance_to_goal'] - max(reward_container['f1_dist'],reward_container['f2_dist'])/5,-1)
         else:
             raise Exception('reward type does not match list of known reward types')
         return float(tstep_reward)
@@ -446,6 +464,12 @@ class DDPGfD_priority():
 
                     next_state.append(self.build_state(t_next_state))
                     expert_status.append(timestep[5])
+                    try:
+                        x = np.where(t_state['obj_2']['pose'][0][0] < self.position_xlims)[0][0]
+                        y = np.where(t_state['obj_2']['pose'][0][1] < self.position_ylims)[0][0]
+                        self.sampled_positions[x,y] +=1
+                    except IndexError:
+                        pass
                     if self.ROLLOUT:
                         series_len = len(timestep_series)
                         for j, timestep in enumerate(timestep_series[1:]):
@@ -454,7 +478,6 @@ class DDPGfD_priority():
                         rollout_discount.append(series_len)
                         last_state.append(self.build_state(t_last_state))
                         rollout_reward.append(rtemp)
-                        # print(rtemp)
                 else:
                     print(timestep_series, transition_weight, indxs)
                     
@@ -472,39 +495,14 @@ class DDPGfD_priority():
             expert_status = torch.unsqueeze(expert_status, 1)
             last_state = torch.tensor(last_state, device=device)
             
-            # state = torch.tensor(state)
-            # action = torch.tensor(action)
-            # action = action.float()
-            # reward = torch.tensor(reward)
-            # reward = torch.unsqueeze(reward, 1)
-            # next_state = torch.tensor(next_state)
-            # rollout_reward = torch.tensor(rollout_reward)
-            # rollout_reward = torch.unsqueeze(rollout_reward, 1)
-            # rollout_discount = torch.tensor(rollout_discount)
-            # rollout_discount = torch.unsqueeze(rollout_discount, 1)
-            # expert_status = torch.tensor(expert_status)
-            # expert_status = torch.unsqueeze(expert_status, 1)
-            # last_state = torch.tensor(last_state)
-            # state = state.to(device)
-            # action = action.to(device)
-            # next_state = next_state.to(device)
-            # reward = reward.to(device)
-            # rollout_reward = rollout_reward.to(device)
-            # rollout_discount = rollout_discount.to(device)
-            # expert_status = expert_status.to(device)
-            # last_state = last_state.to(device)
             trimmed_weight = []
             trimmed_idxs = []
             for tw, inds in zip(transition_weight, indxs):
                 if len(tw) > 0:
-                    
-                    # print(tw[0])
                     trimmed_weight.append(tw[0]) 
                     trimmed_idxs.append(inds[0])
             trimmed_weight = torch.tensor(trimmed_weight, device=device)
             trimmed_weight = torch.unsqueeze(trimmed_weight, 1)
-            # trimmed_weight = trimmed_weight.to(device)
-            # print(last_state == next_state)
             return state, action, next_state, reward, rollout_reward, rollout_discount, last_state, trimmed_weight, trimmed_idxs, expert_status
 
     def train(self, replay_buffer):
@@ -579,8 +577,8 @@ class DDPGfD_priority():
                 priorities = priorities.cpu().detach().numpy()
                 replay_buffer.update_priorities(indxs,priorities)
                 self.writer.add_scalar('priorities/sum_priorities', replay_buffer.buffer_prio.sum(0, replay_buffer.sz),self.total_it)
-                self.writer.add_scalar('priorities/replay_buffer_size', replay_buffer.sz,self.total_it)
-                self.writer.add_scalar('priorities/weights', np.average(transition_weight.cpu().detach().numpy()),self.total_it)
+                # self.writer.add_scalar('priorities/replay_buffer_size', replay_buffer.sz,self.total_it)
+                # self.writer.add_scalar('priorities/weights', np.average(transition_weight.cpu().detach().numpy()),self.total_it)
                 self.writer.add_scalar('priorities/average', np.average(priorities),self.total_it)
                 self.writer.add_scalar('priorities/critic_portion', self.critic_component*np.average(cpart.cpu().detach().numpy()),self.total_it)
                 self.writer.add_scalar('priorities/actor_portion', self.actor_component*np.average(apart.cpu().detach().numpy()),self.total_it)
@@ -594,9 +592,11 @@ class DDPGfD_priority():
 
             
             # update target networks
-            if self.total_it % self.NETWORK_REPL_FREQ == 0:
-                self.update_target()
-                self.u_count +=1
+            # if self.total_it % self.NETWORK_REPL_FREQ == 0:
+            self.update_target()
+            self.u_count +=1
+            # if self.total_it % 100 ==0:
+            #     self.save_poses()
             return actor_loss.item(), critic_loss.item(), critic_L1loss.item(), critic_LNloss.item()
 
 

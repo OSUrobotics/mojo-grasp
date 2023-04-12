@@ -1,0 +1,23 @@
+<?xml version="1.0" ?>
+<robot name="2v2_Demo_cuboid_small">
+
+    <link name="2v2_Demo_cuboid_small">
+        <visual>
+        <origin rpy="1.5707963267948966 0 0" xyz="0 0 0"/>
+            <geometry>
+                <mesh filename="obj_files/2v2_Demo_cuboid_small.obj" scale="1 1 1"/>
+            </geometry>
+        </visual>
+        <collision>
+                <origin rpy="1.5707963267948966 0 0" xyz="0 0 0"/>
+            <geometry>
+                <mesh filename="obj_files/2v2_Demo_cuboid_small_collision.obj" scale="1 1 1"/>
+            </geometry>
+        </collision>
+    <inertial>
+      <mass value="5"/>
+      <inertia ixx="0.004800416666666667" ixy="0.0" ixz="0.0" iyy="0.004800416666666667" iyz="0.0" izz="0.0012675"/>
+    </inertial>
+    </link>
+
+</robot>

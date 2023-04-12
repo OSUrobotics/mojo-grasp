@@ -26,15 +26,13 @@ class data_processor():
         pkl_names = []
         pkl_nums = []
         for name in all_names:
-            # print(name)
             if "all" in name and ".pkl" in name:
                 print('Folder already has episode all. Data not loaded')
                 self.episode_data = []
                 self.save_all_flag = False
                 return
-            elif '.pkl' in name and 'sampling' not in name:
+            elif '.pkl' in name and 'sampled' not in name and 'Evaluation' not in name:
                 pkl_names.append(name)
-                # print(name)
                 temp = re.search('\d+',name)
                 pkl_nums.append(int(temp[0]))
         pkl_sort = np.argsort(pkl_nums)
@@ -44,10 +42,9 @@ class data_processor():
             new_pkl_names.append(pkl_names[ind])
         print('found names: ', len(new_pkl_names))
         for name in new_pkl_names:
-            # print(name)
             with open(self.data_path + name, 'rb') as datafile: 
                 self.episode_data.append(pkl.load(datafile))
-        # print(data_list.keys())
+        self.save_all_flag = True
         
     def save_all(self):
         """
