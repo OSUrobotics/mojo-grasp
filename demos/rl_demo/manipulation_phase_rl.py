@@ -56,6 +56,8 @@ class ManipulationRL(Phase):
         # set the new goal position for the controller
         self.controller.set_goal_position(self.goal_position)
         self.state.init_state()
+        start_state = self.state.get_state()
+        self.reward.setup_reward(start_state['obj_2']['pose'])
 
     def pre_step(self):
         # Get the target action
@@ -93,12 +95,12 @@ class ManipulationRL(Phase):
         if eval_exit:
             if self.timestep > self.eval_terminal_step:
                 self.controller.retry_count=0
-                print('exitiny in manipulation phase rl', self.timestep, self.terminal_step)
+                print('exiting in manipulation phase rl', self.timestep, self.terminal_step)
                 return True
         else:
             if self.timestep > self.terminal_step:# or self.controller.exit_condition(self.terminal_step - self.timestep):
                 self.controller.retry_count=0
-                print('exitiny in manipulation phase rl', self.timestep, self.terminal_step)
+                print('exiting in manipulation phase rl', self.timestep, self.terminal_step)
                 return True
         return False
 

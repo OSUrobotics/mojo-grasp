@@ -90,6 +90,7 @@ class JacobianIK():
             if vec_length > d_step:
                 # shorten step
                 vec_to_target *= d_step / vec_length
+                # CAN ALSO TRY RETURNING HERE INSTEAD OF DOING THE THNIG
             elif np.isclose(vec_length, 0.0):
                 b_keep_going = False
 
@@ -144,4 +145,5 @@ class JacobianIK():
 
         self.finger_fk.update_angles_from_sim()
         # Return the new angles, and whether or not we ever found a better set of angles
+        # print(count_iterations)
         return b_found_better, angles, count_iterations

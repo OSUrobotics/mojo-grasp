@@ -10,6 +10,8 @@ from PIL import ImageGrab
 from scipy.stats import kde
 import re
 import time
+import pathlib
+
 '''
     Data Plotter
     
@@ -17,6 +19,7 @@ import time
     
 '''
 
+#TODO update this so that the training and evaluation data are saved in separate folders and this gui can deal with both at the same time
 def moving_average(a, n) :
     ret = np.cumsum(a, dtype=float)
     ret[n:] = ret[n:] - ret[:-n]
@@ -242,6 +245,7 @@ class GuiBackend():
             return
         data = self.data_dict['timestep_list']
         current_reward_dict = [-f['reward']['distance_to_goal'] for f in data]
+        # current_reward_dict = [-f['reward']['slope_to_goal'] for f in data]
 
         if self.clear_plots | (self.curr_graph != 'rewards'):
             self.ax.cla()
@@ -944,6 +948,7 @@ class GuiBackend():
         self.curr_graph = 'direction_reward_thing'   
     
     def check_all_data(self):
+        #TODO fix this so that it works with different shit
         num_episodes = len(self.all_data['episode_list'])
         for i in range(num_episodes):
             # print(self.all_data['episode_list'][i]['number'])
@@ -959,7 +964,7 @@ class GuiBackend():
             if 'all.' in filename:
                 self.e_num = -1
                 self.all_data = self.data_dict.copy()
-                self.check_all_data()
+                # self.check_all_data()
             else:
                 self.e_num = self.data_dict['number']
     
@@ -973,10 +978,10 @@ class GuiBackend():
                 self.e_num = self.data_dict['number']
              
     def load_data(self, filename):
-        try:
-            self.load_pkl(filename)
-        except:
-            self.load_json(filename)
+        # try:
+        self.load_pkl(filename)
+        # except:
+            # self.load_json(filename)
             
             
 
@@ -1015,7 +1020,8 @@ def main():
 
     episode_files = episode_files[sorted_inds].tolist()
     filenames_only = filenames_only[sorted_inds].tolist()
-    
+    folder_location = os.path.abspath(episode_files[0])
+    overall_path = pathlib.Path(folder_location).parent.resolve()
     
     
     # define menu layout
@@ -1034,7 +1040,9 @@ def main():
            plot_buttons[0], plot_buttons[1], plot_buttons[2], plot_buttons[3], plot_buttons[4], plot_buttons[5], [sg.B('Save Image', key='-SAVE-')],
                [sg.Text('File 1 of {}'.format(len(episode_files)), size=(15, 1), key='-FILENUM-')]]
 
-    col_files = [[sg.Listbox(values=filenames_only, size=(60, 30), key='-LISTBOX-', enable_events=True)],
+    col_files = [[sg.Text(overall_path, key='-print-path')],
+                 [sg.Button('Switch Train/Test'),sg.Button('Select New Folder')],
+                [sg.Listbox(values=filenames_only, size=(60, 30), key='-LISTBOX-', enable_events=True)],
                  [sg.Text('Select an episode.  Use scrollwheel or arrow keys on keyboard to scroll through files one by one.')]]
 
     layout = [[sg.Menu(menu)], [sg.Col(col_files), sg.Col(col)]]
@@ -1121,6 +1129,84 @@ def main():
         elif event == '-SAVE-':
             filename=r'test.png'
             save_element_as_file(window['-CANVAS-'], filename)
+        elif event =='Select New Folder':
+            # Get the folder containing the episodes
+            folder = sg.popup_get_folder('Episode Folder to open')
+            if folder is None:
+                sg.popup_cancel('Cancelling')
+                return
+
+            # get list of pkl files in folder
+            episode_files = [os.path.join(folder, f) for f in os.listdir(folder) if f.lower().endswith('.pkl')]
+            filenames_only = [f for f in os.listdir(folder) if f.lower().endswith('.pkl')]
+            
+            filenums = [re.findall('\d+',f) for f in filenames_only]
+            final_filenums = []
+            for i in filenums:
+                if len(i) > 0 :
+                    final_filenums.append(int(i[0]))
+                else:
+                    final_filenums.append(10000000000)
+            if len(episode_files) == 0:
+                sg.popup('No pkl episodes in folder, using json format.')
+                episode_files = [os.path.join(folder, f) for f in os.listdir(folder) if f.lower().endswith('.json')]
+                filenames_only = [f for f in os.listdir(folder) if f.lower().endswith('.json')]
+
+            sorted_inds = np.argsort(final_filenums)
+            final_filenums = np.array(final_filenums)
+            temp = final_filenums[sorted_inds]
+            episode_files = np.array(episode_files)
+            filenames_only = np.array(filenames_only)
+
+            episode_files = episode_files[sorted_inds].tolist()
+            filenames_only = filenames_only[sorted_inds].tolist()
+            filenum, filename = 0, episode_files[0]
+            backend.load_data(filename)
+            window['-LISTBOX-'].update(filenames_only)
+            folder_location = os.path.abspath(episode_files[0])
+            overall_path = pathlib.Path(folder_location).parent.resolve()
+            window['-print-path'].update()
+        elif event =='Switch Train/Test':
+            temp = str(overall_path)
+            if 'Test' in temp:
+                folder = overall_path.parent.resolve()
+                folder = str(folder.joinpath('Train'))
+            elif 'Train' in temp:
+                folder = overall_path.parent.resolve()
+                folder = str(folder.joinpath('Test'))
+            else:
+                print('no train/test folder in this filepath')
+                pass
+            # get list of pkl files in folder
+            episode_files = [os.path.join(folder, f) for f in os.listdir(folder) if f.lower().endswith('.pkl')]
+            filenames_only = [f for f in os.listdir(folder) if f.lower().endswith('.pkl')]
+            
+            filenums = [re.findall('\d+',f) for f in filenames_only]
+            final_filenums = []
+            for i in filenums:
+                if len(i) > 0 :
+                    final_filenums.append(int(i[0]))
+                else:
+                    final_filenums.append(10000000000)
+            if len(episode_files) == 0:
+                sg.popup('No pkl episodes in folder, using json format.')
+                episode_files = [os.path.join(folder, f) for f in os.listdir(folder) if f.lower().endswith('.json')]
+                filenames_only = [f for f in os.listdir(folder) if f.lower().endswith('.json')]
+
+            sorted_inds = np.argsort(final_filenums)
+            final_filenums = np.array(final_filenums)
+            temp = final_filenums[sorted_inds]
+            episode_files = np.array(episode_files)
+            filenames_only = np.array(filenames_only)
+
+            episode_files = episode_files[sorted_inds].tolist()
+            filenames_only = filenames_only[sorted_inds].tolist()
+            filenum, filename = 0, episode_files[0]
+            backend.load_data(filename)
+            window['-LISTBOX-'].update(filenames_only)
+            folder_location = os.path.abspath(episode_files[0])
+            overall_path = pathlib.Path(folder_location).parent.resolve()
+            window['-print-path'].update()
         # ----------------- Menu choices -----------------
         if event == 'Open Folder':
             newfolder = sg.popup_get_folder('New folder', no_window=True)

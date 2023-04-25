@@ -33,18 +33,23 @@ from mojograsp.simcore.priority_replay_buffer import ReplayBufferPriority
 from mojograsp.simcore.data_combination import data_processor
 import pickle as pkl
 import json
+import time
 
 def run_pybullet(filepath, window=None, runtype='run'):
     # resource paths
     with open(filepath, 'r') as argfile:
         args = json.load(argfile)
     
-    if (args['task'] == 'asterisk')|(runtype=='eval'):
+    if (args['task'] == 'asterisk'):
         x = [0.03, 0, -0.03, -0.04, -0.03, 0, 0.03, 0.04]
         y = [-0.03, -0.04, -0.03, 0, 0.03, 0.04, 0.03, 0]
-    elif args['task'] == 'random':
+    elif args['task'] == 'random' and runtype != 'eval':
         df = pd.read_csv(args['points_path'], index_col=False)
-        
+        x = df["x"]
+        y = df["y"]
+    elif runtype=='eval':
+        df = pd.read_csv('/home/orochi/mojo/mojo-grasp/demos/rl_demo/resources/test_points.csv', index_col=False)
+        print('EVALUATING BOOOIIII')
         x = df["x"]
         y = df["y"]
         
@@ -72,11 +77,15 @@ def run_pybullet(filepath, window=None, runtype='run'):
     # Create TwoFingerGripper Object and set the initial joint positions
     hand = TwoFingerGripper(hand_id, path=args['hand_path'])
     
-    p.resetJointState(hand_id, 0, .75)
-    p.resetJointState(hand_id, 1, -1.4)
-    p.resetJointState(hand_id, 3, -.75)
-    p.resetJointState(hand_id, 4, 1.4)
+    # p.resetJointState(hand_id, 0, -0.4)
+    # p.resetJointState(hand_id, 1, 1.2)
+    # p.resetJointState(hand_id, 3, 0.4)
+    # p.resetJointState(hand_id, 4, -1.2)
     
+    # p.resetJointState(hand_id, 0, 0)
+    # p.resetJointState(hand_id, 1, 0)
+    # p.resetJointState(hand_id, 3, 0)
+    # p.resetJointState(hand_id, 4, 0)
     # change visual of gripper
     p.changeVisualShape(hand_id, 0, rgbaColor=[0.3, 0.3, 0.3, 1])
     p.changeVisualShape(hand_id, 1, rgbaColor=[1, 0.5, 0, 1])
@@ -84,7 +93,6 @@ def run_pybullet(filepath, window=None, runtype='run'):
     p.changeVisualShape(hand_id, 4, rgbaColor=[1, 0.5, 0, 1])
     p.changeVisualShape(hand_id, -1, rgbaColor=[0.3, 0.3, 0.3, 1])
     # p.setTimeStep(1/2400)
-    
     obj = ObjectWithVelocity(obj_id, path=args['object_path'])
     
     goal_poses = GoalHolder(pose_list)
@@ -167,7 +175,8 @@ def run_pybullet(filepath, window=None, runtype='run'):
                 manager.phase_manager.phase_dict['manipulation'].reset()
                 
 def main():
-    run_pybullet('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/3_finger_pos_new_ik/experiment_config.json',runtype='run')
-    # run_pybullet('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/4_hard_priority/experiment_config.json',runtype='eval')
+    run_pybullet('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/slope_test/experiment_config.json',runtype='run')
+    # run_pybullet('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/6_ik_kegan_point_split/experiment_config.json',runtype='eval')
+    # run_pybullet('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/a_throwaway/experiment_config.json',runtype='run')
 if __name__ == '__main__':
     main()

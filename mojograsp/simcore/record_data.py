@@ -247,11 +247,11 @@ class RecordDataPKL(RecordData):
         if self.save_episode_flag and self.data_path != None:
             if evaluated:
                 file_path =file_path = self.data_path + \
-                    "Evaluation_episode_" + str(self.eval_num) + ".pkl" 
+                    "Test/Evaluation_episode_" + str(self.eval_num) + ".pkl" 
                 self.eval_num +=1
                 print('save episode evaluated', self.eval_num)
             else:
-                file_path = self.data_path + \
+                file_path = self.data_path + 'Train/' + \
                     self.data_prefix + "_" + str(self.episode_num) + ".pkl"
             print(file_path)
             
