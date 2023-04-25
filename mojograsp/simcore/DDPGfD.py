@@ -297,7 +297,6 @@ class DDPGfD_priority():
                 state.extend(state_container['f2_base'][0:2])
             elif key == 'ja':
                 state.extend([item for item in state_container['two_finger_gripper']['joint_angles'].values()])
-                # print(state)
             elif key == 'gp':
                 state.extend(state_container['goal_pose']['goal_pose'])
             else:
@@ -321,6 +320,8 @@ class DDPGfD_priority():
             tstep_reward = max(-reward_container['distance_to_goal'] - max(reward_container['f1_dist'],reward_container['f2_dist'])/5,-1)
         elif self.REWARD_TYPE == 'Hinge Distance + Finger':
             tstep_reward = reward_container['distance_to_goal'] < self.SUCCESS_THRESHOLD + max(-reward_container['distance_to_goal'] - max(reward_container['f1_dist'],reward_container['f2_dist'])/5,-1)
+        elif self.REWARD_TYPE == 'Slope':
+            tstep_reward = reward_container['slope_to_goal'] *10000
         else:
             raise Exception('reward type does not match list of known reward types')
         return float(tstep_reward)

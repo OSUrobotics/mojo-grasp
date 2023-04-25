@@ -57,7 +57,7 @@ class RNNGui():
                          [sg.Text('Path to Save Data')],
                          [sg.Button("Browse",key='-browse-save',button_color='DarkBlue'),sg.Text("/", key='-save-path')],
                          [sg.Text('Object'), sg.OptionMenu(values=('Cube', 'Cylinder'), k='-object', default_value='Cube')],
-                         [sg.Text('Hand'), sg.OptionMenu(values=('2v2', 'Other - add later'), k='-hand', default_value='2v2')],
+                         [sg.Text('Hand'), sg.OptionMenu(values=('2v2', '2v2-B'), k='-hand', default_value='2v2')],
                          [sg.Text("Task"), sg.OptionMenu(values=('asterisk','random','forward','backward','left','right'), k='-task', default_value='asterisk')],
                          [sg.Text('Replay Buffer Sampling'), sg.OptionMenu(values=('priority','random','random+expert'), k='-sampling', default_value='random')]]
         
@@ -79,9 +79,9 @@ class RNNGui():
                        [sg.Checkbox('Finger Object Distance', default=False, k='-fod')],
                        [sg.Checkbox('Goal Position',default=True, k='-gp')],
                        [sg.Text('Num Previous States'),sg.Input('0', k='-pv')],
-                       [sg.Text("Reward"), sg.OptionMenu(values=('Sparse','Distance','Distance + Finger', 'Hinge Distance + Finger'), k='-reward',default_value='Distance + Finger'), sg.Text('Success Radius (mm)'), sg.Input(2, key='-sr'),],
+                       [sg.Text("Reward"), sg.OptionMenu(values=('Sparse','Distance','Distance + Finger', 'Hinge Distance + Finger', 'Slope'), k='-reward',default_value='Distance + Finger'), sg.Text('Success Radius (mm)'), sg.Input(2, key='-sr'),],
                        [sg.Text("Action"), sg.OptionMenu(values=('Joint Velocity','Finger Tip Position'), k='-action',default_value='Joint Velocity')],
-                       [sg.Checkbox('Vizualize Simulation',default=True, k='-viz')],
+                       [sg.Checkbox('Vizualize Simulation',default=True, k='-viz'), sg.Checkbox('Real World?',default=False, k='-rw')],
                        [sg.Button('Begin Training', key='-train', bind_return_key=True)],
                        [sg.Button('Build Config File WITHOUT Training', key='-build')],
                        [sg.Text('Work progress'), sg.ProgressBar(100, size=(20, 20), orientation='h', key='-PROG-')]]
@@ -94,8 +94,9 @@ class RNNGui():
         self.window = sg.Window('RNN Gui', layout, return_keyboard_events=True, use_default_focus=False, finalize=True)
 
     def build_args(self, values):
+        RW = bool(values['-rw'])
         self.built = False
-        print('building RL arglist')
+        print('building RL arglist, real world setting: ',RW)
         self.args = {'epochs': int(values['-epochs']),
                      'batch_size': int(values['-batch-size']),
                      'model': values['-model'],
@@ -123,18 +124,30 @@ class RNNGui():
         state_maxes = []
         state_list = []
         if values['-ftp']:
-            state_mins.extend([-0.072, 0.088, -0.072, 0.088])
-            state_maxes.extend([0.072, 0.232, 0.072, 0.232])
+            if not RW:
+                state_mins.extend([-0.072, 0.088, -0.072, 0.088])
+                state_maxes.extend([0.072, 0.232, 0.072, 0.232])
+            elif RW:
+                state_mins.extend([-0.108, 0.132, -0.108, 0.132])
+                state_maxes.extend([0.108, 0.348, 0.108, 0.348])
             state_len += 4
             state_list.append('ftp')
         if values['-fbp']:
-            state_mins.extend([-0.072, 0.088, -0.072, 0.088])
-            state_maxes.extend([0.072, 0.232, 0.072, 0.232])
+            if not RW:
+                state_mins.extend([-0.072, 0.088, -0.072, 0.088])
+                state_maxes.extend([0.072, 0.232, 0.072, 0.232])
+            elif RW:
+                state_mins.extend([-0.108, 0.132, -0.108, 0.132])
+                state_maxes.extend([0.108, 0.348, 0.108, 0.348])
             state_len += 4
             state_list.append('fbp')
         if values['-op']:
-            state_mins.extend([-0.072, 0.088])
-            state_maxes.extend([0.072, 0.232])
+            if not RW:
+                state_mins.extend([-0.072, 0.088])
+                state_maxes.extend([0.072, 0.232])
+            elif RW:
+                state_mins.extend([-0.108, 0.132])
+                state_maxes.extend([0.108, 0.348])
             state_len += 2
             state_list.append('op')
         if values['-ja']:
@@ -143,13 +156,21 @@ class RNNGui():
             state_len += 4
             state_list.append('ja')
         if values['-fod']:
-            state_mins.extend([0.072, 0.072])
-            state_maxes.extend([-0.001, -0.001])
+            if not RW:
+                state_mins.extend([-0.001, -0.001])
+                state_maxes.extend([0.072, 0.072])
+            elif RW:
+                state_mins.extend([-0.001, -0.001])
+                state_maxes.extend([0.108, 0.108])
             state_len += 2
             state_list.append('fod')
         if values['-gp']:
-            state_mins.extend([-0.07, -0.07])
-            state_maxes.extend([0.07, 0.07])
+            if not RW:
+                state_mins.extend([-0.07, -0.07])
+                state_maxes.extend([0.07, 0.07])
+            elif RW:
+                state_mins.extend([-0.105, -0.105])
+                state_maxes.extend([0.105, 0.105])
             state_len += 2
             state_list.append('gp')
         if self.args['pv'] > 0:
@@ -193,6 +214,8 @@ class RNNGui():
         self.args['tname'] = str(run_path.joinpath(values['-title']))
         if values['-hand'] == '2v2':
             self.args['hand_path'] = str(resource_path.joinpath('2v2_nosensors_keegan/2v2_nosensors/2v2_nosensors_limited.urdf'))
+        elif values['-hand'] == '2v2-B':
+            self.args['hand_path'] = str(resource_path.joinpath('2v2_Hand_B/hand/2v2_65.35_65.35_1.1_53.urdf'))
         if values['-object'] == 'Cube':
             self.args['object_path'] = str(resource_path.joinpath('object_models/2v2_mod/2v2_mod_cuboid_small.urdf'))
         elif values['-object'] == 'Cylinder':
@@ -201,9 +224,11 @@ class RNNGui():
             self.args['max_action'] = 1.57
         elif values['-action'] == 'Finger Tip Position':
             self.args['max_action'] = 0.01
-        self.args['points_path'] = str(resource_path.joinpath('points.csv'))
+        self.args['points_path'] = str(resource_path.joinpath('train_points.csv'))
         
         self.built = True
+        
+
         return True
         
     def train(self):
@@ -216,6 +241,14 @@ class RNNGui():
             
             with open(self.args['save_path'] + '/experiment_config.json', 'w') as conf_file:
                 json.dump(self.args, conf_file)
+            try:
+                os.mkdir(self.args['save_path'] + '/Train/')
+            except FileExistsError:
+                pass
+            try:
+                os.mkdir(self.args['save_path'] + '/Test/')
+            except FileExistsError:
+                pass
         else:
             print('config not built, parameters not saved')
 

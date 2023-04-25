@@ -136,7 +136,6 @@ class SimManagerRLHER(SimManager):
                     
                     self.phase_manager.current_phase.train()
                     self.phase_manager.current_phase.setup()
-                    
                     done = False
                     logging.info("CURRENT PHASE: {}".format(
                         self.phase_manager.current_phase.name))

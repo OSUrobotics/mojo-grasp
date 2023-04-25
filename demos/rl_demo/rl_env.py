@@ -26,6 +26,7 @@ class ExpertEnv(Environment):
         # For alt configuration
         hand_id = p.loadURDF(self.hand.path, useFixedBase=True,
                              basePosition=[0.0, 0.0, 0.05])
+        # p.setPhysicsEngineParameter(contactBreakingThreshold = 0.001)
         p.resetJointState(hand_id, 0, .75)
         p.resetJointState(hand_id, 1, -1.4)
         p.resetJointState(hand_id, 3, -.75)

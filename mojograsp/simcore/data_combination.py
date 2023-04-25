@@ -12,10 +12,11 @@ import re
 import numpy as np
 
 class data_processor():
-    def __init__(self, filepath):
+    def __init__(self, filepath, eval_flag=False):
        self.data_path = filepath 
        self.episode_data = []
        self.save_all_flag = True
+       self.eval_flag = eval_flag
        
     def load_data(self):
         """
@@ -27,17 +28,22 @@ class data_processor():
         pkl_nums = []
         for name in all_names:
             if "all" in name and ".pkl" in name:
-                print('Folder already has episode all. Data not loaded')
-                self.episode_data = []
-                self.save_all_flag = False
-                return
-            elif '.pkl' in name and 'sampled' not in name and 'Evaluation' not in name:
-                pkl_names.append(name)
-                temp = re.search('\d+',name)
-                pkl_nums.append(int(temp[0]))
+                if not (('Evaluation' in name) ^ self.eval_flag):
+                    print('Folder already has episode all. Data not loaded')
+                    print(name)
+                    self.episode_data = []
+                    self.save_all_flag = False
+                    return
+            elif '.pkl' in name and 'sampled' not in name:
+                # print('first stage')
+                if not (('Evaluation' in name) ^ self.eval_flag):
+                    print(name)
+                    pkl_names.append(name)
+                    temp = re.search('\d+',name)
+                    pkl_nums.append(int(temp[0]))
         pkl_sort = np.argsort(pkl_nums)
         new_pkl_names = []
-        
+        print('going to next')
         for ind in pkl_sort:
             new_pkl_names.append(pkl_names[ind])
         print('found names: ', len(new_pkl_names))
@@ -52,9 +58,18 @@ class data_processor():
         episode dictionaries to a pkl file. 
         """
         if self.save_all_flag and self.data_path != None:
-            file_path = self.data_path + \
-                "episode_all.pkl"
-            with open(file_path, 'wb') as fout:
-                self.episodes = {"episode_list": self.episode_data}
-                pkl.dump(self.episodes, fout)
+            if not self.eval_flag:
+                file_path = self.data_path + \
+                    "episode_all.pkl"
+                with open(file_path, 'wb') as fout:
+                    self.episodes = {"episode_list": self.episode_data}
+                    pkl.dump(self.episodes, fout)
+            else:
+                file_path = self.data_path + \
+                    "Evaluation_episode_all.pkl"
+                with open(file_path, 'wb') as fout:
+                    self.episodes = {"episode_list": self.episode_data}
+                    pkl.dump(self.episodes, fout)
         print('save completed')
+        
+        

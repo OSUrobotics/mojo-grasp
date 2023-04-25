@@ -64,30 +64,33 @@ cube_id = p.loadURDF(cube_path, basePosition=[0.0, 0.15, .05])
 # Create TwoFingerGripper Object and set the initial joint positions
 hand = TwoFingerGripper(hand_id, path=hand_path)
 
-# p.resetJointState(hand_id, 0, .75)
-# p.resetJointState(hand_id, 1, -1.4)
-# p.resetJointState(hand_id, 3, -.75)
-# p.resetJointState(hand_id, 4, 1.4)
+p.resetJointState(hand_id, 0, .75)
+p.resetJointState(hand_id, 1, -1.4)
+p.resetJointState(hand_id, 3, -.75)
+p.resetJointState(hand_id, 4, 1.4)
 
-p.resetJointState(hand_id, 0, 0)
-p.resetJointState(hand_id, 1, 0)
-p.resetJointState(hand_id, 3, 0)
-p.resetJointState(hand_id, 4, 0)
+# p.resetJointState(hand_id, 0, 0)
+# p.resetJointState(hand_id, 1, 0)
+# p.resetJointState(hand_id, 3, 0)
+# p.resetJointState(hand_id, 4, 0)
 
 link1_pose = p.getLinkState(hand_id, 2)
 # p.get
 link2_pose = p.getLinkState(hand_id, 5)
 
 
-        
-p.addUserDebugLine([0,0,1],link1_pose[0],[0,0,1],0.1,0)
-p.addUserDebugLine([0,0,1],link2_pose[0],[1,0,0],0.1,0)
+# p.addUserDebugPoints(link1_pose[0],[0,0,1])
+print('link_poses', link1_pose[0], link2_pose[0] )
+
+p.addUserDebugPoints(link2_pose[0],link1_pose[0],100.0,5.0)
+# p.addUserDebugLine([0,0,.1],[link1_pose[0][0], link1_pose[0][1], 0.1],[0,0,1],0.1,0)
+# p.addUserDebugLine([0,0,.1],[link2_pose[0][0], link2_pose[0][1], 0.1],[1,0,0],0.1,0)
 
 
 # Create ObjectBase for the cube object
 cube = ObjectWithVelocity(cube_id, path=cube_path)
 obj_pose = p.getBasePositionAndOrientation(cube_id)
-p.addUserDebugLine([0,1,0],obj_pose[0],[0,1,0],0.1,0)
+# p.addUserDebugLine([0,1,0],obj_pose[0],[0,1,0],0.1,0)
 # cylinder = ObjectWithVelocity(cylinder_id, path=cylinder_path)
 # cube = ObjectVelocityDF(cube_id, path=cube_path)
 print('link_poses', link1_pose[0], link2_pose[0] )
