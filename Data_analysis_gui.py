@@ -244,8 +244,8 @@ class GuiBackend():
             print("can't draw when episode_all is selected")
             return
         data = self.data_dict['timestep_list']
-        current_reward_dict = [-f['reward']['distance_to_goal'] for f in data]
-        # current_reward_dict = [-f['reward']['slope_to_goal'] for f in data]
+        # current_reward_dict = [-f['reward']['distance_to_goal'] for f in data]
+        current_reward_dict = [f['reward']['slope_to_goal'] for f in data]
 
         if self.clear_plots | (self.curr_graph != 'rewards'):
             self.ax.cla()
