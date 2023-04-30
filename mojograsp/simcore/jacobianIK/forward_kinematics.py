@@ -147,10 +147,10 @@ class ForwardKinematicsSIM():
         # debug adding link locations
         debug.append(link_location @ [0, 0, 1])
         self.cnt += 1
-        # if self.cnt == 2000:
+        # if self.cnt == 20:
         #     self.cnt = 0
         #     self.debug_show_link_positions(debug)
-        #     time.sleep(.1)
+        #     time.sleep(1)
         return link_location @ [0, 0, 1]
 
     def debug_show_link_positions(self, points):
