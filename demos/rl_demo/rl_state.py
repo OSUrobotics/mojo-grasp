@@ -98,7 +98,7 @@ class StateRL(StateDefault):
         # self.current_state['f2_pos'] = list(temp2[6])
         # self.current_state['f1_obj_dist'] = temp1[8]
         # self.current_state['f2_obj_dist'] = temp2[8]
-
+        # print(self.current_state['f1_obj_dist'], self.current_state['f2_obj_dist'])
         # print('set state')
         
     def init_state(self):

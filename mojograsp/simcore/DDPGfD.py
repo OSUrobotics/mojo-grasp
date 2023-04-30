@@ -150,6 +150,15 @@ class DDPGfD_priority():
         self.position_ylims = np.linspace(0.06,0.26,100)
         self.sampled_file = arg_dict['save_path'] + 'sampled_positions.pkl'
         
+        
+        try:
+            self.CONTACT_SCALING = arg_dict['contact_scaling']
+            self.DISTANCE_SCALING = arg_dict['distance_scaling']
+        except KeyError:
+            self.CONTACT_SCALING = 0.2
+            self.DISTANCE_SCALING = 1
+        
+        print('SCALING SHITE',self.DISTANCE_SCALING, self.CONTACT_SCALING)
         try:
             self.SUCCESS_THRESHOLD = arg_dict['sr']/1000
         except KeyError:
@@ -317,11 +326,13 @@ class DDPGfD_priority():
         elif self.REWARD_TYPE == 'Distance':
             tstep_reward = max(-reward_container['distance_to_goal'],-1)
         elif self.REWARD_TYPE == 'Distance + Finger':
-            tstep_reward = max(-reward_container['distance_to_goal'] - max(reward_container['f1_dist'],reward_container['f2_dist'])/5,-1)
+            tstep_reward = max(-reward_container['distance_to_goal']*self.DISTANCE_SCALING - max(reward_container['f1_dist'],reward_container['f2_dist'])*self.CONTACT_SCALING,-1)
         elif self.REWARD_TYPE == 'Hinge Distance + Finger':
-            tstep_reward = reward_container['distance_to_goal'] < self.SUCCESS_THRESHOLD + max(-reward_container['distance_to_goal'] - max(reward_container['f1_dist'],reward_container['f2_dist'])/5,-1)
+            tstep_reward = reward_container['distance_to_goal'] < self.SUCCESS_THRESHOLD + max(-reward_container['distance_to_goal'] - max(reward_container['f1_dist'],reward_container['f2_dist'])*self.CONTACT_SCALING,-1)
         elif self.REWARD_TYPE == 'Slope':
-            tstep_reward = reward_container['slope_to_goal'] *10000
+            tstep_reward = reward_container['slope_to_goal'] * self.DISTANCE_SCALING
+        elif self.REWARD_TYPE == 'Slope + Finger':
+            tstep_reward = max(reward_container['slope_to_goal'] * self.DISTANCE_SCALING  - max(reward_container['f1_dist'],reward_container['f2_dist'])*self.CONTACT_SCALING,-1)
         else:
             raise Exception('reward type does not match list of known reward types')
         return float(tstep_reward)
