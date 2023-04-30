@@ -60,8 +60,8 @@ class ExpertController():
         self.prev_distance = 0
         self.distance_count = 0
         self.retry_count = 0
-        hand_info = {"finger1": {"name": "body_l", "num_links": 2, "link_lengths": [[0, .072, 0], [0, .072, 0]]},
-                     "finger2": {"name": "body_r", "num_links": 2, "link_lengths": [[0, .072, 0], [0, .072, 0]]}}
+        hand_info = {"finger1": {"name": "finger0", "num_links": 2, "link_lengths": [[0, .072, 0], [0, .072, 0]]},
+                     "finger2": {"name": "finger1", "num_links": 2, "link_lengths": [[0, .072, 0], [0, .072, 0]]}}
         print("TESTSLTKJSLETKJSELTKJSLTKJ", p.getJointInfo(self.gripper.id, 0))
         p.resetJointState(self.gripper.id, 0, 0)
         p.resetJointState(self.gripper.id, 1, 0)
@@ -70,10 +70,18 @@ class ExpertController():
         self.ik_f1 = JacobianIK(gripper.id,deepcopy(hand_info['finger2']))
         
         self.ik_f2 = JacobianIK(gripper.id,deepcopy(hand_info['finger1']))
-        p.resetJointState(self.gripper.id, 0, .75)
-        p.resetJointState(self.gripper.id, 1, -1.4)
-        p.resetJointState(self.gripper.id, 3, -.75)
-        p.resetJointState(self.gripper.id, 4, 1.4)
+        # p.resetJointState(self.gripper.id, 0, .75)
+        # p.resetJointState(self.gripper.id, 1, -1.4)
+        # p.resetJointState(self.gripper.id, 3, -.75)
+        # p.resetJointState(self.gripper.id, 4, 1.4)
+        # p.resetJointState(self.gripper.id, 0, -.695)
+        # p.resetJointState(self.gripper.id, 1, 1.487)
+        # p.resetJointState(self.gripper.id, 3, .695)
+        # p.resetJointState(self.gripper.id, 4, -1.487)
+        p.resetJointState(self.gripper.id, 0, -.725)
+        p.resetJointState(self.gripper.id, 1, 1.45)
+        p.resetJointState(self.gripper.id, 3, .725)
+        p.resetJointState(self.gripper.id, 4, -1.45)
         self.ik_f1.finger_fk.update_angles_from_sim()
         self.ik_f2.finger_fk.update_angles_from_sim()
 

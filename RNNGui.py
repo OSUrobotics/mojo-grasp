@@ -79,7 +79,8 @@ class RNNGui():
                        [sg.Checkbox('Finger Object Distance', default=False, k='-fod')],
                        [sg.Checkbox('Goal Position',default=True, k='-gp')],
                        [sg.Text('Num Previous States'),sg.Input('0', k='-pv')],
-                       [sg.Text("Reward"), sg.OptionMenu(values=('Sparse','Distance','Distance + Finger', 'Hinge Distance + Finger', 'Slope'), k='-reward',default_value='Distance + Finger'), sg.Text('Success Radius (mm)'), sg.Input(2, key='-sr'),],
+                       [sg.Text("Reward"), sg.OptionMenu(values=('Sparse','Distance','Distance + Finger', 'Hinge Distance + Finger', 'Slope', 'Slope + Finger'), k='-reward',default_value='Distance + Finger'), sg.Text('Success Radius (mm)'), sg.Input(2, key='-sr'),],
+                       [sg.Text("Distance Scale"),  sg.Input(1,key='-distance_scale'), sg.Text('Contact Scale'),  sg.Input(0.2,key='-contact_scale')],
                        [sg.Text("Action"), sg.OptionMenu(values=('Joint Velocity','Finger Tip Position'), k='-action',default_value='Joint Velocity')],
                        [sg.Checkbox('Vizualize Simulation',default=True, k='-viz'), sg.Checkbox('Real World?',default=False, k='-rw')],
                        [sg.Button('Begin Training', key='-train', bind_return_key=True)],
@@ -118,7 +119,9 @@ class RNNGui():
                      'viz': int(values['-viz']),
                      'sr': int(values['-sr']),
                      'tsteps': int(values['-tsteps']),
-                     'eval-tsteps':int(values['-eval-tsteps'])}
+                     'eval-tsteps':int(values['-eval-tsteps']),
+                     'distance_scaling': float(values['-distance_scale']),
+                     'contact_scaling': float(values['-contact_scale'])}
         state_len = 0
         state_mins = []
         state_maxes = []
@@ -213,7 +216,7 @@ class RNNGui():
         run_path = overall_path.joinpath('demos/rl_demo/runs')
         self.args['tname'] = str(run_path.joinpath(values['-title']))
         if values['-hand'] == '2v2':
-            self.args['hand_path'] = str(resource_path.joinpath('2v2_nosensors_keegan/2v2_nosensors/2v2_nosensors_limited.urdf'))
+            self.args['hand_path'] = str(resource_path.joinpath('2v2_Hand_A/hand/2v2_50.50_50.50_1.1_53.urdf'))
         elif values['-hand'] == '2v2-B':
             self.args['hand_path'] = str(resource_path.joinpath('2v2_Hand_B/hand/2v2_65.35_65.35_1.1_53.urdf'))
         if values['-object'] == 'Cube':
