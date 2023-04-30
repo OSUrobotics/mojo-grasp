@@ -34,6 +34,8 @@ from mojograsp.simcore.data_combination import data_processor
 import pickle as pkl
 import json
 import time
+import sys
+import os
 
 def run_pybullet(filepath, window=None, runtype='run'):
     # resource paths
@@ -48,10 +50,12 @@ def run_pybullet(filepath, window=None, runtype='run'):
         x = df["x"]
         y = df["y"]
     elif runtype=='eval':
-        df = pd.read_csv('/home/orochi/mojo/mojo-grasp/demos/rl_demo/resources/test_points.csv', index_col=False)
-        print('EVALUATING BOOOIIII')
-        x = df["x"]
-        y = df["y"]
+        # df = pd.read_csv('/home/orochi/mojo/mojo-grasp/demos/rl_demo/resources/test_points.csv', index_col=False)
+        # print('EVALUATING BOOOIIII')
+        # x = df["x"]
+        # y = df["y"]
+        x = [0.03, 0, -0.03, -0.04, -0.03, 0, 0.03, 0.04]
+        y = [-0.03, -0.04, -0.03, 0, 0.03, 0.04, 0.03, 0]
         
     pose_list = [[i,j] for i,j in zip(x,y)]
     
@@ -176,9 +180,19 @@ def run_pybullet(filepath, window=None, runtype='run'):
                 manager.evaluate()
                 manager.phase_manager.phase_dict['manipulation'].reset()
                 
-def main():
-    run_pybullet('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/HPC_runs/0_ftp_control/experiment_config.json',runtype='run')
+def main(run_id):
+    # print(run_id)
+    folder_names = ['0_ftp_control','1_ftp_no_contact','2_ftp_no_contact_velocity','3_ftp_velocity','4_ftp_velocity_x1',
+                    '5_ftp_velocity_x2','6_ftp_velocity_x3','7_ftp_velocity_x4','8_ftp_rollout_10','9_ftp_rollout_1']
+    
+    overall_path = pathlib.Path(__file__).parent.resolve()
+    run_path = overall_path.joinpath('demos/rl_demo/data/HPC_runs')
+    final_path = run_path.joinpath(folder_names[run_id])
+    print(str(final_path))
+    run_pybullet(str(final_path) + '/experiment_config.json',runtype='run')
     # run_pybullet('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/6_ik_kegan_point_split/experiment_config.json',runtype='eval')
     # run_pybullet('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/a_throwaway/experiment_config.json',runtype='run')
+    print('buttz')
 if __name__ == '__main__':
-    main()
+    # print(sys.argv)
+    main(int(sys.argv[1]))

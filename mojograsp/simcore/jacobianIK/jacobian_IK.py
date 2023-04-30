@@ -133,6 +133,8 @@ class JacobianIK():
                     best_distance = new_dist
                     b_found_better = True
                 count_iterations += 1
+            
+                
 
             # We can stop if we're close to the goal
             if np.isclose(best_distance, 0, atol=self.ERROR):
