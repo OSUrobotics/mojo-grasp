@@ -113,6 +113,7 @@ class SimManagerRLHER(SimManager):
         
         
         if len(self.phase_manager.phase_dict) > 0:
+            self.state.train()
             logging.info("RUNNING PHASES: {}".format(
                 self.phase_manager.phase_dict))
             S = None
@@ -231,10 +232,12 @@ class SimManagerRLHER(SimManager):
             logging.info("RUNNING PHASES: {}".format(
                 self.phase_manager.phase_dict))
             end_dists = []
-            
-            for i in range(self.num_episodes):
+            self.state.evaluate()
+            num_eval_eps = len(self.state.objects[-1])
+            for i in range(num_eval_eps):
                 print('recording to episode', i)
                 # self.episode_number += 1
+                
                 self.episode.setup()
                 self.env.setup()
                 self.phase_manager.set_exit_flag(False)

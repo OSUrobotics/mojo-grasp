@@ -47,6 +47,9 @@ def run_pybullet(filepath, window=None, runtype='run'):
         df = pd.read_csv(args['points_path'], index_col=False)
         x = df["x"]
         y = df["y"]
+        df2 = pd.read_csv('/home/orochi/mojo/mojo-grasp/demos/rl_demo/resources/test_points.csv', index_col=False)
+        xeval = df2["x"]
+        yeval = df2["y"]
     elif runtype=='eval':
         df = pd.read_csv('/home/orochi/mojo/mojo-grasp/demos/rl_demo/resources/test_points.csv', index_col=False)
         print('EVALUATING BOOOIIII')
@@ -54,7 +57,7 @@ def run_pybullet(filepath, window=None, runtype='run'):
         y = df["y"]
         
     pose_list = [[i,j] for i,j in zip(x,y)]
-    
+    eval_pose_list = [[i,j] for i,j in zip(xeval,yeval)]
     print(args)
     try:
         if (args['viz']) | (runtype=='eval'):
@@ -98,9 +101,10 @@ def run_pybullet(filepath, window=None, runtype='run'):
     # p.addUserDebugPoints([[0.2,0.1,0.0],[1,0,0]],[[1,0.0,0],[0.5,0.5,0.5]], 1)
     p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 1)
     goal_poses = GoalHolder(pose_list)
+    eval_goal_poses = GoalHolder(eval_pose_list)
     # time.sleep(10)
     # state, action and reward
-    state = StateRL(objects=[hand, obj, goal_poses], prev_len=args['pv'])
+    state = StateRL(objects=[hand, obj, goal_poses], prev_len=args['pv'],eval_goals = eval_goal_poses)
     action = rl_action.ExpertAction()
     reward = rl_reward.ExpertReward()
     
@@ -135,22 +139,28 @@ def run_pybullet(filepath, window=None, runtype='run'):
     # Run the sim
     if runtype == 'run':
         for k in range(int(args['epochs']/len(x))):
-            manager.run()
-            manager.phase_manager.phase_dict['manipulation'].reset()
-            '''
+            print(k)
             if k % args['evaluate'] == 0:
+                print('starting evaluation')
                 manager.evaluate()
                 manager.phase_manager.phase_dict['manipulation'].reset()
                 # manager.train()
-            '''
+            manager.run()
+            manager.phase_manager.phase_dict['manipulation'].reset()
+            # '''
+
+            # '''
                 
         manager.save_network(args['save_path']+'policy')
         # replay_buffer.save_sampling('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/hard_random_sampling/sampling')
         print('training done, creating episode_all')
-        d = data_processor(args['save_path'])
+        d = data_processor(args['save_path'] + 'Train/')
         d.load_data()
         d.save_all()
         manager.phase_manager.phase_dict['manipulation'].controller.policy.save_sampling()
+        d = data_processor(args['save_path'] + 'Test/', eval_flag=True)
+        d.load_data()
+        d.save_all()
     elif runtype == 'eval':
         manipulation.load_policy(args['save_path']+'policy')
         manager.evaluate()
@@ -177,8 +187,8 @@ def run_pybullet(filepath, window=None, runtype='run'):
                 manager.phase_manager.phase_dict['manipulation'].reset()
                 
 def main():
-    run_pybullet('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/HPC_runs/0_ftp_control/experiment_config.json',runtype='run')
+    # run_pybullet('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/HPC_runs/0_ftp_control/experiment_config.json',runtype='run')
     # run_pybullet('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/6_ik_kegan_point_split/experiment_config.json',runtype='eval')
-    # run_pybullet('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/a_throwaway/experiment_config.json',runtype='run')
+    run_pybullet('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/eval_joint_vel/experiment_config.json',runtype='run')
 if __name__ == '__main__':
     main()

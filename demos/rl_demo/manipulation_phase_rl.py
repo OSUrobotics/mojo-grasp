@@ -38,6 +38,7 @@ class ManipulationRL(Phase):
         # create controller
         self.controller = rl_controller.RLController(hand, cube, replay_buffer=replay_buffer, args=args)
         self.end_val = 0
+        
         # self.controller = rl_controller.ExpertController(hand, cube)
 
     def setup(self):
@@ -50,8 +51,12 @@ class ManipulationRL(Phase):
         # self.goal_position = [float(self.x[self.episode]), float(
         #     self.y[self.episode] + .1067), 0]
 
-        self.goal_position = [float(self.x[self.episode]), float(
-            self.y[self.episode] + .16), 0]
+        # self.goal_position = [float(self.x[self.episode]), float(
+        #     self.y[self.episode] + .10), 0]
+        
+        temp_position = self.state.objects[-1].get_data()
+        self.goal_position = [temp_position['goal_pose'][0], temp_position['goal_pose'][1]+0.1, 0]
+        # self.goal_position[1] += 0.1
         # print(self.goal_position)
         # set the new goal position for the controller
         self.controller.set_goal_position(self.goal_position)

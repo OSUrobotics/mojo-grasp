@@ -9,6 +9,7 @@ Created on Thu Aug 25 10:33:32 2022
 from mojograsp.simcore.state import StateDefault
 import numpy as np
 import pybullet as p
+from copy import deepcopy
 
 class GoalHolder():
     def __init__(self, goal_pose):
@@ -26,6 +27,9 @@ class GoalHolder():
         
     def reset(self):
         self.run_num = 0
+    
+    def __len__(self):
+        return len(self.pose)
         
 class StateRL(StateDefault):
     """
@@ -34,7 +38,7 @@ class StateRL(StateDefault):
     and :func:`~mojograsp.simcore.replay_buffer.ReplayBufferDefault`.
     """
 
-    def __init__(self, objects: list = None, prev_len=0):
+    def __init__(self, objects: list = None, prev_len=0, eval_goals:GoalHolder =None):
         """
         Default placeholder constructor optionally takes in a list of objects, if no list is provided it defaults
         to None. 
@@ -49,6 +53,24 @@ class StateRL(StateDefault):
             self.pflag = True
         else:
             self.pflag = False
+        if eval_goals is not None:
+            self.eval_goals = eval_goals
+            self.train_goals = deepcopy(self.objects[-1])
+            self.train_flag = True
+        else:
+            self.eval_goals = None
+            
+    def evaluate(self):
+        if (self.eval_goals is not None) and self.train_flag:
+            self.train_flag = False
+            self.objects[-1] = self.eval_goals
+            print('did an evaluate', self.eval_goals.pose[1],self.train_goals.pose[1])
+            
+    def train(self):
+        if (self.eval_goals is not None) and not self.train_flag:
+            self.train_flag = True
+            self.objects[-1] = self.train_goals
+            print('did a train', self.train_goals.pose[1])
             
     def next_run(self):
         for thing in self.objects:
