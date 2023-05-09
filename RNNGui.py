@@ -128,8 +128,8 @@ class RNNGui():
         state_list = []
         if values['-ftp']:
             if not RW:
-                state_mins.extend([-0.072, 0.088, -0.072, 0.088])
-                state_maxes.extend([0.072, 0.232, 0.072, 0.232])
+                state_mins.extend([-0.072, 0.018, -0.072, 0.018])
+                state_maxes.extend([0.072, 0.172, 0.072, 0.172])
             elif RW:
                 state_mins.extend([-0.108, 0.132, -0.108, 0.132])
                 state_maxes.extend([0.108, 0.348, 0.108, 0.348])
@@ -137,8 +137,8 @@ class RNNGui():
             state_list.append('ftp')
         if values['-fbp']:
             if not RW:
-                state_mins.extend([-0.072, 0.088, -0.072, 0.088])
-                state_maxes.extend([0.072, 0.232, 0.072, 0.232])
+                state_mins.extend([-0.072, 0.018, -0.072, 0.018])
+                state_maxes.extend([0.072, 0.172, 0.072, 0.172])
             elif RW:
                 state_mins.extend([-0.108, 0.132, -0.108, 0.132])
                 state_maxes.extend([0.108, 0.348, 0.108, 0.348])
@@ -146,8 +146,8 @@ class RNNGui():
             state_list.append('fbp')
         if values['-op']:
             if not RW:
-                state_mins.extend([-0.072, 0.088])
-                state_maxes.extend([0.072, 0.232])
+                state_mins.extend([-0.072, 0.018])
+                state_maxes.extend([0.072, 0.172])
             elif RW:
                 state_mins.extend([-0.108, 0.132])
                 state_maxes.extend([0.108, 0.348])
