@@ -181,13 +181,13 @@ def run_pybullet(filepath, window=None, runtype='run'):
                 manager.phase_manager.phase_dict['manipulation'].reset()
                 
 def main(run_id):
-    # print(run_id)
+    print(run_id)
     folder_names = ['0_ftp_control','1_ftp_no_contact','2_ftp_no_contact_velocity','3_ftp_velocity','4_ftp_velocity_x1',
                     '5_ftp_velocity_x2','6_ftp_velocity_x3','7_ftp_velocity_x4','8_ftp_rollout_10','9_ftp_rollout_1']
     
     overall_path = pathlib.Path(__file__).parent.resolve()
     run_path = overall_path.joinpath('demos/rl_demo/data/HPC_runs')
-    final_path = run_path.joinpath(folder_names[run_id])
+    final_path = run_path.joinpath(folder_names[run_id-1])
     print(str(final_path))
     run_pybullet(str(final_path) + '/experiment_config.json',runtype='run')
     # run_pybullet('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/6_ik_kegan_point_split/experiment_config.json',runtype='eval')
