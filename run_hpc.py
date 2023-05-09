@@ -151,7 +151,7 @@ def run_pybullet(filepath, window=None, runtype='run'):
         manager.save_network(args['save_path']+'policy')
         # replay_buffer.save_sampling('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/hard_random_sampling/sampling')
         print('training done, creating episode_all')
-        d = data_processor(args['save_path'])
+        d = data_processor(args['save_path']+'Train/')
         d.load_data()
         d.save_all()
         manager.phase_manager.phase_dict['manipulation'].controller.policy.save_sampling()

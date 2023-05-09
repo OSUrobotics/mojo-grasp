@@ -68,7 +68,7 @@ class GuiBackend():
         self.ax.plot(trajectory_points[:,0], trajectory_points[:,1])
         self.ax.plot([trajectory_points[0,0], goal_pose[0]],[trajectory_points[0,1],goal_pose[1]])
         self.ax.set_xlim([-0.07,0.07])
-        self.ax.set_ylim([0.1,0.22])
+        self.ax.set_ylim([0.04,0.16])
         self.ax.set_xlabel('X pos (m)')
         self.ax.set_ylabel('Y pos (m)')                                                                                                                                                                                                                                   
         self.legend.extend(['RL Trajectory - episode '+str(self.e_num), 'Ideal Path to Goal - episode '+str(self.e_num)])
