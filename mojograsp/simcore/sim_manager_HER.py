@@ -174,7 +174,8 @@ class SimManagerRLHER(SimManager):
                             finger_pos_change = np.linalg.norm(S_finger_pos - S2_finger_pos)
                             diff_max = max(diff_max,finger_pos_change)
                             obj_pos = S2['obj_2']['pose'][0][0:2]
-                            goal_diff = [obj_pos[0]-S2['goal_pose']['goal_pose'][0],obj_pos[1]-(S2['goal_pose']['goal_pose'][1]+0.16)]
+                            goal_diff = [obj_pos[0]-S2['goal_pose']['goal_pose'][0],obj_pos[1]-(S2['goal_pose']['goal_pose'][1]+0.1)]
+                            # print(R['distance_to_goal'], np.linalg.norm(goal_diff))
                             assert R['distance_to_goal'] == np.linalg.norm(goal_diff), 'goal dists not aligned'
                         E = self.episode_number
                         # transition = {'state':S, 'action':A, 'reward':R, 'next_state':S2, 'episode':E}
