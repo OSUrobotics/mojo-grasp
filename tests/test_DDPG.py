@@ -128,11 +128,11 @@ class TestDDPG(unittest.TestCase):
         pass
     
     def test_normalize(self):
-        example_maxes = np.array([1,5,0.2,0.6,44,-3])
-        example_mins = np.array([0,-5,0.1,-0.4,-2,-5])
-        test_in = np.array([0.5,-2,0.19,0.1,0,-2])
+        example_maxes = torch.tensor([1,5,0.2,0.6,44,-3])
+        example_mins = torch.tensor([0,-5,0.1,-0.4,-2,-5])
+        test_in = torch.tensor([0.5,-2,0.19,0.1,0,-2])
         solution = np.array([0, -0.4, 0.8, 0.0, -0.9130434782608696, 2])
-        test_answer = simple_normalize(test_in, example_mins, example_maxes)
+        test_answer = np.array(simple_normalize(test_in, example_mins, example_maxes))
         for i in range(6):
             self.assertAlmostEqual(solution[i], test_answer[i], places=3)
         

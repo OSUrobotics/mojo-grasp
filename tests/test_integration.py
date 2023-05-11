@@ -35,7 +35,7 @@ import numpy as np
 from mojograsp.simcore.priority_replay_buffer import ReplayBufferPriority
 from mojograsp.simcore.data_combination import data_processor
 import pickle as pkl
-
+import json
 
 
 
@@ -51,86 +51,68 @@ def calc_finger_poses(angles):
 
 class fack():
     def __init__(self):
-        with open('./test_configs/experiment_config.pkl','rb') as configfile:
-            self.arg_dict = pkl.load(configfile)
+        with open('./test_configs/experiment_config.json','r') as configfile:
+            self.arg_dict = json.load(configfile)
         self.arg_dict['action_dim'] = 4
         self.arg_dict['tau'] = 0.0005
         self.arg_dict['n'] = 5
         
         x = [0.01, 0.0]
         y = [0.0, 0.01]
-        pose_list = [[i,j] for i,j in zip(x,y)]
-        
-    
-        # physics_client = p.connect(p.GUI)
         physics_client = p.connect(p.DIRECT)
+        pose_list = [[i,j] for i,j in zip(x,y)]
+        eval_pose_list = pose_list
         p.setAdditionalSearchPath(pybullet_data.getDataPath())
         p.setGravity(0, 0, -10)
         p.resetDebugVisualizerCamera(cameraDistance=.02, cameraYaw=0, cameraPitch=-89.9999,
                                      cameraTargetPosition=[0, 0.1, 0.5])
         
         # load objects into pybullet
-        plane_id = p.loadURDF("plane.urdf")
+        plane_id = p.loadURDF("plane.urdf", flags=p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
         hand_id = p.loadURDF(self.arg_dict['hand_path'], useFixedBase=True,
-                             basePosition=[0.0, 0.0, 0.05])
-        obj_id = p.loadURDF(self.arg_dict['object_path'], basePosition=[0.0, 0.16, .05])
+                             basePosition=[0.0, 0.0, 0.05], flags=p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
+        obj_id = p.loadURDF(self.arg_dict['object_path'], basePosition=[0.0, 0.10, .05], flags=p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
         
         # Create TwoFingerGripper Object and set the initial joint positions
         hand = TwoFingerGripper(hand_id, path=self.arg_dict['hand_path'])
         
-        p.resetJointState(hand_id, 0, .75)
-        p.resetJointState(hand_id, 1, -1.4)
-        p.resetJointState(hand_id, 3, -.75)
-        p.resetJointState(hand_id, 4, 1.4)
-
+        # p.resetJointState(hand_id, 0, -0.4)
+        # p.resetJointState(hand_id, 1, 1.2)
+        # p.resetJointState(hand_id, 3, 0.4)
+        # p.resetJointState(hand_id, 4, -1.2)
+        
         # p.resetJointState(hand_id, 0, 0)
         # p.resetJointState(hand_id, 1, 0)
         # p.resetJointState(hand_id, 3, 0)
         # p.resetJointState(hand_id, 4, 0)
-
-        
-        # p.resetJointState(hand_id, 0, .695)
-        # p.resetJointState(hand_id, 1, -1.487)
-        # p.resetJointState(hand_id, 3, -.695)
-        # p.resetJointState(hand_id, 4, 1.487)
-        
-        # cylinder = ObjectWithVelocity(cylinder_id, path=cylinder_path)
-        # obj = ObjectVelocityDF(obj_id, path=self.arg_dict['object_path'])
-        
-        
         # change visual of gripper
         p.changeVisualShape(hand_id, 0, rgbaColor=[0.3, 0.3, 0.3, 1])
         p.changeVisualShape(hand_id, 1, rgbaColor=[1, 0.5, 0, 1])
         p.changeVisualShape(hand_id, 3, rgbaColor=[0.3, 0.3, 0.3, 1])
         p.changeVisualShape(hand_id, 4, rgbaColor=[1, 0.5, 0, 1])
         p.changeVisualShape(hand_id, -1, rgbaColor=[0.3, 0.3, 0.3, 1])
+        p.configureDebugVisualizer(p.COV_ENABLE_RENDERING,0)
         # p.setTimeStep(1/2400)
-        
         obj = ObjectWithVelocity(obj_id, path=self.arg_dict['object_path'])
-        
+        # p.addUserDebugPoints([[0.2,0.1,0.0],[1,0,0]],[[1,0.0,0],[0.5,0.5,0.5]], 1)
+        p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 1)
         goal_poses = GoalHolder(pose_list)
-        # state and reward
-        # state = StateDefault(objects=[hand, obj])
-        state = StateRL(objects=[hand, obj, goal_poses])
-        # state = StateRL(objects=[hand, cylinder, goal_poses])
+        eval_goal_poses = GoalHolder(eval_pose_list)
+        # time.sleep(10)
+        # state, action and reward
+        state = StateRL(objects=[hand, obj, goal_poses], prev_len=self.arg_dict['pv'],eval_goals = eval_goal_poses)
         action = rl_action.ExpertAction()
         reward = rl_reward.ExpertReward()
-        if self.arg_dict['action'] == 'Joint Velocity':
-            ik_flag = False
-        else:
-            ik_flag = True
-        fake_arg_dict = {'state_dim': self.arg_dict['state_dim'], 'action_dim': 4, 'max_action': self.arg_dict['max_action'],
-                    'n': 5, 'discount': self.arg_dict['discount'], 'tau': 0.0005,'batch_size': 100000000, 
-                    'epsilon':self.arg_dict['epsilon'], 'edecay': self.arg_dict['edecay'], 'ik_flag': True,
-                    'reward':self.arg_dict['reward'], 'model':self.arg_dict['model']}
-        # arg_dict = {'state_dim': 8, 'action_dim': 4, 'max_action': 0.005, 'n': 5, 'discount': 0.995, 'tau': 0.0005,
-        #             'batch_size': 100, 'expert_sampling_proportion': 0.7}
         
+        #argument preprocessing
+        arg_dict = self.arg_dict.copy()
+        if self.arg_dict['action'] == 'Joint Velocity':
+            arg_dict['ik_flag'] = False
+        else:
+            arg_dict['ik_flag'] = True
+    
         # replay buffer
         replay_buffer = ReplayBufferPriority(buffer_size=4080000)
-        # replay_buffer.preload_buffer_PKL(self.arg_dict['edata'])
-        # replay_buffer = ReplayBufferDF(state=state, action=action, reward=reward)
-        
         
         # environment and recording
         env = rl_env.ExpertEnv(hand=hand, obj=obj)
@@ -138,18 +120,19 @@ class fack():
         
         # Create phase
         manipulation = manipulation_phase_rl.ManipulationRL(
-            hand, obj, x, y, state, action, reward, replay_buffer=replay_buffer, args=fake_arg_dict, tbname=self.arg_dict['save_path'])
-        # manipulation = manipulation_phase_rl.ManipulationRL(
-        #     hand, cylinder, x, y, state, action, reward, replay_buffer=replay_buffer, self.arg_dict=arg_dict)
+            hand, obj, x, y, state, action, reward, replay_buffer=replay_buffer, args=arg_dict)
+    
         # data recording
         record_data = RecordDataRLPKL(
             data_path=self.arg_dict['save_path'], state=state, action=action, reward=reward, save_all=False, controller=manipulation.controller)
         
         # sim manager
-        self.manager = SimManagerRLHER(num_episodes=len(pose_list), env=env, episode=EpisodeDefault(), record_data=record_data, replay_buffer=replay_buffer, state=state, action=action, reward=reward, TensorboardName='test1', args=fake_arg_dict)
+        self.manager = SimManagerRLHER(num_episodes=len(pose_list), env=env, episode=EpisodeDefault(), record_data=record_data, replay_buffer=replay_buffer, state=state, action=action, reward=reward, args=arg_dict)
         
         # add phase to sim manager
         self.manager.add_phase("manipulation", manipulation, start=True)
+
+
         
         # load up replay buffer
         # for i in range(4):

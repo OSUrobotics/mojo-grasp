@@ -43,7 +43,9 @@ def run_pybullet(filepath, window=None, runtype='run'):
     if (args['task'] == 'asterisk'):
         x = [0.03, 0, -0.03, -0.04, -0.03, 0, 0.03, 0.04]
         y = [-0.03, -0.04, -0.03, 0, 0.03, 0.04, 0.03, 0]
-    elif args['task'] == 'random' and runtype != 'eval':
+        xeval = x
+        yeval = y
+    elif 'random' in args['task'] and runtype != 'eval':
         df = pd.read_csv(args['points_path'], index_col=False)
         x = df["x"]
         y = df["y"]
@@ -137,6 +139,7 @@ def run_pybullet(filepath, window=None, runtype='run'):
     manager.add_phase("manipulation", manipulation, start=True)
     
     # Run the sim
+    time.sleep(10)
     if runtype == 'run':
         for k in range(int(args['epochs']/len(x))):
             print(k)
@@ -147,9 +150,7 @@ def run_pybullet(filepath, window=None, runtype='run'):
                 # manager.train()
             manager.run()
             manager.phase_manager.phase_dict['manipulation'].reset()
-            # '''
 
-            # '''
                 
         manager.save_network(args['save_path']+'policy')
         # replay_buffer.save_sampling('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/hard_random_sampling/sampling')
@@ -189,6 +190,6 @@ def run_pybullet(filepath, window=None, runtype='run'):
 def main():
     # run_pybullet('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/HPC_runs/0_ftp_control/experiment_config.json',runtype='run')
     # run_pybullet('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/6_ik_kegan_point_split/experiment_config.json',runtype='eval')
-    run_pybullet('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/eval_joint_vel/experiment_config.json',runtype='run')
+    run_pybullet('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/pieless/experiment_config.json',runtype='run')
 if __name__ == '__main__':
     main()
