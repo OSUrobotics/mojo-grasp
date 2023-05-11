@@ -58,7 +58,7 @@ class RNNGui():
                          [sg.Button("Browse",key='-browse-save',button_color='DarkBlue'),sg.Text("/", key='-save-path')],
                          [sg.Text('Object'), sg.OptionMenu(values=('Cube', 'Cylinder'), k='-object', default_value='Cube')],
                          [sg.Text('Hand'), sg.OptionMenu(values=('2v2', '2v2-B'), k='-hand', default_value='2v2')],
-                         [sg.Text("Task"), sg.OptionMenu(values=('asterisk','random','forward','backward','left','right'), k='-task', default_value='asterisk')],
+                         [sg.Text("Task"), sg.OptionMenu(values=('asterisk','random','full_random'), k='-task', default_value='asterisk')],
                          [sg.Text('Replay Buffer Sampling'), sg.OptionMenu(values=('priority','random','random+expert'), k='-sampling', default_value='random')]]
         
         
@@ -227,7 +227,10 @@ class RNNGui():
             self.args['max_action'] = 1.57
         elif values['-action'] == 'Finger Tip Position':
             self.args['max_action'] = 0.01
-        self.args['points_path'] = str(resource_path.joinpath('train_points.csv'))
+        if values['-task'] == 'full_random':
+            self.args['points_path'] = str(resource_path.joinpath('points.csv'))
+        else:
+            self.args['points_path'] = str(resource_path.joinpath('train_points.csv'))
         
         self.built = True
         
