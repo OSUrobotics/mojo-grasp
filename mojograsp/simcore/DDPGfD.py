@@ -322,7 +322,7 @@ class DDPGfD_priority():
         :type state: :func:`~mojograsp.simcore.reward.Reward`
         """
         if self.REWARD_TYPE == 'Sparse':
-            tstep_reward = reward_container['distance_to_goal'] < self.SUCCESS_THRESHOLD
+            tstep_reward = -1 + 2*(reward_container['distance_to_goal'] < self.SUCCESS_THRESHOLD)
         elif self.REWARD_TYPE == 'Distance':
             tstep_reward = max(-reward_container['distance_to_goal'],-1)
         elif self.REWARD_TYPE == 'Distance + Finger':

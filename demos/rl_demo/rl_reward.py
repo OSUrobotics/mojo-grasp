@@ -19,7 +19,8 @@ class ExpertReward(Reward):
         old_distance = np.sqrt((goal_position[0] - self.prev_pos[0][0])**2 +
                                (goal_position[1] - self.prev_pos[0][1])**2)
         
-        
+        # print('goal position', goal_position)
+        # print('current cube pose', current_cube_pose)
         f1_dist = p.getClosestPoints(cube.id, hand.id, 10, -1, 1, -1)
         f2_dist = p.getClosestPoints(cube.id, hand.id, 10, -1, 4, -1)
         try:
