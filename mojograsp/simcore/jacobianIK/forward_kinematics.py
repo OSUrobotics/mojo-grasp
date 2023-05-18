@@ -33,7 +33,7 @@ class ForwardKinematicsSIM():
             j_info = p.getJointInfo(self.hand_id, i)
             j_name = j_info[12].decode('UTF-8')
             j_index = j_info[0]
-            print('JNAMES',j_name)
+            # print('JNAMES',j_name)
             # get all links that contain finger name, except for those with static in the name
             if self.finger_name in j_name and "static" not in j_name and "sensor" not in j_name:
                 self.link_ids.append(j_index)
@@ -71,7 +71,7 @@ class ForwardKinematicsSIM():
         self.current_angles.append(p.getJointState(self.hand_id, self.link_ids[0])[0])
         # Get the transformation from previous link to next link
         for i in range(1, len(self.current_poses)):
-            print(self.current_poses[i][0])
+            # print(self.current_poses[i][0])
             mat_t = mh.create_translation_matrix(self.current_poses[i][0])
             mat_r = mh.create_rotation_matrix(p.getEulerFromQuaternion(self.current_poses[i][1])[2])
             # Since poses are in the global frame we need to find the matrix that takes us from previous to next using A@B.I
@@ -87,9 +87,10 @@ class ForwardKinematicsSIM():
         self.link_rotations_original.reverse()
 
         # DEBUG  PRINTOUTS
-        #print("DEBUG F1 STARTING Translation: ", self.link_translations)
-        #print("DEBUG F1 STARTING Rotations: ", self.link_rotations)
-        #print("DEBUG F1 STARTING Angles: ", self.current_angles)
+        # print("DEBUG F1 STARTING Translation: ", self.link_translations)
+        # print("DEBUG F1 STARTING Rotations: ", self.link_rotations)
+        # print("DEBUG F1 STARTING Angles: ", self.current_angles)
+        # print("DEBUG F1 END EFFECTOR: ", self.original_ee_end)
 
 
     # def initialize_transforms(self):
@@ -146,7 +147,7 @@ class ForwardKinematicsSIM():
         link_location = link_location @ link_end
         # debug adding link locations
         debug.append(link_location @ [0, 0, 1])
-        self.cnt += 1
+        # self.cnt += 1
         # if self.cnt == 20:
         #     self.cnt = 0
         #     self.debug_show_link_positions(debug)

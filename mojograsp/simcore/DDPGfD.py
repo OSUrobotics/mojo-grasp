@@ -139,7 +139,7 @@ class DDPGfD_priority():
 
         self.BATCH_SIZE = arg_dict['batch_size']
         self.rng = default_rng()
-        self.ROLLOUT = True
+        self.ROLLOUT = self.ROLLOUT_SIZE > 0
         self.u_count = 0
         
         self.actor_component = 100000
@@ -394,6 +394,7 @@ class DDPGfD_priority():
                         last_state.append(self.build_state(t_last_state))
                         rollout_reward.append(rtemp)
                 else:
+                    print('timestep series has no length')
                     print(timestep_series, transition_weight, indxs)
             state = torch.tensor(state)
             action = torch.tensor(action)
@@ -464,8 +465,9 @@ class DDPGfD_priority():
             rollout_discount = []
             expert_status = []
             for i, timestep_series in enumerate(sampled_data):
+                
                 if len(timestep_series) > 0:
-                    
+                    # print(timestep_series)
                     timestep = timestep_series[0]
                     t_state = timestep[0]
                     state.append(self.build_state(t_state))
@@ -491,6 +493,7 @@ class DDPGfD_priority():
                         last_state.append(self.build_state(t_last_state))
                         rollout_reward.append(rtemp)
                 else:
+                    print('no length bitch')
                     print(timestep_series, transition_weight, indxs)
                     
             state = torch.tensor(state, device=device)
@@ -523,6 +526,8 @@ class DDPGfD_priority():
 
         state, action, next_state, reward, sum_rewards, num_rewards, last_state, transition_weight, indxs, expert_status = self.collect_batch(replay_buffer)
         if state is not None:
+            
+            # print('starting trains')
             next_state_val = self.critic_target(next_state, self.actor_target(next_state))
 
             target_Q = (reward + (self.DISCOUNT * next_state_val).detach()).float()  # bellman equation
