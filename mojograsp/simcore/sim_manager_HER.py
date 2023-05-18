@@ -82,8 +82,10 @@ class SimManagerRLHER(SimManager):
         self.phase_manager = PhaseManager()
         self.episode_number = 0
         self.record_video = False
+        print('THIS IS THE MODEL', args['model'])
         if args['model'] == 'DDPG+HER':
             self.use_HER = True
+            print('SETTING IUSE HER O TRUE')
         else:
             self.use_HER = False
         print('USING HER:', self.use_HER)
@@ -180,6 +182,7 @@ class SimManagerRLHER(SimManager):
                         E = self.episode_number
                         # transition = {'state':S, 'action':A, 'reward':R, 'next_state':S2, 'episode':E}
                         transition = (S,A,R,S2,E,0,timestep_number)
+                        # print('transition',transition)
                         self.replay_buffer.add_timestep(transition)
                         transition_list.append(transition)
                         # done = self.phase_manager.current_phase.exit_condition()
@@ -213,13 +216,15 @@ class SimManagerRLHER(SimManager):
     def add_hindsight(self,transitions):
         goal_position = transitions[-1][0]['obj_2']['pose'][0][0:2]
         end_goal = goal_position.copy()
-        end_goal[1] = end_goal[1] - 0.16 
+        end_goal[1] = end_goal[1] - 0.1 
         for transition in transitions:
             transition[0]['goal_pose']['goal_pose'] = end_goal
             transition[2]['goal_position'] = goal_position
             transition[2]['distance_to_goal'] = np.sqrt((goal_position[0]-transition[0]['obj_2']['pose'][0][0])**2+(goal_position[1]-transition[0]['obj_2']['pose'][0][1])**2)
             self.replay_buffer.add_timestep(transition)
-        # 
+        
+        #
+        
     def stall(self):
         super().stall()
 

@@ -35,12 +35,12 @@ import pickle as pkl
 import json
 import time
 
-def run_pybullet(filepath, window=None, runtype='run'):
+def run_pybullet(filepath, window=None, runtype='run', episode_number=None):
     # resource paths
     with open(filepath, 'r') as argfile:
         args = json.load(argfile)
     
-    if (args['task'] == 'asterisk'):
+    if runtype =='run' and (args['task'] == 'asterisk'):
         x = [0.03, 0, -0.03, -0.04, -0.03, 0, 0.03, 0.04]
         y = [-0.03, -0.04, -0.03, 0, 0.03, 0.04, 0.03, 0]
         xeval = x
@@ -57,12 +57,21 @@ def run_pybullet(filepath, window=None, runtype='run'):
         print('EVALUATING BOOOIIII')
         x = df["x"]
         y = df["y"]
+        xeval = x
+        yeval = y
+    elif runtype=='replay':
+        df = pd.read_csv(args['points_path'], index_col=False)
+        x = df["x"]
+        y = df["y"]
+        df2 = pd.read_csv('/home/orochi/mojo/mojo-grasp/demos/rl_demo/resources/test_points.csv', index_col=False)
+        xeval = df2["x"]
+        yeval = df2["y"]
         
     pose_list = [[i,j] for i,j in zip(x,y)]
     eval_pose_list = [[i,j] for i,j in zip(xeval,yeval)]
     print(args)
     try:
-        if (args['viz']) | (runtype=='eval'):
+        if (args['viz']) | (runtype=='eval') | (runtype=='replay'):
             physics_client = p.connect(p.GUI)
         else:
             physics_client = p.connect(p.DIRECT)
@@ -121,7 +130,7 @@ def run_pybullet(filepath, window=None, runtype='run'):
     replay_buffer = ReplayBufferPriority(buffer_size=4080000)
     
     # environment and recording
-    env = rl_env.ExpertEnv(hand=hand, obj=obj)
+    env = rl_env.ExpertEnv(hand=hand, obj=obj, hand_type=arg_dict['hand'])
     # env = rl_env.ExpertEnv(hand=hand, obj=cylinder)
     
     # Create phase
@@ -139,7 +148,7 @@ def run_pybullet(filepath, window=None, runtype='run'):
     manager.add_phase("manipulation", manipulation, start=True)
     
     # Run the sim
-    time.sleep(10)
+    # time.sleep(10)
     if runtype == 'run':
         for k in range(int(args['epochs']/len(x))):
             print(k)
@@ -178,7 +187,9 @@ def run_pybullet(filepath, window=None, runtype='run'):
         d.save_all()
     elif runtype == 'transfer':
         manipulation.load_policy(args['load_path']+'policy')
+        print('about to eval')
         manager.evaluate()
+        print('done eval')
         manager.phase_manager.phase_dict['manipulation'].reset()
         for k in range(int(args['epochs']/len(x))):
             manager.run()
@@ -186,10 +197,25 @@ def run_pybullet(filepath, window=None, runtype='run'):
             if k % 10 == 9:
                 manager.evaluate()
                 manager.phase_manager.phase_dict['manipulation'].reset()
-                
+    elif runtype == 'replay':
+        episode_data_path = args['save_path']+'Train/episode_'+str(episode_number)+'.pkl'
+        with open(episode_data_path, 'rb') as actor_file:
+            actions = pkl.load(actor_file)
+
+        action_list = []
+        for timestep in actions['timestep_list']:
+            action_list.append(timestep['action']['target_joint_angles'])
+            print(timestep['state'].keys())
+        manager.record_video = True
+        manager.replay(action_list)
+        manager.phase_manager.phase_dict['manipulation'].reset()
+        manager.record_video = False
+            
 def main():
-    # run_pybullet('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/HPC_runs/0_ftp_control/experiment_config.json',runtype='run')
-    # run_pybullet('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/6_ik_kegan_point_split/experiment_config.json',runtype='eval')
-    run_pybullet('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/pieless/experiment_config.json',runtype='run')
+    # run_pybullet('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/hand_b_transfer/experiment_config.json',runtype='transfer')
+    #run_pybullet('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/6_ik_kegan_point_split/experiment_config.json',runtype='eval')
+    # run_pybullet('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/finger_pos_her/experiment_config.json',runtype='run')
+    run_pybullet('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/pieless/experiment_config.json',runtype='replay', episode_number=4973)
+    
 if __name__ == '__main__':
     main()
