@@ -80,6 +80,7 @@ class RNNGui():
                        [sg.Checkbox('Joint Angle', default=False, k='-ja')],
                        [sg.Checkbox('Object Position', default=True, k='-op')],
                        [sg.Checkbox('Finger Object Distance', default=False, k='-fod')],
+                       [sg.Checkbox('Finger Tip Angle',default=True, k='-fta')],
                        [sg.Checkbox('Goal Position',default=True, k='-gp')],
                        [sg.Text('Num Previous States'),sg.Input('0', k='-pv')],
                        [sg.Text("Reward"), sg.OptionMenu(values=('Sparse','Distance','Distance + Finger', 'Hinge Distance + Finger', 'Slope', 'Slope + Finger'), k='-reward',default_value='Distance + Finger'), sg.Text('Success Radius (mm)'), sg.Input(2, key='-sr'),],
@@ -170,6 +171,11 @@ class RNNGui():
                 state_maxes.extend([0.108, 0.108])
             state_len += 2
             state_list.append('fod')
+        if values['-fta']:
+            state_mins.extend([-np.pi/2, -np.pi/2])
+            state_maxes.extend([np.pi/2, np.pi/2])
+            state_len += 2
+            state_list.append('fta')
         if values['-gp']:
             if not RW:
                 state_mins.extend([-0.07, -0.07])

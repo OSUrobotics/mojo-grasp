@@ -116,6 +116,8 @@ class StateRL(StateDefault):
         self.current_state['f2_pos'] = list(link2_pose[0])
         self.current_state['f1_base'] = list(link1_base[0])
         self.current_state['f2_base'] = list(link2_base[0])
+        self.current_state['f1_ang'] = self.current_state['two_finger_gripper']['joint_angles']['finger0_segment0_joint'] + self.current_state['two_finger_gripper']['joint_angles']['finger0_segment1_joint']
+        self.current_state['f2_ang'] = self.current_state['two_finger_gripper']['joint_angles']['finger1_segment0_joint'] + self.current_state['two_finger_gripper']['joint_angles']['finger1_segment1_joint']        
         # self.current_state['f1_pos'] = list(temp1[6])
         # self.current_state['f2_pos'] = list(temp2[6])
         # self.current_state['f1_obj_dist'] = temp1[8]
@@ -141,6 +143,9 @@ class StateRL(StateDefault):
         self.current_state['f2_base'] = list(link2_base[0])
         # self.current_state['f1_obj_dist'] = temp1[8]
         # self.current_state['f2_obj_dist'] = temp2[8]
+        self.current_state['f1_ang'] = self.current_state['two_finger_gripper']['joint_angles']['finger0_segment0_joint'] + self.current_state['two_finger_gripper']['joint_angles']['finger0_segment1_joint']
+        self.current_state['f2_ang'] = self.current_state['two_finger_gripper']['joint_angles']['finger1_segment0_joint'] + self.current_state['two_finger_gripper']['joint_angles']['finger1_segment1_joint']
+
         if self.pflag:
             for i in range(len(self.previous_states)):
                 self.previous_states[i] = self.current_state.copy()

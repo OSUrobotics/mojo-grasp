@@ -213,9 +213,9 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None):
             
 def main():
     # run_pybullet('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/hand_b_transfer/experiment_config.json',runtype='transfer')
-    #run_pybullet('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/6_ik_kegan_point_split/experiment_config.json',runtype='eval')
+    # run_pybullet('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/6_ik_kegan_point_split/experiment_config.json',runtype='eval')
     # run_pybullet('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/finger_pos_her/experiment_config.json',runtype='run')
-    run_pybullet('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/pieless/experiment_config.json',runtype='replay', episode_number=4973)
+    run_pybullet('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/hand_a_finger_pos_fulldimensionless/experiment_config.json',runtype='run')
     
 if __name__ == '__main__':
     main()

@@ -139,7 +139,7 @@ class DDPGfD_priority():
 
         self.BATCH_SIZE = arg_dict['batch_size']
         self.rng = default_rng()
-        self.ROLLOUT = self.ROLLOUT_SIZE > 0
+        self.ROLLOUT = self.ROLLOUT_SIZE > 1
         self.u_count = 0
         
         self.actor_component = 100000
@@ -290,6 +290,8 @@ class DDPGfD_priority():
                         state.extend(state_container['previous_state'][i]['f2_base'][0:2])
                     elif key == 'ja':
                         state.extend([item for item in state_container['previous_state'][i]['two_finger_gripper']['joint_angles'].values()])
+                    elif key == 'fta':
+                        state.extend([state_container['previous_state'][i]['f1_ang'],state_container['previous_state'][i]['f2_ang']])
                     elif key == 'gp':
                         state.extend(state_container['previous_state'][i]['goal_pose']['goal_pose'])
                     else:
@@ -306,6 +308,8 @@ class DDPGfD_priority():
                 state.extend(state_container['f2_base'][0:2])
             elif key == 'ja':
                 state.extend([item for item in state_container['two_finger_gripper']['joint_angles'].values()])
+            elif key == 'fta':
+                state.extend([state_container['f1_ang'],state_container['f2_ang']])
             elif key == 'gp':
                 state.extend(state_container['goal_pose']['goal_pose'])
             else:
@@ -493,7 +497,6 @@ class DDPGfD_priority():
                         last_state.append(self.build_state(t_last_state))
                         rollout_reward.append(rtemp)
                 else:
-                    print('no length bitch')
                     print(timestep_series, transition_weight, indxs)
                     
             state = torch.tensor(state, device=device)
@@ -502,13 +505,19 @@ class DDPGfD_priority():
             reward = torch.tensor(reward, device=device)
             reward = torch.unsqueeze(reward, 1)
             next_state = torch.tensor(next_state, device=device)
-            rollout_reward = torch.tensor(rollout_reward, device=device)
-            rollout_reward = torch.unsqueeze(rollout_reward, 1)
-            rollout_discount = torch.tensor(rollout_discount, device=device)
-            rollout_discount = torch.unsqueeze(rollout_discount, 1)
+            if self.ROLLOUT:
+                rollout_reward = torch.tensor(rollout_reward, device=device)
+                rollout_reward = torch.unsqueeze(rollout_reward, 1)
+                rollout_discount = torch.tensor(rollout_discount, device=device)
+                rollout_discount = torch.unsqueeze(rollout_discount, 1)
+                last_state = torch.tensor(last_state, device=device)
+            else:
+                rollout_reward = None
+                rollout_discount = None
+                last_state = None
             expert_status = torch.tensor(expert_status, device=device)
             expert_status = torch.unsqueeze(expert_status, 1)
-            last_state = torch.tensor(last_state, device=device)
+            
             
             trimmed_weight = []
             trimmed_idxs = []
@@ -534,11 +543,6 @@ class DDPGfD_priority():
 
 
 
-            # Compute the roll rewards and the number of steps forward (could be less than rollout size if timestep near end of trial)
-            super_next_state_val = self.critic_target(last_state, self.actor_target(last_state))
-
-            # Compute QN from roll reward and discounted final state
-            target_QN = ((sum_rewards.to(device)/num_rewards + (self.DISCOUNT**num_rewards * super_next_state_val).detach())).float()
             
 
             # print(target_Q == target_QN)
@@ -549,19 +553,30 @@ class DDPGfD_priority():
             scaled_Q = current_Q * transition_weight
             
             scaled_target = target_Q * transition_weight
-            
-            scaled_QN = target_QN * transition_weight
+
             
             # L_1 loss (Loss between current state, action and reward, next state, action)
             critic_L1loss = F.mse_loss(scaled_Q, scaled_target)
 
-            # L_2 loss (Loss between current state, action and reward, n state, n action)
-            critic_LNloss = F.mse_loss(scaled_Q, scaled_QN)
+            if self.ROLLOUT:
+                
+                # Compute the roll rewards and the number of steps forward (could be less than rollout size if timestep near end of trial)
+                super_next_state_val = self.critic_target(last_state, self.actor_target(last_state))
+        
+                # Compute QN from roll reward and discounted final state
+                target_QN = ((sum_rewards.to(device)/num_rewards + (self.DISCOUNT**num_rewards * super_next_state_val).detach())).float()
+                # L_2 loss (Loss between current state, action and reward, n state, n action)
+                
+                            
+                scaled_QN = target_QN * transition_weight
+                
+                critic_LNloss = F.mse_loss(scaled_Q, scaled_QN)
 
 
-            # Total critic loss
-            critic_loss = critic_L1loss.float() + self.LAMBDA_1 * critic_LNloss
-
+                # Total critic loss
+                critic_loss = critic_L1loss.float() + self.LAMBDA_1 * critic_LNloss
+            else:
+                critic_loss = critic_L1loss.float() 
             # Optimize the critic
             self.critic_optimizer.zero_grad()
             critic_loss.backward()
@@ -604,7 +619,8 @@ class DDPGfD_priority():
 
             self.writer.add_scalar('Loss/critic',critic_loss.detach(),self.total_it)
             self.writer.add_scalar('Loss/critic_L1',critic_L1loss.detach(),self.total_it)
-            self.writer.add_scalar('Loss/critic_LN',critic_LNloss.detach(),self.total_it)
+            if self.ROLLOUT:
+                self.writer.add_scalar('Loss/critic_LN',critic_LNloss.detach(),self.total_it)
             self.writer.add_scalar('Loss/actor',actor_loss.detach(),self.total_it)
 
             
@@ -614,6 +630,8 @@ class DDPGfD_priority():
             self.u_count +=1
             # if self.total_it % 100 ==0:
             #     self.save_poses()
-            return actor_loss.item(), critic_loss.item(), critic_L1loss.item(), critic_LNloss.item()
-
+            if self.ROLLOUT:    
+                return actor_loss.item(), critic_loss.item(), critic_L1loss.item(), critic_LNloss.item()
+            else:
+                return actor_loss.item(), critic_loss.item(), critic_L1loss.item(), None
 
