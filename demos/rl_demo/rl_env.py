@@ -4,9 +4,13 @@ from mojograsp.simobjects.object_base import ObjectBase
 import pybullet as p
 
 class ExpertEnv(Environment):
-    def __init__(self, hand: TwoFingerGripper, obj: ObjectBase):
+    def __init__(self, hand: TwoFingerGripper, obj: ObjectBase, hand_type):
         self.hand = hand
         self.obj = obj
+        if 'B' in hand_type:
+            self.hand_type = 'B'
+        else:
+            self.hand_type = 'A'
 
     def reset(self):
         # reset the simulator
@@ -30,10 +34,16 @@ class ExpertEnv(Environment):
         # p.resetJointState(hand_id, 1, -1.4)
         # p.resetJointState(hand_id, 3, -.75)
         # p.resetJointState(hand_id, 4, 1.4)
-        p.resetJointState(hand_id, 0, -.725)
-        p.resetJointState(hand_id, 1, 1.45)
-        p.resetJointState(hand_id, 3, .725)
-        p.resetJointState(hand_id, 4, -1.45)
+        if self.hand_type =='A':
+            p.resetJointState(hand_id, 0, -.725)
+            p.resetJointState(hand_id, 1, 1.45)
+            p.resetJointState(hand_id, 3, .725)
+            p.resetJointState(hand_id, 4, -1.45)
+        if self.hand_type == 'B':
+            p.resetJointState(hand_id, 0, -.5)
+            p.resetJointState(hand_id, 1, 1.5)
+            p.resetJointState(hand_id, 3, .5)
+            p.resetJointState(hand_id, 4, -1.5)
         p.changeDynamics(plane_id,-1,lateralFriction=0.05, spinningFriction=0.05, rollingFriction=0.05)
         
         # p.resetJointState(hand_id, 0, .695)

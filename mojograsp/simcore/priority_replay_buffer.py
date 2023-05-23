@@ -10,7 +10,9 @@ import numpy as np
 from torch.utils.tensorboard import SummaryWriter
 import pandas as pd
 import pickle as pkl
-
+from torch.utils.data import Dataset, Sampler
+from typing import Iterator
+import torch
 import operator
 import time
 
@@ -139,7 +141,17 @@ class SumSegmentTree(SegmentTree):
         return idx - self._capacity
 
 
-class ReplayBufferPriority():
+class SegmentTreeSampler(Sampler):
+    def __init__(self, data: SumSegmentTree, size: int):
+        self.priority_tree = data
+        self.sz = size
+    
+    def __iter__(self) -> Iterator[int]:
+        #TODO fix this so it generates an iterator rather than a single one.
+        r_num = torch.rand(1) * self.priority_tree.sum()
+        index = self.priority_tree.find_prefixsum_idx(r_num)
+
+class ReplayBufferPriority(Dataset):
     def __init__(self, buffer_size: int = 39999, alpha: float = 0.3, beta: float = 1.0, max_prio: float = 1):
         self.buffer_memory = np.zeros(buffer_size, dtype=object)
         pwr_sz = 1
@@ -158,6 +170,8 @@ class ReplayBufferPriority():
 
         self.rand = np.random.RandomState(None)
         self.sampled_indexes = []
+        
+        # self.weighted_sampler = 
 
     def preload_buffer_PKL(self, file_name):
         with open(file_name, 'rb') as handle:
@@ -289,6 +303,8 @@ class ReplayBufferPriority():
             self.buffer_prio[self.idx] = self.max_prio
             self.idx += 1
             self.sz += 1
+            # self.weighted_sampler.num_samples = self.sz
+            # print('weighted sampler len', len(self.weighted_sampler.weights))
         else:
             print("ERROR: REPLAY BUFFER OUT OF SPACE, TRANSITION NOT ADDED")
 
@@ -301,3 +317,29 @@ class ReplayBufferPriority():
 
     def __len__(self):
         return self.sz
+    
+    def __getitem__(self, idx):
+        ''' Used for getting the index as well as the associated rollout for training
+        '''
+        rollout_size = 5
+        prio_sum = self.buffer_prio.sum(0, self.sz)
+
+        idxes = []
+        transitions = []
+        weights = []
+        r_num = idx
+        # sample_idx = self.buffer_prio.find_prefixsum_idx(r_num)
+        sample_idx = idx
+        # self.sampled_indexes.append(sample_idx)
+        for i in range(rollout_size):
+            if sample_idx + i <= self.sz-1:
+                rollout_sample = self.buffer_memory[sample_idx + i]
+                if rollout_sample != 0 and rollout_sample[4] == self.buffer_memory[sample_idx][4]:
+                    idxes.append(sample_idx + i)
+                    transitions.append(self.buffer_memory[sample_idx + i])
+                    wt = (
+                        (1/(self.buffer_prio[sample_idx + i] / prio_sum)) * (1/self.sz)) ** self.beta
+                    # print(type(wt),wt)
+                    weights.append(wt)
+
+        return transitions, weights, idx

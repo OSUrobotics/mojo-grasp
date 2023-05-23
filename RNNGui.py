@@ -47,6 +47,7 @@ class RNNGui():
         self.shuffle_type = 'Episode'
         self.save_path = '/'
         self.expert_path = '/'
+        self.load_path  = '/'
         self.built = False
         self.train_dataset, self.validation_dataset = None, None
         
@@ -56,6 +57,8 @@ class RNNGui():
                          [sg.Button("Browse",key='-browse-expert',button_color='DarkBlue'),sg.Text("/", key='-expert-path')],
                          [sg.Text('Path to Save Data')],
                          [sg.Button("Browse",key='-browse-save',button_color='DarkBlue'),sg.Text("/", key='-save-path')],
+                         [sg.Text('Path to Previous Policy if Transferring')],
+                         [sg.Button("Browse",key='-browse-load',button_color='DarkBlue'),sg.Text("/", key='-load-path')],
                          [sg.Text('Object'), sg.OptionMenu(values=('Cube', 'Cylinder'), k='-object', default_value='Cube')],
                          [sg.Text('Hand'), sg.OptionMenu(values=('2v2', '2v2-B'), k='-hand', default_value='2v2')],
                          [sg.Text("Task"), sg.OptionMenu(values=('asterisk','random','full_random'), k='-task', default_value='asterisk')],
@@ -77,6 +80,7 @@ class RNNGui():
                        [sg.Checkbox('Joint Angle', default=False, k='-ja')],
                        [sg.Checkbox('Object Position', default=True, k='-op')],
                        [sg.Checkbox('Finger Object Distance', default=False, k='-fod')],
+                       [sg.Checkbox('Finger Tip Angle',default=True, k='-fta')],
                        [sg.Checkbox('Goal Position',default=True, k='-gp')],
                        [sg.Text('Num Previous States'),sg.Input('0', k='-pv')],
                        [sg.Text("Reward"), sg.OptionMenu(values=('Sparse','Distance','Distance + Finger', 'Hinge Distance + Finger', 'Slope', 'Slope + Finger'), k='-reward',default_value='Distance + Finger'), sg.Text('Success Radius (mm)'), sg.Input(2, key='-sr'),],
@@ -167,6 +171,11 @@ class RNNGui():
                 state_maxes.extend([0.108, 0.108])
             state_len += 2
             state_list.append('fod')
+        if values['-fta']:
+            state_mins.extend([-np.pi/2, -np.pi/2])
+            state_maxes.extend([np.pi/2, np.pi/2])
+            state_len += 2
+            state_list.append('fta')
         if values['-gp']:
             if not RW:
                 state_mins.extend([-0.07, -0.07])
@@ -207,7 +216,7 @@ class RNNGui():
                 self.args['edata'] = values['-browse-expert'] + 'episode_all.pkl'
         if os.path.isdir(self.save_path) and self.save_path != '/':
             self.args['save_path'] = self.save_path + '/'
-            self.args['load_path'] = str(pathlib.Path(self.save_path).parent.resolve()) + '/'
+            self.args['load_path'] = self.load_path + '/'
         else:
             print('save path is not a valid directory')
             return False
@@ -246,7 +255,7 @@ class RNNGui():
             print('saving configuration')
             
             with open(self.args['save_path'] + '/experiment_config.json', 'w') as conf_file:
-                json.dump(self.args, conf_file)
+                json.dump(self.args, conf_file, indent=4)
             try:
                 os.mkdir(self.args['save_path'] + '/Train/')
             except FileExistsError:
@@ -290,13 +299,24 @@ class RNNGui():
                 self.window.refresh()
             
             elif event == '-browse-save':
-                newfolder = sg.popup_get_folder('Select Follder To Save Data In', no_window=True)
+                newfolder = sg.popup_get_folder('Select Folder To Save Data In', no_window=True)
                 if newfolder is None:
                     continue
     
                 folder = newfolder
                 print(type(folder))
                 self.save_path = folder
+    
+                self.window.refresh()
+
+            elif event == '-browse-load':
+                newfolder = sg.popup_get_folder('Select Folder To Save Data In', no_window=True)
+                if newfolder is None:
+                    continue
+    
+                folder = newfolder
+                print(type(folder))
+                self.load_path = folder
     
                 self.window.refresh()
                 
@@ -325,6 +345,7 @@ class RNNGui():
                          'Go harrass Nigel with questions. swensoni@oregonstate.edu')
             self.window['-save-path'].update(self.save_path)
             self.window['-expert-path'].update(self.expert_path)
+            self.window['-load-path'].update(self.load_path)
         self.window.close()
         
 
