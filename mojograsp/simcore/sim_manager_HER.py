@@ -29,6 +29,7 @@ from PIL import Image
 from torch.utils.tensorboard import SummaryWriter
 import matplotlib.pyplot as plt
 import numpy as np
+from copy import deepcopy
 
 def calc_finger_poses(angles):
     x0 = [-0.02675, 0.02675]
@@ -195,7 +196,7 @@ class SimManagerRLHER(SimManager):
                             img.save('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/vizualization/episode_' + str(self.episode_number) + '_frame_'+ str(timestep_number)+'.png')
                     self.phase_manager.get_next_phase()
                     if self.use_HER:
-                        self.add_hindsight(transition_list)
+                        self.add_hindsight_random(transition_list)
                 self.record.record_episode()
                 self.record.save_episode()
                 self.episode.post_episode()
@@ -217,14 +218,44 @@ class SimManagerRLHER(SimManager):
         goal_position = transitions[-1][0]['obj_2']['pose'][0][0:2]
         end_goal = goal_position.copy()
         end_goal[1] = end_goal[1] - 0.1 
-        for transition in transitions:
-            transition[0]['goal_pose']['goal_pose'] = end_goal
-            transition[2]['goal_position'] = goal_position
-            transition[2]['distance_to_goal'] = np.sqrt((goal_position[0]-transition[0]['obj_2']['pose'][0][0])**2+(goal_position[1]-transition[0]['obj_2']['pose'][0][1])**2)
-            self.replay_buffer.add_timestep(transition)
+        # print('current_goal', transitions[0][0]['goal_pose']['goal_pose'])
+        # print('where we got', goal_position)
+        # print('new goal', end_goal)
+        if np.linalg.norm(end_goal) > 0.001:
+            for transition in transitions:
+                
+                transition[0]['goal_pose']['goal_pose'] = end_goal
+                transition[2]['goal_position'] = goal_position
+                transition[2]['distance_to_goal'] = np.sqrt((goal_position[0]-transition[0]['obj_2']['pose'][0][0])**2+(goal_position[1]-transition[0]['obj_2']['pose'][0][1])**2)
+                self.replay_buffer.add_timestep(transition)
         
         #
-        
+    def add_hindsight_random(self,transitions):
+        num_steps = len(transitions)
+
+        goal_index = np.random.randint([range(num_steps)]*4,num_steps)
+
+        # print('current_goal', transitions[0][0]['goal_pose']['goal_pose'])
+        # print('where we got', goal_position)
+        # print('new goal', end_goal)
+        for i, transition in enumerate(transitions):
+            # print('indexes',goal_index[:,i])
+            assert (goal_index[:,i]>=i).all()
+            # print('transition before fuckery')
+            # print(transition[0]['goal_pose'])
+            for index in goal_index[:,i]:
+                
+                t2 = deepcopy(transition)
+                goal_position = transitions[index][0]['obj_2']['pose'][0][0:2].copy()
+                end_goal = goal_position.copy()
+                end_goal[1] = end_goal[1] - 0.1 
+                
+                t2[0]['goal_pose']['goal_pose'] = end_goal
+                t2[2]['goal_position'] = goal_position
+                t2[2]['distance_to_goal'] = np.sqrt((goal_position[0]-t2[0]['obj_2']['pose'][0][0])**2+(goal_position[1]-t2[0]['obj_2']['pose'][0][1])**2)
+                self.replay_buffer.add_timestep(t2)
+            # print('transition after fuckery')
+            # print(transition[0]['goal_pose'])
     def stall(self):
         super().stall()
 
