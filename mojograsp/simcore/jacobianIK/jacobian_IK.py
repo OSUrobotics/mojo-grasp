@@ -138,14 +138,19 @@ class JacobianIK():
 
             # We can stop if we're close to the goal
             if np.isclose(best_distance, 0, atol=self.ERROR):
+                # print("BEST DISTANCE", best_distance)
                 b_keep_going = False
 
             # End conditions - b_one_step is true  - don't do another round
             #   OR we didn't take a step (b_took_one_step)
             if b_one_step or not b_took_one_step:
                 b_keep_going = False
-
+        # print("KINEMATICS", self.finger_fk.calculate_forward_kinematics())
+        self.finger_fk.set_joint_angles(angles)
+        # print("KINEMATICS AFTER", self.finger_fk.calculate_forward_kinematics())
         self.finger_fk.update_angles_from_sim()
         # Return the new angles, and whether or not we ever found a better set of angles
+        # print(count_iterations)
+
         # print(count_iterations)
         return b_found_better, angles, count_iterations

@@ -2,7 +2,7 @@ import glob
 from PIL import Image
 
 
-def dif_sort(list_of_string):
+# def dif_sort(list_of_string):
     
 def make_gif(frame_folder):
     files = glob.glob(f"{frame_folder}/*.png")
@@ -13,5 +13,5 @@ def make_gif(frame_folder):
     frame_one.save("e28.gif", format="GIF", append_images=frames,
                save_all=True, duration=100, loop=0)
     
-if __name__ == "__main__":
-    make_gif("./gif_folder/")
+# if __name__ == "__main__":
+#     make_gif("./gif_folder/")

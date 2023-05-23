@@ -86,6 +86,8 @@ class ManipulationRL(Phase):
             p.setJointMotorControlArray(self.hand.id, jointIndices=self.hand.get_joint_numbers(),
                                         controlMode=p.POSITION_CONTROL, targetPositions=action_to_execute)
         else:
+            # print("JOINT INDICES: ", self.hand.get_joint_numbers())
+            # print("TARGET ANGLES RL: ", self.target)
             p.setJointMotorControlArray(self.hand.id, jointIndices=self.hand.get_joint_numbers(),
                                         controlMode=p.POSITION_CONTROL, targetPositions=self.target, positionGains=[0.8,0.8,0.8,0.8])
         self.timestep += 1
