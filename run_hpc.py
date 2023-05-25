@@ -185,6 +185,7 @@ def main(run_id):
     folder_names = ['0_ftp_control','1_ftp_no_contact','2_ftp_no_contact_velocity','3_ftp_velocity','4_ftp_velocity_x1',
                     '5_ftp_velocity_x2','6_ftp_velocity_x3','7_ftp_velocity_x4','8_ftp_rollout_10','9_ftp_rollout_1']
     folder_names = ['0_joint_vel_her','1_finger_pos_her']
+    folder_names = ['HER_finger_pos_new_sparse']
     
     overall_path = pathlib.Path(__file__).parent.resolve()
     run_path = overall_path.joinpath('demos/rl_demo/data/hpc2')
