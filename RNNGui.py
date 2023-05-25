@@ -61,15 +61,15 @@ class RNNGui():
                          [sg.Button("Browse",key='-browse-load',button_color='DarkBlue'),sg.Text("/", key='-load-path')],
                          [sg.Text('Object'), sg.OptionMenu(values=('Cube', 'Cylinder'), k='-object', default_value='Cube')],
                          [sg.Text('Hand'), sg.OptionMenu(values=('2v2', '2v2-B'), k='-hand', default_value='2v2')],
-                         [sg.Text("Task"), sg.OptionMenu(values=('asterisk','random','full_random'), k='-task', default_value='asterisk')],
-                         [sg.Text('Replay Buffer Sampling'), sg.OptionMenu(values=('priority','random','random+expert'), k='-sampling', default_value='random')]]
+                         [sg.Text("Task"), sg.OptionMenu(values=('asterisk','random','full_random'), k='-task', default_value='full_random')],
+                         [sg.Text('Replay Buffer Sampling'), sg.OptionMenu(values=('priority','random','random+expert'), k='-sampling', default_value='priority')]]
         
         
-        model_layout = [ [sg.Text('Num Epochs'), sg.Input(1000, key='-epochs'), sg.Text('Batch Size'), sg.Input(100, key='-batch-size')],
+        model_layout = [ [sg.Text('Num Epochs'), sg.Input(10000, key='-epochs'), sg.Text('Batch Size'), sg.Input(100, key='-batch-size')],
                          [sg.Text('Learning Rate'), sg.Input(0.0001,key='-learning'), sg.Text('Discount Factor'), sg.Input(0.995, key='-df')],
-                         [sg.Text('Starting Epsilon'), sg.Input(0.7,key='-epsilon'), sg.Text('Epsilon Decay Rate'), sg.Input(0.995, key='-edecay')],
+                         [sg.Text('Starting Epsilon'), sg.Input(0.7,key='-epsilon'), sg.Text('Epsilon Decay Rate'), sg.Input(0.998, key='-edecay')],
                          [sg.Text('Rollout Size'), sg.Input(5,key='-rollout_size'), sg.Text('Rollout Weight'), sg.Input(0.5, key='-rollout_weight')],
-                         [sg.Text('Evaluation Period'), sg.Input(100,key='-eval'), sg.Text('Tau'), sg.Input(0.0005, key='-tau')],
+                         [sg.Text('Evaluation Period'), sg.Input(3,key='-eval'), sg.Text('Tau'), sg.Input(0.0005, key='-tau')],
                          [sg.Text('Timesteps per Episode'), sg.Input(150,key='-tsteps'), sg.Text('Timesteps in Evaluation'), sg.Input(150,key='-eval-tsteps')]]
         
         plotting_layout = [[sg.Text('Model Title')],
@@ -85,8 +85,8 @@ class RNNGui():
                        [sg.Text('Num Previous States'),sg.Input('0', k='-pv')],
                        [sg.Text("Reward"), sg.OptionMenu(values=('Sparse','Distance','Distance + Finger', 'Hinge Distance + Finger', 'Slope', 'Slope + Finger'), k='-reward',default_value='Distance + Finger'), sg.Text('Success Radius (mm)'), sg.Input(2, key='-sr'),],
                        [sg.Text("Distance Scale"),  sg.Input(1,key='-distance_scale'), sg.Text('Contact Scale'),  sg.Input(0.2,key='-contact_scale')],
-                       [sg.Text("Action"), sg.OptionMenu(values=('Joint Velocity','Finger Tip Position'), k='-action',default_value='Joint Velocity')],
-                       [sg.Checkbox('Vizualize Simulation',default=True, k='-viz'), sg.Checkbox('Real World?',default=False, k='-rw')],
+                       [sg.Text("Action"), sg.OptionMenu(values=('Joint Velocity','Finger Tip Position'), k='-action',default_value='Finger Tip Position')],
+                       [sg.Checkbox('Vizualize Simulation',default=False, k='-viz'), sg.Checkbox('Real World?',default=False, k='-rw')],
                        [sg.Button('Begin Training', key='-train', bind_return_key=True)],
                        [sg.Button('Build Config File WITHOUT Training', key='-build')],
                        [sg.Text('Work progress'), sg.ProgressBar(100, size=(20, 20), orientation='h', key='-PROG-')]]
