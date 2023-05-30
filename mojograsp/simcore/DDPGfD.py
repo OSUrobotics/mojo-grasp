@@ -20,6 +20,7 @@ import pickle as pkl
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
+
 @torch.jit.script
 def simple_normalize(x_tensor, mins, maxes):
     """
@@ -28,8 +29,8 @@ def simple_normalize(x_tensor, mins, maxes):
     :param mins: - array containing minimum values for the parameters in x_tensor
     :param maxes: - array containing maximum values for the parameters in x_tensor
     """
-    return ((x_tensor-mins)/(maxes-mins)-0.5) *2
-    
+    return ((x_tensor-mins)/(maxes-mins)-0.5) * 2
+
 
 def unpack_arr(long_arr):
     """
@@ -40,7 +41,7 @@ def unpack_arr(long_arr):
 
 
 class Actor(nn.Module):
-    def __init__(self, state_dim:int, action_dim:int, max_action:float, state_mins:list, state_maxes:list):
+    def __init__(self, state_dim: int, action_dim: int, max_action: float, state_mins: list, state_maxes: list):
         """
         Constructor initializes actor network with input dimension 'state_dim' 
         and output dimension 'action_dim'. State mins and maxes saved for normalization
@@ -56,17 +57,18 @@ class Actor(nn.Module):
         self.MINS = torch.tensor(state_mins, device=device)
         self.max_action = max_action
 
-    def forward(self, state:torch.Tensor):
+    def forward(self, state: torch.Tensor):
         """
         Runs state through actor network to get action associated with state
         """
         state = simple_normalize(state, self.MINS, self.MAXES)
-        a = F.relu(self.l1(state))
-        a = F.relu(self.l2(a))
+        a = F.leaky_relu(self.l1(state))
+        a = F.leaky_relu(self.l2(a))
         return torch.tanh(self.l3(a))
 
+
 class Critic(nn.Module):
-    def __init__(self, state_dim:int, action_dim:int, state_mins:list, state_maxes:list):
+    def __init__(self, state_dim: int, action_dim: int, state_mins: list, state_maxes: list):
         """
         Constructor initializes actor network with input dimension 'state_dim'+'action_dim' 
         and output dimension 1. State mins and maxes saved for normalization
@@ -83,16 +85,17 @@ class Critic(nn.Module):
         self.MINS = torch.tensor(state_mins, device=device)
         self.max_q_value = 1
 
-    def forward(self, state:torch.Tensor, action:torch.Tensor):
+    def forward(self, state: torch.Tensor, action: torch.Tensor):
         """
         Concatenates state and action and runs through critic network to return
         q-value associated with state-action pair
         """
         state = simple_normalize(state, self.MINS, self.MAXES)
-        q = F.relu(self.l1(torch.cat([state, action], -1)))
-        q = F.relu(self.l2(q))
+        q = F.leaky_relu(self.l1(torch.cat([state, action], -1)))
+        q = F.leaky_relu(self.l2(q))
         q = self.l3(q)
-        return q# * self.max_q_value
+        return q  # * self.max_q_value
+
 
 class DDPGfD_priority():
     def __init__(self, arg_dict: dict):
@@ -107,20 +110,31 @@ class DDPGfD_priority():
         self.ROLLOUT_SIZE = arg_dict['rollout_size']
         print('Saving to tensorboard file', arg_dict['tname'])
         self.ACTION_DIM = arg_dict['action_dim']
-        self.actor = Actor(self.STATE_DIM, self.ACTION_DIM, arg_dict['max_action'], arg_dict['state_mins'], arg_dict['state_maxes']).to(device)
+        self.actor = Actor(
+            self.STATE_DIM, self.ACTION_DIM, arg_dict['max_action'],
+            arg_dict['state_mins'],
+            arg_dict['state_maxes']).to(device)
         self.actor_target = copy.deepcopy(self.actor)
-        self.actor_optimizer = torch.optim.Adam(self.actor.parameters(), lr=arg_dict['learning_rate'], weight_decay=1e-4)
+        self.actor_optimizer = torch.optim.Adam(
+            self.actor.parameters(),
+            lr=arg_dict['learning_rate'],
+            weight_decay=1e-4, amsgrad=True)
 
-        self.critic = Critic(self.STATE_DIM, self.ACTION_DIM, arg_dict['state_mins'], arg_dict['state_maxes']).to(device)
+        self.critic = Critic(
+            self.STATE_DIM, self.ACTION_DIM, arg_dict['state_mins'],
+            arg_dict['state_maxes']).to(device)
         self.critic_target = copy.deepcopy(self.critic)
-        self.critic_optimizer = torch.optim.Adam(self.critic.parameters(), lr=arg_dict['learning_rate'], weight_decay=1e-4)
-        
+        self.critic_optimizer = torch.optim.Adam(
+            self.critic.parameters(),
+            lr=arg_dict['learning_rate'],
+            weight_decay=1e-4, amsgrad=True)
+
         self.PREV_VALS = arg_dict['pv']
         self.actor_loss = []
         self.critic_loss = []
         self.critic_L1loss = []
         self.critic_LNloss = []
-            
+
         if 'HER' in arg_dict['model']:
             self.USE_HER = True
         else:
@@ -132,7 +146,7 @@ class DDPGfD_priority():
         self.TAU = arg_dict['tau']
         self.NETWORK_REPL_FREQ = 2
         self.total_it = 0
-        self.LOOKBACK_SIZE = 4 # TODO, make this a hyperparameter in the config file
+        self.LOOKBACK_SIZE = 4  # TODO, make this a hyperparameter in the config file
 
         # Most recent evaluation reward produced by the policy within training
         self.avg_evaluation_reward = 0
@@ -141,24 +155,23 @@ class DDPGfD_priority():
         self.rng = default_rng()
         self.ROLLOUT = self.ROLLOUT_SIZE > 1
         self.u_count = 0
-        
+
         self.actor_component = 100000
         self.critic_component = 10
         self.state_list = arg_dict['state_list']
-        self.sampled_positions = np.zeros((100,100))
-        self.position_xlims = np.linspace(-0.1, 0.1,100)
-        self.position_ylims = np.linspace(0.06,0.26,100)
+        self.sampled_positions = np.zeros((100, 100))
+        self.position_xlims = np.linspace(-0.1, 0.1, 100)
+        self.position_ylims = np.linspace(0.06, 0.26, 100)
         self.sampled_file = arg_dict['save_path'] + 'sampled_positions.pkl'
-        
-        
+
         try:
             self.CONTACT_SCALING = arg_dict['contact_scaling']
             self.DISTANCE_SCALING = arg_dict['distance_scaling']
         except KeyError:
             self.CONTACT_SCALING = 0.2
             self.DISTANCE_SCALING = 1
-        
-        print('SCALING SHITE',self.DISTANCE_SCALING, self.CONTACT_SCALING)
+
+        print('SCALING SHITE', self.DISTANCE_SCALING, self.CONTACT_SCALING)
         try:
             self.SUCCESS_THRESHOLD = arg_dict['sr']/1000
         except KeyError:
@@ -190,18 +203,18 @@ class DDPGfD_priority():
         """
         lstate = self.build_state(state)
         lstate = torch.FloatTensor(np.reshape(lstate, (1, -1))).to(device)
-        action = torch.tensor(np.reshape(action, (1,-1)), dtype=float, requires_grad=True, device=device)
-        action=action.float()
+        action = torch.tensor(np.reshape(action, (1, -1)), dtype=float, requires_grad=True, device=device)
+        action = action.float()
         action.retain_grad()
         g = self.critic(lstate, action)
         g.backward()
         grade = g.cpu().data.numpy().flatten()
-        
+
         return grade, action.grad.cpu().data.numpy()
-    
+
     def copy(self, policy_to_copy_from):
         """ Copy input policy to be set to another policy instance
-		policy_to_copy_from: policy that will be copied from
+                policy_to_copy_from: policy that will be copied from
         """
         # Copy the actor and critic networks
         self.actor = copy.deepcopy(policy_to_copy_from.actor)
@@ -212,7 +225,7 @@ class DDPGfD_priority():
         self.critic_target = copy.deepcopy(policy_to_copy_from.critic_target)
         self.critic_optimizer = copy.deepcopy(policy_to_copy_from.critic_optimizer)
         our_dir = vars(self)
-        for key,value in vars(policy_to_copy_from).items():
+        for key, value in vars(policy_to_copy_from).items():
             if key.isupper():
                 our_dir[key] = value
         # self.DISCOUNT = policy_to_copy_from.DISCOUNT
@@ -229,7 +242,7 @@ class DDPGfD_priority():
 
     def save(self, filename):
         """ Save current policy to given filename
-		filename: filename to save policy to
+                filename: filename to save policy to
         """
         torch.save(self.critic.state_dict(), filename + "_critic")
         torch.save(self.critic_target.state_dict(), filename + "_critic_target")
@@ -243,17 +256,17 @@ class DDPGfD_priority():
         with open(self.sampled_file, 'wb') as f_obj:
             # print(self.sampled_positions)
             pkl.dump(self.sampled_positions, f_obj)
-            
+
     def load(self, filename):
         """ Load input policy from given filename
-		filename: filename to load policy from
+                filename: filename to load policy from
         """
         self.critic.load_state_dict(torch.load(filename + "_critic", map_location=device))
         self.critic_optimizer.load_state_dict(torch.load(filename + "_critic_optimizer", map_location=device))
         self.actor.load_state_dict(torch.load(filename + "_actor", map_location=device))
         self.actor_optimizer.load_state_dict(torch.load(filename + "_actor_optimizer", map_location=device))
-        self.critic_target.load_state_dict(torch.load(filename + "_critic_target", map_location=device)) 
-        self.actor_target.load_state_dict(torch.load(filename + "_actor_target", map_location=device)) 
+        self.critic_target.load_state_dict(torch.load(filename + "_critic_target", map_location=device))
+        self.actor_target.load_state_dict(torch.load(filename + "_actor_target", map_location=device))
 
         # self.critic_target = copy.deepcopy(self.critic)
         # self.actor_target = copy.deepcopy(self.actor)
@@ -289,9 +302,13 @@ class DDPGfD_priority():
                         state.extend(state_container['previous_state'][i]['f1_base'][0:2])
                         state.extend(state_container['previous_state'][i]['f2_base'][0:2])
                     elif key == 'ja':
-                        state.extend([item for item in state_container['previous_state'][i]['two_finger_gripper']['joint_angles'].values()])
+                        state.extend(
+                            [item
+                             for item in state_container['previous_state'][i]['two_finger_gripper']
+                             ['joint_angles'].values()])
                     elif key == 'fta':
-                        state.extend([state_container['previous_state'][i]['f1_ang'],state_container['previous_state'][i]['f2_ang']])
+                        state.extend([state_container['previous_state'][i]['f1_ang'],
+                                     state_container['previous_state'][i]['f2_ang']])
                     elif key == 'gp':
                         state.extend(state_container['previous_state'][i]['goal_pose']['goal_pose'])
                     else:
@@ -309,7 +326,7 @@ class DDPGfD_priority():
             elif key == 'ja':
                 state.extend([item for item in state_container['two_finger_gripper']['joint_angles'].values()])
             elif key == 'fta':
-                state.extend([state_container['f1_ang'],state_container['f2_ang']])
+                state.extend([state_container['f1_ang'], state_container['f2_ang']])
             elif key == 'gp':
                 state.extend(state_container['goal_pose']['goal_pose'])
             else:
@@ -328,19 +345,25 @@ class DDPGfD_priority():
         if self.REWARD_TYPE == 'Sparse':
             tstep_reward = -1 + 2*(reward_container['distance_to_goal'] < self.SUCCESS_THRESHOLD)
         elif self.REWARD_TYPE == 'Distance':
-            tstep_reward = max(-reward_container['distance_to_goal'],-1)
+            tstep_reward = max(-reward_container['distance_to_goal'], -1)
         elif self.REWARD_TYPE == 'Distance + Finger':
-            tstep_reward = max(-reward_container['distance_to_goal']*self.DISTANCE_SCALING - max(reward_container['f1_dist'],reward_container['f2_dist'])*self.CONTACT_SCALING,-1)
+            tstep_reward = max(-reward_container['distance_to_goal'] * self.DISTANCE_SCALING -
+                               max(reward_container['f1_dist'],
+                                   reward_container['f2_dist']) * self.CONTACT_SCALING, -1)
         elif self.REWARD_TYPE == 'Hinge Distance + Finger':
-            tstep_reward = reward_container['distance_to_goal'] < self.SUCCESS_THRESHOLD + max(-reward_container['distance_to_goal'] - max(reward_container['f1_dist'],reward_container['f2_dist'])*self.CONTACT_SCALING,-1)
+            tstep_reward = reward_container['distance_to_goal'] < self.SUCCESS_THRESHOLD + max(-reward_container['distance_to_goal'] - max(
+                reward_container['f1_dist'], reward_container['f2_dist'])*self.CONTACT_SCALING, -1)
         elif self.REWARD_TYPE == 'Slope':
             tstep_reward = reward_container['slope_to_goal'] * self.DISTANCE_SCALING
         elif self.REWARD_TYPE == 'Slope + Finger':
-            tstep_reward = max(reward_container['slope_to_goal'] * self.DISTANCE_SCALING  - max(reward_container['f1_dist'],reward_container['f2_dist'])*self.CONTACT_SCALING,-1)
+            tstep_reward = max(
+                reward_container['slope_to_goal'] * self.DISTANCE_SCALING -
+                max(reward_container['f1_dist'],
+                    reward_container['f2_dist']) * self.CONTACT_SCALING, -1)
         else:
             raise Exception('reward type does not match list of known reward types')
         return float(tstep_reward)
-    
+
     def collect_batch_multistep(self, replay_buffer: ReplayBufferPriority):
         """
         Method takes in a ReplayBufferPriority object
@@ -362,13 +385,14 @@ class DDPGfD_priority():
         The name of the next phase or None
         :rtype: str or None
         """
-        
+
         num_timesteps = len(replay_buffer)
         if num_timesteps < self.BATCH_SIZE * 20:
             return None, None, None, None, None, None, None, None, None, None
         else:
-            sampled_data, transition_weight, indxs, lookback = replay_buffer.sample_rollout(self.BATCH_SIZE, self.ROLLOUT_SIZE, self.LOOKBACK_SIZE) 
-            
+            sampled_data, transition_weight, indxs, lookback = replay_buffer.sample_rollout(
+                self.BATCH_SIZE, self.ROLLOUT_SIZE, self.LOOKBACK_SIZE)
+
             state = []
             action = []
             reward = []
@@ -390,7 +414,7 @@ class DDPGfD_priority():
                     next_state.append(self.build_state(t_next_state))
                     expert_status.append(timestep[-1])
                     if self.ROLLOUT:
-                        j =0
+                        j = 0
                         for j, timestep in enumerate(timestep_series[1:]):
                             rtemp += self.build_reward(timestep[2]) * self.DISCOUNT ** (j+1)
                         t_last_state = timestep_series[-1][0]
@@ -425,13 +449,13 @@ class DDPGfD_priority():
             trimmed_idxs = []
             for tw, inds in zip(transition_weight, indxs):
                 if len(tw) > 0:
-                    trimmed_weight.append(tw[0]) 
+                    trimmed_weight.append(tw[0])
                     trimmed_idxs.append(inds[0])
             trimmed_weight = torch.tensor(trimmed_weight)
             trimmed_weight = torch.unsqueeze(trimmed_weight, 1)
             trimmed_weight = trimmed_weight.to(device)
             return state, action, next_state, reward, rollout_reward, rollout_discount, last_state, trimmed_weight, trimmed_idxs, expert_status
-        
+
     def collect_batch(self, replay_buffer: ReplayBufferPriority):
         """
         Method takes in a ReplayBufferPriority object
@@ -453,7 +477,7 @@ class DDPGfD_priority():
         The name of the next phase or None
         :rtype: str or None
         """
-        
+
         num_timesteps = len(replay_buffer)
         if num_timesteps < self.BATCH_SIZE * 20:
             return None, None, None, None, None, None, None, None, None, None
@@ -469,7 +493,7 @@ class DDPGfD_priority():
             rollout_discount = []
             expert_status = []
             for i, timestep_series in enumerate(sampled_data):
-                
+
                 if len(timestep_series) > 0:
                     # print(timestep_series)
                     timestep = timestep_series[0]
@@ -485,7 +509,7 @@ class DDPGfD_priority():
                     try:
                         x = np.where(t_state['obj_2']['pose'][0][0] < self.position_xlims)[0][0]
                         y = np.where(t_state['obj_2']['pose'][0][1] < self.position_ylims)[0][0]
-                        self.sampled_positions[x,y] +=1
+                        self.sampled_positions[x, y] += 1
                     except IndexError:
                         pass
                     if self.ROLLOUT:
@@ -498,7 +522,7 @@ class DDPGfD_priority():
                         rollout_reward.append(rtemp)
                 else:
                     print(timestep_series, transition_weight, indxs)
-                    
+
             state = torch.tensor(state, device=device)
             action = torch.tensor(action, device=device)
             action = action.float()
@@ -517,13 +541,12 @@ class DDPGfD_priority():
                 last_state = None
             expert_status = torch.tensor(expert_status, device=device)
             expert_status = torch.unsqueeze(expert_status, 1)
-            
-            
+
             trimmed_weight = []
             trimmed_idxs = []
             for tw, inds in zip(transition_weight, indxs):
                 if len(tw) > 0:
-                    trimmed_weight.append(tw[0]) 
+                    trimmed_weight.append(tw[0])
                     trimmed_idxs.append(inds[0])
             trimmed_weight = torch.tensor(trimmed_weight, device=device)
             trimmed_weight = torch.unsqueeze(trimmed_weight, 1)
@@ -533,50 +556,44 @@ class DDPGfD_priority():
         """ Update policy based on sample of timesteps from replay buffer"""
         self.total_it += 1
 
-        state, action, next_state, reward, sum_rewards, num_rewards, last_state, transition_weight, indxs, expert_status = self.collect_batch(replay_buffer)
+        state, action, next_state, reward, sum_rewards, num_rewards, last_state, transition_weight, indxs, expert_status = self.collect_batch(
+            replay_buffer)
         if state is not None:
-            
+
             # print('starting trains')
             next_state_val = self.critic_target(next_state, self.actor_target(next_state))
 
             target_Q = (reward + (self.DISCOUNT * next_state_val).detach()).float()  # bellman equation
 
-
-
-            
-
             # print(target_Q == target_QN)
             # Get current Q estimate
             current_Q = self.critic(state, action)
 
-
             scaled_Q = current_Q * transition_weight
-            
+
             scaled_target = target_Q * transition_weight
 
-            
             # L_1 loss (Loss between current state, action and reward, next state, action)
             critic_L1loss = F.mse_loss(scaled_Q, scaled_target)
 
             if self.ROLLOUT:
-                
+
                 # Compute the roll rewards and the number of steps forward (could be less than rollout size if timestep near end of trial)
                 super_next_state_val = self.critic_target(last_state, self.actor_target(last_state))
-        
-                # Compute QN from roll reward and discounted final state
-                target_QN = ((sum_rewards.to(device)/num_rewards + (self.DISCOUNT**num_rewards * super_next_state_val).detach())).float()
-                # L_2 loss (Loss between current state, action and reward, n state, n action)
-                
-                            
-                scaled_QN = target_QN * transition_weight
-                
-                critic_LNloss = F.mse_loss(scaled_Q, scaled_QN)
 
+                # Compute QN from roll reward and discounted final state
+                target_QN = ((sum_rewards.to(device)/num_rewards + (self.DISCOUNT **
+                             num_rewards * super_next_state_val).detach())).float()
+                # L_2 loss (Loss between current state, action and reward, n state, n action)
+
+                scaled_QN = target_QN * transition_weight
+
+                critic_LNloss = F.mse_loss(scaled_Q, scaled_QN)
 
                 # Total critic loss
                 critic_loss = critic_L1loss.float() + self.LAMBDA_1 * critic_LNloss
             else:
-                critic_loss = critic_L1loss.float() 
+                critic_loss = critic_L1loss.float()
             # Optimize the critic
             self.critic_optimizer.zero_grad()
             critic_loss.backward()
@@ -589,49 +606,50 @@ class DDPGfD_priority():
             individual_actor_loss = -self.critic(state, actor_action)
 
             actor_loss = individual_actor_loss.mean()
-            
+
             # Optimize the actor
             self.actor_optimizer.zero_grad()
             actor_loss.backward()
-            
+
             if self.SAMPLING_STRATEGY == 'random+expert':
                 priorities = expert_status*0.5 + 0.5
                 priorities = priorities.cpu().detach().numpy()
-                replay_buffer.update_priorities(indxs,priorities)
-                self.writer.add_scalar('priorities/average',np.average(priorities),self.total_it)
+                replay_buffer.update_priorities(indxs, priorities)
+                self.writer.add_scalar('priorities/average', np.average(priorities), self.total_it)
             elif self.SAMPLING_STRATEGY == 'random':
                 pass
             elif self.SAMPLING_STRATEGY == 'priority':
-                actor_component = actor_action.grad.mean(1,True)
+                actor_component = actor_action.grad.mean(1, True)
                 cpart = (current_Q-target_Q)**2
                 apart = actor_component**2
                 priorities = expert_status*0.5 + 0.0001 + self.actor_component*apart + self.critic_component*cpart
                 priorities = priorities.cpu().detach().numpy()
-                replay_buffer.update_priorities(indxs,priorities)
-                self.writer.add_scalar('priorities/sum_priorities', replay_buffer.buffer_prio.sum(0, replay_buffer.sz),self.total_it)
+                replay_buffer.update_priorities(indxs, priorities)
+                self.writer.add_scalar('priorities/sum_priorities',
+                                       replay_buffer.buffer_prio.sum(0, replay_buffer.sz), self.total_it)
                 # self.writer.add_scalar('priorities/replay_buffer_size', replay_buffer.sz,self.total_it)
                 # self.writer.add_scalar('priorities/weights', np.average(transition_weight.cpu().detach().numpy()),self.total_it)
-                self.writer.add_scalar('priorities/average', np.average(priorities),self.total_it)
-                self.writer.add_scalar('priorities/critic_portion', self.critic_component*np.average(cpart.cpu().detach().numpy()),self.total_it)
-                self.writer.add_scalar('priorities/actor_portion', self.actor_component*np.average(apart.cpu().detach().numpy()),self.total_it)
+                self.writer.add_scalar('priorities/average', np.average(priorities), self.total_it)
+                self.writer.add_scalar('priorities/critic_portion',
+                                       self.critic_component*np.average(cpart.cpu().detach().numpy()), self.total_it)
+                self.writer.add_scalar('priorities/actor_portion',
+                                       self.actor_component*np.average(apart.cpu().detach().numpy()), self.total_it)
             nn.utils.clip_grad_value_(self.actor.parameters(), 0.5)
             self.actor_optimizer.step()
 
-            self.writer.add_scalar('Loss/critic',critic_loss.detach(),self.total_it)
-            self.writer.add_scalar('Loss/critic_L1',critic_L1loss.detach(),self.total_it)
+            self.writer.add_scalar('Loss/critic', critic_loss.detach(), self.total_it)
+            self.writer.add_scalar('Loss/critic_L1', critic_L1loss.detach(), self.total_it)
             if self.ROLLOUT:
-                self.writer.add_scalar('Loss/critic_LN',critic_LNloss.detach(),self.total_it)
-            self.writer.add_scalar('Loss/actor',actor_loss.detach(),self.total_it)
+                self.writer.add_scalar('Loss/critic_LN', critic_LNloss.detach(), self.total_it)
+            self.writer.add_scalar('Loss/actor', actor_loss.detach(), self.total_it)
 
-            
             # update target networks
             # if self.total_it % self.NETWORK_REPL_FREQ == 0:
             self.update_target()
-            self.u_count +=1
+            self.u_count += 1
             # if self.total_it % 100 ==0:
             #     self.save_poses()
-            if self.ROLLOUT:    
+            if self.ROLLOUT:
                 return actor_loss.item(), critic_loss.item(), critic_L1loss.item(), critic_LNloss.item()
             else:
                 return actor_loss.item(), critic_loss.item(), critic_L1loss.item(), None
-

@@ -37,11 +37,12 @@ import time
 import sys
 import os
 
+
 def run_pybullet(filepath, window=None, runtype='run'):
     # resource paths
     with open(filepath, 'r') as argfile:
         args = json.load(argfile)
-    
+
     if (args['task'] == 'asterisk'):
         x = [0.03, 0, -0.03, -0.04, -0.03, 0, 0.03, 0.04]
         y = [-0.03, -0.04, -0.03, 0, 0.03, 0.04, 0.03, 0]
@@ -49,19 +50,19 @@ def run_pybullet(filepath, window=None, runtype='run'):
         df = pd.read_csv(args['points_path'], index_col=False)
         x = df["x"]
         y = df["y"]
-    elif runtype=='eval':
+    elif runtype == 'eval':
         # df = pd.read_csv('/home/orochi/mojo/mojo-grasp/demos/rl_demo/resources/test_points.csv', index_col=False)
         # print('EVALUATING BOOOIIII')
         # x = df["x"]
         # y = df["y"]
         x = [0.03, 0, -0.03, -0.04, -0.03, 0, 0.03, 0.04]
         y = [-0.03, -0.04, -0.03, 0, 0.03, 0.04, 0.03, 0]
-        
-    pose_list = [[i,j] for i,j in zip(x,y)]
-    
+
+    pose_list = [[i, j] for i, j in zip(x, y)]
+
     print(args)
     try:
-        if (args['viz']) | (runtype=='eval'):
+        if (args['viz']) | (runtype == 'eval'):
             physics_client = p.connect(p.GUI)
         else:
             physics_client = p.connect(p.DIRECT)
@@ -71,21 +72,21 @@ def run_pybullet(filepath, window=None, runtype='run'):
     p.setGravity(0, 0, -10)
     p.resetDebugVisualizerCamera(cameraDistance=.02, cameraYaw=0, cameraPitch=-89.9999,
                                  cameraTargetPosition=[0, 0.1, 0.5])
-    
+
     # load objects into pybullet
     plane_id = p.loadURDF("plane.urdf", flags=p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
     hand_id = p.loadURDF(args['hand_path'], useFixedBase=True,
                          basePosition=[0.0, 0.0, 0.05], flags=p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
     obj_id = p.loadURDF(args['object_path'], basePosition=[0.0, 0.10, .05], flags=p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
-    
+
     # Create TwoFingerGripper Object and set the initial joint positions
     hand = TwoFingerGripper(hand_id, path=args['hand_path'])
-    
+
     # p.resetJointState(hand_id, 0, -0.4)
     # p.resetJointState(hand_id, 1, 1.2)
     # p.resetJointState(hand_id, 3, 0.4)
     # p.resetJointState(hand_id, 4, -1.2)
-    
+
     # p.resetJointState(hand_id, 0, 0)
     # p.resetJointState(hand_id, 1, 0)
     # p.resetJointState(hand_id, 3, 0)
@@ -96,7 +97,7 @@ def run_pybullet(filepath, window=None, runtype='run'):
     p.changeVisualShape(hand_id, 3, rgbaColor=[0.3, 0.3, 0.3, 1])
     p.changeVisualShape(hand_id, 4, rgbaColor=[1, 0.5, 0, 1])
     p.changeVisualShape(hand_id, -1, rgbaColor=[0.3, 0.3, 0.3, 1])
-    p.configureDebugVisualizer(p.COV_ENABLE_RENDERING,0)
+    p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 0)
     # p.setTimeStep(1/2400)
     obj = ObjectWithVelocity(obj_id, path=args['object_path'])
     # p.addUserDebugPoints([[0.2,0.1,0.0],[1,0,0]],[[1,0.0,0],[0.5,0.5,0.5]], 1)
@@ -107,8 +108,8 @@ def run_pybullet(filepath, window=None, runtype='run'):
     state = StateRL(objects=[hand, obj, goal_poses], prev_len=args['pv'])
     action = rl_action.ExpertAction()
     reward = rl_reward.ExpertReward()
-    
-    #argument preprocessing
+
+    # argument preprocessing
     arg_dict = args.copy()
     if args['action'] == 'Joint Velocity':
         arg_dict['ik_flag'] = False
@@ -117,25 +118,29 @@ def run_pybullet(filepath, window=None, runtype='run'):
 
     # replay buffer
     replay_buffer = ReplayBufferPriority(buffer_size=4080000)
-    
+
     # environment and recording
     env = rl_env.ExpertEnv(hand=hand, obj=obj)
     # env = rl_env.ExpertEnv(hand=hand, obj=cylinder)
-    
+
     # Create phase
     manipulation = manipulation_phase_rl.ManipulationRL(
         hand, obj, x, y, state, action, reward, replay_buffer=replay_buffer, args=arg_dict)
 
     # data recording
-    record_data = RecordDataRLPKL(
-        data_path=args['save_path'], state=state, action=action, reward=reward, save_all=False, controller=manipulation.controller)
-    
+    record_data = RecordDataRLPKL(data_path=args['save_path'],
+                                  state=state, action=action, reward=reward, save_all=False,
+                                  controller=manipulation.controller)
+
     # sim manager
-    manager = SimManagerRLHER(num_episodes=len(pose_list), env=env, episode=EpisodeDefault(), record_data=record_data, replay_buffer=replay_buffer, state=state, action=action, reward=reward, args=arg_dict)
-    
+    manager = SimManagerRLHER(num_episodes=len(pose_list),
+                              env=env, episode=EpisodeDefault(),
+                              record_data=record_data, replay_buffer=replay_buffer, state=state, action=action,
+                              reward=reward, args=arg_dict)
+
     # add phase to sim manager
     manager.add_phase("manipulation", manipulation, start=True)
-    
+
     # Run the sim
     if runtype == 'run':
         for k in range(int(args['epochs']/len(x))):
@@ -147,7 +152,7 @@ def run_pybullet(filepath, window=None, runtype='run'):
                 manager.phase_manager.phase_dict['manipulation'].reset()
                 # manager.train()
             '''
-                
+
         manager.save_network(args['save_path']+'policy')
         # replay_buffer.save_sampling('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/hard_random_sampling/sampling')
         print('training done, creating episode_all')
@@ -179,22 +184,26 @@ def run_pybullet(filepath, window=None, runtype='run'):
             if k % 10 == 9:
                 manager.evaluate()
                 manager.phase_manager.phase_dict['manipulation'].reset()
-                
+
+
 def main(run_id):
     print(run_id)
-    folder_names = ['0_ftp_control','1_ftp_no_contact','2_ftp_no_contact_velocity','3_ftp_velocity','4_ftp_velocity_x1',
-                    '5_ftp_velocity_x2','6_ftp_velocity_x3','7_ftp_velocity_x4','8_ftp_rollout_10','9_ftp_rollout_1']
-    folder_names = ['0_joint_vel_her','1_finger_pos_her']
-    folder_names = ['HER_finger_pos_new_sparse']
-    
+    folder_names = ['0_ftp_control', '1_ftp_no_contact', '2_ftp_no_contact_velocity', '3_ftp_velocity',
+                    '4_ftp_velocity_x1', '5_ftp_velocity_x2', '6_ftp_velocity_x3', '7_ftp_velocity_x4',
+                    '8_ftp_rollout_10', '9_ftp_rollout_1']
+    folder_names = ['0_joint_vel_her', '1_finger_pos_her']
+    folder_names = ['test1']
+
     overall_path = pathlib.Path(__file__).parent.resolve()
     run_path = overall_path.joinpath('demos/rl_demo/data/hpc2')
     final_path = run_path.joinpath(folder_names[run_id-1])
     print(str(final_path))
-    run_pybullet(str(final_path) + '/experiment_config.json',runtype='run')
+    run_pybullet(str(final_path) + '/experiment_config.json', runtype='run')
     # run_pybullet('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/6_ik_kegan_point_split/experiment_config.json',runtype='eval')
     # run_pybullet('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/a_throwaway/experiment_config.json',runtype='run')
     print('buttz')
+
+
 if __name__ == '__main__':
     # print(sys.argv)
     main(int(sys.argv[1]))
