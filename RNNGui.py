@@ -70,7 +70,8 @@ class RNNGui():
                          [sg.Text('Starting Epsilon'), sg.Input(0.7,key='-epsilon'), sg.Text('Epsilon Decay Rate'), sg.Input(0.998, key='-edecay')],
                          [sg.Text('Rollout Size'), sg.Input(5,key='-rollout_size'), sg.Text('Rollout Weight'), sg.Input(0.5, key='-rollout_weight')],
                          [sg.Text('Evaluation Period'), sg.Input(3,key='-eval'), sg.Text('Tau'), sg.Input(0.0005, key='-tau')],
-                         [sg.Text('Timesteps per Episode'), sg.Input(150,key='-tsteps'), sg.Text('Timesteps in Evaluation'), sg.Input(150,key='-eval-tsteps')]]
+                         [sg.Text('Timesteps per Episode'), sg.Input(150,key='-tsteps'), sg.Text('Timesteps in Evaluation'), sg.Input(150,key='-eval-tsteps')],
+                         [sg.Text('State Training Noise'), sg.Input(0.05, key='-snoise'),sg.Text('Start Pos Range (mm)'), sg.Input(0, key='-start-noise')]]
         
         plotting_layout = [[sg.Text('Model Title')],
                        [sg.Input('test1',key='-title')],
@@ -122,6 +123,8 @@ class RNNGui():
                      'pv': int(values['-pv']),
                      'viz': int(values['-viz']),
                      'sr': int(values['-sr']),
+                     'state_noise': float(values['-snoise']),
+                     'start_noise': float(values['-start-noise']),
                      'tsteps': int(values['-tsteps']),
                      'eval-tsteps':int(values['-eval-tsteps']),
                      'distance_scaling': float(values['-distance_scale']),
