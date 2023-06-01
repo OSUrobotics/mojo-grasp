@@ -298,6 +298,9 @@ class DDPGfD_priority():
                     elif key == 'fbp':
                         state.extend(state_container['previous_state'][i]['f1_base'][0:2])
                         state.extend(state_container['previous_state'][i]['f2_base'][0:2])
+                    elif key == 'fcp':
+                        state.extend(state_container['previous_state'][i]['f1_contact_pos'][0:2])
+                        state.extend(state_container['previous_state'][i]['f2_contact_pos'][0:2])
                     elif key == 'ja':
                         state.extend([item for item in state_container['previous_state'][i]['two_finger_gripper']['joint_angles'].values()])
                     elif key == 'fta':
@@ -316,6 +319,9 @@ class DDPGfD_priority():
             elif key == 'fbp':
                 state.extend(state_container['f1_base'][0:2])
                 state.extend(state_container['f2_base'][0:2])
+            elif key == 'fcp':
+                state.extend(state_container['f1_contact_pos'][0:2])
+                state.extend(state_container['f2_contact_pos'][0:2])
             elif key == 'ja':
                 state.extend([item for item in state_container['two_finger_gripper']['joint_angles'].values()])
             elif key == 'fta':

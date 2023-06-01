@@ -84,7 +84,7 @@ class ManipulationRL(Phase):
         if action_to_execute:
             # print('ye haw')
             p.setJointMotorControlArray(self.hand.id, jointIndices=self.hand.get_joint_numbers(),
-                                        controlMode=p.POSITION_CONTROL, targetPositions=action_to_execute)
+                                        controlMode=p.POSITION_CONTROL, targetPositions=action_to_execute, positionGains=[0.8,0.8,0.8,0.8])
         else:
             # print("JOINT INDICES: ", self.hand.get_joint_numbers())
             # print("TARGET ANGLES RL: ", self.target)
