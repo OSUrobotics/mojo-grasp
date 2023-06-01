@@ -102,8 +102,8 @@ class StateRL(StateDefault):
         # print(self.objects[0].id)
         # print(self.objects[1].id)
         # print(p.getClosestPoints(self.objects[1].id, self.objects[0].id, 10, -1, 1, -1))
-        # temp1 = p.getClosestPoints(self.objects[1].id, self.objects[0].id, 10, -1, 1, -1)[0]
-        # temp2 = p.getClosestPoints(self.objects[1].id, self.objects[0].id, 10, -1, 4, -1)[0]
+        temp1 = p.getClosestPoints(self.objects[1].id, self.objects[0].id, 10, -1, 1, -1)[0]
+        temp2 = p.getClosestPoints(self.objects[1].id, self.objects[0].id, 10, -1, 4, -1)[0]
         link1_pose = p.getLinkState(self.objects[0].id, 2)
         # p.get
         link2_pose = p.getLinkState(self.objects[0].id, 5)
@@ -118,12 +118,14 @@ class StateRL(StateDefault):
         self.current_state['f2_base'] = list(link2_base[0])
         self.current_state['f1_ang'] = self.current_state['two_finger_gripper']['joint_angles']['finger0_segment0_joint'] + self.current_state['two_finger_gripper']['joint_angles']['finger0_segment1_joint']
         self.current_state['f2_ang'] = self.current_state['two_finger_gripper']['joint_angles']['finger1_segment0_joint'] + self.current_state['two_finger_gripper']['joint_angles']['finger1_segment1_joint']        
-        # self.current_state['f1_pos'] = list(temp1[6])
-        # self.current_state['f2_pos'] = list(temp2[6])
+        self.current_state['f1_contact_pos'] = list(temp1[6])
+        self.current_state['f2_contact_pos'] = list(temp2[6])
         # self.current_state['f1_obj_dist'] = temp1[8]
         # self.current_state['f2_obj_dist'] = temp2[8]
         # print(self.current_state['f1_obj_dist'], self.current_state['f2_obj_dist'])
         # print('set state')
+        # print(self.current_state['f1_contact_pos'], self.current_state['f1_pos'])
+        # print(self.current_state['f2_contact_pos'], self.current_state['f2_pos'])
         
     def init_state(self):
         """
@@ -131,8 +133,8 @@ class StateRL(StateDefault):
         """
         super().set_state()
 
-        # temp1 = p.getClosestPoints(self.objects[1].id, self.objects[0].id, 10, -1, 1, -1)[0]
-        # temp2 = p.getClosestPoints(self.objects[1].id, self.objects[0].id, 10, -1, 4, -1)[0]
+        temp1 = p.getClosestPoints(self.objects[1].id, self.objects[0].id, 10, -1, 1, -1)[0]
+        temp2 = p.getClosestPoints(self.objects[1].id, self.objects[0].id, 10, -1, 4, -1)[0]
         link1_pose = p.getLinkState(self.objects[0].id, 2)
         link2_pose = p.getLinkState(self.objects[0].id, 5)
         link1_base = p.getLinkState(self.objects[0].id, 1)
@@ -145,7 +147,8 @@ class StateRL(StateDefault):
         # self.current_state['f2_obj_dist'] = temp2[8]
         self.current_state['f1_ang'] = self.current_state['two_finger_gripper']['joint_angles']['finger0_segment0_joint'] + self.current_state['two_finger_gripper']['joint_angles']['finger0_segment1_joint']
         self.current_state['f2_ang'] = self.current_state['two_finger_gripper']['joint_angles']['finger1_segment0_joint'] + self.current_state['two_finger_gripper']['joint_angles']['finger1_segment1_joint']
-
+        self.current_state['f1_contact_pos'] = list(temp1[6])
+        self.current_state['f2_contact_pos'] = list(temp2[6])
         if self.pflag:
             for i in range(len(self.previous_states)):
                 self.previous_states[i] = self.current_state.copy()

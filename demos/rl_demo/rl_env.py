@@ -16,7 +16,7 @@ class ExpertEnv(Environment):
         # reset the simulator
         p.resetSimulation()
         # reload the objects
-        plane_id = p.loadURDF("plane.urdf")
+        plane_id = p.loadURDF("plane.urdf", flags=p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
         
         
         # hand_id = p.loadURDF(self.hand.path, useFixedBase=True,
@@ -28,7 +28,7 @@ class ExpertEnv(Environment):
 
         # For alt configuration
         hand_id = p.loadURDF(self.hand.path, useFixedBase=True,
-                             basePosition=[0.0, 0.0, 0.05])
+                             basePosition=[0.0, 0.0, 0.05], flags=p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
         # p.setPhysicsEngineParameter(contactBreakingThreshold = 0.001)
         # p.resetJointState(hand_id, 0, .75)
         # p.resetJointState(hand_id, 1, -1.4)
@@ -55,7 +55,7 @@ class ExpertEnv(Environment):
         
         # obj_id = p.loadURDF(self.obj.path, basePosition=[0.0, 0.1067, .05])
 
-        obj_id = p.loadURDF(self.obj.path, basePosition=[0.0, 0.10, .05])
+        obj_id = p.loadURDF(self.obj.path, basePosition=[0.0, 0.10, .05], flags=p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
         # Update the object id's
         self.hand.id = hand_id
         self.obj.id = obj_id
