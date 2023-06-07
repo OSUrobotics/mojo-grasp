@@ -43,7 +43,7 @@ def unpack_arr(long_arr):
 class Actor(nn.Module):
     def __init__(self, state_dim: int, action_dim: int, max_action: float, state_mins: list, state_maxes: list):
         """
-        Constructor initializes actor network with input dimension 'state_dim' 
+        Constructor initializes actor network with input dimension 'state_dim'
         and output dimension 'action_dim'. State mins and maxes saved for normalization
         """
         super(Actor, self).__init__()
@@ -62,15 +62,15 @@ class Actor(nn.Module):
         Runs state through actor network to get action associated with state
         """
         state = simple_normalize(state, self.MINS, self.MAXES)
-        a = F.leaky_relu(self.l1(state))
-        a = F.leaky_relu(self.l2(a))
+        a = F.relu(self.l1(state))
+        a = F.relu(self.l2(a))
         return torch.tanh(self.l3(a))
 
 
 class Critic(nn.Module):
     def __init__(self, state_dim: int, action_dim: int, state_mins: list, state_maxes: list):
         """
-        Constructor initializes actor network with input dimension 'state_dim'+'action_dim' 
+        Constructor initializes actor network with input dimension 'state_dim'+'action_dim'
         and output dimension 1. State mins and maxes saved for normalization
         """
         super(Critic, self).__init__()
@@ -91,8 +91,8 @@ class Critic(nn.Module):
         q-value associated with state-action pair
         """
         state = simple_normalize(state, self.MINS, self.MAXES)
-        q = F.leaky_relu(self.l1(torch.cat([state, action], -1)))
-        q = F.leaky_relu(self.l2(q))
+        q = F.relu(self.l1(torch.cat([state, action], -1)))
+        q = F.relu(self.l2(q))
         q = self.l3(q)
         return q  # * self.max_q_value
 
@@ -199,7 +199,7 @@ class DDPGfD_priority():
         :param state: :func:`~mojograsp.simcore.state.State` object.
         :param action: :func:`~np.ndarray` containing action
         :type state: :func:`~mojograsp.simcore.state.State`
-        :type action: :func:`~np.ndarray` 
+        :type action: :func:`~np.ndarray`
         """
         lstate = self.build_state(state)
         lstate = torch.FloatTensor(np.reshape(lstate, (1, -1))).to(device)
@@ -282,7 +282,7 @@ class DDPGfD_priority():
 
     def build_state(self, state_container: State):
         """
-        Method takes in a State object 
+        Method takes in a State object
         Extracts state information from state_container and returns it as a list based on
         current used states contained in self.state_list
 
@@ -367,8 +367,8 @@ class DDPGfD_priority():
     def collect_batch_multistep(self, replay_buffer: ReplayBufferPriority):
         """
         Method takes in a ReplayBufferPriority object
-        Extracts BATCH_SIZE transitions and associated priority information from 
-        replay buffer and returns them as tensors for training 
+        Extracts BATCH_SIZE transitions and associated priority information from
+        replay buffer and returns them as tensors for training
 
         :param state: :func:`~mojograsp.simcore.priority_replay_buffer.ReplayBufferPriority' object.
         :type state: :func:`~mojograsp.simcore.priority_replay_buffer.ReplayBufferPriority
@@ -459,8 +459,8 @@ class DDPGfD_priority():
     def collect_batch(self, replay_buffer: ReplayBufferPriority):
         """
         Method takes in a ReplayBufferPriority object
-        Extracts BATCH_SIZE transitions and associated priority information from 
-        replay buffer and returns them as tensors for training 
+        Extracts BATCH_SIZE transitions and associated priority information from
+        replay buffer and returns them as tensors for training
 
         :param state: :func:`~mojograsp.simcore.priority_replay_buffer.ReplayBufferPriority' object.
         :type state: :func:`~mojograsp.simcore.priority_replay_buffer.ReplayBufferPriority

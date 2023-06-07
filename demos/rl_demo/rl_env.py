@@ -17,8 +17,9 @@ class ExpertEnv(Environment):
         p.resetSimulation()
         # reload the objects
         plane_id = p.loadURDF("plane.urdf")
-        
-        
+        p.setPhysicsEngineParameter(contactBreakingThreshold=.001)
+
+
         # hand_id = p.loadURDF(self.hand.path, useFixedBase=True,
         #                      basePosition=[0.0, 0.0, 0.05])
         # p.resetJointState(hand_id, 0, .75)
@@ -45,14 +46,14 @@ class ExpertEnv(Environment):
             p.resetJointState(hand_id, 3, .5)
             p.resetJointState(hand_id, 4, -1.5)
         p.changeDynamics(plane_id,-1,lateralFriction=0.05, spinningFriction=0.05, rollingFriction=0.05)
-        
+
         # p.resetJointState(hand_id, 0, .695)
         # p.resetJointState(hand_id, 1, -1.487)
         # p.resetJointState(hand_id, 3, -.695)
         # p.resetJointState(hand_id, 4, 1.487)
-        
+
         p.setGravity(0, 0, -10)
-        
+
         # obj_id = p.loadURDF(self.obj.path, basePosition=[0.0, 0.1067, .05])
 
         obj_id = p.loadURDF(self.obj.path, basePosition=[0.0, 0.10, .05])
@@ -65,7 +66,7 @@ class ExpertEnv(Environment):
         p.changeVisualShape(hand_id, 1, rgbaColor=[0.3, 0.3, 0.3, 1])
         p.changeVisualShape(hand_id, 3, rgbaColor=[1, 0.5, 0, 1])
         p.changeVisualShape(hand_id, 4, rgbaColor=[0.3, 0.3, 0.3, 1])
-        
+
     def setup(self):
         super().setup()
 

@@ -46,7 +46,7 @@ def run_pybullet(filepath, window=None, runtype='run'):
     if (args['task'] == 'asterisk'):
         x = [0.03, 0, -0.03, -0.04, -0.03, 0, 0.03, 0.04]
         y = [-0.03, -0.04, -0.03, 0, 0.03, 0.04, 0.03, 0]
-    elif args['task'] == 'random' and runtype != 'eval':
+    elif args['task'] == 'full_random' and runtype != 'eval':
         df = pd.read_csv(args['points_path'], index_col=False)
         x = df["x"]
         y = df["y"]
@@ -120,7 +120,7 @@ def run_pybullet(filepath, window=None, runtype='run'):
     replay_buffer = ReplayBufferPriority(buffer_size=4080000)
 
     # environment and recording
-    env = rl_env.ExpertEnv(hand=hand, obj=obj)
+    env = rl_env.ExpertEnv(hand=hand, obj=obj, hand_type="A")
     # env = rl_env.ExpertEnv(hand=hand, obj=cylinder)
 
     # Create phase
@@ -188,17 +188,13 @@ def run_pybullet(filepath, window=None, runtype='run'):
 
 def main(run_id):
     print(run_id)
-    folder_names = ['0_ftp_control', '1_ftp_no_contact', '2_ftp_no_contact_velocity', '3_ftp_velocity',
-                    '4_ftp_velocity_x1', '5_ftp_velocity_x2', '6_ftp_velocity_x3', '7_ftp_velocity_x4',
-                    '8_ftp_rollout_10', '9_ftp_rollout_1']
-    folder_names = ['0_joint_vel_her', '1_finger_pos_her']
-    folder_names = ['test1']
+    folder_names = ['leaky_test']
 
     overall_path = pathlib.Path(__file__).parent.resolve()
     run_path = overall_path.joinpath('demos/rl_demo/data/hpc2')
-    final_path = run_path.joinpath(folder_names[run_id-1])
+    final_path = run_path.joinpath(folder_names[0])
     print(str(final_path))
-    run_pybullet(str(final_path) + '/experiment_config.json', runtype='run')
+    run_pybullet(str(final_path) + '/state_all_config.json', runtype='run')
     # run_pybullet('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/6_ik_kegan_point_split/experiment_config.json',runtype='eval')
     # run_pybullet('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/a_throwaway/experiment_config.json',runtype='run')
     print('buttz')
