@@ -3,6 +3,7 @@ from mojograsp.simobjects.two_finger_gripper import TwoFingerGripper
 from mojograsp.simobjects.object_base import ObjectBase
 import pybullet as p
 
+
 class ExpertEnv(Environment):
     def __init__(self, hand: TwoFingerGripper, obj: ObjectBase, hand_type):
         self.hand = hand
@@ -16,16 +17,8 @@ class ExpertEnv(Environment):
         # reset the simulator
         p.resetSimulation()
         # reload the objects
-<<<<<<< HEAD
-        plane_id = p.loadURDF("plane.urdf")
-        p.setPhysicsEngineParameter(contactBreakingThreshold=.001)
-
-
-=======
         plane_id = p.loadURDF("plane.urdf", flags=p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
-        
-        
->>>>>>> RL
+
         # hand_id = p.loadURDF(self.hand.path, useFixedBase=True,
         #                      basePosition=[0.0, 0.0, 0.05])
         # p.resetJointState(hand_id, 0, .75)
@@ -41,7 +34,7 @@ class ExpertEnv(Environment):
         # p.resetJointState(hand_id, 1, -1.4)
         # p.resetJointState(hand_id, 3, -.75)
         # p.resetJointState(hand_id, 4, 1.4)
-        if self.hand_type =='A':
+        if self.hand_type == 'A':
             p.resetJointState(hand_id, 0, -.725)
             p.resetJointState(hand_id, 1, 1.45)
             p.resetJointState(hand_id, 3, .725)
@@ -51,7 +44,7 @@ class ExpertEnv(Environment):
             p.resetJointState(hand_id, 1, 1.5)
             p.resetJointState(hand_id, 3, .5)
             p.resetJointState(hand_id, 4, -1.5)
-        p.changeDynamics(plane_id,-1,lateralFriction=0.05, spinningFriction=0.05, rollingFriction=0.05)
+        p.changeDynamics(plane_id, -1, lateralFriction=0.05, spinningFriction=0.05, rollingFriction=0.05)
 
         # p.resetJointState(hand_id, 0, .695)
         # p.resetJointState(hand_id, 1, -1.487)
