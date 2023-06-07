@@ -70,13 +70,15 @@ class RNNGui():
                          [sg.Text('Starting Epsilon'), sg.Input(0.7,key='-epsilon'), sg.Text('Epsilon Decay Rate'), sg.Input(0.998, key='-edecay')],
                          [sg.Text('Rollout Size'), sg.Input(5,key='-rollout_size'), sg.Text('Rollout Weight'), sg.Input(0.5, key='-rollout_weight')],
                          [sg.Text('Evaluation Period'), sg.Input(3,key='-eval'), sg.Text('Tau'), sg.Input(0.0005, key='-tau')],
-                         [sg.Text('Timesteps per Episode'), sg.Input(150,key='-tsteps'), sg.Text('Timesteps in Evaluation'), sg.Input(150,key='-eval-tsteps')]]
+                         [sg.Text('Timesteps per Episode'), sg.Input(150,key='-tsteps'), sg.Text('Timesteps in Evaluation'), sg.Input(150,key='-eval-tsteps')],
+                         [sg.Text('State Training Noise'), sg.Input(0.05, key='-snoise'),sg.Text('Start Pos Range (mm)'), sg.Input(0, key='-start-noise')]]
         
         plotting_layout = [[sg.Text('Model Title')],
                        [sg.Input('test1',key='-title')],
                        [sg.Text("State")],
                        [sg.Checkbox('Finger Tip Position', default=True, k='-ftp')],
                        [sg.Checkbox('Finger Base Position', default=False, k='-fbp')],
+                       [sg.Checkbox('Finger Contact Position', default=False, k='-fcp')],
                        [sg.Checkbox('Joint Angle', default=False, k='-ja')],
                        [sg.Checkbox('Object Position', default=True, k='-op')],
                        [sg.Checkbox('Finger Object Distance', default=False, k='-fod')],
@@ -122,6 +124,8 @@ class RNNGui():
                      'pv': int(values['-pv']),
                      'viz': int(values['-viz']),
                      'sr': int(values['-sr']),
+                     'state_noise': float(values['-snoise']),
+                     'start_noise': float(values['-start-noise']),
                      'tsteps': int(values['-tsteps']),
                      'eval-tsteps':int(values['-eval-tsteps']),
                      'distance_scaling': float(values['-distance_scale']),
@@ -148,6 +152,15 @@ class RNNGui():
                 state_maxes.extend([0.108, 0.348, 0.108, 0.348])
             state_len += 4
             state_list.append('fbp')
+        if values['-fcp']:
+            if not RW:
+                state_mins.extend([-0.072, 0.018, -0.072, 0.018])
+                state_maxes.extend([0.072, 0.172, 0.072, 0.172])
+            elif RW:
+                state_mins.extend([-0.108, 0.132, -0.108, 0.132])
+                state_maxes.extend([0.108, 0.348, 0.108, 0.348])
+            state_len += 4
+            state_list.append('fcp')
         if values['-op']:
             if not RW:
                 state_mins.extend([-0.072, 0.018])

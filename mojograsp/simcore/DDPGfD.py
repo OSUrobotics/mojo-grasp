@@ -31,6 +31,18 @@ def simple_normalize(x_tensor, mins, maxes):
     """
     return ((x_tensor-mins)/(maxes-mins)-0.5) * 2
 
+# @torch.jit.script
+
+
+def simple_normalize_noise(x_tensor, mins, maxes, noise_percent):
+    """
+    normalizes a numpy array to -1 and 1 using provided maximums and minimums
+    :param x_tensor: - array to be normalized
+    :param mins: - array containing minimum values for the parameters in x_tensor
+    :param maxes: - array containing maximum values for the parameters in x_tensor
+    """
+    return ((x_tensor-mins)/(maxes-mins)-0.5) * 2 + torch.normal(0, noise_percent, size=x_tensor.shape).to(device)
+
 
 def unpack_arr(long_arr):
     """
@@ -41,7 +53,7 @@ def unpack_arr(long_arr):
 
 
 class Actor(nn.Module):
-    def __init__(self, state_dim: int, action_dim: int, max_action: float, state_mins: list, state_maxes: list):
+    def __init__(self, state_dim: int, action_dim: int, max_action: float):
         """
         Constructor initializes actor network with input dimension 'state_dim'
         and output dimension 'action_dim'. State mins and maxes saved for normalization
@@ -53,22 +65,19 @@ class Actor(nn.Module):
         torch.nn.init.kaiming_uniform_(self.l2.weight, a=0, mode='fan_in', nonlinearity='leaky_relu')
         self.l3 = nn.Linear(300, action_dim)
         torch.nn.init.kaiming_uniform_(self.l3.weight, a=0, mode='fan_in', nonlinearity='leaky_relu')
-        self.MAXES = torch.tensor(state_maxes, device=device)
-        self.MINS = torch.tensor(state_mins, device=device)
         self.max_action = max_action
 
     def forward(self, state: torch.Tensor):
         """
         Runs state through actor network to get action associated with state
         """
-        state = simple_normalize(state, self.MINS, self.MAXES)
         a = F.relu(self.l1(state))
         a = F.relu(self.l2(a))
         return torch.tanh(self.l3(a))
 
 
 class Critic(nn.Module):
-    def __init__(self, state_dim: int, action_dim: int, state_mins: list, state_maxes: list):
+    def __init__(self, state_dim: int, action_dim: int):
         """
         Constructor initializes actor network with input dimension 'state_dim'+'action_dim'
         and output dimension 1. State mins and maxes saved for normalization
@@ -81,8 +90,7 @@ class Critic(nn.Module):
         torch.nn.init.kaiming_uniform_(self.l2.weight, a=0, mode='fan_in', nonlinearity='leaky_relu')
         self.l3 = nn.Linear(300, 1)
         torch.nn.init.kaiming_uniform_(self.l3.weight, a=0, mode='fan_in', nonlinearity='leaky_relu')
-        self.MAXES = torch.tensor(state_maxes, device=device)
-        self.MINS = torch.tensor(state_mins, device=device)
+
         self.max_q_value = 1
 
     def forward(self, state: torch.Tensor, action: torch.Tensor):
@@ -90,7 +98,6 @@ class Critic(nn.Module):
         Concatenates state and action and runs through critic network to return
         q-value associated with state-action pair
         """
-        state = simple_normalize(state, self.MINS, self.MAXES)
         q = F.relu(self.l1(torch.cat([state, action], -1)))
         q = F.relu(self.l2(q))
         q = self.l3(q)
@@ -108,26 +115,25 @@ class DDPGfD_priority():
         self.SAMPLING_STRATEGY = arg_dict['sampling']
         self.LAMBDA_1 = arg_dict['rollout_weight']
         self.ROLLOUT_SIZE = arg_dict['rollout_size']
+        self.STATE_NOISE = arg_dict['state_noise']
         print('Saving to tensorboard file', arg_dict['tname'])
         self.ACTION_DIM = arg_dict['action_dim']
-        self.actor = Actor(
-            self.STATE_DIM, self.ACTION_DIM, arg_dict['max_action'],
-            arg_dict['state_mins'],
-            arg_dict['state_maxes']).to(device)
+        self.actor = Actor(self.STATE_DIM, self.ACTION_DIM, arg_dict['max_action']).to(device)
         self.actor_target = copy.deepcopy(self.actor)
         self.actor_optimizer = torch.optim.Adam(
             self.actor.parameters(),
             lr=arg_dict['learning_rate'],
             weight_decay=1e-4, amsgrad=True)
 
-        self.critic = Critic(
-            self.STATE_DIM, self.ACTION_DIM, arg_dict['state_mins'],
-            arg_dict['state_maxes']).to(device)
+        self.critic = Critic(self.STATE_DIM, self.ACTION_DIM).to(device)
         self.critic_target = copy.deepcopy(self.critic)
         self.critic_optimizer = torch.optim.Adam(
             self.critic.parameters(),
             lr=arg_dict['learning_rate'],
-            weight_decay=1e-4, amsgrad=True)
+            weight_decay=1e-4)
+
+        self.MAXES = torch.tensor(arg_dict['state_maxes'], device=device)
+        self.MINS = torch.tensor(arg_dict['state_mins'], device=device)
 
         self.PREV_VALS = arg_dict['pv']
         self.actor_loss = []
@@ -187,6 +193,7 @@ class DDPGfD_priority():
         """
         lstate = self.build_state(state)
         lstate = torch.FloatTensor(np.reshape(lstate, (1, -1))).to(device)
+        lstate = simple_normalize(lstate, self.MINS, self.MAXES)
         action = self.actor(lstate).cpu().data.numpy().flatten()
         return action
 
@@ -203,6 +210,7 @@ class DDPGfD_priority():
         """
         lstate = self.build_state(state)
         lstate = torch.FloatTensor(np.reshape(lstate, (1, -1))).to(device)
+        lstate = simple_normalize(lstate, self.MINS, self.MAXES)
         action = torch.tensor(np.reshape(action, (1, -1)), dtype=float, requires_grad=True, device=device)
         action = action.float()
         action.retain_grad()
@@ -301,6 +309,9 @@ class DDPGfD_priority():
                     elif key == 'fbp':
                         state.extend(state_container['previous_state'][i]['f1_base'][0:2])
                         state.extend(state_container['previous_state'][i]['f2_base'][0:2])
+                    elif key == 'fcp':
+                        state.extend(state_container['previous_state'][i]['f1_contact_pos'][0:2])
+                        state.extend(state_container['previous_state'][i]['f2_contact_pos'][0:2])
                     elif key == 'ja':
                         state.extend(
                             [item
@@ -323,6 +334,9 @@ class DDPGfD_priority():
             elif key == 'fbp':
                 state.extend(state_container['f1_base'][0:2])
                 state.extend(state_container['f2_base'][0:2])
+            elif key == 'fcp':
+                state.extend(state_container['f1_contact_pos'][0:2])
+                state.extend(state_container['f2_contact_pos'][0:2])
             elif key == 'ja':
                 state.extend([item for item in state_container['two_finger_gripper']['joint_angles'].values()])
             elif key == 'fta':
@@ -559,8 +573,15 @@ class DDPGfD_priority():
         state, action, next_state, reward, sum_rewards, num_rewards, last_state, transition_weight, indxs, expert_status = self.collect_batch(
             replay_buffer)
         if state is not None:
+            if self.STATE_NOISE > 0:
+                state = simple_normalize_noise(state, self.MINS, self.MAXES, self.STATE_NOISE)
+                next_state = simple_normalize_noise(next_state, self.MINS, self.MAXES, self.STATE_NOISE)
+                last_state = simple_normalize_noise(last_state, self.MINS, self.MAXES, self.STATE_NOISE)
+            else:
+                state = simple_normalize(state, self.MINS, self.MAXES)
+                next_state = simple_normalize(next_state, self.MINS, self.MAXES)
+                last_state = simple_normalize(last_state, self.MINS, self.MAXES)
 
-            # print('starting trains')
             next_state_val = self.critic_target(next_state, self.actor_target(next_state))
 
             target_Q = (reward + (self.DISCOUNT * next_state_val).detach()).float()  # bellman equation

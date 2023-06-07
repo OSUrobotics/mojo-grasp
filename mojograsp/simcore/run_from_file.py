@@ -101,16 +101,16 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None):
     # p.resetJointState(hand_id, 3, 0)
     # p.resetJointState(hand_id, 4, 0)
     # change visual of gripper
-    p.changeVisualShape(hand_id, 0, rgbaColor=[0.3, 0.3, 0.3, 1])
-    p.changeVisualShape(hand_id, 1, rgbaColor=[1, 0.5, 0, 1])
-    p.changeVisualShape(hand_id, 3, rgbaColor=[0.3, 0.3, 0.3, 1])
-    p.changeVisualShape(hand_id, 4, rgbaColor=[1, 0.5, 0, 1])
     p.changeVisualShape(hand_id, -1, rgbaColor=[0.3, 0.3, 0.3, 1])
-    p.configureDebugVisualizer(p.COV_ENABLE_RENDERING,0)
+    p.changeVisualShape(hand_id, 0, rgbaColor=[1, 0.5, 0, 1])
+    p.changeVisualShape(hand_id, 1, rgbaColor=[0.3, 0.3, 0.3, 1])
+    p.changeVisualShape(hand_id, 3, rgbaColor=[1, 0.5, 0, 1])
+    p.changeVisualShape(hand_id, 4, rgbaColor=[0.3, 0.3, 0.3, 1])
+    # p.configureDebugVisualizer(p.COV_ENABLE_RENDERING,0)
     # p.setTimeStep(1/2400)
     obj = ObjectWithVelocity(obj_id, path=args['object_path'])
     # p.addUserDebugPoints([[0.2,0.1,0.0],[1,0,0]],[[1,0.0,0],[0.5,0.5,0.5]], 1)
-    p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 1)
+    # p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 1)
     goal_poses = GoalHolder(pose_list)
     eval_goal_poses = GoalHolder(eval_pose_list)
     # time.sleep(10)
@@ -118,7 +118,7 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None):
     state = StateRL(objects=[hand, obj, goal_poses], prev_len=args['pv'],eval_goals = eval_goal_poses)
     action = rl_action.ExpertAction()
     reward = rl_reward.ExpertReward()
-    
+    p.changeDynamics(plane_id,-1,lateralFriction=0.05, spinningFriction=0.05, rollingFriction=0.05)
     #argument preprocessing
     arg_dict = args.copy()
     if args['action'] == 'Joint Velocity':
@@ -198,6 +198,7 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None):
                 manager.evaluate()
                 manager.phase_manager.phase_dict['manipulation'].reset()
     elif runtype == 'replay':
+        print('replaying the episode')
         episode_data_path = args['save_path']+'Train/episode_'+str(episode_number)+'.pkl'
         with open(episode_data_path, 'rb') as actor_file:
             actions = pkl.load(actor_file)
@@ -205,12 +206,12 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None):
         action_list = []
         for timestep in actions['timestep_list']:
             action_list.append(timestep['action']['target_joint_angles'])
-            print(timestep['state'].keys())
         manager.record_video = True
+        manager.phase_manager.phase_dict['manipulation'].reset()
         manager.replay(action_list)
         manager.phase_manager.phase_dict['manipulation'].reset()
         manager.record_video = False
-            
+
 def main():
     # run_pybullet('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/hand_b_transfer/experiment_config.json',runtype='transfer')
     # run_pybullet('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/6_ik_kegan_point_split/experiment_config.json',runtype='eval')
@@ -218,7 +219,8 @@ def main():
     # run_pybullet('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/hand_b_fp_control/experiment_config.json',runtype='transfer')
     
     # run_pybullet('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/hand_b_fp_control/experiment_config.json',runtype='run')
-    run_pybullet('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/hand_b_ja_control/experiment_config.json',runtype='run')
-    
+    run_pybullet('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/hand_a_slope_fp_contact_point/experiment_config.json',runtype='run')
+    # run_pybullet('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/hand_b_fp_control/experiment_config.json',runtype='replay',episode_number=9960)
+
 if __name__ == '__main__':
     main()
