@@ -28,6 +28,7 @@ def simple_normalize(x_tensor, mins, maxes):
     :param mins: - array containing minimum values for the parameters in x_tensor
     :param maxes: - array containing maximum values for the parameters in x_tensor
     """
+    # print(x_tensor.shape)
     return ((x_tensor-mins)/(maxes-mins)-0.5) *2
 
 # @torch.jit.script    
@@ -182,6 +183,7 @@ class DDPGfD_priority():
         """
         lstate = self.build_state(state)
         lstate = torch.FloatTensor(np.reshape(lstate, (1, -1))).to(device)
+        # print('select action call')
         lstate = simple_normalize(lstate, self.MINS, self.MAXES)
         action = self.actor(lstate).cpu().data.numpy().flatten()
         return action
@@ -550,15 +552,18 @@ class DDPGfD_priority():
         self.total_it += 1
 
         state, action, next_state, reward, sum_rewards, num_rewards, last_state, transition_weight, indxs, expert_status = self.collect_batch(replay_buffer)
+        # print('collect batch just called')
         if state is not None:
             if self.STATE_NOISE > 0:
                 state = simple_normalize_noise(state, self.MINS, self.MAXES, self.STATE_NOISE)
                 next_state = simple_normalize_noise(next_state, self.MINS, self.MAXES, self.STATE_NOISE)
-                last_state = simple_normalize_noise(last_state, self.MINS, self.MAXES, self.STATE_NOISE)
+                if self.ROLLOUT:
+                    last_state = simple_normalize_noise(last_state, self.MINS, self.MAXES, self.STATE_NOISE)
             else:
                 state = simple_normalize(state, self.MINS, self.MAXES)
                 next_state = simple_normalize(next_state, self.MINS, self.MAXES)
-                last_state = simple_normalize(last_state, self.MINS, self.MAXES)
+                if self.ROLLOUT:
+                    last_state = simple_normalize(last_state, self.MINS, self.MAXES)
 
             
             next_state_val = self.critic_target(next_state, self.actor_target(next_state))
@@ -581,7 +586,7 @@ class DDPGfD_priority():
             
             # L_1 loss (Loss between current state, action and reward, next state, action)
             critic_L1loss = F.mse_loss(scaled_Q, scaled_target)
-
+            # print(self.ROLLOUT)
             if self.ROLLOUT:
                 
                 # Compute the roll rewards and the number of steps forward (could be less than rollout size if timestep near end of trial)

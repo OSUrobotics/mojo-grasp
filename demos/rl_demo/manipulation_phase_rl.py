@@ -36,7 +36,10 @@ class ManipulationRL(Phase):
         self.target = None
         self.goal_position = None
         # create controller
-        self.controller = rl_controller.RLController(hand, cube, replay_buffer=replay_buffer, args=args)
+        if args['model'] == 'gym':
+            self.controller = rl_controller.GymController(hand, cube, args=args)
+        else:
+            self.controller = rl_controller.RLController(hand, cube, replay_buffer=replay_buffer, args=args)
         self.end_val = 0
         
         # self.controller = rl_controller.ExpertController(hand, cube)
@@ -78,6 +81,20 @@ class ManipulationRL(Phase):
         # Set the current state before sim is stepped
         # self.state.set_state()
 
+    def gym_pre_step(self, gym_action):
+        # Get the target action
+        if self.use_ik:
+            self.target, self.actor_portion = self.controller.find_angles(gym_action)
+            # print('manipulation phase rl',self.actor_portion)
+        else:
+            self.target, self.actor_portion =  self.controller.find_angles(gym_action)
+
+        # Set the next action before the sim is stepped for Action (Done so that replay buffer and record data work)
+        self.action.set_action(self.target, self.actor_portion)
+        # Set the current state before sim is stepped
+        # self.state.set_state()
+
+
     def execute_action(self, action_to_execute=None):
         # Execute the target that we got from the controller in pre_step()
         # print('GGGGGG')
@@ -96,6 +113,10 @@ class ManipulationRL(Phase):
         # Set the reward from the given action after the step
         self.reward.set_reward(self.goal_position, self.cube, self.hand, self.controller.final_reward)
 
+    def get_episode_info(self):
+        # DO NOT USE UNLESS THIS IS GYM WRAPPER
+        self.state.set_state()
+        return self.state.get_state(), self.reward.get_reward()
 
     def exit_condition(self, eval_exit=False) -> bool:
         # If we reach 400 steps or the controller exit condition finishes we exit the phase
