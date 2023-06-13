@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Tue Jan 24 13:11:51 2023
+Created on Tue Jun 13 10:53:58 2023
 
 @author: orochi
 """
@@ -17,6 +17,7 @@ from demos.rl_demo import manipulation_phase_rl
 from demos.rl_demo.rl_state import StateRL, GoalHolder
 from demos.rl_demo import rl_action
 from demos.rl_demo import rl_reward
+from demos.rl_demo import rl_gym_wrapper
 import pandas as pd
 from mojograsp.simcore.sim_manager_HER import SimManagerRLHER
 from mojograsp.simcore.state import StateDefault
@@ -34,6 +35,10 @@ from mojograsp.simcore.data_combination import data_processor
 import pickle as pkl
 import json
 import time
+from stable_baselines3.common.env_checker import check_env
+from stable_baselines3 import A2C, PPO
+# from stable_baselines3.DQN import MlpPolicy
+# from stable_baselines3.common.cmd_util import make_vec_env
 
 def run_pybullet(filepath, window=None, runtype='run', episode_number=None):
     # resource paths
@@ -137,99 +142,51 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None):
     
     # environment and recording
     env = rl_env.ExpertEnv(hand=hand, obj=obj, hand_type=arg_dict['hand'])
+
     # env = rl_env.ExpertEnv(hand=hand, obj=cylinder)
     
     # Create phase
     manipulation = manipulation_phase_rl.ManipulationRL(
         hand, obj, x, y, state, action, reward, replay_buffer=replay_buffer, args=arg_dict)
-
+    
+    
     # data recording
     record_data = RecordDataRLPKL(
         data_path=args['save_path'], state=state, action=action, reward=reward, save_all=False, controller=manipulation.controller)
     
-    # sim manager
-    manager = SimManagerRLHER(num_episodes=len(pose_list), env=env, episode=EpisodeDefault(), record_data=record_data, replay_buffer=replay_buffer, state=state, action=action, reward=reward, args=arg_dict)
     
-    # add phase to sim manager
-    manager.add_phase("manipulation", manipulation, start=True)
-    
-    # Run the sim
-    # time.sleep(10)
+    gym_env = rl_gym_wrapper.GymWrapper(env, manipulation, record_data, args)
+
+
+
+    # check_env(gym_env, warn=True)
     if runtype == 'run':
-        for k in range(int(args['epochs']/len(x))):
-            print(k)
-            if k % args['evaluate'] == 0:
-                print('starting evaluation')
-                manager.evaluate()
-                manager.phase_manager.phase_dict['manipulation'].reset()
-                # manager.train()
-            manager.run()
-            manager.phase_manager.phase_dict['manipulation'].reset()
-
-                
-        manager.save_network(args['save_path']+'policy')
-        # replay_buffer.save_sampling('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/hard_random_sampling/sampling')
-        print('training done, creating episode_all')
-        d = data_processor(args['save_path'] + 'Train/')
-        d.load_data()
-        d.save_all()
-        manager.phase_manager.phase_dict['manipulation'].controller.policy.save_sampling()
-        d = data_processor(args['save_path'] + 'Test/', eval_flag=True)
-        d.load_data()
-        d.save_all()
+        # gym_env = make_vec_env(lambda: gym_env, n_envs=1)
+        model = A2C("MlpPolicy", gym_env, learning_rate=0.0001, tensorboard_log=args['tname']).learn(500000)
+        obs = env.reset()
+        for step in range(151):
+            action, _ = model.predict(obs, deterministic=True)
+            print("Step {}".format(step + 1))
+            print("Action: ", action)
+            obs, reward, done, info = env.step(action)
+            print('obs=', obs, 'reward=', reward, 'done=', done)
+            # env.render(mode='console')
+            if done:
+              # Note that the VecEnv resets automatically
+              # when a done signal is encountered
+              print("Goal reached!", "reward=", reward)
+              break
     elif runtype == 'eval':
-        manipulation.load_policy(args['save_path']+'policy')
-        manager.evaluate()
-        manager.phase_manager.phase_dict['manipulation'].reset()
+        pass
     elif runtype == 'cont':
-        manipulation.load_policy(args['save_path']+'policy')
-        for k in range(int(args['epochs']/len(x))):
-            manager.run()
-            manager.phase_manager.phase_dict['manipulation'].reset()
-        manager.save_network(args['save_path']+'policy_2')
-        print('training done, creating episode_all')
-        d = data_processor(args['save_path'])
-        d.load_data()
-        d.save_all()
+        pass
     elif runtype == 'transfer':
-        manipulation.load_policy(args['load_path']+'policy')
-        print('about to eval')
-        manager.evaluate()
-        print('done eval')
-        manager.phase_manager.phase_dict['manipulation'].reset()
-        for k in range(int(args['epochs']/len(x))):
-            manager.run()
-            manager.phase_manager.phase_dict['manipulation'].reset()
-            if k % 10 == 9:
-                manager.evaluate()
-                manager.phase_manager.phase_dict['manipulation'].reset()
+        pass
     elif runtype == 'replay':
-        print('replaying the episode')
-        episode_data_path = args['save_path']+'Train/episode_'+str(episode_number)+'.pkl'
-        with open(episode_data_path, 'rb') as actor_file:
-            actions = pkl.load(actor_file)
-
-        action_list = []
-        for timestep in actions['timestep_list']:
-            action_list.append(timestep['action']['target_joint_angles'])
-        manager.record_video = True
-        manager.phase_manager.phase_dict['manipulation'].reset()
-        manager.replay(action_list)
-        manager.phase_manager.phase_dict['manipulation'].reset()
-        manager.record_video = False
+        pass
 
 def main():
-    # run_pybullet('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/hand_b_transfer/experiment_config.json',runtype='transfer')
-    # run_pybullet('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/6_ik_kegan_point_split/experiment_config.json',runtype='eval')
-    # run_pybullet('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/hand_a_ja_full_dimensionless/experiment_config.json',runtype='run')
-    # run_pybullet('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/hand_b_fp_control/experiment_config.json',runtype='transfer')
-    
-    # run_pybullet('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/hand_b_fp_control/experiment_config.json',runtype='run')
-    # run_pybullet('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/hand_a_slope_fp_contact_point/experiment_config.json',runtype='run')
-    # run_pybullet('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/slope_noise/experiment_config.json',runtype='run')
-    # run_pybullet('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/slope_noise_old_her_exploration_strat/experiment_config.json',runtype='run')
-    run_pybullet('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/0_slope_epsilon_greedy_all_noises/experiment_config.json',runtype='run')
-    # run_pybullet('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/hand_b_fp_control/experiment_config.json',runtype='replay',episode_number=9960)
+    run_pybullet('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/gym_tests/experiment_config.json',runtype='run')
 
 if __name__ == '__main__':
     main()

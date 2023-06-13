@@ -53,6 +53,7 @@ class GuiBackend():
         self.colorbar = None
         self.big_data = False
         self.succcess_range = 0.002
+        self.use_distance = False
         
     def draw_path(self):
         if self.e_num == -1:
@@ -244,8 +245,10 @@ class GuiBackend():
             print("can't draw when episode_all is selected")
             return
         data = self.data_dict['timestep_list']
-        # current_reward_dict = [-f['reward']['distance_to_goal'] for f in data]
-        current_reward_dict = [f['reward']['slope_to_goal'] for f in data]
+        if self.use_distance:
+            current_reward_dict = [-f['reward']['distance_to_goal'] for f in data]
+        else:
+            current_reward_dict = [f['reward']['slope_to_goal'] for f in data]
 
         if self.clear_plots | (self.curr_graph != 'rewards'):
             self.ax.cla()
@@ -290,9 +293,13 @@ class GuiBackend():
         reward_dict_f1 = [-f['reward']['f1_dist'] for f in data]
         reward_dict_f2 = [-f['reward']['f2_dist'] for f in data]
         reward_dict_penalty = [f['reward']['end_penalty'] for f in data]
+        current_reward_dict = [f['reward']['slope_to_goal'] for f in data]
         full_reward = []
         for i in range(len(reward_dict_dist)):
-            full_reward.append(max(reward_dict_dist[i]+min(reward_dict_f1[i],reward_dict_f2[i])/5,-1))
+            if self.use_distance:
+                full_reward.append(max(reward_dict_dist[i]+min(reward_dict_f1[i],reward_dict_f2[i])/5,-1))
+            else:
+                full_reward.append(max(current_reward_dict[i]*100+min(reward_dict_f1[i],reward_dict_f2[i])/5,-1))
         net_reward = sum(full_reward)
             
         if self.clear_plots | (self.curr_graph != 'rewards'):
@@ -472,8 +479,11 @@ class GuiBackend():
 
                 data = tempdata['timestep_list']
                 for timestep in data:
-                    temp += - timestep['reward']['distance_to_goal'] \
-                            -max(timestep['reward']['f1_dist'],timestep['reward']['f2_dist'])/5
+                    if self.use_distance:
+                        temp += - timestep['reward']['distance_to_goal'] \
+                                -max(timestep['reward']['f1_dist'],timestep['reward']['f2_dist'])/5
+                    else:
+                        temp += max(timestep['reward']['slope_to_goal']*100-max(timestep['reward']['f1_dist'],timestep['reward']['f2_dist'])/5,-1)
                 rewards.append(temp)
                 temp = 0
                 if count% 100 ==0:
@@ -487,10 +497,12 @@ class GuiBackend():
                 data = episode['timestep_list']
                 goal_position = data[0]['state']['goal_pose']['goal_pose']
                 for timestep in data:
-                    temp += - timestep['reward']['distance_to_goal'] \
-                            -max(timestep['reward']['f1_dist'],timestep['reward']['f2_dist'])/5
+                    if self.use_distance:
+                        temp += - timestep['reward']['distance_to_goal'] \
+                                -max(timestep['reward']['f1_dist'],timestep['reward']['f2_dist'])/5
                                             #timestep['reward']['end_penalty'] \
-    
+                    else:
+                        temp += max(timestep['reward']['slope_to_goal']*100-max(timestep['reward']['f1_dist'],timestep['reward']['f2_dist'])/5,-1)
                 rewards.append(temp)
                 temp = 0
         if self.moving_avg != 1:
@@ -501,7 +513,7 @@ class GuiBackend():
         self.ax.set_xlabel('Episode Number')
         self.ax.set_ylabel('Total Reward Over the Entire Episode')
         self.ax.set_title("Agent Reward over Episode")
-        self.ax.set_ylim([-12, 0])
+        # self.ax.set_ylim([-12, 0])
         self.ax.grid(True)
         self.figure_canvas_agg.draw()
         self.curr_graph = 'Group_Reward'
@@ -1028,12 +1040,12 @@ def main():
     menu = [['File', ['Open Folder', 'Exit']], ['Help', ['About', ]]]
 
 
-    plot_buttons = [[sg.Button('Object Path', size=(8, 2)), sg.Button('Finger Angles', size=(8, 2)),sg.Button('Rewards', size=(8, 2), key='FullRewards'), sg.Button('Contact Rewards', key='ContactRewards',size=(8, 2)), sg.Button('Distance Rewards', key='SimpleRewards',size=(8, 2))],
+    plot_buttons = [[sg.Button('Object Path', size=(8, 2)), sg.Button('Finger Angles', size=(8, 2)),sg.Button('Rewards', size=(8, 2), key='FullRewards'), sg.Button('Contact Rewards', key='ContactRewards',size=(8, 2)), sg.Button('Distance/Slope Rewards', key='SimpleRewards',size=(8, 2))],
                     [sg.Button('Explored Region', size=(8,2)), sg.Button('Actor Output', size=(8, 2)), sg.Button('Critic Output', size=(8, 2)), sg.Button('RewardSplit',size=(8, 2)), sg.Button('Asterisk Success', size=(8,2))],
                     [sg.Button('End Region', size=(8,2)), sg.Button('Average Actor Values', size=(8,2)), sg.Button('Episode Rewards', size=(8,2)), sg.Button('Finger Object Avg', size=(8,2)), sg.Button('Shortest Goal Dist', size=(8,2))],
                     [sg.Button('Path + Action', size=(8,2)), sg.Button('Success Rate', size=(8,2)), sg.Button('Ending Velocity', size=(8,2)), sg.Button('Finger Object Max', size=(8,2)), sg.Button('Ending Goal Dist', size=(8,2))],
                     [sg.Slider((1,20),10,1,1,key='moving_avg',orientation='h', size=(48,6)), sg.Text("Keep previous graph", size=(10, 3), key='-toggletext-'), sg.Button(image_data=toggle_btn_off, key='-TOGGLE-GRAPHIC-', button_color=(sg.theme_background_color(), sg.theme_background_color()), border_width=0, metadata=False)],
-                    [sg.Slider((1,20),2,1,1,key='success_range',orientation='h', size=(48,6)),sg.Text("Data Too Large to Make Episode All", size=(20, 3), key='-BEEG-'), sg.Button('Sampled Poses', size=(8,2)),]]
+                    [sg.Slider((1,20),2,1,1,key='success_range',orientation='h', size=(48,6)),sg.Text("Distance Reward (toggled)/Slope Reward", size=(20, 3), key='-BEEG-'),  sg.Button(image_data=toggle_btn_off, key='-TOGGLE-REWARDS-', button_color=(sg.theme_background_color(), sg.theme_background_color()), border_width=0, metadata=False), sg.Button('Sampled Poses', size=(8,2)),]]
     # define layout, show and read the window
     col = [[sg.Text(episode_files[0], size=(80, 3), key='-FILENAME-')],
            [sg.Canvas(size=(1280, 960), key='-CANVAS-')],
@@ -1124,6 +1136,10 @@ def main():
             window['-TOGGLE-GRAPHIC-'].metadata = not window['-TOGGLE-GRAPHIC-'].metadata
             window['-TOGGLE-GRAPHIC-'].update(image_data=toggle_btn_on if window['-TOGGLE-GRAPHIC-'].metadata else toggle_btn_off)
             backend.clear_plots = not backend.clear_plots
+        elif event == '-TOGGLE-REWARDS-':  # if the graphical button that changes images
+            window['-TOGGLE-REWARDS-'].metadata = not window['-TOGGLE-REWARDS-'].metadata
+            window['-TOGGLE-REWARDS-'].update(image_data=toggle_btn_on if window['-TOGGLE-REWARDS-'].metadata else toggle_btn_off)
+            backend.use_distance = not backend.use_distance
         elif event =='Sampled Poses':
             backend.draw_sampled_region()
         elif event == '-SAVE-':

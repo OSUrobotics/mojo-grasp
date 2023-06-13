@@ -22,7 +22,6 @@ import pathlib
     Data Plotter
     
     This is based on the Demo_PNG_Viewer by PySimpleGUI
-    
 '''
 
 def save_element_as_file(element, filename):
@@ -52,7 +51,7 @@ class RNNGui():
         self.train_dataset, self.validation_dataset = None, None
         
         # define layout, show and read the window
-        data_layout =  [ [sg.Text('Model Type'), sg.OptionMenu(values=('DDPG', 'DDPGFD','DDPG+HER', 'DDPGFD+HER', 'gym'),  k='-model', default_value='DDPG')],
+        data_layout =  [ [sg.Text('Model Type'), sg.OptionMenu(values=('DDPG', 'DDPGFD','DDPG+HER', 'DDPGFD+HER'),  k='-model', default_value='DDPG')],
                          [sg.Text('Path to Expert Data if using FD')],
                          [sg.Button("Browse",key='-browse-expert',button_color='DarkBlue'),sg.Text("/", key='-expert-path')],
                          [sg.Text('Path to Save Data')],
@@ -93,9 +92,7 @@ class RNNGui():
                        [sg.Button('Build Config File WITHOUT Training', key='-build')],
                        [sg.Text('Work progress'), sg.ProgressBar(100, size=(20, 20), orientation='h', key='-PROG-')]]
 
-        layout = [[sg.TabGroup([[sg.Tab('Task and General parameters', data_layout, key='-mykey-'),
-                                sg.Tab('Hyperparameters', model_layout),
-                                sg.Tab('State, Action, Reward', plotting_layout)]], key='-group1-', tab_location='top', selected_title_color='purple')]]
+        layout = [[sg.Menu(menu)], [sg.(col)]]
             
         self.data_type = None
         self.window = sg.Window('RNN Gui', layout, return_keyboard_events=True, use_default_focus=False, finalize=True)
