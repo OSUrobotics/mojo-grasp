@@ -14,6 +14,7 @@ from mojograsp.simcore.state import State
 from mojograsp.simcore.reward import Reward
 from csv import writer
 import pickle as pkl
+from torchmetrics import ExplainedVariance
 # Implementation of Deep Deterministic Policy Gradients (DDPG)
 # Paper: https://arxiv.org/abs/1509.02971
 # [Not the implementation used in the TD3 paper]
@@ -648,6 +649,9 @@ class DDPGfD_priority():
 
             self.writer.add_scalar('Loss/critic',critic_loss.detach(),self.total_it)
             self.writer.add_scalar('Loss/critic_L1',critic_L1loss.detach(),self.total_it)
+            variance = ExplainedVariance()
+            ev = variance(current_Q,target_Q)
+            self.writer.add_scalar('explained_variance',ev, self.total_it)
             if self.ROLLOUT:
                 self.writer.add_scalar('Loss/critic_LN',critic_LNloss.detach(),self.total_it)
             self.writer.add_scalar('Loss/actor',actor_loss.detach(),self.total_it)

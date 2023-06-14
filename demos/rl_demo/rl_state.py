@@ -87,6 +87,7 @@ class StateRL(StateDefault):
         """
         Default method that sets self.current_state to either get_data() for the object or an empty dictionary
         """
+        # print('setting state')
         if self.pflag:
             self.previous_states[1:] = self.previous_states[0:-1]
             self.previous_states[0] = self.current_state.copy()
@@ -132,7 +133,7 @@ class StateRL(StateDefault):
         Default method that sets self.current_state to either get_data() for the object or an empty dictionary
         """
         super().set_state()
-
+        print('initializing state', self.pflag)
         temp1 = p.getClosestPoints(self.objects[1].id, self.objects[0].id, 10, -1, 1, -1)[0]
         temp2 = p.getClosestPoints(self.objects[1].id, self.objects[0].id, 10, -1, 4, -1)[0]
         link1_pose = p.getLinkState(self.objects[0].id, 2)
@@ -150,8 +151,10 @@ class StateRL(StateDefault):
         self.current_state['f1_contact_pos'] = list(temp1[6])
         self.current_state['f2_contact_pos'] = list(temp2[6])
         if self.pflag:
+            print('going through to copy previous states')
             for i in range(len(self.previous_states)):
                 self.previous_states[i] = self.current_state.copy()
+                
         # print('initialized state')
          
     def get_state(self) -> dict:
@@ -162,6 +165,7 @@ class StateRL(StateDefault):
         :return: Dictionary containing the representation of the current simulator state or an empty dictionary.
         :rtype: dict
         """
+        # print('g state')
         temp = self.current_state.copy()
         if self.pflag:
             temp['previous_state'] = self.previous_states.copy()

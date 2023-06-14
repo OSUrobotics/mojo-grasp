@@ -34,10 +34,15 @@ class GymWrapper(gym.Env):
         self.record = record_data
         
     def reset(self):
-        self.manipulation_phase.setup()
         self.env.reset()
+        self.manipulation_phase.setup()
+        
         state, _ = self.manipulation_phase.get_episode_info()
+        # print('state and prev states')
+        # print(state['f1_pos'],state['f2_pos'])
+        # print(state['previous_state'][0]['f1_pos'],state['previous_state'][0]['f2_pos'])
         state = self.build_state(state)
+        
         print('Episode ',self.manipulation_phase.episode,' goal pose', self.manipulation_phase.goal_position)
         return state
 
@@ -55,16 +60,23 @@ class GymWrapper(gym.Env):
         None.
 
         '''
+        # print('new step')
         self.manipulation_phase.gym_pre_step(action)
         self.manipulation_phase.execute_action()
         self.env.step()
+        # print('just env stepped')
         done = self.manipulation_phase.exit_condition()
         self.manipulation_phase.post_step()
+        
         self.record.record_timestep()
+        # print('recorded timesteps')
         state, reward = self.manipulation_phase.get_episode_info()
         info = {}
         state = self.build_state(state)
         reward = self.build_reward(reward)
+        # print('about to set state')
+        # self.manipulation_phase.state.set_state()
+        # print(reward)
         if done:
             print('done, recording stuff')
             self.record.record_episode()

@@ -228,7 +228,7 @@ def main():
     # run_pybullet('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/hand_a_slope_fp_contact_point/experiment_config.json',runtype='run')
     # run_pybullet('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/slope_noise/experiment_config.json',runtype='run')
     # run_pybullet('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/slope_noise_old_her_exploration_strat/experiment_config.json',runtype='run')
-    run_pybullet('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/0_slope_epsilon_greedy_all_noises/experiment_config.json',runtype='run')
+    run_pybullet('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/simple_test/experiment_config.json',runtype='run')
     # run_pybullet('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/hand_b_fp_control/experiment_config.json',runtype='replay',episode_number=9960)
 
 if __name__ == '__main__':
