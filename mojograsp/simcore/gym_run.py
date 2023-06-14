@@ -77,7 +77,8 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None):
         df2 = pd.read_csv('/home/orochi/mojo/mojo-grasp/demos/rl_demo/resources/test_points.csv', index_col=False)
         xeval = df2["x"]
         yeval = df2["y"]
-        
+    x = [0.08] * 500
+    y = [0.0] * 500
     pose_list = [[i,j] for i,j in zip(x,y)]
     eval_pose_list = [[i,j] for i,j in zip(xeval,yeval)]
     print(args)
@@ -162,7 +163,7 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None):
     # check_env(gym_env, warn=True)
     if runtype == 'run':
         # gym_env = make_vec_env(lambda: gym_env, n_envs=1)
-        model = A2C("MlpPolicy", gym_env, learning_rate=0.0001, tensorboard_log=args['tname']).learn(500000)
+        model = PPO("MlpPolicy", gym_env, tensorboard_log=args['tname']).learn(500000)
         obs = env.reset()
         for step in range(151):
             action, _ = model.predict(obs, deterministic=True)

@@ -25,8 +25,8 @@ class ExpertEnv(Environment):
         #no noise
         obj_change = np.array([0,0])
         
-        f1_pos = [0.03+obj_change[0], 0.10+obj_change[1], 0.05]
-        f2_pos = [-0.03+obj_change[0], 0.10+obj_change[1], 0.05]
+        # f1_pos = [0.03+obj_change[0], 0.10+obj_change[1], 0.05]
+        # f2_pos = [-0.03+obj_change[0], 0.10+obj_change[1], 0.05]
         # print('object pose', obj_change + np.array([0,0.1]))
         # print('f1 pos', f1_pos)
         # print('f2 pos', f2_pos)
@@ -56,13 +56,13 @@ class ExpertEnv(Environment):
             p.resetJointState(hand_id, 1, 1.5)
             p.resetJointState(hand_id, 3, .5)
             p.resetJointState(hand_id, 4, -1.5)
-        f1_angs = p.calculateInverseKinematics(hand_id, 2, f1_pos, maxNumIterations=3000)
-        f2_angs = p.calculateInverseKinematics(hand_id, 5, f2_pos, maxNumIterations=3000)
-        # print(f1_angs, f2_angs)
-        p.resetJointState(hand_id, 0, f1_angs[0])
-        p.resetJointState(hand_id, 1, f1_angs[1])
-        p.resetJointState(hand_id, 3, f2_angs[2])
-        p.resetJointState(hand_id, 4, f2_angs[3])
+        # f1_angs = p.calculateInverseKinematics(hand_id, 2, f1_pos, maxNumIterations=3000)
+        # f2_angs = p.calculateInverseKinematics(hand_id, 5, f2_pos, maxNumIterations=3000)
+        # # print(f1_angs, f2_angs)
+        # p.resetJointState(hand_id, 0, f1_angs[0])
+        # p.resetJointState(hand_id, 1, f1_angs[1])
+        # p.resetJointState(hand_id, 3, f2_angs[2])
+        # p.resetJointState(hand_id, 4, f2_angs[3])
         p.changeDynamics(plane_id,-1,lateralFriction=0.05, spinningFriction=0.05, rollingFriction=0.05)
         
         # p.resetJointState(hand_id, 0, .695)
