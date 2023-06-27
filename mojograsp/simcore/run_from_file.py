@@ -221,6 +221,7 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None):
 def main():
     # run_pybullet('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/hand_b_transfer/experiment_config.json',runtype='transfer')
     # run_pybullet('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/6_ik_kegan_point_split/experiment_config.json',runtype='eval')
+    run_pybullet('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/PPO_joint_angle/experiment_config.json',runtype='replay', episode_number=1)
     # run_pybullet('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/hand_a_ja_full_dimensionless/experiment_config.json',runtype='run')
     # run_pybullet('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/hand_b_fp_control/experiment_config.json',runtype='transfer')
     
@@ -228,7 +229,7 @@ def main():
     # run_pybullet('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/hand_a_slope_fp_contact_point/experiment_config.json',runtype='run')
     # run_pybullet('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/slope_noise/experiment_config.json',runtype='run')
     # run_pybullet('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/slope_noise_old_her_exploration_strat/experiment_config.json',runtype='run')
-    run_pybullet('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/simple_test/experiment_config.json',runtype='run')
+    # run_pybullet('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/simple_test/experiment_config.json',runtype='run')
     # run_pybullet('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/hand_b_fp_control/experiment_config.json',runtype='replay',episode_number=9960)
 
 if __name__ == '__main__':

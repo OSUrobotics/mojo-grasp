@@ -77,8 +77,9 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None):
         df2 = pd.read_csv('/home/orochi/mojo/mojo-grasp/demos/rl_demo/resources/test_points.csv', index_col=False)
         xeval = df2["x"]
         yeval = df2["y"]
-    x = [0.08] * 500
-    y = [0.0] * 500
+    xeval = [0.045, 0, -0.045, -0.06, -0.045, 0, 0.045, 0.06]
+    yeval = [-0.045, -0.06, -0.045, 0, 0.045, 0.06, 0.045, 0]
+    names = ['AsteriskSE.pkl','AsteriskS.pkl','AsteriskSW.pkl','AsteriskW.pkl','AsteriskNW.pkl','AsteriskN.pkl','AsteriskNE.pkl','AsteriskE.pkl']
     pose_list = [[i,j] for i,j in zip(x,y)]
     eval_pose_list = [[i,j] for i,j in zip(xeval,yeval)]
     print(args)
@@ -91,6 +92,7 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None):
         physics_client = p.connect(p.GUI)
     p.setAdditionalSearchPath(pybullet_data.getDataPath())
     p.setGravity(0, 0, -10)
+    p.setPhysicsEngineParameter(contactBreakingThreshold=.001)
     p.resetDebugVisualizerCamera(cameraDistance=.02, cameraYaw=0, cameraPitch=-89.9999,
                                  cameraTargetPosition=[0, 0.1, 0.5])
     
@@ -128,10 +130,16 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None):
     # time.sleep(10)
     # state, action and reward
     state = StateRL(objects=[hand, obj, goal_poses], prev_len=args['pv'],eval_goals = eval_goal_poses)
-    action = rl_action.ExpertAction()
+    
+    if args['freq'] ==240:
+        action = rl_action.ExpertAction()
+    else:
+        action = rl_action.InterpAction(args['freq'])
+    
     reward = rl_reward.ExpertReward()
     p.changeDynamics(plane_id,-1,lateralFriction=0.05, spinningFriction=0.05, rollingFriction=0.05)
     #argument preprocessing
+    p.changeDynamics(obj.id, -1, mass=.03, restitution=.95, lateralFriction=1)
     arg_dict = args.copy()
     if args['action'] == 'Joint Velocity':
         arg_dict['ik_flag'] = False
@@ -159,24 +167,30 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None):
     gym_env = rl_gym_wrapper.GymWrapper(env, manipulation, record_data, args)
 
 
+    # p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 0)
+    # p.configureDebugVisualizer(p.COV_ENABLE_GUI, 0)
 
     # check_env(gym_env, warn=True)
     if runtype == 'run':
         # gym_env = make_vec_env(lambda: gym_env, n_envs=1)
-        model = PPO("MlpPolicy", gym_env, tensorboard_log=args['tname']).learn(500000)
-        obs = env.reset()
-        for step in range(151):
-            action, _ = model.predict(obs, deterministic=True)
-            print("Step {}".format(step + 1))
-            print("Action: ", action)
-            obs, reward, done, info = env.step(action)
-            print('obs=', obs, 'reward=', reward, 'done=', done)
-            # env.render(mode='console')
-            if done:
-              # Note that the VecEnv resets automatically
-              # when a done signal is encountered
-              print("Goal reached!", "reward=", reward)
-              break
+        model = PPO("MlpPolicy", gym_env, tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-1}).learn(151*30000)
+        model.save(args['save_path']+'policy')
+        # d = data_processor(args['save_path'] + 'Train/')
+        # d.load_data()
+        # d.save_all()
+        gym_env.eval = True
+        gym_env.eval_names = names
+
+        for _ in range(8):
+            obs = gym_env.reset()
+            for step in range(151):
+                action, _ = model.predict(obs, deterministic=True)
+                # print("Step {}".format(step + 1))
+                # print("Action: ", action)
+                obs, reward, done, info = gym_env.step(action)
+                # print('obs=', obs, 'reward=', reward, 'done=', done)
+                # env.render(mode='console')
+
     elif runtype == 'eval':
         pass
     elif runtype == 'cont':
@@ -187,7 +201,7 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None):
         pass
 
 def main():
-    run_pybullet('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/gym_tests/experiment_config.json',runtype='run')
+    run_pybullet('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/PPO_FTP_Constraints/experiment_config.json',runtype='run')
 
 if __name__ == '__main__':
     main()

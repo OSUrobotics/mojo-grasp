@@ -36,6 +36,7 @@ class ManipulationRL(Phase):
         self.target = None
         self.goal_position = None
         # create controller
+        self.interp_ratio = int(240/args['freq'])
         if args['model'] == 'gym':
             self.controller = rl_controller.GymController(hand, cube, args=args)
         else:
@@ -94,19 +95,15 @@ class ManipulationRL(Phase):
         # Set the current state before sim is stepped
         # self.state.set_state()
 
-
     def execute_action(self, action_to_execute=None):
         # Execute the target that we got from the controller in pre_step()
-        # print('GGGGGG')
-        if action_to_execute:
-            # print('ye haw')
-            p.setJointMotorControlArray(self.hand.id, jointIndices=self.hand.get_joint_numbers(),
-                                        controlMode=p.POSITION_CONTROL, targetPositions=action_to_execute, positionGains=[0.8,0.8,0.8,0.8])
-        else:
-            # print("JOINT INDICES: ", self.hand.get_joint_numbers())
-            # print("TARGET ANGLES RL: ", self.target)
-            p.setJointMotorControlArray(self.hand.id, jointIndices=self.hand.get_joint_numbers(),
-                                        controlMode=p.POSITION_CONTROL, targetPositions=self.target, positionGains=[0.8,0.8,0.8,0.8])
+        for i in range(self.interp_ratio):
+            if action_to_execute:
+                p.setJointMotorControlArray(self.hand.id, jointIndices=self.hand.get_joint_numbers(),
+                                            controlMode=p.POSITION_CONTROL, targetPositions=action_to_execute, positionGains=[0.8,0.8,0.8,0.8], forces=[0.4,0.4,0.4,0.4])
+            else:
+                p.setJointMotorControlArray(self.hand.id, jointIndices=self.hand.get_joint_numbers(),
+                                            controlMode=p.POSITION_CONTROL, targetPositions=self.action.get_joint_angles(), positionGains=[0.8,0.8,0.8,0.8], forces=[0.4,0.4,0.4,0.4])
         self.timestep += 1
 
     def post_step(self):
@@ -123,12 +120,12 @@ class ManipulationRL(Phase):
         if eval_exit:
             if self.timestep > self.eval_terminal_step:
                 self.controller.retry_count=0
-                print('exiting in manipulation phase rl', self.timestep, self.terminal_step)
+                # print('exiting in manipulation phase rl', self.timestep, self.terminal_step)
                 return True
         else:
             if self.timestep > self.terminal_step:# or self.controller.exit_condition(self.terminal_step - self.timestep):
                 self.controller.retry_count=0
-                print('exiting in manipulation phase rl', self.timestep, self.terminal_step)
+                # print('exiting in manipulation phase rl', self.timestep, self.terminal_step)
                 return True
         return False
 

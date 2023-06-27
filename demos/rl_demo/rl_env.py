@@ -56,6 +56,15 @@ class ExpertEnv(Environment):
             p.resetJointState(hand_id, 1, 1.5)
             p.resetJointState(hand_id, 3, .5)
             p.resetJointState(hand_id, 4, -1.5)
+        mass_link = .036
+        p.changeDynamics(hand_id, 1, lateralFriction=1, rollingFriction=0.04,
+                         mass=.036)
+        p.changeDynamics(hand_id, 4, lateralFriction=1, rollingFriction=0.04,
+                         mass=.036)
+        p.changeDynamics(hand_id, 0, jointLowerLimit=-1.57, jointUpperLimit=1.57, mass=mass_link)
+        p.changeDynamics(hand_id, 1, jointLowerLimit=0, jointUpperLimit=2.09, mass=mass_link)
+        p.changeDynamics(hand_id, 3, jointLowerLimit=-1.57, jointUpperLimit=1.57, mass=mass_link)
+        p.changeDynamics(hand_id, 4, jointLowerLimit=-2.09, jointUpperLimit=0, mass=mass_link)
         # f1_angs = p.calculateInverseKinematics(hand_id, 2, f1_pos, maxNumIterations=3000)
         # f2_angs = p.calculateInverseKinematics(hand_id, 5, f2_pos, maxNumIterations=3000)
         # # print(f1_angs, f2_angs)
@@ -64,14 +73,14 @@ class ExpertEnv(Environment):
         # p.resetJointState(hand_id, 3, f2_angs[2])
         # p.resetJointState(hand_id, 4, f2_angs[3])
         p.changeDynamics(plane_id,-1,lateralFriction=0.05, spinningFriction=0.05, rollingFriction=0.05)
-        
+        p.changeDynamics(self.obj.id, -1, mass=.03, restitution=.95, lateralFriction=1)
         # p.resetJointState(hand_id, 0, .695)
         # p.resetJointState(hand_id, 1, -1.487)
         # p.resetJointState(hand_id, 3, -.695)
         # p.resetJointState(hand_id, 4, 1.487)
         
         p.setGravity(0, 0, -10)
-        
+        p.setPhysicsEngineParameter(contactBreakingThreshold=.001)
         # obj_id = p.loadURDF(self.obj.path, basePosition=[0.0, 0.1067, .05])
 
         obj_id = p.loadURDF(self.obj.path, basePosition=[0.0+obj_change[0], 0.10+obj_change[1], .05], flags=p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
