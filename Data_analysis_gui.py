@@ -176,11 +176,11 @@ class GuiBackend():
         for angle in current_angle_dict:
             temp = [angs for angs in angle.values()]
             current_angle_list.append(temp)        
-        current_action_list= [f['action']['target_joint_angles'] for f in data]
+        # current_action_list= [f['action']['target_joint_angles'] for f in data]
         
         current_angle_list=np.array(current_angle_list)
-        current_action_list=np.array(current_action_list)
-        angle_tweaks = current_angle_list#current_action_list - current_angle_list
+        # current_action_list=np.array(current_action_list)
+        angle_tweaks = current_angle_list
         if self.clear_plots | (self.curr_graph != 'angles'):
             self.ax.cla()
             self.legend = []
@@ -476,7 +476,6 @@ class GuiBackend():
             for episode_file in episode_files:
                 with open(episode_file, 'rb') as ef:
                     tempdata = pkl.load(ef)
-
                 data = tempdata['timestep_list']
                 for timestep in data:
                     if self.use_distance:
@@ -837,12 +836,40 @@ class GuiBackend():
 
     def draw_ending_goal_dist(self):
         if self.all_data is None:
-            print('need to load in episode all first')
-            return
-        ending_dists = np.zeros((len(self.all_data['episode_list']),1))
-        for i, episode in enumerate(self.all_data['episode_list']):
-            data = episode['timestep_list']
-            ending_dists[i] = np.max(data[-1]['reward']['distance_to_goal'], axis=0)
+            # print('need to load in episode all first')
+            print('this will be slow, and we both know it')
+            episode_files = [os.path.join(self.folder, f) for f in os.listdir(self.folder) if f.lower().endswith('.pkl')]
+            filenames_only = [f for f in os.listdir(self.folder) if f.lower().endswith('.pkl')]
+            
+            filenums = [re.findall('\d+',f) for f in filenames_only]
+            final_filenums = []
+            for i in filenums:
+                if len(i) > 0 :
+                    final_filenums.append(int(i[0]))
+            
+            
+            sorted_inds = np.argsort(final_filenums)
+            final_filenums = np.array(final_filenums)
+            temp = final_filenums[sorted_inds]
+            episode_files = np.array(episode_files)
+            filenames_only = np.array(filenames_only)
+            count = 0
+            episode_files = episode_files[sorted_inds].tolist()
+            ending_dists = []
+            for episode_file in episode_files:
+                with open(episode_file, 'rb') as ef:
+                    tempdata = pkl.load(ef)
+
+                data = tempdata['timestep_list']
+                ending_dists.append(data[-1]['reward']['distance_to_goal'])
+                if count% 100 ==0:
+                    print('count = ', count)
+                count +=1
+        else:
+            ending_dists = np.zeros((len(self.all_data['episode_list']),1))
+            for i, episode in enumerate(self.all_data['episode_list']):
+                data = episode['timestep_list']
+                ending_dists[i] = np.max(data[-1]['reward']['distance_to_goal'], axis=0)
 
         if self.moving_avg != 1:
             ending_dists = moving_average(ending_dists,self.moving_avg)

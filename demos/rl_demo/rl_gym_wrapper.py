@@ -14,7 +14,30 @@ from gym import spaces
 import numpy as np
 from mojograsp.simcore.state import State
 from mojograsp.simcore.reward import Reward
+import pybullet as p
+from PIL import Image
 
+class NoiseAdder():
+    def __init__(self,mins,maxes):
+        self.mins = mins
+        self.maxes = maxes
+        
+    def add_noise(self,x_tensor,noise_percent):
+        """
+        normalizes a numpy array to -1 and 1 using provided maximums and minimums
+        :param x_tensor: - array to be normalized
+        :param mins: - array containing minimum values for the parameters in x_tensor
+        :param maxes: - array containing maximum values for the parameters in x_tensor
+        """
+        t1 = np.random.normal(0,noise_percent, size=len(x_tensor))
+        print('range',(self.maxes-self.mins))
+        print('raw noise', t1)
+        print('end noise',t1 * (self.maxes-self.mins))
+        print('xtensor', x_tensor)
+        print(np.array(x_tensor)> self.mins )
+        print((np.array(x_tensor)> self.mins))
+        return x_tensor + t1 * (self.maxes-self.mins)/2
+    
 class GymWrapper(gym.Env):
     '''
     Example environment that follows gym interface to allow us to use openai gym learning algorithms with mojograsp
@@ -26,14 +49,42 @@ class GymWrapper(gym.Env):
         self.action_space = spaces.Box(low=np.array([-1,-1,-1,-1]), high=np.array([1,1,1,1]))
         self.manipulation_phase = manipulation_phase
         self.observation_space = spaces.Box(np.array(args['state_mins']),np.array(args['state_maxes']))
+        self.STATE_NOISE = args['state_noise']
+        if self.STATE_NOISE > 0:
+            self.noisey_boi = NoiseAdder(np.array(args['state_mins']), np.array(args['state_maxes']))
         self.PREV_VALS = args['pv']
         self.REWARD_TYPE = args['reward']
         self.state_list = args['state_list']
         self.CONTACT_SCALING = args['contact_scaling']
         self.DISTANCE_SCALING = args['distance_scaling'] 
+        self.image_path = args['save_path'] + 'Videos/'
         self.record = record_data
+        self.eval = False
+        self.eval_names = None
+        self.run_name = None
+        self.eval_run = 0
+        self.timestep = 0
+        self.first = True
+        self.camera_view_matrix = p.computeViewMatrix((0.0,0.1,0.5),(0.0,0.1,0.005), (0.0,1,0.0))
+        # self.camera_projection_matrix = p.computeProjectionMatrix(-0.1,0.1,-0.1,0.1,-0.1,0.1)
+        self.camera_projection_matrix = p.computeProjectionMatrixFOV(60,4/3,0.1,0.9)
         
     def reset(self):
+        if not self.first:
+            
+            self.record.record_episode(self.eval)
+            self.record.save_episode(self.eval, self.run_name)
+            self.manipulation_phase.next_phase()
+            if self.manipulation_phase.episode >= 500:
+                self.manipulation_phase.reset()
+        self.timestep=0
+        self.first = False
+        if self.eval:
+            self.manipulation_phase.state.evaluate()
+            self.run_name = self.eval_names[self.eval_run]
+            self.eval_run +=1
+        else:
+            self.manipulation_phase.state.train()
         self.env.reset()
         self.manipulation_phase.setup()
         
@@ -60,7 +111,7 @@ class GymWrapper(gym.Env):
         None.
 
         '''
-        # print('new step')
+        # print('timestep num', self.timestep)
         self.manipulation_phase.gym_pre_step(action)
         self.manipulation_phase.execute_action()
         self.env.step()
@@ -71,19 +122,30 @@ class GymWrapper(gym.Env):
         self.record.record_timestep()
         # print('recorded timesteps')
         state, reward = self.manipulation_phase.get_episode_info()
+        # print(state['obj_2'])
         info = {}
         state = self.build_state(state)
+        if self.STATE_NOISE > 0:
+            state = self.noisey_boi.add_noise(state, self.STATE_NOISE)
         reward = self.build_reward(reward)
         # print('about to set state')
         # self.manipulation_phase.state.set_state()
         # print(reward)
+        
+        if self.eval:
+            
+            img = p.getCameraImage(640, 480,viewMatrix=self.camera_view_matrix,
+                                    projectionMatrix=self.camera_projection_matrix,
+                                    shadow=1,
+                                    lightDirection=[1, 1, 1])
+            img = Image.fromarray(img[2])
+            temp = self.run_name.split('.')[0]
+            img.save(self.image_path+ temp + '_frame_'+ str(self.timestep)+'.png')
+        
         if done:
             print('done, recording stuff')
-            self.record.record_episode()
-            self.record.save_episode()
-            self.manipulation_phase.next_phase()
-            if self.manipulation_phase.episode >= 500:
-                self.manipulation_phase.reset()
+
+        self.timestep +=1
         return state, reward, done, info
         
     

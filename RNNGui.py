@@ -71,7 +71,8 @@ class RNNGui():
                          [sg.Text('Rollout Size'), sg.Input(5,key='-rollout_size'), sg.Text('Rollout Weight'), sg.Input(0.5, key='-rollout_weight')],
                          [sg.Text('Evaluation Period'), sg.Input(3,key='-eval'), sg.Text('Tau'), sg.Input(0.0005, key='-tau')],
                          [sg.Text('Timesteps per Episode'), sg.Input(150,key='-tsteps'), sg.Text('Timesteps in Evaluation'), sg.Input(150,key='-eval-tsteps')],
-                         [sg.Text('State Training Noise'), sg.Input(0.05, key='-snoise'),sg.Text('Start Pos Range (mm)'), sg.Input(0, key='-start-noise')]]
+                         [sg.Text('State Training Noise'), sg.Input(0.05, key='-snoise'),sg.Text('Start Pos Range (mm)'), sg.Input(0, key='-start-noise')],
+                         [sg.Text('Timestep Frequency'), sg.Input(240,key='-freq')]]
         
         plotting_layout = [[sg.Text('Model Title')],
                        [sg.Input('test1',key='-title')],
@@ -129,7 +130,8 @@ class RNNGui():
                      'tsteps': int(values['-tsteps']),
                      'eval-tsteps':int(values['-eval-tsteps']),
                      'distance_scaling': float(values['-distance_scale']),
-                     'contact_scaling': float(values['-contact_scale'])}
+                     'contact_scaling': float(values['-contact_scale']),
+                     'freq': int(values['-freq'])}
         state_len = 0
         state_mins = []
         state_maxes = []
@@ -171,8 +173,8 @@ class RNNGui():
             state_len += 2
             state_list.append('op')
         if values['-ja']:
-            state_mins.extend([-np.pi/2, -np.pi, -np.pi/2, 0])
-            state_maxes.extend([np.pi/2, 0, np.pi/2, np.pi])
+            state_mins.extend([-np.pi/2, -2.09, -np.pi/2, 0])
+            state_maxes.extend([np.pi/2, 0, np.pi/2, 2.09])
             state_len += 4
             state_list.append('ja')
         if values['-fod']:
@@ -185,8 +187,8 @@ class RNNGui():
             state_len += 2
             state_list.append('fod')
         if values['-fta']:
-            state_mins.extend([-np.pi/2, -np.pi/2])
-            state_maxes.extend([np.pi/2, np.pi/2])
+            state_mins.extend([-np.pi/2-2.09, -np.pi/2])
+            state_maxes.extend([np.pi/2, np.pi/2+2.09])
             state_len += 2
             state_list.append('fta')
         if values['-gp']:
@@ -275,6 +277,10 @@ class RNNGui():
                 pass
             try:
                 os.mkdir(self.args['save_path'] + '/Test/')
+            except FileExistsError:
+                pass
+            try:
+                os.mkdir(self.args['save_path'] + '/Videos/')
             except FileExistsError:
                 pass
         else:

@@ -133,7 +133,7 @@ class StateRL(StateDefault):
         Default method that sets self.current_state to either get_data() for the object or an empty dictionary
         """
         super().set_state()
-        print('initializing state', self.pflag)
+        # print('initializing state', self.pflag)
         temp1 = p.getClosestPoints(self.objects[1].id, self.objects[0].id, 10, -1, 1, -1)[0]
         temp2 = p.getClosestPoints(self.objects[1].id, self.objects[0].id, 10, -1, 4, -1)[0]
         link1_pose = p.getLinkState(self.objects[0].id, 2)
@@ -151,7 +151,7 @@ class StateRL(StateDefault):
         self.current_state['f1_contact_pos'] = list(temp1[6])
         self.current_state['f2_contact_pos'] = list(temp2[6])
         if self.pflag:
-            print('going through to copy previous states')
+            # print('going through to copy previous states')
             for i in range(len(self.previous_states)):
                 self.previous_states[i] = self.current_state.copy()
                 

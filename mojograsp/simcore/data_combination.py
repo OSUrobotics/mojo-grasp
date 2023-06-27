@@ -74,7 +74,7 @@ class data_processor():
      
 
 def main():
-    path ='/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/0_slope_epsilon_greedy_all_noises/'
+    path ='/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/PPO_JA_new_physics/'
     d = data_processor(path + 'Train/')
     d.load_data()
     d.save_all()
