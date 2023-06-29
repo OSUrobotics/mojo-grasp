@@ -71,5 +71,16 @@ class data_processor():
                     self.episodes = {"episode_list": self.episode_data}
                     pkl.dump(self.episodes, fout)
         print('save completed')
+     
+
+def main():
+    path ='/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/PPO_JA_new_physics/'
+    d = data_processor(path + 'Train/')
+    d.load_data()
+    d.save_all()
+    d = data_processor(path + 'Test/', eval_flag=True)
+    d.load_data()
+    d.save_all()
         
-        
+if __name__ == '__main__':
+    main()
