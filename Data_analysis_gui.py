@@ -53,6 +53,7 @@ class GuiBackend():
         self.colorbar = None
         self.big_data = False
         self.succcess_range = 0.002
+        self.use_distance = False
         
     def draw_path(self):
         if self.e_num == -1:
@@ -175,11 +176,11 @@ class GuiBackend():
         for angle in current_angle_dict:
             temp = [angs for angs in angle.values()]
             current_angle_list.append(temp)        
-        current_action_list= [f['action']['target_joint_angles'] for f in data]
+        # current_action_list= [f['action']['target_joint_angles'] for f in data]
         
         current_angle_list=np.array(current_angle_list)
-        current_action_list=np.array(current_action_list)
-        angle_tweaks = current_angle_list#current_action_list - current_angle_list
+        # current_action_list=np.array(current_action_list)
+        angle_tweaks = current_angle_list
         if self.clear_plots | (self.curr_graph != 'angles'):
             self.ax.cla()
             self.legend = []
@@ -191,7 +192,7 @@ class GuiBackend():
         self.ax.legend(self.legend)
         self.ax.grid(True)
         self.ax.set_ylabel('Angle (radians)')
-        self.ax.set_xlabel('Timestep (1/240 s)')
+        self.ax.set_xlabel('Timestep (1/30 s)')
         self.ax.set_title('Joint Angles')
         self.figure_canvas_agg.draw()
         self.curr_graph = 'angles'
@@ -214,7 +215,7 @@ class GuiBackend():
         self.ax.legend(self.legend)
         self.ax.grid(True)
         self.ax.set_ylabel('Actor Output')
-        self.ax.set_xlabel('Timestep (1/240 s)')
+        self.ax.set_xlabel('Timestep (1/30 s)')
         self.ax.set_title('Actor Output')
         self.figure_canvas_agg.draw()
         self.curr_graph = 'angles'
@@ -234,7 +235,7 @@ class GuiBackend():
         self.ax.legend(self.legend)
         self.ax.grid(True)
         self.ax.set_ylabel('Action Value')
-        self.ax.set_xlabel('Timestep (1/240 s)')
+        self.ax.set_xlabel('Timestep (1/30 s)')
         self.ax.set_title('Critic Output')
         self.figure_canvas_agg.draw()
         self.curr_graph = 'rewards'
@@ -244,8 +245,10 @@ class GuiBackend():
             print("can't draw when episode_all is selected")
             return
         data = self.data_dict['timestep_list']
-        # current_reward_dict = [-f['reward']['distance_to_goal'] for f in data]
-        current_reward_dict = [f['reward']['slope_to_goal'] for f in data]
+        if self.use_distance:
+            current_reward_dict = [-f['reward']['distance_to_goal'] for f in data]
+        else:
+            current_reward_dict = [f['reward']['slope_to_goal'] for f in data]
 
         if self.clear_plots | (self.curr_graph != 'rewards'):
             self.ax.cla()
@@ -255,7 +258,7 @@ class GuiBackend():
         self.ax.legend(self.legend)
         self.ax.grid(True)
         self.ax.set_ylabel('Reward')
-        self.ax.set_xlabel('Timestep (1/240 s)')
+        self.ax.set_xlabel('Timestep (1/30 s)')
         self.ax.set_title('Reward Plot')
         self.figure_canvas_agg.draw()
         self.curr_graph = 'rewards'
@@ -276,7 +279,7 @@ class GuiBackend():
         self.ax.legend(self.legend)
         self.ax.grid(True)
         self.ax.set_ylabel('Reward')
-        self.ax.set_xlabel('Timestep (1/240 s)')
+        self.ax.set_xlabel('Timestep (1/30 s)')
         self.ax.set_title('Contact Reward Plot')
         self.figure_canvas_agg.draw()
         self.curr_graph = 'rewards'
@@ -290,9 +293,13 @@ class GuiBackend():
         reward_dict_f1 = [-f['reward']['f1_dist'] for f in data]
         reward_dict_f2 = [-f['reward']['f2_dist'] for f in data]
         reward_dict_penalty = [f['reward']['end_penalty'] for f in data]
+        current_reward_dict = [f['reward']['slope_to_goal'] for f in data]
         full_reward = []
         for i in range(len(reward_dict_dist)):
-            full_reward.append(max(reward_dict_dist[i]+min(reward_dict_f1[i],reward_dict_f2[i])/5,-1))
+            if self.use_distance:
+                full_reward.append(max(reward_dict_dist[i]+min(reward_dict_f1[i],reward_dict_f2[i])/5,-1))
+            else:
+                full_reward.append(max(current_reward_dict[i]*100+min(reward_dict_f1[i],reward_dict_f2[i])/5,-1))
         net_reward = sum(full_reward)
             
         if self.clear_plots | (self.curr_graph != 'rewards'):
@@ -304,7 +311,7 @@ class GuiBackend():
         self.legend.extend(['Reward - episode ' + str(self.e_num)])
         self.ax.legend(self.legend)
         self.ax.set_ylabel('Reward')
-        self.ax.set_xlabel('Timestep (1/240 s)')
+        self.ax.set_xlabel('Timestep (1/30 s)')
         self.ax.set_title(title)
         self.ax.grid(True)
         self.figure_canvas_agg.draw()
@@ -469,11 +476,13 @@ class GuiBackend():
             for episode_file in episode_files:
                 with open(episode_file, 'rb') as ef:
                     tempdata = pkl.load(ef)
-
                 data = tempdata['timestep_list']
                 for timestep in data:
-                    temp += - timestep['reward']['distance_to_goal'] \
-                            -max(timestep['reward']['f1_dist'],timestep['reward']['f2_dist'])/5
+                    if self.use_distance:
+                        temp += - timestep['reward']['distance_to_goal'] \
+                                -max(timestep['reward']['f1_dist'],timestep['reward']['f2_dist'])/5
+                    else:
+                        temp += max(timestep['reward']['slope_to_goal']*100-max(timestep['reward']['f1_dist'],timestep['reward']['f2_dist'])/5,-1)
                 rewards.append(temp)
                 temp = 0
                 if count% 100 ==0:
@@ -487,10 +496,12 @@ class GuiBackend():
                 data = episode['timestep_list']
                 goal_position = data[0]['state']['goal_pose']['goal_pose']
                 for timestep in data:
-                    temp += - timestep['reward']['distance_to_goal'] \
-                            -max(timestep['reward']['f1_dist'],timestep['reward']['f2_dist'])/5
+                    if self.use_distance:
+                        temp += - timestep['reward']['distance_to_goal'] \
+                                -max(timestep['reward']['f1_dist'],timestep['reward']['f2_dist'])/5
                                             #timestep['reward']['end_penalty'] \
-    
+                    else:
+                        temp += max(timestep['reward']['slope_to_goal']*100-max(timestep['reward']['f1_dist'],timestep['reward']['f2_dist'])/5,-1)
                 rewards.append(temp)
                 temp = 0
         if self.moving_avg != 1:
@@ -501,7 +512,7 @@ class GuiBackend():
         self.ax.set_xlabel('Episode Number')
         self.ax.set_ylabel('Total Reward Over the Entire Episode')
         self.ax.set_title("Agent Reward over Episode")
-        self.ax.set_ylim([-12, 0])
+        # self.ax.set_ylim([-12, 0])
         self.ax.grid(True)
         self.figure_canvas_agg.draw()
         self.curr_graph = 'Group_Reward'
@@ -825,12 +836,40 @@ class GuiBackend():
 
     def draw_ending_goal_dist(self):
         if self.all_data is None:
-            print('need to load in episode all first')
-            return
-        ending_dists = np.zeros((len(self.all_data['episode_list']),1))
-        for i, episode in enumerate(self.all_data['episode_list']):
-            data = episode['timestep_list']
-            ending_dists[i] = np.max(data[-1]['reward']['distance_to_goal'], axis=0)
+            # print('need to load in episode all first')
+            print('this will be slow, and we both know it')
+            episode_files = [os.path.join(self.folder, f) for f in os.listdir(self.folder) if f.lower().endswith('.pkl')]
+            filenames_only = [f for f in os.listdir(self.folder) if f.lower().endswith('.pkl')]
+            
+            filenums = [re.findall('\d+',f) for f in filenames_only]
+            final_filenums = []
+            for i in filenums:
+                if len(i) > 0 :
+                    final_filenums.append(int(i[0]))
+            
+            
+            sorted_inds = np.argsort(final_filenums)
+            final_filenums = np.array(final_filenums)
+            temp = final_filenums[sorted_inds]
+            episode_files = np.array(episode_files)
+            filenames_only = np.array(filenames_only)
+            count = 0
+            episode_files = episode_files[sorted_inds].tolist()
+            ending_dists = []
+            for episode_file in episode_files:
+                with open(episode_file, 'rb') as ef:
+                    tempdata = pkl.load(ef)
+
+                data = tempdata['timestep_list']
+                ending_dists.append(data[-1]['reward']['distance_to_goal'])
+                if count% 100 ==0:
+                    print('count = ', count)
+                count +=1
+        else:
+            ending_dists = np.zeros((len(self.all_data['episode_list']),1))
+            for i, episode in enumerate(self.all_data['episode_list']):
+                data = episode['timestep_list']
+                ending_dists[i] = np.max(data[-1]['reward']['distance_to_goal'], axis=0)
 
         if self.moving_avg != 1:
             ending_dists = moving_average(ending_dists,self.moving_avg)
@@ -991,7 +1030,8 @@ def main():
     toggle_btn_on = b'iVBORw0KGgoAAAANSUhEUgAAACgAAAAoCAYAAACM/rhtAAAABmJLR0QA/wD/AP+gvaeTAAAD+UlEQVRYCe1XzW8bVRCffbvrtbP+2NhOD7GzLm1VoZaPhvwDnKBUKlVyqAQ3/gAkDlWgPeVQEUCtEOIP4AaHSI0CqBWCQyXOdQuRaEFOk3g3IMWO46+tvZ+PeZs6apq4ipON1MNafrvreTPzfvub92bGAOEnZCBkIGQgZOClZoDrh25y5pdjruleEiX+A+rCaQo05bpuvJ/+IHJCSJtwpAHA/e269g8W5RbuzF6o7OVjF8D3Pr4tSSkyjcqfptPDMDKSleW4DKIggIAD5Yf+Oo4DNg6jbUBlvWLUNutAwZu1GnDjzrcXzGcX2AHw/emFUV6Sfk0pqcKpEydkKSo9q3tkz91uF5aWlo1Gs/mYc+i7tz4//19vsW2AU9O381TiioVCQcnlRsWeQhD3bJyH1/MiFLICyBHiuzQsD1arDvypW7DR9nzZmq47q2W95prm+I9fXfqXCX2AF2d+GhI98Y8xVX0lnxvl2UQQg0csb78ag3NjEeD8lXZ7pRTgftmCu4864OGzrq+5ZU0rCa3m+NzXlzvoAoB3+M+SyWQuaHBTEzKMq/3BMbgM+FuFCDBd9kK5XI5PJBKqLSev+POTV29lKB8rT0yMD0WjUSYLZLxzNgZvIHODOHuATP72Vwc6nQ4Uiw8MUeBU4nHS5HA6TYMEl02wPRcZBJuv+ya+UCZOIBaLwfCwQi1Mc4QXhA+PjWRkXyOgC1uIhW5Qd8yG2TK7kSweLcRGKKVnMNExWWBDTQsH9qVmtmzjiThQDs4Qz/OUSGTwcLwIQTLW58i+yOjpXDLqn1tgmDzXzRCk9eDenjo9yhvBmlizrB3V5dDrNTuY0A7opdndStqmaQLPC1WCGfShYRgHdLe32UrV3ntiH9LliuNrsToNlD4kruN8v75eafnSgC6Luo2+B3fGKskilj5muV6pNhk2Qqg5v7lZ51nBZhNBjGrbxfI1+La5t2JCzfD8RF1HTBGJXyDzs1MblONulEqPDVYXgwDIfNx91IUVbAbY837GMur+/k/XZ75UWmJ77ou5mfM1/0x7vP1ls9XQdF2z9uNsPzosXPNFA5m0/EX72TBSiqsWzN8z/GZB08pWq9VeEZ+0bjKb7RTD2i1P4u6r+bwypo5tZUumEcDAmuC3W8ezIqSGfE6g/sTd1W5p5bKjaWubrmWd29Fu9TD0GlYlmTx+8tTJoZeqYe2BZC1/JEU+wQR5TVEUPptJy3Fs+Vkzgf8lemqHumP1AnYoMZSwsVEz6o26i/G9Lgitb+ZmLu/YZtshfn5FZDPBCcJFQRQ+8ih9DctOFvdLIKHH6uUQnq9yhFu0bec7znZ+xpAGmuqef5/wd8hAyEDIQMjAETHwP7nQl2WnYk4yAAAAAElFTkSuQmCC'
 
     # Get the folder containing the episodes
-    folder = sg.popup_get_folder('Episode Folder to open')
+    p1 = pathlib.Path(__file__).parent.resolve()
+    folder = sg.popup_get_folder('Episode Folder to open',initial_folder=str(p1)+'/demos/rl_demo/data')
     if folder is None:
         sg.popup_cancel('Cancelling')
         return
@@ -1028,12 +1068,12 @@ def main():
     menu = [['File', ['Open Folder', 'Exit']], ['Help', ['About', ]]]
 
 
-    plot_buttons = [[sg.Button('Object Path', size=(8, 2)), sg.Button('Finger Angles', size=(8, 2)),sg.Button('Rewards', size=(8, 2), key='FullRewards'), sg.Button('Contact Rewards', key='ContactRewards',size=(8, 2)), sg.Button('Distance Rewards', key='SimpleRewards',size=(8, 2))],
+    plot_buttons = [[sg.Button('Object Path', size=(8, 2)), sg.Button('Finger Angles', size=(8, 2)),sg.Button('Rewards', size=(8, 2), key='FullRewards'), sg.Button('Contact Rewards', key='ContactRewards',size=(8, 2)), sg.Button('Distance/Slope Rewards', key='SimpleRewards',size=(8, 2))],
                     [sg.Button('Explored Region', size=(8,2)), sg.Button('Actor Output', size=(8, 2)), sg.Button('Critic Output', size=(8, 2)), sg.Button('RewardSplit',size=(8, 2)), sg.Button('Asterisk Success', size=(8,2))],
                     [sg.Button('End Region', size=(8,2)), sg.Button('Average Actor Values', size=(8,2)), sg.Button('Episode Rewards', size=(8,2)), sg.Button('Finger Object Avg', size=(8,2)), sg.Button('Shortest Goal Dist', size=(8,2))],
                     [sg.Button('Path + Action', size=(8,2)), sg.Button('Success Rate', size=(8,2)), sg.Button('Ending Velocity', size=(8,2)), sg.Button('Finger Object Max', size=(8,2)), sg.Button('Ending Goal Dist', size=(8,2))],
                     [sg.Slider((1,20),10,1,1,key='moving_avg',orientation='h', size=(48,6)), sg.Text("Keep previous graph", size=(10, 3), key='-toggletext-'), sg.Button(image_data=toggle_btn_off, key='-TOGGLE-GRAPHIC-', button_color=(sg.theme_background_color(), sg.theme_background_color()), border_width=0, metadata=False)],
-                    [sg.Slider((1,20),2,1,1,key='success_range',orientation='h', size=(48,6)),sg.Text("Data Too Large to Make Episode All", size=(20, 3), key='-BEEG-'), sg.Button('Sampled Poses', size=(8,2)),]]
+                    [sg.Slider((1,20),2,1,1,key='success_range',orientation='h', size=(48,6)),sg.Text("Distance Reward (toggled)/Slope Reward", size=(20, 3), key='-BEEG-'),  sg.Button(image_data=toggle_btn_off, key='-TOGGLE-REWARDS-', button_color=(sg.theme_background_color(), sg.theme_background_color()), border_width=0, metadata=False), sg.Button('Sampled Poses', size=(8,2)),]]
     # define layout, show and read the window
     col = [[sg.Text(episode_files[0], size=(80, 3), key='-FILENAME-')],
            [sg.Canvas(size=(1280, 960), key='-CANVAS-')],
@@ -1124,6 +1164,10 @@ def main():
             window['-TOGGLE-GRAPHIC-'].metadata = not window['-TOGGLE-GRAPHIC-'].metadata
             window['-TOGGLE-GRAPHIC-'].update(image_data=toggle_btn_on if window['-TOGGLE-GRAPHIC-'].metadata else toggle_btn_off)
             backend.clear_plots = not backend.clear_plots
+        elif event == '-TOGGLE-REWARDS-':  # if the graphical button that changes images
+            window['-TOGGLE-REWARDS-'].metadata = not window['-TOGGLE-REWARDS-'].metadata
+            window['-TOGGLE-REWARDS-'].update(image_data=toggle_btn_on if window['-TOGGLE-REWARDS-'].metadata else toggle_btn_off)
+            backend.use_distance = not backend.use_distance
         elif event =='Sampled Poses':
             backend.draw_sampled_region()
         elif event == '-SAVE-':
@@ -1209,7 +1253,7 @@ def main():
             window['-print-path'].update()
         # ----------------- Menu choices -----------------
         if event == 'Open Folder':
-            newfolder = sg.popup_get_folder('New folder', no_window=True)
+            newfolder = sg.popup_get_folder('Episode Folder to open',initial_folder=str(p1)+'/demos/rl_demo/data')
             if newfolder is None:
                 continue
 

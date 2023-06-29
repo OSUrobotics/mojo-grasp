@@ -239,20 +239,26 @@ class RecordDataPKL(RecordData):
             self.episode_num += 1
             self.eval_num = self.episode_num
 
-    def save_episode(self,evaluated=False):
+    def save_episode(self,evaluated=False, filename=None):
         """
         Method called by :func:`~mojograsp.simcore.sim_manager.SimManager` after every episode. Saves the most recent
         episode dictionary to a pkl file. 
         """
         if self.save_episode_flag and self.data_path != None:
             if evaluated:
-                file_path =file_path = self.data_path + \
-                    "Test/Evaluation_episode_" + str(self.eval_num) + ".pkl" 
+                if filename is None:
+                    file_path = self.data_path + \
+                        "Test/Evaluation_episode_" + str(self.eval_num) + ".pkl" 
+                else:
+                    file_path = self.data_path + "Test/"+ filename
                 self.eval_num +=1
                 print('save episode evaluated', self.eval_num)
             else:
-                file_path = self.data_path + 'Train/' + \
-                    self.data_prefix + "_" + str(self.episode_num) + ".pkl"
+                if filename is None:
+                    file_path = self.data_path + 'Train/' + \
+                        self.data_prefix + "_" + str(self.episode_num) + ".pkl"
+                else:
+                    file_path = self.data_path + 'Train/' +  filename
             print(file_path)
             
             with open(file_path, 'wb') as fout:
@@ -288,7 +294,9 @@ class RecordDataRLPKL(RecordDataPKL):
         state_reward_dict = {}
         timestep_dict = {"number": self.timestep_num}
         if self.state:
-            timestep_dict["state"] = self.state.get_state()
+            temp = self.state.get_state()
+            exclude_keys = ['previous_state']
+            timestep_dict["state"] = {k: temp[k] for k in set(list(temp.keys())) - set(exclude_keys)}
         if self.reward:
             timestep_dict["reward"] = self.reward.get_reward()
         if self.action:

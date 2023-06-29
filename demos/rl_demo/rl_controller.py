@@ -30,6 +30,7 @@ def calc_finger_poses(angles):
     f2y = y0[1] + np.cos(angles[2])*0.0936 + np.cos(angles[2] + angles[3])*0.0504
     print([f1x, f1y, f2x, f2y])
     return [f1x, f1y, f2x, f2y]
+
 def clip_angs(angles):
     # function to clip angles to between -pi to pi
 
@@ -41,6 +42,7 @@ def clip_angs(angles):
             angles[i] = angles[i] - period*2*np.pi
             # print('new angle', angles[i])
     return angles
+
 class ExpertController():
     # Maximum move per step
     MAX_MOVE = .01
@@ -324,7 +326,17 @@ class RLController(ExpertController):
         
         if not self.rand_episode:           
             # print(self.epsilon)
+            
+            # Previous method of exploration
             actor_portion = self.policy.select_action(state) + (np.random.rand(4)-0.5)/2 * self.epsilon
+            
+            # DDPG HER paper method of exploration
+            # if self.train_flag:
+            #     # print('not adding noise')
+            #     actor_portion = self.policy.select_action(state)
+            # else:
+            #     actor_portion = self.policy.select_action(state) + np.random.normal(0,0.1,size=4)
+                
             actor_portion = np.clip(actor_portion,-1,1)
             # actor_portion = np.array([0,-1,0,-1])
             ap = actor_portion * self.MAX_DISTANCE_CHANGE
@@ -477,3 +489,51 @@ class RLController(ExpertController):
         if self.train_flag:
             self.train_flag=False
             self.epsilon = self.old_epsilon
+
+class GymController(ExpertController):
+    def __init__(self, gripper: TwoFingerGripper, cube: ObjectBase, data_file: str = None, args: dict = None):
+        if 'B' in args['hand']:
+            super().__init__(gripper, cube, data_file,'B')
+        else:
+            super().__init__(gripper, cube, data_file)
+        self.train_flag = False
+        self.MAX_ANGLE_CHANGE = 0.01
+        self.MAX_DISTANCE_CHANGE = 0.001
+        self.epsilon = args['epsilon']
+        self.COOLING_RATE = args['edecay']
+        self.rand_portion = np.array([0,0,0,0])
+        self.final_reward = 0
+        
+        self.old_epsilon = self.epsilon
+        print('epsilon and edecay', self.epsilon, self.COOLING_RATE)
+        self.rand_episode = np.random.rand() < self.epsilon
+        self.useIK = args['action']=="Finger Tip Position"
+        # self.eval_flag = False
+        
+    def find_angles(self,actor_output):
+        if self.useIK:
+            # get current cube position
+            self.get_current_cube_position()
+
+            finger_pos1 = p.getLinkState(self.gripper.id, 2) #RIGHT FINGER
+            finger_pos2 = p.getLinkState(self.gripper.id, 5) #LEFT FINGER
+            finger_angles = self.gripper.get_joint_angles()
+            
+            ap = actor_output * self.MAX_DISTANCE_CHANGE
+            new_finger_poses = [finger_pos1[0][0] + ap[0], finger_pos1[0][1] + ap[1], finger_pos2[0][0] + ap[2], finger_pos2[0][1] + ap[3]]
+            
+            found1, finger_1_angs_kegan, it1 = self.ik_f1.calculate_ik(target=new_finger_poses[:2], ee_location=None)
+            found2, finger_2_angs_kegan, it12 = self.ik_f2.calculate_ik(target=new_finger_poses[2:], ee_location=None)
+            action = [finger_1_angs_kegan[0],finger_1_angs_kegan[1],finger_2_angs_kegan[0],finger_2_angs_kegan[1]]
+            action = clip_angs(action)
+            
+        else:
+            self.get_current_cube_position()
+    
+            finger_angles = self.gripper.get_joint_angles()
+
+            action = ((actor_output)*self.MAX_ANGLE_CHANGE + finger_angles).tolist()
+        return action, actor_output
+        
+    def get_network_outputs(self,state):
+        return 0

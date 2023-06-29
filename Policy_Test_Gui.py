@@ -22,7 +22,6 @@ import pathlib
     Data Plotter
     
     This is based on the Demo_PNG_Viewer by PySimpleGUI
-    
 '''
 
 def save_element_as_file(element, filename):
@@ -52,7 +51,7 @@ class RNNGui():
         self.train_dataset, self.validation_dataset = None, None
         
         # define layout, show and read the window
-        data_layout =  [ [sg.Text('Model Type'), sg.OptionMenu(values=('DDPG', 'DDPGFD','DDPG+HER', 'DDPGFD+HER', 'gym'),  k='-model', default_value='DDPG')],
+        data_layout =  [ [sg.Text('Model Type'), sg.OptionMenu(values=('DDPG', 'DDPGFD','DDPG+HER', 'DDPGFD+HER'),  k='-model', default_value='DDPG')],
                          [sg.Text('Path to Expert Data if using FD')],
                          [sg.Button("Browse",key='-browse-expert',button_color='DarkBlue'),sg.Text("/", key='-expert-path')],
                          [sg.Text('Path to Save Data')],
@@ -71,8 +70,7 @@ class RNNGui():
                          [sg.Text('Rollout Size'), sg.Input(5,key='-rollout_size'), sg.Text('Rollout Weight'), sg.Input(0.5, key='-rollout_weight')],
                          [sg.Text('Evaluation Period'), sg.Input(3,key='-eval'), sg.Text('Tau'), sg.Input(0.0005, key='-tau')],
                          [sg.Text('Timesteps per Episode'), sg.Input(150,key='-tsteps'), sg.Text('Timesteps in Evaluation'), sg.Input(150,key='-eval-tsteps')],
-                         [sg.Text('State Training Noise'), sg.Input(0.05, key='-snoise'),sg.Text('Start Pos Range (mm)'), sg.Input(0, key='-start-noise')],
-                         [sg.Text('Timestep Frequency'), sg.Input(240,key='-freq')]]
+                         [sg.Text('State Training Noise'), sg.Input(0.05, key='-snoise'),sg.Text('Start Pos Range (mm)'), sg.Input(0, key='-start-noise')]]
         
         plotting_layout = [[sg.Text('Model Title')],
                        [sg.Input('test1',key='-title')],
@@ -94,9 +92,7 @@ class RNNGui():
                        [sg.Button('Build Config File WITHOUT Training', key='-build')],
                        [sg.Text('Work progress'), sg.ProgressBar(100, size=(20, 20), orientation='h', key='-PROG-')]]
 
-        layout = [[sg.TabGroup([[sg.Tab('Task and General parameters', data_layout, key='-mykey-'),
-                                sg.Tab('Hyperparameters', model_layout),
-                                sg.Tab('State, Action, Reward', plotting_layout)]], key='-group1-', tab_location='top', selected_title_color='purple')]]
+        layout = [[sg.Menu(menu)], [sg.(col)]]
             
         self.data_type = None
         self.window = sg.Window('RNN Gui', layout, return_keyboard_events=True, use_default_focus=False, finalize=True)
@@ -130,8 +126,7 @@ class RNNGui():
                      'tsteps': int(values['-tsteps']),
                      'eval-tsteps':int(values['-eval-tsteps']),
                      'distance_scaling': float(values['-distance_scale']),
-                     'contact_scaling': float(values['-contact_scale']),
-                     'freq': int(values['-freq'])}
+                     'contact_scaling': float(values['-contact_scale'])}
         state_len = 0
         state_mins = []
         state_maxes = []
@@ -173,8 +168,8 @@ class RNNGui():
             state_len += 2
             state_list.append('op')
         if values['-ja']:
-            state_mins.extend([-np.pi/2, -2.09, -np.pi/2, 0])
-            state_maxes.extend([np.pi/2, 0, np.pi/2, 2.09])
+            state_mins.extend([-np.pi/2, -np.pi, -np.pi/2, 0])
+            state_maxes.extend([np.pi/2, 0, np.pi/2, np.pi])
             state_len += 4
             state_list.append('ja')
         if values['-fod']:
@@ -187,8 +182,8 @@ class RNNGui():
             state_len += 2
             state_list.append('fod')
         if values['-fta']:
-            state_mins.extend([-np.pi/2-2.09, -np.pi/2])
-            state_maxes.extend([np.pi/2, np.pi/2+2.09])
+            state_mins.extend([-np.pi/2, -np.pi/2])
+            state_maxes.extend([np.pi/2, np.pi/2])
             state_len += 2
             state_list.append('fta')
         if values['-gp']:
@@ -277,10 +272,6 @@ class RNNGui():
                 pass
             try:
                 os.mkdir(self.args['save_path'] + '/Test/')
-            except FileExistsError:
-                pass
-            try:
-                os.mkdir(self.args['save_path'] + '/Videos/')
             except FileExistsError:
                 pass
         else:
