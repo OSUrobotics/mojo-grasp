@@ -158,6 +158,7 @@ class GymWrapper(gym.Env):
         :param state: :func:`~mojograsp.simcore.phase.State` object.
         :type state: :func:`~mojograsp.simcore.phase.State`
         """
+        angle_keys = ["finger0_segment0_joint","finger0_segment1_joint","finger1_segment0_joint","finger1_segment1_joint"]
         state = []
         if self.PREV_VALS > 0:
             for i in range(self.PREV_VALS):
@@ -174,7 +175,7 @@ class GymWrapper(gym.Env):
                         state.extend(state_container['previous_state'][i]['f1_contact_pos'][0:2])
                         state.extend(state_container['previous_state'][i]['f2_contact_pos'][0:2])
                     elif key == 'ja':
-                        state.extend([item for item in state_container['previous_state'][i]['two_finger_gripper']['joint_angles'].values()])
+                        state.extend([state_container['previous_state'][i]['two_finger_gripper']['joint_angles'][item] for item in angle_keys])
                     elif key == 'fta':
                         state.extend([state_container['previous_state'][i]['f1_ang'],state_container['previous_state'][i]['f2_ang']])
                     elif key == 'gp':
@@ -195,7 +196,7 @@ class GymWrapper(gym.Env):
                 state.extend(state_container['f1_contact_pos'][0:2])
                 state.extend(state_container['f2_contact_pos'][0:2])
             elif key == 'ja':
-                state.extend([item for item in state_container['two_finger_gripper']['joint_angles'].values()])
+                state.extend([state_container['two_finger_gripper']['joint_angles'][item] for item in angle_keys])
             elif key == 'fta':
                 state.extend([state_container['f1_ang'],state_container['f2_ang']])
             elif key == 'gp':

@@ -173,13 +173,17 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None):
     # check_env(gym_env, warn=True)
     if runtype == 'run':
         # gym_env = make_vec_env(lambda: gym_env, n_envs=1)
-        model = PPO("MlpPolicy", gym_env, tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-1}).learn(151*30000)
+        model = PPO("MlpPolicy", gym_env, tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-1}).learn(151*100000)
         model.save(args['save_path']+'policy')
+        temp = model.get_parameters()
+        with open(args['save_path']+'parameters.pkl','wb') as file:
+            pkl.dump(temp,file)
         # d = data_processor(args['save_path'] + 'Train/')
         # d.load_data()
         # d.save_all()
         gym_env.eval = True
         gym_env.eval_names = names
+        
 
         for _ in range(8):
             obs = gym_env.reset()
@@ -201,7 +205,7 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None):
         pass
 
 def main():
-    run_pybullet('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/PPO_FTP_Constraints/experiment_config.json',runtype='run')
+    run_pybullet('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/PPO_JA_long/experiment_config.json',runtype='run')
 
 if __name__ == '__main__':
     main()
