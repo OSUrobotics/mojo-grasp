@@ -192,7 +192,7 @@ class GuiBackend():
         self.ax.legend(self.legend)
         self.ax.grid(True)
         self.ax.set_ylabel('Angle (radians)')
-        self.ax.set_xlabel('Timestep (1/240 s)')
+        self.ax.set_xlabel('Timestep (1/30 s)')
         self.ax.set_title('Joint Angles')
         self.figure_canvas_agg.draw()
         self.curr_graph = 'angles'
@@ -215,7 +215,7 @@ class GuiBackend():
         self.ax.legend(self.legend)
         self.ax.grid(True)
         self.ax.set_ylabel('Actor Output')
-        self.ax.set_xlabel('Timestep (1/240 s)')
+        self.ax.set_xlabel('Timestep (1/30 s)')
         self.ax.set_title('Actor Output')
         self.figure_canvas_agg.draw()
         self.curr_graph = 'angles'
@@ -235,7 +235,7 @@ class GuiBackend():
         self.ax.legend(self.legend)
         self.ax.grid(True)
         self.ax.set_ylabel('Action Value')
-        self.ax.set_xlabel('Timestep (1/240 s)')
+        self.ax.set_xlabel('Timestep (1/30 s)')
         self.ax.set_title('Critic Output')
         self.figure_canvas_agg.draw()
         self.curr_graph = 'rewards'
@@ -258,7 +258,7 @@ class GuiBackend():
         self.ax.legend(self.legend)
         self.ax.grid(True)
         self.ax.set_ylabel('Reward')
-        self.ax.set_xlabel('Timestep (1/240 s)')
+        self.ax.set_xlabel('Timestep (1/30 s)')
         self.ax.set_title('Reward Plot')
         self.figure_canvas_agg.draw()
         self.curr_graph = 'rewards'
@@ -279,7 +279,7 @@ class GuiBackend():
         self.ax.legend(self.legend)
         self.ax.grid(True)
         self.ax.set_ylabel('Reward')
-        self.ax.set_xlabel('Timestep (1/240 s)')
+        self.ax.set_xlabel('Timestep (1/30 s)')
         self.ax.set_title('Contact Reward Plot')
         self.figure_canvas_agg.draw()
         self.curr_graph = 'rewards'
@@ -311,7 +311,7 @@ class GuiBackend():
         self.legend.extend(['Reward - episode ' + str(self.e_num)])
         self.ax.legend(self.legend)
         self.ax.set_ylabel('Reward')
-        self.ax.set_xlabel('Timestep (1/240 s)')
+        self.ax.set_xlabel('Timestep (1/30 s)')
         self.ax.set_title(title)
         self.ax.grid(True)
         self.figure_canvas_agg.draw()

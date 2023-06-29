@@ -12,22 +12,25 @@ import os
 import re
 import pickle as pkl
 
-folder = '/home/orochi/Downloads/'
+folder = '/home/orochi/mojo/mojo-grasp/demos/real_world/'
 episode_files = [os.path.join(folder, f) for f in os.listdir(folder) if f.lower().endswith('.pkl')]
 filenames_only = [f for f in os.listdir(folder) if f.lower().endswith('.pkl')]
 real_ones = [f for f in filenames_only if f[0].isupper()]
 print(filenames_only)
 print(real_ones)
 for filename in real_ones:
-    direction = re.findall('\w+_',filename)
+    direction = re.findall('\w+',filename)
     print(direction[0])
     # a = [f for f in filenames_only if f.startswith(direction[0])]
-    with open(folder+direction[0]+'state.pkl', 'rb') as file:
+    with open(folder+direction[0]+'.pkl', 'rb') as file:
         state = pkl.load(file)
-    with open(folder+direction[0]+'actor.pkl', 'rb') as file:
-        action = pkl.load(file)
+    # with open(folder+direction[0]+'actor.pkl', 'rb') as file:
+    #     action = pkl.load(file)
     edict = {'number': 0, 'timestep_list':[]}
-    for i,j in zip(state,action):
-        edict['timestep_list'].append({'state':i,'action':j})
+    # for i,j in zip(state,action):
+    #     edict['timestep_list'].append({'state':i,'action':j})
+    for i in state:
+        edict['timestep_list'].append({'state':i})
+    
     with open(folder+direction[0] +'episode.pkl','wb') as file:
         pkl.dump(edict,file)
