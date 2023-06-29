@@ -19,7 +19,7 @@ import pickle as pkl
 # [Not the implementation used in the TD3 paper]
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
+assert torch.cuda.is_available()
 @torch.jit.script
 def simple_normalize(x_tensor, mins, maxes):
     """
