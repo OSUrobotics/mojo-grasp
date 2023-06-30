@@ -34,9 +34,10 @@ class GoalHolder():
 class RandomGoalHolder(GoalHolder):
     def __init__(self, radius_range: list):
         self.name = 'goal_pose'
+        self.rrange = radius_range
         self.pose = []
         self.next_run()
-        self.rrange = radius_range
+        
     
     def next_run(self):
         l = np.sqrt(np.random.uniform(self.rrange[0]**2,self.rrange[1]**2))
