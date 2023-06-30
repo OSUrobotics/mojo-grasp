@@ -11,7 +11,7 @@ import pathlib
 from demos.rl_demo import rl_env
 from demos.rl_demo import manipulation_phase_rl
 # import rl_env
-from demos.rl_demo.rl_state import StateRL, GoalHolder
+from demos.rl_demo.rl_state import StateRL, GoalHolder, RandomGoalHolder
 from demos.rl_demo import rl_action
 from demos.rl_demo import rl_reward
 from demos.rl_demo import rl_gym_wrapper
@@ -46,11 +46,14 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None):
         xeval = df2["x"]
         yeval = df2["y"]
     elif 'full_random' == args['task'] and runtype != 'eval':
+        pass
+        '''
         df = pd.read_csv(args['points_path'], index_col=False)
         x = df["x"]
         y = df["y"]
         xeval = x
         yeval = y
+        '''
     elif runtype=='eval':
         df = pd.read_csv('/home/orochi/mojo/mojo-grasp/demos/rl_demo/resources/test_points.csv', index_col=False)
         print('EVALUATING BOOOIIII')
@@ -114,6 +117,7 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None):
     # p.addUserDebugPoints([[0.2,0.1,0.0],[1,0,0]],[[1,0.0,0],[0.5,0.5,0.5]], 1)
     # p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 1)
     goal_poses = GoalHolder(pose_list)
+    goal_poses = RandomGoalHolder([0.01,0.065])
     eval_goal_poses = GoalHolder(eval_pose_list)
     # time.sleep(10)
     # state, action and reward
