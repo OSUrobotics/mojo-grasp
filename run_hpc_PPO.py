@@ -93,6 +93,7 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None):
     
     # load objects into pybullet
     plane_id = p.loadURDF("plane.urdf", flags=p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
+    print(args['hand_path'])
     hand_id = p.loadURDF(args['hand_path'], useFixedBase=True,
                          basePosition=[0.0, 0.0, 0.05], flags=p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
     obj_id = p.loadURDF(args['object_path'], basePosition=[0.0, 0.10, .05], flags=p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
