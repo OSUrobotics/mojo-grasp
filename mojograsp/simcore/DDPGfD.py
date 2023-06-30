@@ -18,7 +18,6 @@ from torchmetrics import ExplainedVariance
 # Implementation of Deep Deterministic Policy Gradients (DDPG)
 # Paper: https://arxiv.org/abs/1509.02971
 # [Not the implementation used in the TD3 paper]
-
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 assert torch.cuda.is_available()
 @torch.jit.script
