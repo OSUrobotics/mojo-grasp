@@ -46,6 +46,10 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None):
         xeval = df2["x"]
         yeval = df2["y"]
     elif 'full_random' == args['task'] and runtype != 'eval':
+        x = [1,2,3]
+        y = [1,2,3]
+        xeval = x
+        yeval = y
         pass
         '''
         df = pd.read_csv(args['points_path'], index_col=False)
