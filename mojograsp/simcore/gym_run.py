@@ -6,11 +6,8 @@ Created on Tue Jun 13 10:53:58 2023
 @author: orochi
 """
 
-from multiprocessing import connection
-from operator import truediv
 import pybullet as p
 import pybullet_data
-import pathlib
 from demos.rl_demo import rl_env
 from demos.rl_demo import manipulation_phase_rl
 # import rl_env
@@ -19,29 +16,20 @@ from demos.rl_demo import rl_action
 from demos.rl_demo import rl_reward
 from demos.rl_demo import rl_gym_wrapper
 import pandas as pd
-from mojograsp.simcore.sim_manager_HER import SimManagerRLHER
-from mojograsp.simcore.state import StateDefault
-from mojograsp.simcore.reward import RewardDefault
 from mojograsp.simcore.record_data import RecordDataJSON, RecordDataPKL,  RecordDataRLPKL
 from mojograsp.simobjects.two_finger_gripper import TwoFingerGripper
-from mojograsp.simobjects.object_base import ObjectBase
 from mojograsp.simobjects.object_with_velocity import ObjectWithVelocity
-from mojograsp.simobjects.object_for_dataframe import ObjectVelocityDF
-from mojograsp.simcore.replay_buffer import ReplayBufferDefault, ReplayBufferDF
-from mojograsp.simcore.episode import EpisodeDefault
-import numpy as np
 from mojograsp.simcore.priority_replay_buffer import ReplayBufferPriority
-from mojograsp.simcore.data_combination import data_processor
 import pickle as pkl
 import json
-import time
-from stable_baselines3.common.env_checker import check_env
 from stable_baselines3 import A2C, PPO
+import wandb
 # from stable_baselines3.DQN import MlpPolicy
 # from stable_baselines3.common.cmd_util import make_vec_env
 
 def run_pybullet(filepath, window=None, runtype='run', episode_number=None):
     # resource paths
+    wandb.init(project = 'StableBaselinesWandBTest')
     with open(filepath, 'r') as argfile:
         args = json.load(argfile)
     
@@ -122,7 +110,7 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None):
     p.changeVisualShape(hand_id, 4, rgbaColor=[0.3, 0.3, 0.3, 1])
     # p.configureDebugVisualizer(p.COV_ENABLE_RENDERING,0)
     # p.setTimeStep(1/2400)
-    obj = ObjectWithVelocity(obj_id, path=args['object_path'])
+    obj = ObjectWithVelocity(obj_id, path=args['object_path'],name='obj_2')
     # p.addUserDebugPoints([[0.2,0.1,0.0],[1,0,0]],[[1,0.0,0],[0.5,0.5,0.5]], 1)
     # p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 1)
     goal_poses = GoalHolder(pose_list)
@@ -173,7 +161,7 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None):
     # check_env(gym_env, warn=True)
     if runtype == 'run':
         # gym_env = make_vec_env(lambda: gym_env, n_envs=1)
-        model = PPO("MlpPolicy", gym_env, tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-1}).learn(151*100000)
+        model = PPO("MlpPolicy", gym_env, tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-1}).learn(151*args['epochs'])
         model.save(args['save_path']+'policy')
         temp = model.get_parameters()
         with open(args['save_path']+'parameters.pkl','wb') as file:
@@ -205,7 +193,7 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None):
         pass
 
 def main():
-    run_pybullet('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/PPO_JA_long/experiment_config.json',runtype='run')
+    run_pybullet('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/PPO_long_kitchen_sink/experiment_config.json',runtype='run')
 
 if __name__ == '__main__':
     main()

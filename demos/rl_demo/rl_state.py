@@ -30,6 +30,22 @@ class GoalHolder():
     
     def __len__(self):
         return len(self.pose)
+    
+class RandomGoalHolder(GoalHolder):
+    def __init__(self, radius_range: list):
+        self.name = 'goal_pose'
+        self.pose = []
+        self.next_run()
+        self.rrange = radius_range
+    
+    def next_run(self):
+        l = np.sqrt(np.random.uniform(self.rrange[0]**2,self.rrange[1]**2))
+        ang = np.pi * np.random.uniform(0,2)
+        self.pos = [l * np.cos(ang),l * np.sin(ang)]
+    
+    def get_data(self):
+        return {'goal_pose':self.pose}
+        
         
 class StateRL(StateDefault):
     """
