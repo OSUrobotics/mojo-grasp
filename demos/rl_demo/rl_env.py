@@ -13,6 +13,7 @@ class ExpertEnv(Environment):
             self.hand_type = 'B'
         else:
             self.hand_type = 'A'
+        self.rand_start = True
         
     def reset(self):
         # reset the simulator
@@ -21,12 +22,14 @@ class ExpertEnv(Environment):
         plane_id = p.loadURDF("plane.urdf", flags=p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
         
         #adding noise
-        # obj_change = np.random.normal(0,0.01,2)
-        #no noise
-        obj_change = np.array([0,0])
+        if self.rand_start:
+            obj_change = np.random.normal(0,0.01,2)
+        else:
+            #no noise
+            obj_change = np.array([0,0])
         
-        # f1_pos = [0.03+obj_change[0], 0.10+obj_change[1], 0.05]
-        # f2_pos = [-0.03+obj_change[0], 0.10+obj_change[1], 0.05]
+        
+
         # print('object pose', obj_change + np.array([0,0.1]))
         # print('f1 pos', f1_pos)
         # print('f2 pos', f2_pos)
@@ -65,8 +68,26 @@ class ExpertEnv(Environment):
         p.changeDynamics(hand_id, 1, jointLowerLimit=0, jointUpperLimit=2.09, mass=mass_link)
         p.changeDynamics(hand_id, 3, jointLowerLimit=-1.57, jointUpperLimit=1.57, mass=mass_link)
         p.changeDynamics(hand_id, 4, jointLowerLimit=-2.09, jointUpperLimit=0, mass=mass_link)
-        # f1_angs = p.calculateInverseKinematics(hand_id, 2, f1_pos, maxNumIterations=3000)
-        # f2_angs = p.calculateInverseKinematics(hand_id, 5, f2_pos, maxNumIterations=3000)
+        obj_id = p.loadURDF(self.obj.path, basePosition=[0.0+obj_change[0], 0.10+obj_change[1], .05], flags=p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
+
+        if self.rand_start:
+            f1_pos = [0.03+obj_change[0], 0.10+obj_change[1], 0.05]
+            f2_pos = [-0.03+obj_change[0], 0.10+obj_change[1], 0.05]
+            
+            f1_angs = p.calculateInverseKinematics(hand_id, 2, f1_pos, maxNumIterations=3000)
+            f2_angs = p.calculateInverseKinematics(hand_id, 5, f2_pos, maxNumIterations=3000)
+            p.resetJointState(hand_id, 0, -np.pi/2)
+            p.resetJointState(hand_id, 1, np.pi/4)
+            p.resetJointState(hand_id, 3, np.pi/2)
+            p.resetJointState(hand_id, 4, -np.pi/4)
+            
+            positions = np.linspace([-np.pi/2,np.pi/4,np.pi/2,-np.pi/4],[f1_angs[0],f1_angs[1],f2_angs[2],f2_angs[3]],20)
+            for action_to_execute in positions:
+                p.setJointMotorControlArray(hand_id, jointIndices=self.hand.get_joint_numbers(),
+                                            controlMode=p.POSITION_CONTROL, targetPositions=action_to_execute,
+                                            positionGains=[0.8,0.8,0.8,0.8], forces=[0.4,0.4,0.4,0.4])
+                self.step()
+                # time.sleep(0.01)
         # # print(f1_angs, f2_angs)
         # p.resetJointState(hand_id, 0, f1_angs[0])
         # p.resetJointState(hand_id, 1, f1_angs[1])
@@ -83,7 +104,6 @@ class ExpertEnv(Environment):
         p.setPhysicsEngineParameter(contactBreakingThreshold=.001)
         # obj_id = p.loadURDF(self.obj.path, basePosition=[0.0, 0.1067, .05])
 
-        obj_id = p.loadURDF(self.obj.path, basePosition=[0.0+obj_change[0], 0.10+obj_change[1], .05], flags=p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
         # Update the object id's
         self.hand.id = hand_id
         self.obj.id = obj_id
