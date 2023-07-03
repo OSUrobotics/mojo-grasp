@@ -33,27 +33,33 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None):
     with open(filepath, 'r') as argfile:
         args = json.load(argfile)
     
-    if runtype =='run' and (args['task'] == 'asterisk'):
-        x = [0.03, 0, -0.03, -0.04, -0.03, 0, 0.03, 0.04]
-        y = [-0.03, -0.04, -0.03, 0, 0.03, 0.04, 0.03, 0]
-        xeval = x
-        yeval = y
-    elif 'random' == args['task'] and runtype != 'eval':
-        df = pd.read_csv(args['points_path'], index_col=False)
-        x = df["x"]
-        y = df["y"]
-        df2 = pd.read_csv('/home/orochi/mojo/mojo-grasp/demos/rl_demo/resources/test_points.csv', index_col=False)
-        xeval = df2["x"]
-        yeval = df2["y"]
-    elif 'full_random' == args['task'] and runtype != 'eval':
-        df = pd.read_csv(args['points_path'], index_col=False)
-        x = df["x"]
-        y = df["y"]
-        xeval = x
-        yeval = y
-        
+    if runtype =='run':
+        if args['task'] == 'asterisk':
+            x = [0.03, 0, -0.03, -0.04, -0.03, 0, 0.03, 0.04]
+            y = [-0.03, -0.04, -0.03, 0, 0.03, 0.04, 0.03, 0]
+            xeval = x
+            yeval = y
+            
+        elif 'random' == args['task']:
+            df = pd.read_csv(args['points_path'], index_col=False)
+            x = df["x"]
+            y = df["y"]
+            df2 = pd.read_csv('./demos/rl_demo/resources/test_points.csv', index_col=False)
+            xeval = [0.045, 0, -0.045, -0.06, -0.045, 0, 0.045, 0.06]
+            yeval = [-0.045, -0.06, -0.045, 0, 0.045, 0.06, 0.045, 0]
+        elif 'full_random' == args['task']:
+            df = pd.read_csv(args['points_path'], index_col=False)
+            x = df["x"]
+            y = df["y"]
+            xeval = [0.045, 0, -0.045, -0.06, -0.045, 0, 0.045, 0.06]
+            yeval = [-0.045, -0.06, -0.045, 0, 0.045, 0.06, 0.045, 0]
+        elif args['task'] == 'unplanned_random':
+            x = [0.02]
+            y = [0.065]
+            xeval = [0.045, 0, -0.045, -0.06, -0.045, 0, 0.045, 0.06]
+            yeval = [-0.045, -0.06, -0.045, 0, 0.045, 0.06, 0.045, 0]
     elif runtype=='eval':
-        df = pd.read_csv('/home/orochi/mojo/mojo-grasp/demos/rl_demo/resources/test_points.csv', index_col=False)
+        df = pd.read_csv('./demos/rl_demo/resources/test_points.csv', index_col=False)
         print('EVALUATING BOOOIIII')
         x = df["x"]
         y = df["y"]
@@ -63,11 +69,10 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None):
         df = pd.read_csv(args['points_path'], index_col=False)
         x = df["x"]
         y = df["y"]
-        df2 = pd.read_csv('/home/orochi/mojo/mojo-grasp/demos/rl_demo/resources/test_points.csv', index_col=False)
+        df2 = pd.read_csv('./demos/rl_demo/resources/test_points.csv', index_col=False)
         xeval = df2["x"]
         yeval = df2["y"]
-    xeval = [0.045, 0, -0.045, -0.06, -0.045, 0, 0.045, 0.06]
-    yeval = [-0.045, -0.06, -0.045, 0, 0.045, 0.06, 0.045, 0]
+    
     names = ['AsteriskSE.pkl','AsteriskS.pkl','AsteriskSW.pkl','AsteriskW.pkl','AsteriskNW.pkl','AsteriskN.pkl','AsteriskNE.pkl','AsteriskE.pkl']
     pose_list = [[i,j] for i,j in zip(x,y)]
     eval_pose_list = [[i,j] for i,j in zip(xeval,yeval)]
@@ -115,7 +120,10 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None):
     obj = ObjectWithVelocity(obj_id, path=args['object_path'])
     # p.addUserDebugPoints([[0.2,0.1,0.0],[1,0,0]],[[1,0.0,0],[0.5,0.5,0.5]], 1)
     # p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 1)
-    goal_poses = GoalHolder(pose_list)
+    if args['task'] == 'unplanned_random':
+        goal_poses = RandomGoalHolder(pose_list)
+    else:    
+        goal_poses = GoalHolder(pose_list)
     # goal_poses = RandomGoalHolder([0.01,0.065])
     eval_goal_poses = GoalHolder(eval_pose_list)
     # time.sleep(10)
@@ -141,7 +149,7 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None):
     replay_buffer = ReplayBufferPriority(buffer_size=4080000)
     
     # environment and recording
-    env = rl_env.ExpertEnv(hand=hand, obj=obj, hand_type=arg_dict['hand'])
+    env = rl_env.ExpertEnv(hand=hand, obj=obj, hand_type=arg_dict['hand'], rand_start=args['rstart'])
 
     # env = rl_env.ExpertEnv(hand=hand, obj=cylinder)
     

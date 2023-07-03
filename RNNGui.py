@@ -61,7 +61,8 @@ class RNNGui():
                          [sg.Button("Browse",key='-browse-load',button_color='DarkBlue'),sg.Text("/", key='-load-path')],
                          [sg.Text('Object'), sg.OptionMenu(values=('Cube', 'Cylinder'), k='-object', default_value='Cube')],
                          [sg.Text('Hand'), sg.OptionMenu(values=('2v2', '2v2-B'), k='-hand', default_value='2v2')],
-                         [sg.Text("Task"), sg.OptionMenu(values=('asterisk','random','full_random'), k='-task', default_value='full_random')],
+                         [sg.Text("Task"), sg.OptionMenu(values=('asterisk','random','full_random','unplanned_random'), k='-task', default_value='full_random')],
+                         [sg.Checkbox("Randomized Start Position", key='-rstart',default=False)],
                          [sg.Text('Replay Buffer Sampling'), sg.OptionMenu(values=('priority','random','random+expert'), k='-sampling', default_value='priority')]]
         
         
@@ -131,7 +132,8 @@ class RNNGui():
                      'eval-tsteps':int(values['-eval-tsteps']),
                      'distance_scaling': float(values['-distance_scale']),
                      'contact_scaling': float(values['-contact_scale']),
-                     'freq': int(values['-freq'])}
+                     'freq': int(values['-freq']),
+                     'rstart': int(values['-rstart'])}
         state_len = 0
         state_mins = []
         state_maxes = []
