@@ -11,7 +11,7 @@ import pybullet_data
 from demos.rl_demo import rl_env
 from demos.rl_demo import manipulation_phase_rl
 # import rl_env
-from demos.rl_demo.rl_state import StateRL, GoalHolder
+from demos.rl_demo.rl_state import StateRL, GoalHolder, RandomGoalHolder
 from demos.rl_demo import rl_action
 from demos.rl_demo import rl_reward
 from demos.rl_demo import rl_gym_wrapper
@@ -113,7 +113,13 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None):
     obj = ObjectWithVelocity(obj_id, path=args['object_path'],name='obj_2')
     # p.addUserDebugPoints([[0.2,0.1,0.0],[1,0,0]],[[1,0.0,0],[0.5,0.5,0.5]], 1)
     # p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 1)
-    goal_poses = GoalHolder(pose_list)
+    
+    # For standard loaded goal poses
+    # goal_poses = GoalHolder(pose_list)
+    
+    # For randomized poses
+    goal_poses = RandomGoalHolder([0.02,0.065])
+    
     eval_goal_poses = GoalHolder(eval_pose_list)
     # time.sleep(10)
     # state, action and reward
@@ -193,7 +199,7 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None):
         pass
 
 def main():
-    run_pybullet('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/PPO_long_kitchen_sink/experiment_config.json',runtype='run')
+    run_pybullet('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/ppo-rand-start-and-end/experiment_config.json',runtype='run')
 
 if __name__ == '__main__':
     main()

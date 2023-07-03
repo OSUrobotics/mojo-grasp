@@ -42,7 +42,7 @@ class RandomGoalHolder(GoalHolder):
     def next_run(self):
         l = np.sqrt(np.random.uniform(self.rrange[0]**2,self.rrange[1]**2))
         ang = np.pi * np.random.uniform(0,2)
-        self.pos = [l * np.cos(ang),l * np.sin(ang)]
+        self.pose = [l * np.cos(ang),l * np.sin(ang)]
     
     def get_data(self):
         return {'goal_pose':self.pose}
@@ -91,7 +91,7 @@ class StateRL(StateDefault):
             
     def next_run(self):
         for thing in self.objects:
-            if type(thing) == GoalHolder:
+            if (type(thing) == GoalHolder) | (type(thing) == RandomGoalHolder):
                 thing.next_run()
         
     def reset(self):
