@@ -6,14 +6,14 @@ import numpy as np
 import time
 
 class ExpertEnv(Environment):
-    def __init__(self, hand: TwoFingerGripper, obj: ObjectBase, hand_type):
+    def __init__(self, hand: TwoFingerGripper, obj: ObjectBase, hand_type, rand_start = False):
         self.hand = hand
         self.obj = obj
         if 'B' in hand_type:
             self.hand_type = 'B'
         else:
             self.hand_type = 'A'
-        self.rand_start = True
+        self.rand_start = rand_start
         
     def reset(self):
         # reset the simulator
