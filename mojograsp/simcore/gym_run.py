@@ -208,7 +208,7 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None):
         pass
 
 def main():
-    run_pybullet('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/ppo-rand-start-and-end/experiment_config.json',runtype='run')
+    run_pybullet('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/ppo-rand-start-only/experiment_config.json',runtype='run')
 
 if __name__ == '__main__':
     main()
