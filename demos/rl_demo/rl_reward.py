@@ -6,9 +6,10 @@ from mojograsp.simobjects.two_finger_gripper import TwoFingerGripper
 from copy import deepcopy
 
 class ExpertReward(Reward):
-    def __init__(self):
+    def __init__(self, physics_ID=None):
         self.current_reward = {}
         self.prev_pos = []
+
 
     def set_reward(self, goal_position: list, cube: ObjectBase, hand: TwoFingerGripper, end_reward):
         current_cube_pose = cube.get_curr_pose()
@@ -52,8 +53,9 @@ class ExpertReward(Reward):
 
 
 class TranslateReward(Reward):
-    def __init__(self):
+    def __init__(self, physics_ID):
         self.current_reward = {}
+        self.client = physics_ID
 
     def set_reward(self, goal_position: list, cube: ObjectBase, hand: TwoFingerGripper, prev_position: list):
         current_cube_pose = cube.get_curr_pose()

@@ -16,7 +16,21 @@ from mojograsp.simcore.state import State
 from mojograsp.simcore.reward import Reward
 import pybullet as p
 from PIL import Image
+from stable_baselines3.common.callbacks import EvalCallback
 
+class EvaluateCallback(EvalCallback):
+
+    def _on_step(self) -> bool:
+        if self.eval_freq > 0 and self.n_calls % self.eval_freq == 0:
+            self.eval_env.envs[0].evaluate()
+            temp = super(EvaluateCallback,self)._on_step()
+            self.eval_env.envs[0].train()
+            print('evaluation cylce')
+            return temp
+        else:
+            return True
+
+    
 class NoiseAdder():
     def __init__(self,mins,maxes):
         self.mins = mins
@@ -60,8 +74,7 @@ class GymWrapper(gym.Env):
         self.image_path = args['save_path'] + 'Videos/'
         self.record = record_data
         self.eval = False
-        self.eval_names = None
-        self.run_name = None
+        self.viz = False
         self.eval_run = 0
         self.timestep = 0
         self.first = True
@@ -72,16 +85,15 @@ class GymWrapper(gym.Env):
     def reset(self):
         if not self.first:
             
-            self.record.record_episode(self.eval)
-            self.record.save_episode(self.eval, self.run_name)
-            self.manipulation_phase.next_phase()
             if self.manipulation_phase.episode >= 500:
                 self.manipulation_phase.reset()
+            self.manipulation_phase.next_phase()
+
         self.timestep=0
         self.first = False
         if self.eval:
-            self.manipulation_phase.state.evaluate()
-            self.run_name = self.eval_names[self.eval_run]
+            print('evaluating at eval run', self.eval_run)
+            # print('fack',self.manipulation_phase.state.objects[-1].run_num)
             self.eval_run +=1
         else:
             self.manipulation_phase.state.train()
@@ -95,6 +107,7 @@ class GymWrapper(gym.Env):
         state = self.build_state(state)
         
         print('Episode ',self.manipulation_phase.episode,' goal pose', self.manipulation_phase.goal_position)
+        # print('fack',self.manipulation_phase.state.objects[-1].run_num)
         return state
 
     def step(self, action):
@@ -132,18 +145,23 @@ class GymWrapper(gym.Env):
         # self.manipulation_phase.state.set_state()
         # print(reward)
         
-        if self.eval:
+        if self.viz:
             
             img = p.getCameraImage(640, 480,viewMatrix=self.camera_view_matrix,
                                     projectionMatrix=self.camera_projection_matrix,
                                     shadow=1,
                                     lightDirection=[1, 1, 1])
             img = Image.fromarray(img[2])
-            temp = self.run_name.split('.')[0]
+            temp = 'Fuck'
             img.save(self.image_path+ temp + '_frame_'+ str(self.timestep)+'.png')
         
         if done:
             print('done, recording stuff')
+            self.record.record_episode(self.eval)
+            if self.eval:
+                self.record.save_episode(self.eval, use_reward_name=True)
+            else:
+                self.record.save_episode(self.eval)
 
         self.timestep +=1
         return state, reward, done, info
@@ -234,4 +252,16 @@ class GymWrapper(gym.Env):
         pass
     
     def close(self):
-        pass
+        p.disconnect()
+        
+    def evaluate(self):
+        self.eval = True
+        self.eval_run = 0
+        self.manipulation_phase.state.evaluate()
+        self.manipulation_phase.state.reset()
+        self.manipulation_phase.state.objects[-1].run_num = 0
+        self.manipulation_phase.eval = True
+        
+    def train(self):
+        self.eval = False
+        self.manipulation_phase.eval = False

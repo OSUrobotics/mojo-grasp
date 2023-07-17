@@ -1,12 +1,12 @@
 from numpy import angle
 import pybullet as p
 import logging
-
+from pybullet_utils.bullet_client import BulletClient
 
 class ObjectBase:
     """ObjectBase Base Class"""
 
-    def __init__(self, id: int = None, path: str = None, name: str = None):
+    def __init__(self, id: int = None, path: str = None, name: str = None, physicsClientId: BulletClient = None):
         """
         Constructor takes in object id, path to urdf or sdf files (If one exists) and an object name. 
         This serves as the base class that all other object types should inherit from. 
@@ -98,7 +98,7 @@ class ActuatedObject(ObjectBase):
     actuated objects with pybullet. Offers helper functions and keeps track of joint dictionary. 
     """
 
-    def __init__(self, id: int = None, path: str = None, name: str = None):
+    def __init__(self, id: int = None, path: str = None, name: str = None, physicsClientId: BulletClient = None):
         """
         Constructor takes in object id, path to urdf or sdf files (If one exists) and an object name. 
         This serves as the base class that all other object types should inherit from. 
@@ -111,7 +111,7 @@ class ActuatedObject(ObjectBase):
         :type name: str
         """
 
-        super().__init__(id=id, path=path, name=name)
+        super().__init__(id=id, path=path, name=name, physicsClientId=physicsClientId)
         self.joint_dict = {}
         self.create_joint_dict()
 

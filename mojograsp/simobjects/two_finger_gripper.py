@@ -2,13 +2,14 @@ import pybullet as p
 
 from mojograsp.simobjects.object_base import ActuatedObject
 from mojograsp.simobjects.sensor_base import SensorBase
+from pybullet_utils.bullet_client import BulletClient
 
 
 # TODO: Make convenience functions for end effectors
 class TwoFingerGripper(ActuatedObject):
     """TwoFingerGripper Class is a child class of ActuatedObject"""
 
-    def __init__(self, id: int = None, path: str = None, name: str = "two_finger_gripper"):
+    def __init__(self, id: int = None, path: str = None, name: str = "two_finger_gripper", physicsClientId:BulletClient=None):
         """
         Constructor takes in object id, path to urdf or sdf files (If one exists) and an object name. 
         This serves as the base class that all other object types should inherit from. 
@@ -20,7 +21,7 @@ class TwoFingerGripper(ActuatedObject):
         :type path: str
         :type name: str
         """
-        super().__init__(id=id, path=path, name=name)
+        super().__init__(id=id, path=path, name=name, physicsClientId=physicsClientId)
         self.sensor_dict = {}
         self.num_joints = p.getNumJoints(self.id)
         self.create_sensor_index()
