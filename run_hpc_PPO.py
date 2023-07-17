@@ -121,7 +121,7 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None):
     # p.addUserDebugPoints([[0.2,0.1,0.0],[1,0,0]],[[1,0.0,0],[0.5,0.5,0.5]], 1)
     # p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 1)
     if args['task'] == 'unplanned_random':
-        goal_poses = RandomGoalHolder(pose_list)
+        goal_poses = RandomGoalHolder([0.01,0.065])
     else:    
         goal_poses = GoalHolder(pose_list)
     # goal_poses = RandomGoalHolder([0.01,0.065])
@@ -205,10 +205,10 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None):
     
 def main(run_id):
     print(run_id)
-    folder_names = ['PPO_HPC']
+    folder_names = ['rand_end_only','rand_start_and_end','rand_start_only']
     
     overall_path = pathlib.Path(__file__).parent.resolve()
-    run_path = overall_path.joinpath('demos/rl_demo/data')
+    run_path = overall_path.joinpath('demos/rl_demo/data/HPC_run2')
     final_path = run_path.joinpath(folder_names[run_id-1])
     print(str(final_path))
     run_pybullet(str(final_path) + '/experiment_config.json',runtype='run')
