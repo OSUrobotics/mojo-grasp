@@ -6,7 +6,7 @@ import numpy as np
 import time
 
 class ExpertEnv(Environment):
-    def __init__(self, hand: TwoFingerGripper, obj: ObjectBase, hand_type, rand_start = False):
+    def __init__(self, hand: TwoFingerGripper, obj: ObjectBase, hand_type, physicsClientId=None,rand_start = False):
         self.hand = hand
         self.obj = obj
         if 'B' in hand_type:
@@ -68,7 +68,8 @@ class ExpertEnv(Environment):
         p.changeDynamics(hand_id, 1, jointLowerLimit=0, jointUpperLimit=2.09, mass=mass_link)
         p.changeDynamics(hand_id, 3, jointLowerLimit=-1.57, jointUpperLimit=1.57, mass=mass_link)
         p.changeDynamics(hand_id, 4, jointLowerLimit=-2.09, jointUpperLimit=0, mass=mass_link)
-        obj_id = p.loadURDF(self.obj.path, basePosition=[0.0+obj_change[0], 0.10+obj_change[1], .05], flags=p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
+        obj_id = p.loadURDF(self.obj.path, basePosition=[0.0+obj_change[0], 0.10+obj_change[1], .05],
+                            flags=p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
 
         if self.rand_start:
             f1_pos = [0.03+obj_change[0], 0.10+obj_change[1], 0.05]
@@ -113,6 +114,7 @@ class ExpertEnv(Environment):
         p.changeVisualShape(hand_id, 1, rgbaColor=[0.3, 0.3, 0.3, 1])
         p.changeVisualShape(hand_id, 3, rgbaColor=[1, 0.5, 0, 1])
         p.changeVisualShape(hand_id, 4, rgbaColor=[0.3, 0.3, 0.3, 1])
+        p.changeVisualShape(obj_id, -1, rgbaColor=[0.1, 0.1, 0.1, 1])
         # time.sleep(5)
         
     def setup(self):

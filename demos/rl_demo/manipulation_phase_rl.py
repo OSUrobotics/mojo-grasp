@@ -14,13 +14,14 @@ from math import isclose
 
 class ManipulationRL(Phase):
 
-    def __init__(self, hand: TwoFingerGripper, cube: ObjectBase, x, y, state: State, action: Action, reward: Reward, replay_buffer: ReplayBufferDefault = None, args: dict = None):
+    def __init__(self, hand: TwoFingerGripper, cube: ObjectBase, x, y, state: State, action: Action, reward: Reward, replay_buffer: ReplayBufferDefault = None, args: dict = None,physicsClientId = None):
         self.name = "manipulation"
         self.hand = hand
         self.cube = cube
         self.state = state
         self.action = action
         self.reward = reward
+        self.eval = False
         try:
             self.terminal_step = args['tsteps']
             self.eval_terminal_step = args['eval-tsteps']
@@ -131,7 +132,8 @@ class ManipulationRL(Phase):
 
     def next_phase(self) -> str:
         # increment episode count and return next phase (None in this case)
-        self.episode += 1
+        if not self.eval:
+            self.episode += 1
         self.state.next_run()
         return None
 
@@ -152,6 +154,8 @@ class ManipulationRL(Phase):
         
     def evaluate(self):
         self.controller.evaluate()
+        self.eval = True
         
     def train(self):
         self.controller.train()
+        self.eval = False
