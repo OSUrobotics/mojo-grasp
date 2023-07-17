@@ -23,6 +23,7 @@ from mojograsp.simcore.priority_replay_buffer import ReplayBufferPriority
 import pickle as pkl
 import json
 from stable_baselines3 import A2C, PPO
+from stable_baselines3.common.evaluation import evaluate_policy
 import wandb
 # from stable_baselines3.DQN import MlpPolicy
 # from stable_baselines3.common.cmd_util import make_vec_env
@@ -47,12 +48,14 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None):
             df2 = pd.read_csv('/home/orochi/mojo/mojo-grasp/demos/rl_demo/resources/test_points.csv', index_col=False)
             xeval = [0.045, 0, -0.045, -0.06, -0.045, 0, 0.045, 0.06]
             yeval = [-0.045, -0.06, -0.045, 0, 0.045, 0.06, 0.045, 0]
+            eval_names = ['SE','S','SW','W','NW','N','NE','E'] 
         elif 'full_random' == args['task']:
             df = pd.read_csv(args['points_path'], index_col=False)
             x = df["x"]
             y = df["y"]
             xeval = [0.045, 0, -0.045, -0.06, -0.045, 0, 0.045, 0.06]
             yeval = [-0.045, -0.06, -0.045, 0, 0.045, 0.06, 0.045, 0]
+            eval_names = ['SE','S','SW','W','NW','N','NE','E'] 
         elif args['task'] == 'unplanned_random':
             x = [0.02]
             y = [0.065]
@@ -65,6 +68,9 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None):
         y = df["y"]
         xeval = x
         yeval = y
+        xeval = [0.045, 0, -0.045, -0.06, -0.045, 0, 0.045, 0.06]
+        yeval = [-0.045, -0.06, -0.045, 0, 0.045, 0.06, 0.045, 0]
+        eval_names = ['SE','S','SW','W','NW','N','NE','E'] 
     elif runtype=='replay':
         df = pd.read_csv(args['points_path'], index_col=False)
         x = df["x"]
@@ -122,14 +128,14 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None):
     
     # For standard loaded goal poses
     if args['task'] == 'unplanned_random':
-        goal_poses = RandomGoalHolder(pose_list)
+        goal_poses = RandomGoalHolder([0.02,0.065])
     else:    
         goal_poses = GoalHolder(pose_list)
     
     # For randomized poses
     
     
-    eval_goal_poses = GoalHolder(eval_pose_list)
+    eval_goal_poses = GoalHolder(eval_pose_list,eval_names)
     # time.sleep(10)
     # state, action and reward
     state = StateRL(objects=[hand, obj, goal_poses], prev_len=args['pv'],eval_goals = eval_goal_poses)
@@ -168,22 +174,18 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None):
     
     
     gym_env = rl_gym_wrapper.GymWrapper(env, manipulation, record_data, args)
-
-
+    train_timesteps = args['evaluate']*151
+    callback = rl_gym_wrapper.EvaluateCallback(gym_env,n_eval_episodes=8, eval_freq=train_timesteps, best_model_save_path=args['save_path'])
     # p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 0)
     # p.configureDebugVisualizer(p.COV_ENABLE_GUI, 0)
-
     # check_env(gym_env, warn=True)
     if runtype == 'run':
+        
+        model = PPO("MlpPolicy", gym_env, tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-1})
         # gym_env = make_vec_env(lambda: gym_env, n_envs=1)
-        model = PPO("MlpPolicy", gym_env, tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-1}).learn(151*args['epochs'])
-        model.save(args['save_path']+'policy')
-        temp = model.get_parameters()
-        with open(args['save_path']+'parameters.pkl','wb') as file:
-            pkl.dump(temp,file)
-        # d = data_processor(args['save_path'] + 'Train/')
-        # d.load_data()
-        # d.save_all()
+        
+        gym_env.train()
+        model.learn(args['epochs']*151,callback=callback)
         gym_env.eval = True
         gym_env.eval_names = names
         
@@ -199,7 +201,17 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None):
                 # env.render(mode='console')
 
     elif runtype == 'eval':
-        pass
+        model = PPO("MlpPolicy", gym_env, tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-1}).load(args['save_path']+'policy.zip')
+        gym_env.evaluate()
+        for _ in range(8):
+            obs = gym_env.reset()
+            for step in range(151):
+                action, _ = model.predict(obs, deterministic=True)
+                # print("Step {}".format(step + 1))
+                # print("Action: ", action)
+                obs, reward, done, info = gym_env.step(action)
+                # print('obs=', obs, 'reward=', reward, 'done=', done)
+                # env.render(mode='console')
     elif runtype == 'cont':
         pass
     elif runtype == 'transfer':
@@ -208,7 +220,7 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None):
         pass
 
 def main():
-    run_pybullet('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/ppo-rand-start-only/experiment_config.json',runtype='run')
-
+    run_pybullet('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/ftp_experiment/experiment_config.json',runtype='run')
+    # run_pybullet('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/ftp_experiment/experiment_config.json',runtype='eval')
 if __name__ == '__main__':
     main()

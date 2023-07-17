@@ -12,18 +12,24 @@ import pybullet as p
 from copy import deepcopy
 
 class GoalHolder():
-    def __init__(self, goal_pose):
+    def __init__(self, goal_pose, goal_names = None):
         self.pose = goal_pose
         self.name = 'goal_pose'
+        self.len = len(self.pose)
+        self.goal_names = goal_names
         if len(np.shape(self.pose)) == 1:
             self.pose = [self.pose]
         self.run_num = 0
     
     def get_data(self):
-        return {'goal_pose':self.pose[self.run_num]}
-
+        return {'goal_pose':self.pose[self.run_num%self.len]}
+    
+    def get_name(self):
+        return self.goal_names[self.run_num%self.len]
+    
     def next_run(self):
         self.run_num +=1
+        print('Run number',self.run_num)
         
     def reset(self):
         self.run_num = 0
@@ -55,7 +61,7 @@ class StateRL(StateDefault):
     and :func:`~mojograsp.simcore.replay_buffer.ReplayBufferDefault`.
     """
 
-    def __init__(self, objects: list = None, prev_len=0, eval_goals:GoalHolder =None):
+    def __init__(self, objects: list = None, prev_len=0, physicsClientId=None,eval_goals:GoalHolder =None):
         """
         Default placeholder constructor optionally takes in a list of objects, if no list is provided it defaults
         to None. 
@@ -97,7 +103,7 @@ class StateRL(StateDefault):
     def reset(self):
         self.run_num = 0
         for thing in self.objects:
-            if type(thing) == GoalHolder:
+            if (type(thing) == GoalHolder) | (type(thing) == RandomGoalHolder):
                 thing.reset()
     
     def set_state(self):
@@ -188,6 +194,10 @@ class StateRL(StateDefault):
             temp['previous_state'] = self.previous_states.copy()
         return temp
     
+    def get_name(self) -> str:
+        for thing in self.objects:
+            if (type(thing) == GoalHolder) | (type(thing) == RandomGoalHolder):
+                return thing.get_name()
     
     def __eq__(self, o):
         # Doesnt check that the objects are the same or that the run number is the same,

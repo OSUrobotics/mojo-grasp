@@ -1,8 +1,8 @@
 from mojograsp.simobjects.object_base import ObjectBase
 
 class ObjectWithVelocity(ObjectBase):
-    def __init__(self, id: int = None, path: str = None, name: str = None):
-        super().__init__(id=id, path=path, name=name)
+    def __init__(self, id: int = None, path: str = None, name: str = None, physicsClientId: int = 0):
+        super().__init__(id=id, path=path, name=name,physicsClientId=physicsClientId)
 
     def get_data(self):
         """
