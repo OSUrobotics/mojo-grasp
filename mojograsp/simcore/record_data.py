@@ -239,18 +239,22 @@ class RecordDataPKL(RecordData):
             self.episode_num += 1
             self.eval_num = self.episode_num
 
-    def save_episode(self,evaluated=False, filename=None):
+    def save_episode(self,evaluated=False, filename=None, use_reward_name=False):
         """
         Method called by :func:`~mojograsp.simcore.sim_manager.SimManager` after every episode. Saves the most recent
         episode dictionary to a pkl file. 
         """
         if self.save_episode_flag and self.data_path != None:
             if evaluated:
-                if filename is None:
+                if filename is not None:
+                    file_path = self.data_path + "Test/"+ filename + str(self.eval_num) + '.pkl'
+                elif use_reward_name:
+                    name = self.state.get_name()
+                    file_path = self.data_path + "Test/"+ name + str(self.eval_num) + '.pkl'
+                else:
                     file_path = self.data_path + \
                         "Test/Evaluation_episode_" + str(self.eval_num) + ".pkl" 
-                else:
-                    file_path = self.data_path + "Test/"+ filename
+                    
                 self.eval_num +=1
                 print('save episode evaluated', self.eval_num)
             else:
