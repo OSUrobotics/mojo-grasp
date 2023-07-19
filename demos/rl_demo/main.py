@@ -20,23 +20,25 @@ from mojograsp.simobjects.object_for_dataframe import ObjectVelocityDF
 from mojograsp.simcore.replay_buffer import ReplayBufferDefault, ReplayBufferDF
 from mojograsp.simcore.episode import EpisodeDefault
 import numpy as np
+import json
+import time
 from mojograsp.simcore.priority_replay_buffer import ReplayBufferPriority
 # resource paths
 current_path = str(pathlib.Path().resolve())
-hand_path = current_path+"/resources/2v2_nosensors/2v2_nosensors_limited.urdf"
+hand_path = current_path+"/resources/2v2_Hand_A_finger_2/hand/2v2_50.50_50.50_1.1_53.urdf"
 cube_path = current_path + \
     "/resources/object_models/2v2_mod/2v2_mod_cuboid_small.urdf"
 cylinder_path = current_path + \
     "/resources/object_models/2v2_mod/2v2_mod_cylinder_small_alt.urdf"
-data_path = current_path+"/data/hmmm/"
+data_path = current_path+"/data/a_throwaway/"
 points_path = current_path+"/resources/points.csv"
 
-x = [0.055]
-y = [0.055]
+x = [0.055, -0.055]
+y = [0.055, -0.055]
 pose_list = [[i,j] for i,j in zip(x,y)]
 # start pybullet
-# physics_client = p.connect(p.GUI)
-physics_client = p.connect(p.DIRECT)
+physics_client = p.connect(p.GUI)
+# physics_client = p.connect(p.DIRECT)
 p.setAdditionalSearchPath(pybullet_data.getDataPath())
 p.setGravity(0, 0, -10)
 p.resetDebugVisualizerCamera(cameraDistance=.02, cameraYaw=0, cameraPitch=-89.9999,
@@ -51,10 +53,10 @@ cube_id = p.loadURDF(cube_path, basePosition=[0.0, 0.16, .05])
 # Create TwoFingerGripper Object and set the initial joint positions
 hand = TwoFingerGripper(hand_id, path=hand_path)
 
-p.resetJointState(hand_id, 0, .75)
-p.resetJointState(hand_id, 1, -1.4)
-p.resetJointState(hand_id, 2, -.75)
-p.resetJointState(hand_id, 3, 1.4)
+p.resetJointState(hand_id, 0, 0)
+p.resetJointState(hand_id, 1, 0)
+p.resetJointState(hand_id, 2, 0)
+p.resetJointState(hand_id, 3, 0)
 
 # Create ObjectBase for the cube object
 cube = ObjectWithVelocity(cube_id, path=cube_path)
@@ -80,7 +82,10 @@ action = rl_action.ExpertAction()
 reward = rl_reward.ExpertReward()
 arg_dict = {'state_dim': 8, 'action_dim': 4, 'max_action': 1.57, 'n': 5, 'discount': 0.995, 'tau': 0.0005,
             'batch_size': 100, 'expert_sampling_proportion': 0.7}
-
+filepath = data_path + 'experiment_config.json'
+with open(filepath, 'r') as argfile:
+    arg_dict = json.load(argfile)
+    
 
 # replay buffer
 replay_buffer = ReplayBufferPriority(buffer_size=401000)
@@ -88,6 +93,7 @@ replay_buffer = ReplayBufferPriority(buffer_size=401000)
 
 
 # environment and recording
+time.sleep(20)
 env = rl_env.ExpertEnv(hand=hand, obj=cube)
 # env = rl_env.ExpertEnv(hand=hand, obj=cylinder)
 
