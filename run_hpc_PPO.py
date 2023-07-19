@@ -24,12 +24,14 @@ import pickle as pkl
 import json
 from stable_baselines3 import A2C, PPO
 import sys
-
+from stable_baselines3.common.evaluation import evaluate_policy
+import wandb
 # from stable_baselines3.DQN import MlpPolicy
 # from stable_baselines3.common.cmd_util import make_vec_env
 
 def run_pybullet(filepath, window=None, runtype='run', episode_number=None):
     # resource paths
+    wandb.init(project = 'StableBaselinesWandBTest')
     with open(filepath, 'r') as argfile:
         args = json.load(argfile)
     
@@ -39,7 +41,7 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None):
             y = [-0.03, -0.04, -0.03, 0, 0.03, 0.04, 0.03, 0]
             xeval = x
             yeval = y
-            
+            eval_names = ['SE','S','SW','W','NW','N','NE','E'] 
         elif 'random' == args['task']:
             df = pd.read_csv(args['points_path'], index_col=False)
             x = df["x"]
@@ -47,17 +49,20 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None):
             df2 = pd.read_csv('./demos/rl_demo/resources/test_points.csv', index_col=False)
             xeval = [0.045, 0, -0.045, -0.06, -0.045, 0, 0.045, 0.06]
             yeval = [-0.045, -0.06, -0.045, 0, 0.045, 0.06, 0.045, 0]
+            eval_names = ['SE','S','SW','W','NW','N','NE','E'] 
         elif 'full_random' == args['task']:
             df = pd.read_csv(args['points_path'], index_col=False)
             x = df["x"]
             y = df["y"]
             xeval = [0.045, 0, -0.045, -0.06, -0.045, 0, 0.045, 0.06]
             yeval = [-0.045, -0.06, -0.045, 0, 0.045, 0.06, 0.045, 0]
+            eval_names = ['SE','S','SW','W','NW','N','NE','E'] 
         elif args['task'] == 'unplanned_random':
             x = [0.02]
             y = [0.065]
             xeval = [0.045, 0, -0.045, -0.06, -0.045, 0, 0.045, 0.06]
             yeval = [-0.045, -0.06, -0.045, 0, 0.045, 0.06, 0.045, 0]
+            eval_names = ['SE','S','SW','W','NW','N','NE','E'] 
     elif runtype=='eval':
         df = pd.read_csv('./demos/rl_demo/resources/test_points.csv', index_col=False)
         print('EVALUATING BOOOIIII')
@@ -65,6 +70,9 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None):
         y = df["y"]
         xeval = x
         yeval = y
+        xeval = [0.045, 0, -0.045, -0.06, -0.045, 0, 0.045, 0.06]
+        yeval = [-0.045, -0.06, -0.045, 0, 0.045, 0.06, 0.045, 0]
+        eval_names = ['SE','S','SW','W','NW','N','NE','E'] 
     elif runtype=='replay':
         df = pd.read_csv(args['points_path'], index_col=False)
         x = df["x"]
@@ -92,7 +100,6 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None):
     
     # load objects into pybullet
     plane_id = p.loadURDF("plane.urdf", flags=p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
-    print(args['hand_path'])
     hand_id = p.loadURDF(args['hand_path'], useFixedBase=True,
                          basePosition=[0.0, 0.0, 0.05], flags=p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
     obj_id = p.loadURDF(args['object_path'], basePosition=[0.0, 0.10, .05], flags=p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
@@ -117,15 +124,17 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None):
     p.changeVisualShape(hand_id, 4, rgbaColor=[0.3, 0.3, 0.3, 1])
     # p.configureDebugVisualizer(p.COV_ENABLE_RENDERING,0)
     # p.setTimeStep(1/2400)
-    obj = ObjectWithVelocity(obj_id, path=args['object_path'])
+    obj = ObjectWithVelocity(obj_id, path=args['object_path'],name='obj_2')
     # p.addUserDebugPoints([[0.2,0.1,0.0],[1,0,0]],[[1,0.0,0],[0.5,0.5,0.5]], 1)
     # p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 1)
+    
+    
     if args['task'] == 'unplanned_random':
-        goal_poses = RandomGoalHolder([0.01,0.065])
+        goal_poses = RandomGoalHolder([0.02,0.065])
     else:    
         goal_poses = GoalHolder(pose_list)
     # goal_poses = RandomGoalHolder([0.01,0.065])
-    eval_goal_poses = GoalHolder(eval_pose_list)
+    eval_goal_poses = GoalHolder(eval_pose_list, eval_names)
     # time.sleep(10)
     # state, action and reward
     state = StateRL(objects=[hand, obj, goal_poses], prev_len=args['pv'],eval_goals = eval_goal_poses)
@@ -164,26 +173,22 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None):
     
     
     gym_env = rl_gym_wrapper.GymWrapper(env, manipulation, record_data, args)
-
-
+    train_timesteps = args['evaluate']*151
+    callback = rl_gym_wrapper.EvaluateCallback(gym_env,n_eval_episodes=8, eval_freq=train_timesteps, best_model_save_path=args['save_path'])
     # p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 0)
     # p.configureDebugVisualizer(p.COV_ENABLE_GUI, 0)
-
     # check_env(gym_env, warn=True)
     if runtype == 'run':
         # gym_env = make_vec_env(lambda: gym_env, n_envs=1)
-        model = PPO("MlpPolicy", gym_env, tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-1}).learn(151*100000)
-        model.save(args['save_path']+'policy')
-        temp = model.get_parameters()
-        with open(args['save_path']+'parameters.pkl','wb') as file:
-            pkl.dump(temp,file)
-        # d = data_processor(args['save_path'] + 'Train/')
-        # d.load_data()
-        # d.save_all()
+        model = PPO("MlpPolicy", gym_env, tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-1})
+        
+        
+        gym_env.train()
+        model.learn(args['epochs']*151,callback=callback)
         gym_env.eval = True
         gym_env.eval_names = names
         
-
+        
         for _ in range(8):
             obs = gym_env.reset()
             for step in range(151):
@@ -193,6 +198,7 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None):
                 obs, reward, done, info = gym_env.step(action)
                 # print('obs=', obs, 'reward=', reward, 'done=', done)
                 # env.render(mode='console')
+
 
     elif runtype == 'eval':
         pass
@@ -205,7 +211,7 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None):
     
 def main(run_id):
     print(run_id)
-    folder_names = ['rand_end_only','rand_start_and_end','rand_start_only']
+    folder_names = ['FTP_new_fingers','JA_new_fingers']
     
     overall_path = pathlib.Path(__file__).parent.resolve()
     run_path = overall_path.joinpath('demos/rl_demo/data/HPC_run2')

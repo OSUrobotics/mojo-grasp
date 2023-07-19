@@ -133,10 +133,7 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None):
         goal_poses = RandomGoalHolder([0.02,0.065])
     else:    
         goal_poses = GoalHolder(pose_list)
-    
-    # For randomized poses
-    
-    
+
     eval_goal_poses = GoalHolder(eval_pose_list,eval_names)
     # time.sleep(10)
     # state, action and reward
