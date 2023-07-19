@@ -95,8 +95,6 @@ class GymWrapper(gym.Env):
             print('evaluating at eval run', self.eval_run)
             # print('fack',self.manipulation_phase.state.objects[-1].run_num)
             self.eval_run +=1
-        else:
-            self.manipulation_phase.state.train()
         self.env.reset()
         self.manipulation_phase.setup()
         
@@ -265,3 +263,5 @@ class GymWrapper(gym.Env):
     def train(self):
         self.eval = False
         self.manipulation_phase.eval = False
+        self.manipulation_phase.state.train()
+        self.manipulation_phase.state.reset()
