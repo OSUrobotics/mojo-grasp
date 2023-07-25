@@ -149,3 +149,4 @@ demos/rl_demo/old_runs/*
 tests/runs/*
 tests/no/*
 mojograsp/simcore/wandb/*
+demos/rl_demo/wandb/*
