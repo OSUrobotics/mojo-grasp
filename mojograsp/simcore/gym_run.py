@@ -25,12 +25,14 @@ import json
 from stable_baselines3 import A2C, PPO
 from stable_baselines3.common.evaluation import evaluate_policy
 import wandb
+import numpy as np
+import os
 # from stable_baselines3.DQN import MlpPolicy
 # from stable_baselines3.common.cmd_util import make_vec_env
 
 def run_pybullet(filepath, window=None, runtype='run', episode_number=None):
     # resource paths
-    wandb.init(project = 'StableBaselinesWandBTest')
+    
     with open(filepath, 'r') as argfile:
         args = json.load(argfile)
     
@@ -40,7 +42,7 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None):
             y = [-0.03, -0.04, -0.03, 0, 0.03, 0.04, 0.03, 0]
             xeval = x
             yeval = y
-            
+            eval_names = ['SE','S','SW','W','NW','N','NE','E'] 
         elif 'random' == args['task']:
             df = pd.read_csv(args['points_path'], index_col=False)
             x = df["x"]
@@ -78,9 +80,12 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None):
         x = df["x"]
         y = df["y"]
         df2 = pd.read_csv('/home/orochi/mojo/mojo-grasp/demos/rl_demo/resources/test_points.csv', index_col=False)
-        xeval = df2["x"]
-        yeval = df2["y"]
-    
+        xeval = [0.045, 0, -0.045, -0.06, -0.045, 0, 0.045, 0.06]
+        yeval = [-0.045, -0.06, -0.045, 0, 0.045, 0.06, 0.045, 0]
+        eval_names = ['SE','S','SW','W','NW','N','NE','E'] 
+        with open('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/emulate_episode.pkl','rb') as fol:
+            data = pkl.load(fol)
+        action_list = [i['action']['actor_output'] for i in data['timestep_list']]
     names = ['AsteriskSE.pkl','AsteriskS.pkl','AsteriskSW.pkl','AsteriskW.pkl','AsteriskNW.pkl','AsteriskN.pkl','AsteriskNE.pkl','AsteriskE.pkl']
     pose_list = [[i,j] for i,j in zip(x,y)]
     eval_pose_list = [[i,j] for i,j in zip(xeval,yeval)]
@@ -179,7 +184,7 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None):
     # p.configureDebugVisualizer(p.COV_ENABLE_GUI, 0)
     # check_env(gym_env, warn=True)
     if runtype == 'run':
-        
+        wandb.init(project = 'StableBaselinesWandBTest')
         model = PPO("MlpPolicy", gym_env, tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-1})
         # gym_env = make_vec_env(lambda: gym_env, n_envs=1)
         
@@ -187,39 +192,57 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None):
         model.learn(args['epochs']*151, callback=callback)
         gym_env.eval = True
         gym_env.eval_names = names
-        
 
         for _ in range(8):
             obs = gym_env.reset()
             for step in range(151):
                 action, _ = model.predict(obs, deterministic=True)
-                # print("Step {}".format(step + 1))
-                # print("Action: ", action)
                 obs, reward, done, info = gym_env.step(action)
-                # print('obs=', obs, 'reward=', reward, 'done=', done)
-                # env.render(mode='console')
 
     elif runtype == 'eval':
-        model = PPO("MlpPolicy", gym_env, tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-1}).load(args['save_path']+'policy.zip')
+        model = PPO("MlpPolicy", gym_env, tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-1}).load(args['save_path']+'best_model')
         gym_env.evaluate()
+        obj_pos = [0.0, 0.1, 0.05]
+        joint_angs = [ -.85,1.3,0.85,-1.3]
+            # p.resetJointState(hand_id, 0, -.725)
+            # p.resetJointState(hand_id, 1, 1.45)
+            # p.resetJointState(hand_id, 3, .725)
+            # p.resetJointState(hand_id, 4, -1.45)
         for _ in range(8):
-            obs = gym_env.reset()
+            obs = gym_env.reset(special=(obj_pos,joint_angs))
             for step in range(151):
                 action, _ = model.predict(obs, deterministic=True)
-                # print("Step {}".format(step + 1))
-                # print("Action: ", action)
-                obs, reward, done, info = gym_env.step(action)
-                # print('obs=', obs, 'reward=', reward, 'done=', done)
-                # env.render(mode='console')
+                print("Step {}".format(step + 1))
+                print("Action: ", action, type(action))
+                mirrored_action = np.array([-action[2], action[3],-action[0],action[1]])
+                # print('mirrored action: ', mirrored_action)
+                obs, reward, done, info = gym_env.step(action, viz=True)
+                print('obs=', obs, 'reward=', reward, 'done=', done)
+
     elif runtype == 'cont':
         pass
+    
     elif runtype == 'transfer':
         pass
+    
     elif runtype == 'replay':
-        pass
+        gym_env.evaluate()
+        for _ in range(1):
+            obs = gym_env.reset()
+            for step in range(151):
+                # action, _ = model.predict(obs, deterministic=True)
+                action = action_list[step]
+                print("Step {}".format(step + 1))
+                print("Action: ", action, type(action))
+                mirrored_action = np.array([-action[2], action[3],-action[0],action[1]])
+                obs, reward, done, info = gym_env.step(mirrored_action,viz=True)
+                print('obs=', obs, 'reward=', reward, 'done=', done)
+                # env.render(mode='console')
 
 def main():
-    run_pybullet('/home/mothra/mojo-grasp/demos/rl_demo/data/JA-eval-no-content/experiment_config.json',runtype='run')
+    this_path = os.path.abspath(__file__)
+    overall_path = os.path.dirname(os.path.dirname(os.path.dirname(this_path)))
+    run_pybullet(overall_path+'/demos/rl_demo/data/JA-eval-no-content/experiment_config.json',runtype='run')
     # run_pybullet('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/ftp_experiment/experiment_config.json',runtype='eval')
 if __name__ == '__main__':
     main()

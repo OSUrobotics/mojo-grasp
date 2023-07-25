@@ -82,7 +82,7 @@ class GymWrapper(gym.Env):
         # self.camera_projection_matrix = p.computeProjectionMatrix(-0.1,0.1,-0.1,0.1,-0.1,0.1)
         self.camera_projection_matrix = p.computeProjectionMatrixFOV(60,4/3,0.1,0.9)
         
-    def reset(self):
+    def reset(self,special=None):
         if not self.first:
             
             if self.manipulation_phase.episode >= 500:
@@ -95,7 +95,10 @@ class GymWrapper(gym.Env):
             print('evaluating at eval run', self.eval_run)
             # print('fack',self.manipulation_phase.state.objects[-1].run_num)
             self.eval_run +=1
-        self.env.reset()
+        if special is not None:
+            self.env.reset_to_pos(special[0],special[1])
+        else:
+            self.env.reset()
         self.manipulation_phase.setup()
         
         state, _ = self.manipulation_phase.get_episode_info()
@@ -108,7 +111,7 @@ class GymWrapper(gym.Env):
         # print('fack',self.manipulation_phase.state.objects[-1].run_num)
         return state
 
-    def step(self, action):
+    def step(self, action, mirror=False, viz=False):
         '''
         currently this does not use the action fed in in action, it uses the action applied to self.action in the sim manager
 
@@ -135,7 +138,10 @@ class GymWrapper(gym.Env):
         state, reward = self.manipulation_phase.get_episode_info()
         # print(state['obj_2'])
         info = {}
-        state = self.build_state(state)
+        if mirror:
+            state = self.build_mirror_state(state)
+        else:
+            state = self.build_state(state)
         if self.STATE_NOISE > 0:
             state = self.noisey_boi.add_noise(state, self.STATE_NOISE)
         reward = self.build_reward(reward)
@@ -143,14 +149,14 @@ class GymWrapper(gym.Env):
         # self.manipulation_phase.state.set_state()
         # print(reward)
         
-        if self.viz:
+        if self.viz | viz:
             
             img = p.getCameraImage(640, 480,viewMatrix=self.camera_view_matrix,
                                     projectionMatrix=self.camera_projection_matrix,
                                     shadow=1,
                                     lightDirection=[1, 1, 1])
             img = Image.fromarray(img[2])
-            temp = 'Fuck'
+            temp = 'SE_wide_start'
             img.save(self.image_path+ temp + '_frame_'+ str(self.timestep)+'.png')
         
         if done:
@@ -220,6 +226,78 @@ class GymWrapper(gym.Env):
             else:
                 raise Exception('key does not match list of known keys')
         return state
+
+    def build_mirror_state(self, state_container: State):
+        """
+        Method takes in a State object 
+        Extracts state information from state_container and returns it as a list based on
+        current used states contained in self.state_list
+
+        :param state: :func:`~mojograsp.simcore.phase.State` object.
+        :type state: :func:`~mojograsp.simcore.phase.State`
+        """
+        angle_keys = ["finger0_segment0_joint","finger0_segment1_joint","finger1_segment0_joint","finger1_segment1_joint"]
+        state = []
+        if self.PREV_VALS > 0:
+            for i in range(self.PREV_VALS):
+                for key in self.state_list:
+                    if key == 'op':
+                        temp = state_container['previous_state'][i]['obj_2']['pose'][0]
+                        state.extend([-temp[0],temp[1]])
+                    elif key == 'ftp':
+                        temp = state_container['previous_state'][i]['f2_pos'][0:2]
+                        state.extend([-temp[0],temp[1]])
+                        temp = state_container['previous_state'][i]['f1_pos'][0:2]
+                        state.extend([-temp[0],temp[1]])
+                    elif key == 'fbp':
+                        temp = state_container['previous_state'][i]['f2_base']
+                        state.extend([-temp[0],temp[1]])
+                        temp = state_container['previous_state'][i]['f1_base']
+                        state.extend([-temp[0],temp[1]])
+                    elif key == 'fcp':
+                        temp = state_container['previous_state'][i]['f2_contact_pos']
+                        state.extend([-temp[0],temp[1]])
+                        temp = state_container['previous_state'][i]['f1_contact_pos']
+                        state.extend([-temp[0],temp[1]])
+                    elif key == 'ja':
+                        state.extend([-state_container['previous_state'][i]['two_finger_gripper']['joint_angles'][item] for item in angle_keys])
+                    elif key == 'fta':
+                        state.extend([-state_container['previous_state'][i]['f2_ang'],-state_container['previous_state'][i]['f1_ang']])
+                    elif key == 'gp':
+                        temp = state_container['previous_state'][i]['goal_pose']['goal_pose']
+                        state.extend([-temp[0],temp[1]])
+                    else:
+                        raise Exception('key does not match list of known keys')
+
+        for key in self.state_list:
+            if key == 'op':
+                temp = state_container['obj_2']['pose'][0]
+                state.extend([-temp[0],temp[1]])
+            elif key == 'ftp':
+                temp = state_container['f2_pos'][0:2]
+                state.extend([-temp[0],temp[1]])
+                temp = state_container['f1_pos'][0:2]
+                state.extend([-temp[0],temp[1]])
+            elif key == 'fbp':
+                temp = state_container['f2_base']
+                state.extend([-temp[0],temp[1]])
+                temp = state_container['f1_base']
+                state.extend([-temp[0],temp[1]])
+            elif key == 'fcp':
+                temp = state_container['f2_contact_pos']
+                state.extend([-temp[0],temp[1]])
+                temp = state_container['f1_contact_pos']
+                state.extend([-temp[0],temp[1]])
+            elif key == 'ja':
+                state.extend([state_container['two_finger_gripper']['joint_angles'][item] for item in angle_keys])
+            elif key == 'fta':
+                state.extend([state_container['f2_ang'],state_container['f1_ang']])
+            elif key == 'gp':
+                temp = state_container['goal_pose']['goal_pose']
+                state.extend([-temp[0],temp[1]])
+            else:
+                raise Exception('key does not match list of known keys')
+        return state
     
     def build_reward(self, reward_container: Reward):
         """
@@ -265,3 +343,4 @@ class GymWrapper(gym.Env):
         self.manipulation_phase.eval = False
         self.manipulation_phase.state.train()
         self.manipulation_phase.state.reset()
+        self.reset()
