@@ -184,7 +184,7 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None):
         # gym_env = make_vec_env(lambda: gym_env, n_envs=1)
         
         gym_env.train()
-        model.learn(args['epochs']*151,callback=callback)
+        model.learn(args['epochs']*151, callback=callback)
         gym_env.eval = True
         gym_env.eval_names = names
         
@@ -219,7 +219,7 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None):
         pass
 
 def main():
-    run_pybullet('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/ftp_long_rand_end/experiment_config.json',runtype='run')
+    run_pybullet('/home/mothra/mojo-grasp/demos/rl_demo/data/JA-eval-no-content/experiment_config.json',runtype='run')
     # run_pybullet('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/ftp_experiment/experiment_config.json',runtype='eval')
 if __name__ == '__main__':
     main()

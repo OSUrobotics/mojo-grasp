@@ -22,11 +22,11 @@ class EvaluateCallback(EvalCallback):
 
     def _on_step(self) -> bool:
         if self.eval_freq > 0 and self.n_calls % self.eval_freq == 0:
-            self.eval_env.envs[0].evaluate()
-            temp = super(EvaluateCallback,self)._on_step()
-            self.eval_env.envs[0].train()
-            print('evaluation cylce')
-            return temp
+            # self.eval_env.envs[0].evaluate()
+            # temp = super(EvaluateCallback,self)._on_step()
+            # self.eval_env.envs[0].train()
+            print('evaluation cycle with nothing in it')
+            return True
         else:
             return True
 
@@ -104,7 +104,7 @@ class GymWrapper(gym.Env):
         # print(state['previous_state'][0]['f1_pos'],state['previous_state'][0]['f2_pos'])
         state = self.build_state(state)
         
-        print('Episode ',self.manipulation_phase.episode,' goal pose', self.manipulation_phase.goal_position)
+        # print('Episode ',self.manipulation_phase.episode,' goal pose', self.manipulation_phase.goal_position)
         # print('fack',self.manipulation_phase.state.objects[-1].run_num)
         return state
 
@@ -154,7 +154,7 @@ class GymWrapper(gym.Env):
             img.save(self.image_path+ temp + '_frame_'+ str(self.timestep)+'.png')
         
         if done:
-            print('done, recording stuff')
+            # print('done, recording stuff')
             self.record.record_episode(self.eval)
             if self.eval:
                 self.record.save_episode(self.eval, use_reward_name=True)
