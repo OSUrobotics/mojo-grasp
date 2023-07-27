@@ -27,6 +27,7 @@ from stable_baselines3.common.evaluation import evaluate_policy
 import wandb
 import numpy as np
 import os
+import time
 # from stable_baselines3.DQN import MlpPolicy
 # from stable_baselines3.common.cmd_util import make_vec_env
 
@@ -242,7 +243,10 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None):
 def main():
     this_path = os.path.abspath(__file__)
     overall_path = os.path.dirname(os.path.dirname(os.path.dirname(this_path)))
-    run_pybullet(overall_path+'/demos/rl_demo/data/JA-eval-no-content/experiment_config.json',runtype='run')
+    run_pybullet(overall_path+'/demos/rl_demo/data/ja-friction-fuckery/experiment_config.json',runtype='run')
+    # run_pybullet(overall_path+'/demos/rl_demo/data/multiprocessing_spot/experiment_config.json',runtype='run')
     # run_pybullet('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/ftp_experiment/experiment_config.json',runtype='eval')
+
+
 if __name__ == '__main__':
     main()

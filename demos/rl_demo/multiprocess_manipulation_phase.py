@@ -1,4 +1,3 @@
-import pybullet as p
 from mojograsp.simcore.phase import Phase
 from mojograsp.simobjects.two_finger_gripper import TwoFingerGripper
 from mojograsp.simobjects.object_base import ObjectBase
@@ -12,7 +11,7 @@ from math import isclose
 
 
 
-class ManipulationRL(Phase):
+class MultiprocessManipulation(Phase):
 
     def __init__(self, hand: TwoFingerGripper, cube: ObjectBase, x, y, state: State, action: Action, reward: Reward, replay_buffer: ReplayBufferDefault = None, args: dict = None,physicsClientId = None):
         self.name = "manipulation"
@@ -96,19 +95,16 @@ class ManipulationRL(Phase):
         # Set the current state before sim is stepped
         # self.state.set_state()
 
-    def execute_action(self, action_to_execute=None, pybullet_thing = None):
+    def execute_action(self, pybullet_thing, action_to_execute=None):
         # Execute the target that we got from the controller in pre_step()
         for i in range(self.interp_ratio):
-            if pybullet_thing is not None:
+            if action_to_execute:
                 pybullet_thing.setJointMotorControlArray(self.hand.id, jointIndices=self.hand.get_joint_numbers(),
-                                            controlMode=p.POSITION_CONTROL, targetPositions=self.action.get_joint_angles(), positionGains=[0.8,0.8,0.8,0.8], forces=[0.4,0.4,0.4,0.4])
-            elif action_to_execute:
-                p.setJointMotorControlArray(self.hand.id, jointIndices=self.hand.get_joint_numbers(),
-                                            controlMode=p.POSITION_CONTROL, targetPositions=action_to_execute, positionGains=[0.8,0.8,0.8,0.8], forces=[0.4,0.4,0.4,0.4])
+                                            controlMode=pybullet_thing.POSITION_CONTROL, targetPositions=action_to_execute, positionGains=[0.8,0.8,0.8,0.8], forces=[0.4,0.4,0.4,0.4])
             else:
                 # print('no action given',self.action.get_joint_angles())
-                p.setJointMotorControlArray(self.hand.id, jointIndices=self.hand.get_joint_numbers(),
-                                            controlMode=p.POSITION_CONTROL, targetPositions=self.action.get_joint_angles(), positionGains=[0.8,0.8,0.8,0.8], forces=[0.4,0.4,0.4,0.4])
+                pybullet_thing.setJointMotorControlArray(self.hand.id, jointIndices=self.hand.get_joint_numbers(),
+                                            controlMode=pybullet_thing.POSITION_CONTROL, targetPositions=self.action.get_joint_angles(), positionGains=[0.8,0.8,0.8,0.8], forces=[0.4,0.4,0.4,0.4])
         self.timestep += 1
 
     def post_step(self):
@@ -142,7 +138,7 @@ class ManipulationRL(Phase):
         return None
 
     def reset(self):
-        print('still reseting')
+        # print('still reseting')
         # temp = list(range(len(self.x)))
         
         # shuffle(temp)
