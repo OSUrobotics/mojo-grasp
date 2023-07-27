@@ -14,7 +14,6 @@ from gym import spaces
 import numpy as np
 from mojograsp.simcore.state import State
 from mojograsp.simcore.reward import Reward
-import pybullet as p
 from PIL import Image
 from stable_baselines3.common.callbacks import EvalCallback
 
@@ -25,12 +24,6 @@ class EvaluateCallback(EvalCallback):
             self.eval_env.envs[0].evaluate()
             temp = super(EvaluateCallback,self)._on_step()
             self.eval_env.envs[0].train()
-            t1 = self.eval_env.envs[0].manipulation_phase.controller.mags
-            print(f'during previous 1000 steps there were: {len(t1)} times the \
-                  finger tip motion was too high with an average magnitude of \
-                  {np.average(t1)} and a maximum of {max(t1)}')
-            self.eval_env.envs[0].manipulation_phase.controller.mags=[]
-
             return temp
         else:
             return True
@@ -57,14 +50,15 @@ class NoiseAdder():
         print((np.array(x_tensor)> self.mins))
         return x_tensor + t1 * (self.maxes-self.mins)/2
     
-class GymWrapper(gym.Env):
+class MultiprocessGymWrapper(gym.Env):
     '''
     Example environment that follows gym interface to allow us to use openai gym learning algorithms with mojograsp
     '''
     
     def __init__(self, rl_env, manipulation_phase,record_data, args):
-        super(GymWrapper,self).__init__()
+        super(MultiprocessGymWrapper,self).__init__()
         self.env = rl_env
+        self.p = self.env.p
         self.action_space = spaces.Box(low=np.array([-1,-1,-1,-1]), high=np.array([1,1,1,1]))
         self.manipulation_phase = manipulation_phase
         self.observation_space = spaces.Box(np.array(args['state_mins']),np.array(args['state_maxes']))
@@ -83,9 +77,9 @@ class GymWrapper(gym.Env):
         self.eval_run = 0
         self.timestep = 0
         self.first = True
-        self.camera_view_matrix = p.computeViewMatrix((0.0,0.1,0.5),(0.0,0.1,0.005), (0.0,1,0.0))
+        self.camera_view_matrix = self.p.computeViewMatrix((0.0,0.1,0.5),(0.0,0.1,0.005), (0.0,1,0.0))
         # self.camera_projection_matrix = p.computeProjectionMatrix(-0.1,0.1,-0.1,0.1,-0.1,0.1)
-        self.camera_projection_matrix = p.computeProjectionMatrixFOV(60,4/3,0.1,0.9)
+        self.camera_projection_matrix = self.p.computeProjectionMatrixFOV(60,4/3,0.1,0.9)
         
     def reset(self,special=None):
         if not self.first:
@@ -132,7 +126,7 @@ class GymWrapper(gym.Env):
         '''
         # print('timestep num', self.timestep)
         self.manipulation_phase.gym_pre_step(action)
-        self.manipulation_phase.execute_action()
+        self.manipulation_phase.execute_action(self.p)
         self.env.step()
         # print('just env stepped')
         done = self.manipulation_phase.exit_condition()
@@ -156,7 +150,7 @@ class GymWrapper(gym.Env):
         
         if self.viz | viz:
             
-            img = p.getCameraImage(640, 480,viewMatrix=self.camera_view_matrix,
+            img = self.p.getCameraImage(640, 480,viewMatrix=self.camera_view_matrix,
                                     projectionMatrix=self.camera_projection_matrix,
                                     shadow=1,
                                     lightDirection=[1, 1, 1])
@@ -333,7 +327,7 @@ class GymWrapper(gym.Env):
         pass
     
     def close(self):
-        p.disconnect()
+        self.p.disconnect()
         
     def evaluate(self):
         self.eval = True

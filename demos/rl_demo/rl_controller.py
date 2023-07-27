@@ -1,5 +1,4 @@
 from multiprocessing.dummy import current_process
-import pybullet as p
 
 import numpy as np
 
