@@ -9,7 +9,7 @@ import numpy as np
 import os
 # import Markers
 import torch
-from mojograsp.simcore.jacobianIK.jacobian_IK import JacobianIK
+from mojograsp.simcore.jacobianIK.multiprocess_jik import JacobianIK
 from copy import deepcopy
 import time
 

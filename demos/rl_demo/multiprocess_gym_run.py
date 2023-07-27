@@ -34,7 +34,7 @@ import time
 def make_env(filepath=None,rank=0):
     def _init():
         import pybullet as p1
-        env= make_pybullet(filepath, p1, rank)
+        env, _ = make_pybullet(filepath, p1, rank)
         return env
     return _init
 
@@ -145,24 +145,26 @@ def make_pybullet(filepath, pybullet_instance, rank):
     
     
     gym_env = multiprocess_gym_wrapper.MultiprocessGymWrapper(env, manipulation, record_data, args)
-    return gym_env
+    return gym_env, args
 
 
 
 def main():
-    num_cpu = 15  # Number of processes to use
+    num_cpu = 16 # Number of processes to use
     # Create the vectorized environment
-    filepath = './data/multiprocessing_spot/experiment_config.json'
+    filepath = './data/ftp-multiprocessing_test/experiment_config.json'
     vec_env = SubprocVecEnv([make_env(filepath,i) for i in range(num_cpu)])
-
+    eval_env, args = make_pybullet(filepath, 100)
+    train_timesteps = args['evaluate']*151
+    callback = multiprocess_gym_wrapper.EvaluateCallback(eval_env,n_eval_episodes=8, eval_freq=train_timesteps, best_model_save_path=args['save_path'])
     # Stable Baselines provides you with make_vec_env() helper
     # which does exactly the previous steps for you.
     # You can choose between `DummyVecEnv` (usually faster) and `SubprocVecEnv`
     # env = make_vec_env(env_id, n_envs=num_cpu, seed=0, vec_env_cls=SubprocVecEnv)
     start = time.time()    
-    model = PPO("MlpPolicy", vec_env, n_steps=151, batch_size=15)
-    model.learn(total_timesteps=15*10*151)
-    model.save('./data/multiprocessing_spot/best_policy')
+    model = PPO("MlpPolicy", vec_env, n_steps=151, batch_size=16, callback=callback)
+    model.learn(total_timesteps=args['epochs']*151)
+    model.save('./data/ftp-multiprocessing_test/best_policy')
     end = time.time()
     print(f'multiprocess env takes {end-start} seconds')
 if __name__ == '__main__':
