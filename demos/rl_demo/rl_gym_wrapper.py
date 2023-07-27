@@ -22,11 +22,16 @@ class EvaluateCallback(EvalCallback):
 
     def _on_step(self) -> bool:
         if self.eval_freq > 0 and self.n_calls % self.eval_freq == 0:
-            # self.eval_env.envs[0].evaluate()
-            # temp = super(EvaluateCallback,self)._on_step()
-            # self.eval_env.envs[0].train()
-            print('evaluation cycle with nothing in it')
-            return True
+            self.eval_env.envs[0].evaluate()
+            temp = super(EvaluateCallback,self)._on_step()
+            self.eval_env.envs[0].train()
+            
+            t1 = self.eval_env.envs[0].manipulation_phase.controller.mags
+            print(f'during previous 1000 steps there were: {len(t1)} times the \
+                  finger tip motion was too high with an average magnitude of \
+                  {np.average(t1)} and a maximum of {max(t1)}')
+            self.eval_env.envs[0].manipulation_phase.controller.mags=[]
+            return temp
         else:
             return True
 
