@@ -192,6 +192,9 @@ class GymWrapper(gym.Env):
                 for key in self.state_list:
                     if key == 'op':
                         state.extend(state_container['previous_state'][i]['obj_2']['pose'][0][0:2])
+                    elif key == 'oo':
+                        # print(state_container['previous_state'][i]['obj_2']['pose'][1])
+                        state.extend(state_container['previous_state'][i]['obj_2']['pose'][1])
                     elif key == 'ftp':
                         state.extend(state_container['previous_state'][i]['f1_pos'][0:2])
                         state.extend(state_container['previous_state'][i]['f2_pos'][0:2])
@@ -213,6 +216,8 @@ class GymWrapper(gym.Env):
         for key in self.state_list:
             if key == 'op':
                 state.extend(state_container['obj_2']['pose'][0][0:2])
+            elif key == 'oo':
+                state.extend(state_container['obj_2']['pose'][1])
             elif key == 'ftp':
                 state.extend(state_container['f1_pos'][0:2])
                 state.extend(state_container['f2_pos'][0:2])
