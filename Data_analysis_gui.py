@@ -1044,7 +1044,7 @@ def main():
     final_filenums = []
     for i in filenums:
         if len(i) > 0 :
-            final_filenums.append(int(i[0]))
+            final_filenums.append(int(i[-1]))
         else:
             final_filenums.append(10000000000)
     if len(episode_files) == 0:
