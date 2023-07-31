@@ -26,9 +26,9 @@ class EvaluateCallback(EvalCallback):
             temp = super(EvaluateCallback,self)._on_step()
             self.eval_env.envs[0].train()
             t1 = self.eval_env.envs[0].manipulation_phase.controller.mags
-            print(f'during previous 1000 steps there were: {len(t1)} times the \
-                  finger tip motion was too high with an average magnitude of \
-                  {np.average(t1)} and a maximum of {max(t1)}')
+            # print(f'during previous 1000 steps there were: {len(t1)} times the \
+            #       finger tip motion was too high with an average magnitude of \
+            #       {np.average(t1)} and a maximum of {max(t1)}')
             self.eval_env.envs[0].manipulation_phase.controller.mags=[]
 
             return temp
@@ -192,6 +192,9 @@ class GymWrapper(gym.Env):
                 for key in self.state_list:
                     if key == 'op':
                         state.extend(state_container['previous_state'][i]['obj_2']['pose'][0][0:2])
+                    elif key == 'oo':
+                        # print(state_container['previous_state'][i]['obj_2']['pose'][1])
+                        state.extend(state_container['previous_state'][i]['obj_2']['pose'][1])
                     elif key == 'ftp':
                         state.extend(state_container['previous_state'][i]['f1_pos'][0:2])
                         state.extend(state_container['previous_state'][i]['f2_pos'][0:2])
@@ -213,6 +216,8 @@ class GymWrapper(gym.Env):
         for key in self.state_list:
             if key == 'op':
                 state.extend(state_container['obj_2']['pose'][0][0:2])
+            elif key == 'oo':
+                state.extend(state_container['obj_2']['pose'][1])
             elif key == 'ftp':
                 state.extend(state_container['f1_pos'][0:2])
                 state.extend(state_container['f2_pos'][0:2])
