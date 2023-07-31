@@ -185,7 +185,7 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None):
     # p.configureDebugVisualizer(p.COV_ENABLE_GUI, 0)
     # check_env(gym_env, warn=True)
     if runtype == 'run':
-        #wandb.init(project = 'StableBaselinesWandBTest')
+        wandb.init(project = 'StableBaselinesWandBTest')
         model = PPO("MlpPolicy", gym_env, tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-1})
         # gym_env = make_vec_env(lambda: gym_env, n_envs=1)
         

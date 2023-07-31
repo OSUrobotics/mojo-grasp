@@ -152,19 +152,21 @@ def make_pybullet(filepath, pybullet_instance, rank):
 def main():
     num_cpu = 16 # Number of processes to use
     # Create the vectorized environment
-    filepath = './data/ftp-multiprocessing_test/experiment_config.json'
+    filepath = './data/ftp_multiprocessing_test/experiment_config.json'
     vec_env = SubprocVecEnv([make_env(filepath,i) for i in range(num_cpu)])
-    eval_env, args = make_pybullet(filepath, 100)
-    train_timesteps = args['evaluate']*151
+    import pybullet as p2
+    eval_env, args = make_pybullet(filepath,p2, 100)
+    train_timesteps = int(args['evaluate']*151/num_cpu)
     callback = multiprocess_gym_wrapper.EvaluateCallback(eval_env,n_eval_episodes=8, eval_freq=train_timesteps, best_model_save_path=args['save_path'])
     # Stable Baselines provides you with make_vec_env() helper
     # which does exactly the previous steps for you.
     # You can choose between `DummyVecEnv` (usually faster) and `SubprocVecEnv`
     # env = make_vec_env(env_id, n_envs=num_cpu, seed=0, vec_env_cls=SubprocVecEnv)
+    wandb.init(project = 'StableBaselinesWandBTest')
     start = time.time()    
-    model = PPO("MlpPolicy", vec_env, n_steps=151, batch_size=16, callback=callback)
-    model.learn(total_timesteps=args['epochs']*151)
-    model.save('./data/ftp-multiprocessing_test/best_policy')
+    model = PPO("MlpPolicy", vec_env, n_steps=151, batch_size=16 ,tensorboard_log=args['tname'])
+    model.learn(total_timesteps=args['epochs']*151, callback=callback)
+    model.save('./data/ftp_multiprocessing_test/best_policy')
     end = time.time()
     print(f'multiprocess env takes {end-start} seconds')
 if __name__ == '__main__':
