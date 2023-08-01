@@ -322,7 +322,6 @@ class RLController(ExpertController):
         # print(finger_pos1[0][0:2])
         # print(finger_pos2[0][0:2])
         
-        
         if not self.rand_episode:           
             # print(self.epsilon)
             
