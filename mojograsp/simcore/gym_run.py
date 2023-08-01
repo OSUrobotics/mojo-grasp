@@ -18,6 +18,7 @@ from demos.rl_demo import rl_gym_wrapper
 import pandas as pd
 from mojograsp.simcore.record_data import RecordDataJSON, RecordDataPKL,  RecordDataRLPKL
 from mojograsp.simobjects.two_finger_gripper import TwoFingerGripper
+from mojograsp.simobjects.ik_gripper import IKGripper
 from mojograsp.simobjects.object_with_velocity import ObjectWithVelocity
 from mojograsp.simcore.priority_replay_buffer import ReplayBufferPriority
 import pickle as pkl
@@ -111,7 +112,9 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None):
     obj_id = p.loadURDF(args['object_path'], basePosition=[0.0, 0.10, .05], flags=p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
     
     # Create TwoFingerGripper Object and set the initial joint positions
-    hand = TwoFingerGripper(hand_id, path=args['hand_path'])
+    # hand = TwoFingerGripper(hand_id, path=args['hand_path'])
+
+    hand = IKGripper(hand_id, path=args['hand_path'])
     
     # p.resetJointState(hand_id, 0, -0.4)
     # p.resetJointState(hand_id, 1, 1.2)
@@ -243,7 +246,7 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None):
 def main():
     this_path = os.path.abspath(__file__)
     overall_path = os.path.dirname(os.path.dirname(os.path.dirname(this_path)))
-    run_pybullet(overall_path+'/demos/rl_demo/data/orientation_ja/experiment_config.json',runtype='run')
+    run_pybullet(overall_path+'/demos/rl_demo/data/ftp_eval_evec/experiment_config.json',runtype='run')
 
     # run_pybullet('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/ftp_experiment/experiment_config.json',runtype='eval')
 

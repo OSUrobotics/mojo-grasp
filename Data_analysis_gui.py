@@ -57,6 +57,7 @@ class GuiBackend():
         self.min_dists = []
         self.end_dists = []
         self.rewards = []
+        self.reduced_format = False
         
     def draw_path(self):
         if self.e_num == -1:
@@ -496,21 +497,24 @@ class GuiBackend():
             else:
                 rewards = self.rewards
         else: 
-            rewards = []
-            temp = 0
-            for episode in self.all_data['episode_list']:
-                data = episode['timestep_list']
-                goal_position = data[0]['state']['goal_pose']['goal_pose']
-                for timestep in data:
-                    if self.use_distance:
-                        temp += - timestep['reward']['distance_to_goal'] \
-                                -max(timestep['reward']['f1_dist'],timestep['reward']['f2_dist'])/5
-                                            #timestep['reward']['end_penalty'] \
-                    else:
-                        temp += max(timestep['reward']['slope_to_goal']*100-max(timestep['reward']['f1_dist'],timestep['reward']['f2_dist'])/5,-1)
-                rewards.append(temp)
+            if self.reduced_format:
+                rewards = [-i['sum_dist']-i['sum_finger']/5 for i in self.all_data['episode_list']]
+            else:
+                rewards = []
                 temp = 0
-            self.rewards= rewards
+                for episode in self.all_data['episode_list']:
+                    data = episode['timestep_list']
+                    goal_position = data[0]['state']['goal_pose']['goal_pose']
+                    for timestep in data:
+                        if self.use_distance:
+                            temp += - timestep['reward']['distance_to_goal'] \
+                                    -max(timestep['reward']['f1_dist'],timestep['reward']['f2_dist'])/5
+                                                #timestep['reward']['end_penalty'] \
+                        else:
+                            temp += max(timestep['reward']['slope_to_goal']*100-max(timestep['reward']['f1_dist'],timestep['reward']['f2_dist'])/5,-1)
+                    rewards.append(temp)
+                    temp = 0
+                self.rewards= rewards
         if self.moving_avg != 1:
             rewards = moving_average(rewards,self.moving_avg)
         self.ax.cla()
@@ -711,13 +715,16 @@ class GuiBackend():
             else:
                 min_dists = self.min_dists
         else:
-            min_dists = np.zeros((len(self.all_data['episode_list']),1))
-            for i, episode in enumerate(self.all_data['episode_list']):
-                data = episode['timestep_list']
-                goal_dist = np.zeros(len(data))
-                for j, timestep in enumerate(data):
-                    goal_dist[j] = timestep['reward']['distance_to_goal']
-                min_dists[i] = np.min(goal_dist, axis=0)
+            if self.reduced_format:
+                min_dists = [i['min_dist'] for i in self.all_data['episode_list']]
+            else:
+                min_dists = np.zeros((len(self.all_data['episode_list']),1))
+                for i, episode in enumerate(self.all_data['episode_list']):
+                    data = episode['timestep_list']
+                    goal_dist = np.zeros(len(data))
+                    for j, timestep in enumerate(data):
+                        goal_dist[j] = timestep['reward']['distance_to_goal']
+                    min_dists[i] = np.min(goal_dist, axis=0)
 
         if self.moving_avg != 1:
             min_dists = moving_average(min_dists,self.moving_avg)
@@ -846,22 +853,23 @@ class GuiBackend():
                 else:
                     s_f.append(0)
 
-                
-
         else:
-            s_f = []
-            min_dists = []
-            for i, episode in enumerate(self.all_data['episode_list']):
-                data = episode['timestep_list']
-                goal_position = data[0]['state']['goal_pose']['goal_pose']
-                goal_dists = [f['reward']['distance_to_goal'] for f in data]
-                ending_dist = min(goal_dists)
-                min_dists.append(ending_dist)
-                if ending_dist < self.succcess_range:
-                    s_f.append(100)
-                else:
-                    s_f.append(0)
-            self.min_dists = min_dists
+            if self.reduced_format:
+                s_f = [100*(i['min_dist']<self.succcess_range) for i in self.all_data['episode_list']]
+            else:
+                s_f = []
+                min_dists = []
+                for i, episode in enumerate(self.all_data['episode_list']):
+                    data = episode['timestep_list']
+                    goal_position = data[0]['state']['goal_pose']['goal_pose']
+                    goal_dists = [f['reward']['distance_to_goal'] for f in data]
+                    ending_dist = min(goal_dists)
+                    min_dists.append(ending_dist)
+                    if ending_dist < self.succcess_range:
+                        s_f.append(100)
+                    else:
+                        s_f.append(0)
+                self.min_dists = min_dists
             
         if self.moving_avg != 1:
             s_f = moving_average(s_f,self.moving_avg)
@@ -918,11 +926,14 @@ class GuiBackend():
             else:
                 ending_dists = self.end_dists
         else:
-            ending_dists = np.zeros((len(self.all_data['episode_list']),1))
-            for i, episode in enumerate(self.all_data['episode_list']):
-                data = episode['timestep_list']
-                ending_dists[i] = np.max(data[-1]['reward']['distance_to_goal'], axis=0)
-            self.end_dists = ending_dists
+            if self.reduced_format:
+                ending_dists = [i['ending_dist'] for i in self.all_data['episode_list']]
+            else:
+                ending_dists = np.zeros((len(self.all_data['episode_list']),1))
+                for i, episode in enumerate(self.all_data['episode_list']):
+                    data = episode['timestep_list']
+                    ending_dists[i] = np.max(data[-1]['reward']['distance_to_goal'], axis=0)
+                self.end_dists = ending_dists
 
         if self.moving_avg != 1:
             ending_dists = moving_average(ending_dists,self.moving_avg)
@@ -1041,10 +1052,15 @@ class GuiBackend():
     
     def check_all_data(self):
         #TODO fix this so that it works with different shit
-        num_episodes = len(self.all_data['episode_list'])
-        for i in range(num_episodes):
-            # print(self.all_data['episode_list'][i]['number'])
-            assert i+1 == self.all_data['episode_list'][i]['number']
+
+        if self.all_data['episode_list'][0].keys():
+            print('Episode_all is in reduced format, some plotting functions may be unavailable')
+            self.reduced_format = True
+        else:
+            num_episodes = len(self.all_data['episode_list'])
+            self.reduced_format = False
+            for i in range(num_episodes):
+                assert i+1 == self.all_data['episode_list'][i]['number']
             
     def show_finger_viz(self):
         pass
@@ -1056,7 +1072,7 @@ class GuiBackend():
             if 'all.' in filename:
                 self.e_num = -1
                 self.all_data = self.data_dict.copy()
-                # self.check_all_data()
+                self.check_all_data()
             else:
                 self.e_num = self.data_dict['number']
     
