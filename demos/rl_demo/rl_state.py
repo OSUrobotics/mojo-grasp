@@ -61,7 +61,7 @@ class StateRL(StateDefault):
     and :func:`~mojograsp.simcore.replay_buffer.ReplayBufferDefault`.
     """
 
-    def __init__(self, objects: list = None, prev_len=0, physicsClientId=None,eval_goals:GoalHolder =None):
+    def __init__(self, objects: list = None, prev_len=0, physicsClientId=None, eval_goals:GoalHolder =None):
         """
         Default placeholder constructor optionally takes in a list of objects, if no list is provided it defaults
         to None. 
