@@ -208,6 +208,10 @@ class GymWrapper(gym.Env):
                         state.extend([state_container['previous_state'][i]['two_finger_gripper']['joint_angles'][item] for item in angle_keys])
                     elif key == 'fta':
                         state.extend([state_container['previous_state'][i]['f1_ang'],state_container['previous_state'][i]['f2_ang']])
+                    elif key == 'eva':
+                        state.extend(state_container['previous_state'][i]['two_finger_gripper']['eigenvalues'])
+                    elif key == 'evc':
+                        state.extend(state_container['previous_state'][i]['two_finger_gripper']['eigenvectors'])
                     elif key == 'gp':
                         state.extend(state_container['previous_state'][i]['goal_pose']['goal_pose'])
                     else:
@@ -231,6 +235,10 @@ class GymWrapper(gym.Env):
                 state.extend([state_container['two_finger_gripper']['joint_angles'][item] for item in angle_keys])
             elif key == 'fta':
                 state.extend([state_container['f1_ang'],state_container['f2_ang']])
+            elif key == 'eva':
+                state.extend(state_container['two_finger_gripper']['eigenvalues'])
+            elif key == 'evc':
+                state.extend(state_container['two_finger_gripper']['eigenvectors'])
             elif key == 'gp':
                 state.extend(state_container['goal_pose']['goal_pose'])
             else:
