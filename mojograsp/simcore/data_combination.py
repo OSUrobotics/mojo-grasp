@@ -101,7 +101,9 @@ class data_processor():
         for ind in pkl_sort:
             new_pkl_names.append(pkl_names[ind])
         print('found names: ', len(new_pkl_names))
-        for name in new_pkl_names:
+        for i,name in enumerate(new_pkl_names):
+            if i %500 ==0:
+                print('we are on number',i)
             with open(self.data_path + name, 'rb') as datafile: 
                 temp = pkl.load(datafile)
                 goal_dists = [f['reward']['distance_to_goal'] for f in temp['timestep_list']]
@@ -116,7 +118,7 @@ class data_processor():
         self.save_all_flag = True
 
 def main():
-    path ='/home/mothra/mojo-grasp/demos/rl_demo/data/orientation_ja/'
+    path ='/home/mothra/mojo-grasp/demos/rl_demo/data/ftp_eval_evec/'
     d = data_processor(path + 'Train/')
     d.load_limited()
     d.save_all()
