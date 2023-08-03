@@ -246,7 +246,7 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None):
 def main():
     this_path = os.path.abspath(__file__)
     overall_path = os.path.dirname(os.path.dirname(os.path.dirname(this_path)))
-    run_pybullet(overall_path+'/demos/rl_demo/data/ftp_eval_evec/experiment_config.json',runtype='run')
+    run_pybullet(overall_path+'/demos/rl_demo/data/ftp_evecXeval/experiment_config.json',runtype='run')
 
     # run_pybullet('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/ftp_experiment/experiment_config.json',runtype='eval')
 

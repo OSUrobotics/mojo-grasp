@@ -8,26 +8,35 @@ import cv2
 import imageio
 import os
 import numpy as np
+from plot_scripts import running_plot_and_video
+import re
+import pickle as pkl
 
-# 1. Get Images
-print("Saving GIF file")
-path = './Videos/'
-filenames = os.listdir(path)
-direction = [filenam.split('_')[0] for filenam in filenames]
-valid_keys = np.unique(direction)
-for key in valid_keys:
-    frame_names = [file for file in filenames if key+'_' in file]
-    tstep = [int(filenam.split('_')[-1].split('.')[0]) for filenam in frame_names]
-    tstepinds = np.argsort(tstep)
+def plot_actor_output_with_video(filepath, episode_number, test=False):
+    if test:
+        temp = os.listdir(filepath+'Test/')
+        filenames = [file for file in temp if str(episode_number)+'.pkl' in temp]
+        if len(filenames) > 1:
+            raise TypeError('too many files with that number')
+        else:
+            data_path = filepath+'Test/'+filenames[0]
+            file_thing = filenames[0].split('.')[0]
+    else:
+        data_path = filepath+'Train/episode_'+str(episode_number)+'.pkl'
+        file_thing = 'episode_'+str(episode_number)
+    video_path = filepath+'Videos/'
 
-    frames = []
+    frame_list = []
+    for i in range(151):
+        frame_path = video_path+file_thing+'_frame_'+str(i)+'.png'
+        frame_list.append(frame_path)
     
-    for ind in tstepinds:
-        img = cv2.imread(path+frame_names[ind])
-        
-        frames.append(cv2.cvtColor(img, cv2.COLOR_RGB2BGR))
+    x = range(151)
+    with open(data_path,'rb') as file:
+        data = pkl.load(file)
+
+    actor_list = np.array([f['action']['actor_output'] for f in data['timestep_list']])
     
-    with imageio.get_writer(key+".gif", mode="I") as writer:
-        for idx, frame in enumerate(frames):
-            print("Adding frame to GIF file: ", idx + 1)
-            writer.append_data(frame)
+    running_plot_and_video(frame_list, x, actor_list,
+                           xlabel='Elapsed Timesteps', ylabel='Actor Output', title='Actor Output')
+    

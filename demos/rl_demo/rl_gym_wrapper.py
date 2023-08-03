@@ -212,6 +212,12 @@ class GymWrapper(gym.Env):
                         state.extend(state_container['previous_state'][i]['two_finger_gripper']['eigenvalues'])
                     elif key == 'evc':
                         state.extend(state_container['previous_state'][i]['two_finger_gripper']['eigenvectors'])
+                    elif key == 'evv':
+                        evecs = state_container['previous_state'][i]['two_finger_gripper']['eigenvectors']
+                        evals = state_container['previous_state'][i]['two_finger_gripper']['eigenvalues']
+                        scaled = [evals[0]*evecs[0],evals[0]*evecs[2],evals[1]*evecs[1],evals[1]*evecs[3],
+                                  evals[2]*evecs[4],evals[2]*evecs[6],evals[3]*evecs[5],evals[3]*evecs[7]]
+                        state.extend(scaled)
                     elif key == 'gp':
                         state.extend(state_container['previous_state'][i]['goal_pose']['goal_pose'])
                     else:
@@ -239,6 +245,12 @@ class GymWrapper(gym.Env):
                 state.extend(state_container['two_finger_gripper']['eigenvalues'])
             elif key == 'evc':
                 state.extend(state_container['two_finger_gripper']['eigenvectors'])
+            elif key == 'evv':
+                evecs = state_container['two_finger_gripper']['eigenvectors']
+                evals = state_container['two_finger_gripper']['eigenvalues']
+                scaled = [evals[0]*evecs[0],evals[0]*evecs[2],evals[1]*evecs[1],evals[1]*evecs[3],
+                          evals[2]*evecs[4],evals[2]*evecs[6],evals[3]*evecs[5],evals[3]*evecs[7]]
+                state.extend(scaled)
             elif key == 'gp':
                 state.extend(state_container['goal_pose']['goal_pose'])
             else:
