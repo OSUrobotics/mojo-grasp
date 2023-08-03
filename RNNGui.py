@@ -89,6 +89,7 @@ class RNNGui():
                        [sg.Checkbox('Goal Position',default=True, k='-gp')],
                        [sg.Checkbox('Eigenvalues',default=False,key='-eva')],
                        [sg.Checkbox('Eigenvectors',default=False,key='-evc')],
+                       [sg.Checkbox('Eigenvectors Times Eigenvalues',default=False,key='-evv')],
                        [sg.Text('Num Previous States'),sg.Input('0', k='-pv')],
                        [sg.Text("Reward"), sg.OptionMenu(values=('Sparse','Distance','Distance + Finger', 'Hinge Distance + Finger', 'Slope', 'Slope + Finger'), k='-reward',default_value='Distance + Finger'), sg.Text('Success Radius (mm)'), sg.Input(2, key='-sr'),],
                        [sg.Text("Distance Scale"),  sg.Input(1,key='-distance_scale'), sg.Text('Contact Scale'),  sg.Input(0.2,key='-contact_scale')],
@@ -215,6 +216,11 @@ class RNNGui():
             state_maxes.extend([1, 1, 1, 1, 1, 1, 1, 1])
             state_len += 8
             state_list.append('evc')
+        if values['-evv']:
+            state_mins.extend([-1, -1, -1, -1, -1, -1, -1, -1])
+            state_maxes.extend([1, 1, 1, 1, 1, 1, 1, 1])
+            state_len += 8
+            state_list.append('evv')
         if values['-gp']:
             if not RW:
                 state_mins.extend([-0.07, -0.07])
