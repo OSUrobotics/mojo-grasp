@@ -250,6 +250,7 @@ def main():
     overall_path = os.path.dirname(os.path.dirname(os.path.dirname(this_path)))
     run_pybullet(overall_path+'/demos/rl_demo/data/ja-new-fric/experiment_config.json',runtype='run')
 
+
     # run_pybullet('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/ftp_experiment/experiment_config.json',runtype='eval')
 
 
