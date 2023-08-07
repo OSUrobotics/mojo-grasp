@@ -207,8 +207,8 @@ class RNNGui():
             state_len += 2
             state_list.append('fta')
         if values['-eva']:
-            state_mins.extend([-5, -5, -5, -5])
-            state_maxes.extend([5, 5, 5, 5])
+            state_mins.extend([-0.2, -0.2, -0.2, -0.2])
+            state_maxes.extend([0.2, 0.2, 0.2, 0.2])
             state_len += 4
             state_list.append('eva')
         if values['-evc']:
