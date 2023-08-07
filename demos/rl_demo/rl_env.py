@@ -121,6 +121,7 @@ class ExpertEnv(Environment):
     def reset_to_pos(self, object_pos, finger_angles):
         # reset the simulator
         p.resetSimulation()
+        print('AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAa')
         # reload the objects
         plane_id = p.loadURDF("plane.urdf", flags=p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
 

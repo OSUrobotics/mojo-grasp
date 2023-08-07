@@ -161,7 +161,7 @@ class GymWrapper(gym.Env):
                                     shadow=1,
                                     lightDirection=[1, 1, 1])
             img = Image.fromarray(img[2])
-            temp = 'SE_wide_start'
+            temp = 'SE_0.5_0.001_0.0_norm'
             img.save(self.image_path+ temp + '_frame_'+ str(self.timestep)+'.png')
         
         if done:
