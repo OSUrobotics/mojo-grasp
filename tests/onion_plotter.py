@@ -68,17 +68,35 @@ def load_pkl_angle(filename):
 
     return goal_position, current_angle
 
+def load_pkls_compare(filepath1, filepath2, thold):
+    goal_poses1, end_dist1 = load_pkl_goal_dist(filepath1)
+    goal_poses2, end_dist2 = load_pkl_goal_dist(filepath2)
+    successful_1_goals = []
+    successful_2_goals = []
+    for goal1,end1 in zip(goal_poses1, end_dist1):
+        if end1 < thold:
+            successful_1_goals.append(goal1)
+    for goal2,end2 in zip(goal_poses2, end_dist2):
+        if end2 < thold:
+            successful_2_goals.append(goal2)
+            
+    
+    return goal_position, end_position
 
-filepath = '/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/ja_testing/EVALUATION/Test'
-thold = 0.001
+
+filepath = '/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/ftp_comparison/EVALUATION/Test'
+thold = 0.02
+
 
 filenames = os.listdir(filepath)
 episode_number = [re.search('\d+',filenam)[0] for filenam in filenames]
-# einds = np.argsort(episode_number)
-# max_num = max(episode_number)
+einds = np.argsort(episode_number)
+max_num = max(episode_number)
+
+
 # successful_goals, failed_goals = [],[]
 # for i,episode in enumerate(episode_number):
-#     goal, end_dist = load_pkl(filepath + '/'+filenames[i])
+#     goal, end_dist = load_pkl_goal_dist(filepath + '/'+filenames[i])
 #     if end_dist < thold:
 #         successful_goals.append(goal)
 #     else:
@@ -91,35 +109,35 @@ episode_number = [re.search('\d+',filenam)[0] for filenam in filenames]
 # plt.legend(['successful','failed'])
 # plt.title(f'Success Threshold: {thold*100} cm')
 
-'''
-successful_goals, failed_goals = [],[]
-for i,episode in enumerate(episode_number):
-    goal, end_dist = load_pkl_goal_dist(filepath + '/'+filenames[i], True)
-    if end_dist < thold:
-        successful_goals.append(goal)
-    else:
-        failed_goals.append(goal)
 
-successful_goals = np.array(successful_goals)
-failed_goals = np.array(failed_goals)
-plt.scatter(successful_goals[:,0], successful_goals[:,1])
-plt.scatter(failed_goals[:,0], failed_goals[:,1])
-plt.legend(['successful','failed'])
-plt.title(f'Success Threshold: {thold*100} cm')
-'''
-
-# goals, end_spots = [],[]
+# successful_goals, failed_goals = [],[]
 # for i,episode in enumerate(episode_number):
-#     goal, end_dist = load_pkl_end_pos(filepath + '/' + filenames[i])
-#     goals.append(goal)
-#     end_spots.append(end_dist)
+#     goal, end_dist = load_pkl_goal_dist(filepath + '/'+filenames[i], True)
+#     if end_dist < thold:
+#         successful_goals.append(goal)
+#     else:
+#         failed_goals.append(goal)
 
-# successful_goals = np.array(goals)
-# failed_goals = np.array(end_spots) - np.array([0,0.1,0])
+# successful_goals = np.array(successful_goals)
+# failed_goals = np.array(failed_goals)
 # plt.scatter(successful_goals[:,0], successful_goals[:,1])
 # plt.scatter(failed_goals[:,0], failed_goals[:,1])
-# plt.legend(['Goal Poses','End Poses'])
-# plt.title('Goal and End Poses')
+# plt.legend(['successful','failed'])
+# plt.title(f'Success Threshold: {thold*100} cm')
+
+
+goals, end_spots = [],[]
+for i,episode in enumerate(episode_number):
+    goal, end_dist = load_pkl_end_pos(filepath + '/' + filenames[i])
+    goals.append(goal)
+    end_spots.append(end_dist)
+
+successful_goals = np.array(goals)
+failed_goals = np.array(end_spots) - np.array([0,0.1,0])
+plt.scatter(successful_goals[:,0], successful_goals[:,1])
+plt.scatter(failed_goals[:,0], failed_goals[:,1])
+plt.legend(['Goal Poses','End Poses'])
+plt.title('Goal and End Poses')
 
 # maintain_contact, failed_contact = [],[]
 # for i,episode in enumerate(episode_number):
@@ -138,16 +156,16 @@ plt.title(f'Success Threshold: {thold*100} cm')
 
 
 
-nope, singularity = [],[]
-for i,episode in enumerate(episode_number):
-    goal, eval_s = load_pkl_angle(filepath + '/' + filenames[i])
-    if np.isclose(eval_s,0, atol=0.0001).any():
-        singularity.append(goal)
-    else:
-        nope.append(goal)
-nope = np.array(nope)
-singularity = np.array(singularity)
-plt.scatter(nope[:,0], nope[:,1])
-plt.scatter(singularity[:,0], singularity[:,1])
-plt.legend(['NO singularity','singularity'])
-plt.title('Fingers didnt get within 0.0001 rads of singularity')
+# nope, singularity = [],[]
+# for i,episode in enumerate(episode_number):
+#     goal, eval_s = load_pkl_angle(filepath + '/' + filenames[i])
+#     if np.isclose(eval_s,0, atol=0.0001).any():
+#         singularity.append(goal)
+#     else:
+#         nope.append(goal)
+# nope = np.array(nope)
+# singularity = np.array(singularity)
+# plt.scatter(nope[:,0], nope[:,1])
+# plt.scatter(singularity[:,0], singularity[:,1])
+# plt.legend(['NO singularity','singularity'])
+# plt.title('Fingers didnt get within 0.0001 rads of singularity')
