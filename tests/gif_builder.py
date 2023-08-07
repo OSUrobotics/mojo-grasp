@@ -11,6 +11,8 @@ import numpy as np
 from plot_scripts import running_plot_and_video
 import re
 import pickle as pkl
+# import glob
+from PIL import Image
 
 def plot_actor_output_with_video(filepath, episode_number, test=False):
     if test:
@@ -30,7 +32,11 @@ def plot_actor_output_with_video(filepath, episode_number, test=False):
     for i in range(151):
         frame_path = video_path+file_thing+'_frame_'+str(i)+'.png'
         frame_list.append(frame_path)
-    
+    frames = [Image.open(image) for image in frame_list]
+    frame_one = frames[0]
+    frame_one.save("Episode.gif", format="GIF", append_images=frames,
+               save_all=True, duration=151, loop=0)
+    '''
     x = range(151)
     with open(data_path,'rb') as file:
         data = pkl.load(file)
@@ -40,4 +46,18 @@ def plot_actor_output_with_video(filepath, episode_number, test=False):
     eival_ratio2 = np.max(eival_list[2:4],axis=1)/np.min(eival_list[2:4],axis=1)
     running_plot_and_video(frame_list, x, actor_list,
                            xlabel='Elapsed Timesteps', ylabel='Actor Output', title='Actor Output')
-    
+    '''
+
+
+def make_video(filepath):
+    temp = os.listdir(filepath+'Videos/')
+    video_path = filepath+'Videos/'
+    file_thing = 'SE_0.5_0.001_0.0_norm'
+    frame_list = []
+    for i in range(151):
+        frame_path = video_path+file_thing+'_frame_'+str(i)+'.png'
+        frame_list.append(frame_path)
+    frames = [Image.open(image) for image in frame_list]
+    frame_one = frames[0]
+    frame_one.save("Episode.gif", format="GIF", append_images=frames,
+               save_all=True, duration=151, loop=0)
