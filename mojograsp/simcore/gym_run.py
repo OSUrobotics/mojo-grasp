@@ -32,7 +32,7 @@ import time
 # from stable_baselines3.DQN import MlpPolicy
 # from stable_baselines3.common.cmd_util import make_vec_env
 
-def run_pybullet(filepath, window=None, runtype='run', episode_number=None):
+def run_pybullet(filepath, window=None, runtype='run', episode_number=None, action_list = None):
     # resource paths
     
     with open(filepath, 'r') as argfile:
@@ -82,13 +82,13 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None):
         df = pd.read_csv(args['points_path'], index_col=False)
         x = df["x"]
         y = df["y"]
-        df2 = pd.read_csv('/home/orochi/mojo/mojo-grasp/demos/rl_demo/resources/test_points.csv', index_col=False)
         xeval = [0.045, 0, -0.045, -0.06, -0.045, 0, 0.045, 0.06]
         yeval = [-0.045, -0.06, -0.045, 0, 0.045, 0.06, 0.045, 0]
         eval_names = ['SE','S','SW','W','NW','N','NE','E'] 
-        with open('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/emulate_episode.pkl','rb') as fol:
-            data = pkl.load(fol)
-        action_list = [i['action']['actor_output'] for i in data['timestep_list']]
+        if action_list == None:
+            with open('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/emulate_episode.pkl','rb') as fol:
+                data = pkl.load(fol)
+            action_list = [i['action']['actor_output'] for i in data['timestep_list']]
     names = ['AsteriskSE.pkl','AsteriskS.pkl','AsteriskSW.pkl','AsteriskW.pkl','AsteriskNW.pkl','AsteriskN.pkl','AsteriskNE.pkl','AsteriskE.pkl']
     pose_list = [[i,j] for i,j in zip(x,y)]
     eval_pose_list = [[i,j] for i,j in zip(xeval,yeval)]
@@ -111,7 +111,8 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None):
     hand_id = p.loadURDF(args['hand_path'], useFixedBase=True,
                          basePosition=[0.0, 0.0, 0.05], flags=p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
     obj_id = p.loadURDF(args['object_path'], basePosition=[0.0, 0.10, .05], flags=p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
-    
+    # print('expected inertia  ', [0.000029435425,0.000029435425,0.00000725805])
+    # print('cube dynamics info',p.getDynamicsInfo(obj_id,-1))
     # Create TwoFingerGripper Object and set the initial joint positions
     # hand = TwoFingerGripper(hand_id, path=args['hand_path'])
 
@@ -157,7 +158,8 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None):
     reward = rl_reward.ExpertReward()
     p.changeDynamics(plane_id,-1,lateralFriction=0.05, spinningFriction=0.05, rollingFriction=0.05)
     #argument preprocessing
-    p.changeDynamics(obj.id, -1, mass=.03, restitution=.95, lateralFriction=1)
+    p.changeDynamics(obj.id, -1, mass=.03, restitution=.95, lateralFriction=1, localInertiaDiagonal=[0.000029435425,0.000029435425,0.00000725805])
+
     arg_dict = args.copy()
     if args['action'] == 'Joint Velocity':
         arg_dict['ik_flag'] = False
@@ -239,15 +241,15 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None):
                 action = action_list[step]
                 print("Step {}".format(step + 1))
                 print("Action: ", action, type(action))
-                mirrored_action = np.array([-action[2], action[3],-action[0],action[1]])
-                obs, reward, done, info = gym_env.step(mirrored_action,viz=True)
+                # mirrored_action = np.array([-action[2], action[3],-action[0],action[1]])
+                obs, reward, done, info = gym_env.step(np.array(action),viz=True)
                 print('obs=', obs, 'reward=', reward, 'done=', done)
                 # env.render(mode='console')
 
 def main():
     this_path = os.path.abspath(__file__)
     overall_path = os.path.dirname(os.path.dirname(os.path.dirname(this_path)))
-    run_pybullet(overall_path+'/demos/rl_demo/data/sneaky/experiment_config.json',runtype='run')
+    run_pybullet(overall_path+'/demos/rl_demo/data/ja-new-fric/experiment_config.json',runtype='run')
 
     # run_pybullet('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/ftp_experiment/experiment_config.json',runtype='eval')
 
