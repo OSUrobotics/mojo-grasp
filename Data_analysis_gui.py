@@ -1050,6 +1050,37 @@ class GuiBackend():
         self.figure_canvas_agg.draw()
         self.curr_graph = 'direction_reward_thing'   
     
+    def draw_fingertip_path(self):
+        if self.e_num == -1:
+            print("can't draw when episode_all is selected")
+            return
+        data = self.data_dict['timestep_list']
+        trajectory_points = [f['state']['obj_2']['pose'][0] for f in data]
+        fingertip1_points = [f['state']['f1_pos'] for f in data]
+        fingertip2_points = [f['state']['f2_pos'] for f in data]
+        goal_pose = data[1]['reward']['goal_position']
+        trajectory_points = np.array(trajectory_points)
+        fingertip1_points = np.array(fingertip1_points)
+        fingertip2_points = np.array(fingertip2_points)
+        if self.clear_plots | (self.curr_graph != 'path'):
+            self.ax.cla()
+            self.legend = []
+        self.ax.plot(trajectory_points[:,0], trajectory_points[:,1])
+        self.ax.plot(fingertip1_points[:,0], fingertip1_points[:,1])
+        self.ax.plot(fingertip2_points[:,0], fingertip2_points[:,1])
+        self.ax.plot([trajectory_points[0,0], goal_pose[0]],[trajectory_points[0,1],goal_pose[1]])
+        self.ax.set_xlim([-0.07,0.07])
+        self.ax.set_ylim([0.04,0.16])
+        self.ax.set_xlabel('X pos (m)')
+        self.ax.set_ylabel('Y pos (m)')                                                                                                                                                                                                                                   
+        self.legend.extend(['RL Trajectory - episode '+str(self.e_num),'F1 Trajectory - episode '+str(self.e_num),
+                            'F2 Trajectory - episode '+str(self.e_num),'Ideal Path to Goal - episode '+str(self.e_num)])
+        self.ax.legend(self.legend)
+        self.ax.set_title('Object Path')
+        self.figure_canvas_agg.draw()
+        self.curr_graph = 'path'
+
+    
     def check_all_data(self):
         #TODO fix this so that it works with different shit
 
@@ -1141,12 +1172,13 @@ def main():
                     [sg.Button('Explored Region', size=(8,2)), sg.Button('Actor Output', size=(8, 2)), sg.Button('Critic Output', size=(8, 2)), sg.Button('RewardSplit',size=(8, 2)), sg.Button('Asterisk Success', size=(8,2))],
                     [sg.Button('End Region', size=(8,2)), sg.Button('Average Actor Values', size=(8,2)), sg.Button('Episode Rewards', size=(8,2)), sg.Button('Finger Object Avg', size=(8,2)), sg.Button('Shortest Goal Dist', size=(8,2))],
                     [sg.Button('Path + Action', size=(8,2)), sg.Button('Success Rate', size=(8,2)), sg.Button('Ending Velocity', size=(8,2)), sg.Button('Finger Object Max', size=(8,2)), sg.Button('Ending Goal Dist', size=(8,2))],
+                    [sg.Button('Fingertip Route', size=(8,2))],
                     [sg.Slider((1,20),10,1,1,key='moving_avg',orientation='h', size=(48,6)), sg.Text("Keep previous graph", size=(10, 3), key='-toggletext-'), sg.Button(image_data=toggle_btn_off, key='-TOGGLE-GRAPHIC-', button_color=(sg.theme_background_color(), sg.theme_background_color()), border_width=0, metadata=False)],
                     [sg.Slider((1,20),2,1,1,key='success_range',orientation='h', size=(48,6)),sg.Text("Distance Reward (toggled)/Slope Reward", size=(20, 3), key='-BEEG-'),  sg.Button(image_data=toggle_btn_off, key='-TOGGLE-REWARDS-', button_color=(sg.theme_background_color(), sg.theme_background_color()), border_width=0, metadata=False), sg.Button('Sampled Poses', size=(8,2)),]]
     # define layout, show and read the window
     col = [[sg.Text(episode_files[0], size=(80, 3), key='-FILENAME-')],
            [sg.Canvas(size=(1280, 960), key='-CANVAS-')],
-           plot_buttons[0], plot_buttons[1], plot_buttons[2], plot_buttons[3], plot_buttons[4], plot_buttons[5], [sg.B('Save Image', key='-SAVE-')],
+           plot_buttons[0], plot_buttons[1], plot_buttons[2], plot_buttons[3], plot_buttons[4], plot_buttons[5], plot_buttons[6], [sg.B('Save Image', key='-SAVE-')],
                [sg.Text('File 1 of {}'.format(len(episode_files)), size=(15, 1), key='-FILENUM-')]]
 
     col_files = [[sg.Text(overall_path, key='-print-path')],
@@ -1227,6 +1259,8 @@ def main():
             backend.draw_ending_goal_dist()  
         elif event == 'End Region':
             backend.draw_end_region()
+        elif event == 'Fingertip Route':
+            backend.draw_fingertip_path()
         elif event == 'RewardSplit':
             backend.draw_goal_rewards()
         elif event == '-TOGGLE-GRAPHIC-':  # if the graphical button that changes images
