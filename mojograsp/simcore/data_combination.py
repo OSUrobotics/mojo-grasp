@@ -116,7 +116,7 @@ class data_processor():
         self.save_all_flag = True
 
 def main():
-    path ='/home/mothra/mojo-grasp/demos/rl_demo/data/orientation_ja/'
+    path ='/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/orientation_test/'
     d = data_processor(path + 'Train/')
     d.load_limited()
     d.save_all()
