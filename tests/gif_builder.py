@@ -35,8 +35,9 @@ def plot_actor_output_with_video(filepath, episode_number, test=False):
     with open(data_path,'rb') as file:
         data = pkl.load(file)
 
-    actor_list = np.array([f['action']['actor_output'] for f in data['timestep_list']])
-    
+    eival_list = np.array([f['state']['two_finger_gripper']['eigenvalues'] for f in data['timestep_list']])
+    eival_ratio1 = np.max(eival_list[0:2],axis=1)/np.min(eival_list[0:2],axis=1)
+    eival_ratio2 = np.max(eival_list[2:4],axis=1)/np.min(eival_list[2:4],axis=1)
     running_plot_and_video(frame_list, x, actor_list,
                            xlabel='Elapsed Timesteps', ylabel='Actor Output', title='Actor Output')
     

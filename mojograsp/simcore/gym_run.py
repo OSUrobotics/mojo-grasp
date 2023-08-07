@@ -86,9 +86,9 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None, acti
         yeval = [-0.045, -0.06, -0.045, 0, 0.045, 0.06, 0.045, 0]
         eval_names = ['SE','S','SW','W','NW','N','NE','E'] 
         if action_list == None:
-            with open('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/emulate_episode.pkl','rb') as fol:
+            with open('/home/mothra/mojo-grasp/ftp_180k/SE_IK_actor.pkl','rb') as fol:
                 data = pkl.load(fol)
-            action_list = [i['action']['actor_output'] for i in data['timestep_list']]
+            action_list = np.array(data)
     names = ['AsteriskSE.pkl','AsteriskS.pkl','AsteriskSW.pkl','AsteriskW.pkl','AsteriskNW.pkl','AsteriskN.pkl','AsteriskNE.pkl','AsteriskE.pkl']
     pose_list = [[i,j] for i,j in zip(x,y)]
     eval_pose_list = [[i,j] for i,j in zip(xeval,yeval)]
@@ -238,18 +238,21 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None, acti
             obs = gym_env.reset()
             for step in range(151):
                 # action, _ = model.predict(obs, deterministic=True)
+                # print(action_list)
                 action = action_list[step]
-                print("Step {}".format(step + 1))
-                print("Action: ", action, type(action))
+                # print("Step {}".format(step + 1))
+                # print("Action: ", action, type(action))
                 # mirrored_action = np.array([-action[2], action[3],-action[0],action[1]])
                 obs, reward, done, info = gym_env.step(np.array(action),viz=True)
-                print('obs=', obs, 'reward=', reward, 'done=', done)
+                # print('obs=', obs, 'reward=', reward, 'done=', done)
                 # env.render(mode='console')
 
 def main():
     this_path = os.path.abspath(__file__)
     overall_path = os.path.dirname(os.path.dirname(os.path.dirname(this_path)))
-    run_pybullet(overall_path+'/demos/rl_demo/data/ja-new-fric/experiment_config.json',runtype='run')
+    # run_pybullet(overall_path+'/demos/rl_demo/data/ftp_eigen_3/experiment_config.json',runtype='run')
+    run_pybullet(overall_path+'/demos/rl_demo/data/ftp_friction_fuckery/experiment_config.json', runtype='replay')
+
 
     # run_pybullet('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/ftp_experiment/experiment_config.json',runtype='eval')
 
