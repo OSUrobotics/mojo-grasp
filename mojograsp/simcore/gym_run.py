@@ -86,7 +86,7 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None, acti
         yeval = [-0.045, -0.06, -0.045, 0, 0.045, 0.06, 0.045, 0]
         eval_names = ['SE','S','SW','W','NW','N','NE','E'] 
         if action_list == None:
-            with open('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/ja_testing/Train/episode_99993.pkl','rb') as fol:
+            with open('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/ja_testing/Train/episode_61604.pkl','rb') as fol:
                 data = pkl.load(fol)
             action_list = data#np.array(data)
     names = ['AsteriskSE.pkl','AsteriskS.pkl','AsteriskSW.pkl','AsteriskW.pkl','AsteriskNW.pkl','AsteriskN.pkl','AsteriskNE.pkl','AsteriskE.pkl']
