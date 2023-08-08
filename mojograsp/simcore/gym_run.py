@@ -49,7 +49,7 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None, acti
             df = pd.read_csv(args['points_path'], index_col=False)
             x = df["x"]
             y = df["y"]
-            df2 = pd.read_csv('/home/orochi/mojo/mojo-grasp/demos/rl_demo/resources/test_points.csv', index_col=False)
+            df2 = pd.read_csv('/home/mothra/mojo-grasp/demos/rl_demo/resources/test_points.csv', index_col=False)
             xeval = [0.045, 0, -0.045, -0.06, -0.045, 0, 0.045, 0.06]
             yeval = [-0.045, -0.06, -0.045, 0, 0.045, 0.06, 0.045, 0]
             eval_names = ['SE','S','SW','W','NW','N','NE','E'] 
@@ -254,11 +254,11 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None, acti
 def main():
     this_path = os.path.abspath(__file__)
     overall_path = os.path.dirname(os.path.dirname(os.path.dirname(this_path)))
-    # run_pybullet(overall_path+'/demos/rl_demo/data/ftp_eigen_3/experiment_config.json',runtype='run')
-    # run_pybullet(overall_path+'/demos/rl_demo/data/sneaky/experiment_config.json', runtype='eval')
+    # run_pybullet(overall_path+'/demos/rl_demo/data/ftp_friction_fuckery/experiment_config.json', runtype='replay')
 
 
-    run_pybullet('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/ja_testing/experiment_config.json',runtype='replay')
+    run_pybullet(overall_path+'/demos/rl_demo/data/ftp_friction_fuckery/experiment_config.json',runtype='eval')
+
 
 # DO A REPLAY OF JA-testing episode 99924, 99918
 if __name__ == '__main__':
