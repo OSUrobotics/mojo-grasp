@@ -190,9 +190,13 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None, acti
     # p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 0)
     # p.configureDebugVisualizer(p.COV_ENABLE_GUI, 0)
     # check_env(gym_env, warn=True)
+    if 'entropy' in args.keys():
+        ent = args['entropy']
+    else:
+        ent = 0.0
     if runtype == 'run':
-        # wandb.init(project = 'StableBaselinesWandBTest')
-        model = PPO("MlpPolicy", gym_env, tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-1})
+        wandb.init(project = 'StableBaselinesWandBTest')
+        model = PPO("MlpPolicy", gym_env, tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-1}, ent_coef=ent)
         # gym_env = make_vec_env(lambda: gym_env, n_envs=1)
         
         gym_env.train()
@@ -256,7 +260,7 @@ def main():
     overall_path = os.path.dirname(os.path.dirname(os.path.dirname(this_path)))
     # run_pybullet(overall_path+'/demos/rl_demo/data/ja_testing/experiment_config.json', runtype='replay')
 
-    run_pybullet(overall_path+'/demos/rl_demo/data/a_throwaway/experiment_config.json', runtype='run')
+    run_pybullet(overall_path+'/demos/rl_demo/data/ja_new_rewards/experiment_config.json', runtype='run')
 
     # run_pybullet(overall_path+'/demos/rl_demo/data/ftp_friction_fuckery/experiment_config.json',runtype='eval')
 
