@@ -732,7 +732,6 @@ class GuiBackend():
                 avg_actor_std[i,:] = np.std(actor_list, axis = 0)
                 if i % 100 ==0:
                     print('count = ',i)
-            return
         else:
             avg_actor_output = np.zeros((len(self.all_data['episode_list']),4))
             avg_actor_std = np.zeros((len(self.all_data['episode_list']),4))
