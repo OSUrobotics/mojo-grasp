@@ -119,6 +119,7 @@ class data_processor():
 
 def main():
     path ='/home/mothra/mojo-grasp/demos/rl_demo/data/ftp_friction_fuckery/'
+
     d = data_processor(path + 'Train/')
     d.load_limited()
     d.save_all()

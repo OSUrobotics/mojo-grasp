@@ -161,7 +161,7 @@ class GymWrapper(gym.Env):
                                     shadow=1,
                                     lightDirection=[1, 1, 1])
             img = Image.fromarray(img[2])
-            temp = 'SE_0.5_0.001_0.0_norm'
+            temp = 'eval'
             img.save(self.image_path+ temp + '_frame_'+ str(self.timestep)+'.png')
         
         if done:
@@ -350,6 +350,17 @@ class GymWrapper(gym.Env):
             tstep_reward = reward_container['slope_to_goal'] * self.DISTANCE_SCALING
         elif self.REWARD_TYPE == 'Slope + Finger':
             tstep_reward = max(reward_container['slope_to_goal'] * self.DISTANCE_SCALING  - max(reward_container['f1_dist'],reward_container['f2_dist'])*self.CONTACT_SCALING,-1)
+        elif self.REWARD_TYPE == 'SmartDistance + Finger':
+            ftemp = max(reward_container['f1_dist'],reward_container['f2_dist'])
+            temp = -reward_container['distance_to_goal'] * (1 + 4*reward_container['plane_side'])
+            # print(reward_container['plane_side'])
+            tstep_reward = max(temp*self.DISTANCE_SCALING - ftemp*self.CONTACT_SCALING,-1)
+        elif self.REWARD_TYPE == 'SmartDistance + SmartFinger':
+            ftemp = max(reward_container['f1_dist'],reward_container['f2_dist'])
+            if ftemp > 0.001:
+                ftemp = ftemp*ftemp*1000
+            temp = -reward_container['distance_to_goal'] * (1 + 4*reward_container['plane_side'])
+            tstep_reward = max(temp*self.DISTANCE_SCALING - ftemp*self.CONTACT_SCALING,-1)
         else:
             raise Exception('reward type does not match list of known reward types')
         return float(tstep_reward)
