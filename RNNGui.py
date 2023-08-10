@@ -73,7 +73,7 @@ class RNNGui():
                          [sg.Text('Evaluation Period'), sg.Input(1000,key='-eval'), sg.Text('Tau'), sg.Input(0.0005, key='-tau')],
                          [sg.Text('Timesteps per Episode'), sg.Input(150,key='-tsteps'), sg.Text('Timesteps in Evaluation'), sg.Input(150,key='-eval-tsteps')],
                          [sg.Text('State Training Noise'), sg.Input(0.0, key='-snoise'),sg.Text('Start Pos Range (mm)'), sg.Input(0, key='-start-noise')],
-                         [sg.Text('Timestep Frequency'), sg.Input(30,key='-freq')]]
+                         [sg.Text('Timestep Frequency'), sg.Input(30,key='-freq'), sg.Text('Entropy'), sg.Input(0.0,key='-entropy')]]
         
         plotting_layout = [[sg.Text('Model Title')],
                        [sg.Input('test1',key='-title')],
@@ -91,7 +91,7 @@ class RNNGui():
                        [sg.Checkbox('Eigenvectors',default=False,key='-evc')],
                        [sg.Checkbox('Eigenvectors Times Eigenvalues',default=False,key='-evv')],
                        [sg.Text('Num Previous States'),sg.Input('0', k='-pv')],
-                       [sg.Text("Reward"), sg.OptionMenu(values=('Sparse','Distance','Distance + Finger', 'Hinge Distance + Finger', 'Slope', 'Slope + Finger','SmartDistance + Finger','SmartDistance + SmartFinger'), k='-reward',default_value='Distance + Finger'), sg.Text('Success Radius (mm)'), sg.Input(2, key='-sr'),],
+                       [sg.Text("Reward"), sg.OptionMenu(values=('Sparse','Distance','Distance + Finger', 'Hinge Distance + Finger', 'Slope', 'Slope + Finger','SmartDistance + Finger','SmartDistance + SmartFinger','ScaledDistance + Finger'), k='-reward',default_value='Distance + Finger'), sg.Text('Success Radius (mm)'), sg.Input(2, key='-sr'),],
                        [sg.Text("Distance Scale"),  sg.Input(1,key='-distance_scale'), sg.Text('Contact Scale'),  sg.Input(0.2,key='-contact_scale')],
                        [sg.Text("Action"), sg.OptionMenu(values=('Joint Velocity','Finger Tip Position'), k='-action',default_value='Finger Tip Position')],
                        [sg.Checkbox('Vizualize Simulation',default=False, k='-viz'), sg.Checkbox('Real World?',default=False, k='-rw')],
@@ -117,6 +117,7 @@ class RNNGui():
                      'discount': float(values['-df']),
                      'epsilon': float(values['-epsilon']),
                      'edecay': float(values['-edecay']),
+                     'entropy': float(values['-entropy']),
                      'object': values['-object'],
                      'hand': values['-hand'],
                      'task': values['-task'],
