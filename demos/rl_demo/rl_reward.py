@@ -30,7 +30,7 @@ class ExpertReward(Reward):
         
         current_pos_vec = np.array(goal_position[0:2])- np.array([current_cube_pose[0][0],current_cube_pose[0][1]])
        
-        self.current_reward['plane_side'] = np.dot(start_pos_vec,current_pos_vec) >= 0
+        self.current_reward['plane_side'] = np.dot(start_pos_vec,current_pos_vec) <= 0
         try:
             self.current_reward["distance_to_goal"] = distance
             self.current_reward["goal_position"] = goal_position
@@ -57,7 +57,8 @@ class ExpertReward(Reward):
 
     def setup_reward(self, start_pos):
         self.prev_pos = start_pos
-        self.start_pos = np.array(start_pos)
+        self.start_pos = np.array(start_pos[0])
+        # print(self.start_pos)
 
 
 class TranslateReward(Reward):

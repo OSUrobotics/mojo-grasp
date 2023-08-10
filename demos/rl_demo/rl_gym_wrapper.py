@@ -353,6 +353,7 @@ class GymWrapper(gym.Env):
         elif self.REWARD_TYPE == 'SmartDistance + Finger':
             ftemp = max(reward_container['f1_dist'],reward_container['f2_dist'])
             temp = -reward_container['distance_to_goal'] * (1 + 4*reward_container['plane_side'])
+            # print(reward_container['plane_side'])
             tstep_reward = max(temp*self.DISTANCE_SCALING - ftemp*self.CONTACT_SCALING,-1)
         elif self.REWARD_TYPE == 'SmartDistance + SmartFinger':
             ftemp = max(reward_container['f1_dist'],reward_container['f2_dist'])

@@ -61,19 +61,19 @@ class RNNGui():
                          [sg.Button("Browse",key='-browse-load',button_color='DarkBlue'),sg.Text("/", key='-load-path')],
                          [sg.Text('Object'), sg.OptionMenu(values=('Cube', 'Cylinder'), k='-object', default_value='Cube')],
                          [sg.Text('Hand'), sg.OptionMenu(values=('2v2', '2v2-B'), k='-hand', default_value='2v2')],
-                         [sg.Text("Task"), sg.OptionMenu(values=('asterisk','random','full_random','unplanned_random'), k='-task', default_value='full_random')],
+                         [sg.Text("Task"), sg.OptionMenu(values=('asterisk','random','full_random','unplanned_random'), k='-task', default_value='unplanned_random')],
                          [sg.Checkbox("Randomized Start Position", key='-rstart',default=False)],
                          [sg.Text('Replay Buffer Sampling'), sg.OptionMenu(values=('priority','random','random+expert'), k='-sampling', default_value='priority')]]
         
         
-        model_layout = [ [sg.Text('Num Epochs'), sg.Input(10000, key='-epochs'), sg.Text('Batch Size'), sg.Input(100, key='-batch-size')],
+        model_layout = [ [sg.Text('Num Epochs'), sg.Input(100000, key='-epochs'), sg.Text('Batch Size'), sg.Input(100, key='-batch-size')],
                          [sg.Text('Learning Rate'), sg.Input(0.0001,key='-learning'), sg.Text('Discount Factor'), sg.Input(0.995, key='-df')],
                          [sg.Text('Starting Epsilon'), sg.Input(0.7,key='-epsilon'), sg.Text('Epsilon Decay Rate'), sg.Input(0.998, key='-edecay')],
                          [sg.Text('Rollout Size'), sg.Input(5,key='-rollout_size'), sg.Text('Rollout Weight'), sg.Input(0.5, key='-rollout_weight')],
-                         [sg.Text('Evaluation Period'), sg.Input(3,key='-eval'), sg.Text('Tau'), sg.Input(0.0005, key='-tau')],
+                         [sg.Text('Evaluation Period'), sg.Input(1000,key='-eval'), sg.Text('Tau'), sg.Input(0.0005, key='-tau')],
                          [sg.Text('Timesteps per Episode'), sg.Input(150,key='-tsteps'), sg.Text('Timesteps in Evaluation'), sg.Input(150,key='-eval-tsteps')],
-                         [sg.Text('State Training Noise'), sg.Input(0.05, key='-snoise'),sg.Text('Start Pos Range (mm)'), sg.Input(0, key='-start-noise')],
-                         [sg.Text('Timestep Frequency'), sg.Input(240,key='-freq')]]
+                         [sg.Text('State Training Noise'), sg.Input(0.0, key='-snoise'),sg.Text('Start Pos Range (mm)'), sg.Input(0, key='-start-noise')],
+                         [sg.Text('Timestep Frequency'), sg.Input(30,key='-freq')]]
         
         plotting_layout = [[sg.Text('Model Title')],
                        [sg.Input('test1',key='-title')],
