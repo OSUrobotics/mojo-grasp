@@ -118,7 +118,7 @@ class data_processor():
         self.save_all_flag = True
 
 def main():
-    path ='/home/mothra/mojo-grasp/demos/rl_demo/data/ja-new-fric/'
+    path ='/home/mothra/mojo-grasp/demos/rl_demo/data/ftp_friction_fuckery/'
     d = data_processor(path + 'Train/')
     d.load_limited()
     d.save_all()
