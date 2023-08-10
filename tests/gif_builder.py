@@ -52,7 +52,7 @@ def plot_actor_output_with_video(filepath, episode_number, test=False):
 def make_video(filepath):
     temp = os.listdir(filepath+'Videos/')
     video_path = filepath+'Videos/'
-    file_thing = 'SE_0.5_0.001_0.0_norm'
+    file_thing = 'eval'
     frame_list = []
     for i in range(151):
         frame_path = video_path+file_thing+'_frame_'+str(i)+'.png'

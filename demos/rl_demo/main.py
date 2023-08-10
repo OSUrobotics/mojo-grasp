@@ -5,6 +5,7 @@ import pybullet_data
 import pathlib
 import manipulation_phase_rl
 import rl_env
+from expert_controller import ExpertController
 from rl_state import StateRL, GoalHolder
 import rl_action
 import rl_reward
@@ -25,7 +26,7 @@ import time
 from mojograsp.simcore.priority_replay_buffer import ReplayBufferPriority
 # resource paths
 current_path = str(pathlib.Path().resolve())
-hand_path = current_path+"/resources/2v2_Hand_A_finger_2/hand/2v2_50.50_50.50_1.1_53.urdf"
+hand_path = current_path+"/resources/2v2_Hand_A/hand/2v2_50.50_50.50_1.1_53.urdf"
 cube_path = current_path + \
     "/resources/object_models/2v2_mod/2v2_mod_cuboid_small.urdf"
 cylinder_path = current_path + \
