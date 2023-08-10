@@ -531,7 +531,79 @@ class GuiBackend():
         self.ax.grid(True)
         self.figure_canvas_agg.draw()
         self.curr_graph = 'Group_Reward'
-
+        
+    def draw_net_distance_reward(self):
+        if self.all_data is None:
+            if len(self.rewards) ==0:
+                # print('need to load in episode all first')
+                print('this will be slow, and we both know it')
+                
+                # get list of pkl files in folder
+                episode_files = [os.path.join(self.folder, f) for f in os.listdir(self.folder) if f.lower().endswith('.pkl')]
+                filenames_only = [f for f in os.listdir(self.folder) if f.lower().endswith('.pkl')]
+                
+                filenums = [re.findall('\d+',f) for f in filenames_only]
+                final_filenums = []
+                for i in filenums:
+                    if len(i) > 0 :
+                        final_filenums.append(int(i[0]))
+                
+                
+                sorted_inds = np.argsort(final_filenums)
+                final_filenums = np.array(final_filenums)
+                temp = final_filenums[sorted_inds]
+                episode_files = np.array(episode_files)
+                filenames_only = np.array(filenames_only)
+    
+                episode_files = episode_files[sorted_inds].tolist()
+                # filenames_only = filenames_only[sorted_inds].tolist()
+                rewards = []
+                temp = 0
+                count = 0
+                for episode_file in episode_files:
+                    with open(episode_file, 'rb') as ef:
+                        tempdata = pkl.load(ef)
+                    data = tempdata['timestep_list']
+                    for timestep in data:
+                        temp += - timestep['reward']['distance_to_goal']
+                    rewards.append(temp)
+                    temp = 0
+                    if count% 100 ==0:
+                        print('count = ', count)
+                    count +=1
+                self.rewards= rewards
+            else:
+                rewards = self.rewards
+        else: 
+            if self.reduced_format:
+                rewards = [-i['sum_dist'] for i in self.all_data['episode_list']]
+            else:
+                rewards = []
+                temp = 0
+                for episode in self.all_data['episode_list']:
+                    data = episode['timestep_list']
+                    goal_position = data[0]['state']['goal_pose']['goal_pose']
+                    for timestep in data:
+                        temp += - timestep['reward']['distance_to_goal']
+                    rewards.append(temp)
+                    temp = 0
+                self.rewards= rewards
+        if self.moving_avg != 1:
+            rewards = moving_average(rewards,self.moving_avg)
+        if self.clear_plots | (self.curr_graph !='Group_Reward'):
+            self.ax.cla()
+            self.legend = []
+        self.legend.append('Average Distance Reward')
+        self.ax.plot(range(len(rewards)), rewards)
+        self.ax.set_xlabel('Episode Number')
+        self.ax.set_ylabel('Total Reward Over the Entire Episode')
+        self.ax.set_title("Agent Reward over Episode")
+        # self.ax.set_ylim([-12, 0])
+        self.ax.legend(self.legend)
+        self.ax.grid(True)
+        self.figure_canvas_agg.draw()
+        self.curr_graph = 'Group_Reward'
+        
     def draw_finger_obj_dist_avg(self):
         if self.all_data is None:
             print('need to load in episode all first')
@@ -1182,7 +1254,7 @@ class GuiBackend():
         self.ax.set_title("Agent Reward over Episode")
         self.legend.append('Average Finger Tip Reward')
         self.ax.legend(self.legend)
-        self.ax.set_ylim([-0.61, 0.001])
+        # self.ax.set_ylim([-0.61, 0.001])
         self.ax.grid(True)
         self.figure_canvas_agg.draw()
         self.curr_graph = 'Group_Reward'
@@ -1278,7 +1350,7 @@ def main():
                     [sg.Button('Explored Region', size=(8,2)), sg.Button('Actor Output', size=(8, 2)), sg.Button('Critic Output', size=(8, 2)), sg.Button('RewardSplit',size=(8, 2)), sg.Button('Asterisk Success', size=(8,2))],
                     [sg.Button('End Region', size=(8,2)), sg.Button('Average Actor Values', size=(8,2)), sg.Button('Episode Rewards', size=(8,2)), sg.Button('Finger Object Avg', size=(8,2)), sg.Button('Shortest Goal Dist', size=(8,2))],
                     [sg.Button('Path + Action', size=(8,2)), sg.Button('Success Rate', size=(8,2)), sg.Button('Ending Velocity', size=(8,2)), sg.Button('Finger Object Max', size=(8,2)), sg.Button('Ending Goal Dist', size=(8,2))],
-                    [sg.Button('Fingertip Route', size=(8,2)), sg.Button('Average Finger Tip', size=(8,2))],
+                    [sg.Button('Fingertip Route', size=(8,2)), sg.Button('Average Finger Tip', size=(8,2)), sg.Button('Average Dist Reward', size=(8,2))],
                     [sg.Slider((1,20),10,1,1,key='moving_avg',orientation='h', size=(48,6)), sg.Text("Keep previous graph", size=(10, 3), key='-toggletext-'), sg.Button(image_data=toggle_btn_off, key='-TOGGLE-GRAPHIC-', button_color=(sg.theme_background_color(), sg.theme_background_color()), border_width=0, metadata=False)],
                     [sg.Slider((1,20),2,1,1,key='success_range',orientation='h', size=(48,6)),sg.Text("Distance Reward (toggled)/Slope Reward", size=(20, 3), key='-BEEG-'),  sg.Button(image_data=toggle_btn_off, key='-TOGGLE-REWARDS-', button_color=(sg.theme_background_color(), sg.theme_background_color()), border_width=0, metadata=False), sg.Button('Sampled Poses', size=(8,2)),]]
     # define layout, show and read the window
@@ -1369,8 +1441,9 @@ def main():
             backend.draw_fingertip_path()
         elif event == 'RewardSplit':
             backend.draw_goal_rewards()
+        elif event =='Average Dist Reward':
+            backend.draw_net_distance_reward()
         elif event == 'Average Finger Tip':
-            print('drawing thinhg')
             backend.draw_net_finger_reward()
         elif event == '-TOGGLE-GRAPHIC-':  # if the graphical button that changes images
             window['-TOGGLE-GRAPHIC-'].metadata = not window['-TOGGLE-GRAPHIC-'].metadata
