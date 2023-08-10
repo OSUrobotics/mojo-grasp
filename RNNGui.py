@@ -91,7 +91,7 @@ class RNNGui():
                        [sg.Checkbox('Eigenvectors',default=False,key='-evc')],
                        [sg.Checkbox('Eigenvectors Times Eigenvalues',default=False,key='-evv')],
                        [sg.Text('Num Previous States'),sg.Input('0', k='-pv')],
-                       [sg.Text("Reward"), sg.OptionMenu(values=('Sparse','Distance','Distance + Finger', 'Hinge Distance + Finger', 'Slope', 'Slope + Finger'), k='-reward',default_value='Distance + Finger'), sg.Text('Success Radius (mm)'), sg.Input(2, key='-sr'),],
+                       [sg.Text("Reward"), sg.OptionMenu(values=('Sparse','Distance','Distance + Finger', 'Hinge Distance + Finger', 'Slope', 'Slope + Finger','SmartDistance + Finger','SmartDistance + SmartFinger'), k='-reward',default_value='Distance + Finger'), sg.Text('Success Radius (mm)'), sg.Input(2, key='-sr'),],
                        [sg.Text("Distance Scale"),  sg.Input(1,key='-distance_scale'), sg.Text('Contact Scale'),  sg.Input(0.2,key='-contact_scale')],
                        [sg.Text("Action"), sg.OptionMenu(values=('Joint Velocity','Finger Tip Position'), k='-action',default_value='Finger Tip Position')],
                        [sg.Checkbox('Vizualize Simulation',default=False, k='-viz'), sg.Checkbox('Real World?',default=False, k='-rw')],
@@ -407,3 +407,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+    

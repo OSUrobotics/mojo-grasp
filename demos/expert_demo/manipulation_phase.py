@@ -19,7 +19,7 @@ class Manipulation(Phase):
         self.state = state
         self.action = action
         self.reward = reward
-        self.terminal_step = 400
+        self.terminal_step = 800
         self.timestep = 0
         self.episode = 0
         self.x = x
@@ -36,13 +36,14 @@ class Manipulation(Phase):
         self.controller.num_contact_loss = 0
         # Get new goal position
         self.goal_position = [float(self.x[self.episode]), float(
-            self.y[self.episode] + .16), 0]
+            self.y[self.episode] + .10), 0]
         # set the new goal position for the controller
         self.controller.set_goal_position(self.goal_position)
 
     def pre_step(self):
         # Get the target action
         self.target = self.controller.get_next_action()
+        self.target = self.controller.move_hand_point()
         # Set the next action before the sim is stepped for Action (Done so that replay buffer and record data work)
         self.action.set_action(self.target)
         # Set the current state before sim is stepped
@@ -50,13 +51,13 @@ class Manipulation(Phase):
 
     def execute_action(self):
         # Execute the target that we got from the controller in pre_step()
-        p.setJointMotorControlArray(self.hand.id, jointIndices=self.hand.get_joint_numbers(),
-                                    controlMode=p.POSITION_CONTROL, targetPositions=self.target)
+        # p.setJointMotorControlArray(self.hand.id, jointIndices=self.hand.get_joint_numbers(),
+        #                             controlMode=p.POSITION_CONTROL, targetPositions=self.target)
         self.timestep += 1
 
     def post_step(self):
         # Set the reward from the given action after the step
-        self.reward.set_reward(self.goal_position, self.cube, self.hand, 0)
+        self.reward.set_reward(self.goal_position, self.cube)
 
     def exit_condition(self) -> bool:
         # If we reach 400 steps or the controller exit condition finishes we exit the phase
@@ -64,6 +65,7 @@ class Manipulation(Phase):
             print('ending with distance', self.controller.check_goal())
             print('retry count', self.controller.retry_count)
             self.controller.retry_count=0
+            print('goal position was ',self.goal_position)
             return True
         return False
 

@@ -118,7 +118,7 @@ class data_processor():
         self.save_all_flag = True
 
 def main():
-    path ='/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/ja_testing/'
+    path ='/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/ftp_comparison/FTP_Train/'
     d = data_processor(path + 'Train/')
     d.load_limited()
     d.save_all()
