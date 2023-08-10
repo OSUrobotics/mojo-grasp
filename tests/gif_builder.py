@@ -5,7 +5,7 @@ Created on Tue Dec  6 12:27:24 2022
 """
 
 import cv2
-import imageio
+# import imageio
 import os
 import numpy as np
 from plot_scripts import running_plot_and_video
@@ -59,5 +59,5 @@ def make_video(filepath):
         frame_list.append(frame_path)
     frames = [Image.open(image) for image in frame_list]
     frame_one = frames[0]
-    frame_one.save("Episode.gif", format="GIF", append_images=frames,
+    frame_one.save(filepath+"Episode.gif", format="GIF", append_images=frames,
                save_all=True, duration=151, loop=0)
