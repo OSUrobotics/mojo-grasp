@@ -13,15 +13,16 @@ import numpy as np
 import pickle as pkl
 import re
 
-def load_pkl_goal_dist(filename,mins=False):
+def load_pkl_goal_dist(filename,last=False):
     with open(filename, 'rb') as pkl_file:
         data_dict = pkl.load(pkl_file)
     data = data_dict['timestep_list']
     goal_position = data[0]['state']['goal_pose']['goal_pose']
-    goal_dists = [f['reward']['distance_to_goal'] for f in data]
-    if mins:
-        ending_dist = goal_dists[-1]
+    
+    if last:
+        ending_dist = data[-1]['reward']['distance_to_goal']
     else:
+        goal_dists = [f['reward']['distance_to_goal'] for f in data]
         ending_dist = min(goal_dists)
 
     return goal_position, ending_dist
@@ -81,27 +82,37 @@ def load_pkls_compare(filepath1, filepath2, thold):
             successful_2_goals.append(goal2)
             
     
-    return goal_position, end_position
+    # return goal_position, end_position
 
 
-filepath = '/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/ftp_comparison/EVALUATION/Test'
-thold = 0.02
+# filepath = '/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/ftp_comparison/EVALUATION/Test'
+# filepath = '/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/ja_testing/Train'
+filepath = '/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/ja_testing/EVALUATION/Test'
+# filepath = '/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/IK_results/'
+
+thold = 0.001
 
 
 filenames = os.listdir(filepath)
-episode_number = [re.search('\d+',filenam)[0] for filenam in filenames]
+print(len(filenames))
+episode_number = [int(re.search('\d+',filenam)[0]) for filenam in filenames]
 einds = np.argsort(episode_number)
+new_name_order = [filenames[i] for i in einds]
+# print(new_name_order)
 max_num = max(episode_number)
 
 
 # successful_goals, failed_goals = [],[]
 # for i,episode in enumerate(episode_number):
+#     print(filenames[i])
 #     goal, end_dist = load_pkl_goal_dist(filepath + '/'+filenames[i])
+#     print(end_dist)
 #     if end_dist < thold:
 #         successful_goals.append(goal)
 #     else:
 #         failed_goals.append(goal)
 
+# print(successful_goals)
 # successful_goals = np.array(successful_goals)
 # failed_goals = np.array(failed_goals)
 # plt.scatter(successful_goals[:,0], successful_goals[:,1])
@@ -126,46 +137,97 @@ max_num = max(episode_number)
 # plt.title(f'Success Threshold: {thold*100} cm')
 
 
-goals, end_spots = [],[]
-for i,episode in enumerate(episode_number):
-    goal, end_dist = load_pkl_end_pos(filepath + '/' + filenames[i])
-    goals.append(goal)
-    end_spots.append(end_dist)
+# goals, end_spots = [],[]
+# for i,episode in enumerate(episode_number):
+#     goal, end_dist = load_pkl_end_pos(filepath + '/' + filenames[i])
+#     goals.append(goal)
+#     end_spots.append(end_dist)
 
-successful_goals = np.array(goals)
-failed_goals = np.array(end_spots) - np.array([0,0.1,0])
-plt.scatter(successful_goals[:,0], successful_goals[:,1])
-plt.scatter(failed_goals[:,0], failed_goals[:,1])
-plt.legend(['Goal Poses','End Poses'])
-plt.title('Goal and End Poses')
+# successful_goals = np.array(goals)
+# failed_goals = np.array(end_spots) - np.array([0,0.1,0])
+# plt.scatter(successful_goals[:,0], successful_goals[:,1])
+# plt.scatter(failed_goals[:,0], failed_goals[:,1])
+# plt.legend(['Goal Poses','End Poses'])
+# plt.title('Goal and End Poses')
+
+maintain_contact, failed_contact = [],[]
+for i,episode in enumerate(episode_number):
+    goal, finger_dists, tsteps_with_contact = load_pkl_finger_dist(filepath + '/' + filenames[i])
+    
+    if np.max(finger_dists) < thold:
+        maintain_contact.append(goal)
+    else:
+        failed_contact.append(goal)
+maintain_contact = np.array(maintain_contact)
+failed_contact = np.array(failed_contact)
+plt.scatter(maintain_contact[:,0], maintain_contact[:,1])
+plt.scatter(failed_contact[:,0], failed_contact[:,1])
+plt.legend(['successful','failed'])
+plt.title(f'Contact Threshold: {thold*1000} mm')
 
 # maintain_contact, failed_contact = [],[]
-# for i,episode in enumerate(episode_number):
-#     goal, finger_dists, tsteps_with_contact = load_pkl_finger_dist(filepath + '/' + filenames[i])
-    
-#     if np.max(finger_dists) < thold:
-#         maintain_contact.append(goal)
-#     else:
-#         failed_contact.append(goal)
-# maintain_contact = np.array(maintain_contact)
-# failed_contact = np.array(failed_contact)
-# plt.scatter(maintain_contact[:,0], maintain_contact[:,1])
-# plt.scatter(failed_contact[:,0], failed_contact[:,1])
-# plt.legend(['successful','failed'])
+# contact_dist = []
+# for i,episode in enumerate(new_name_order):
+#     goal, finger_dists, tsteps_with_contact = load_pkl_finger_dist(filepath + '/' + episode)
+#     contact_dist.append(np.max(finger_dists))
+
+
+# plt.plot(range(len(contact_dist)), contact_dist)
 # plt.title(f'Contact Threshold: {thold*1000} mm')
-
-
+# plt.xlabel('Epoch')
+# plt.ylabel('Maximum Finger Tip Distance')
 
 # nope, singularity = [],[]
 # for i,episode in enumerate(episode_number):
 #     goal, eval_s = load_pkl_angle(filepath + '/' + filenames[i])
-#     if np.isclose(eval_s,0, atol=0.0001).any():
+#     if np.isclose(eval_s,0, atol=0.01).any():
 #         singularity.append(goal)
+#         print('file is singularity', filenames[i])
 #     else:
 #         nope.append(goal)
+
+# success, fail = [],[]
+# for i,episode in enumerate(episode_number):
+#     goal, end_dist = load_pkl_goal_dist(filepath + '/' + filenames[i])
+#     if end_dist < thold:
+#         success.append(goal)
+#     else:
+#         fail.append(goal)
+
+# singular_success= 0
+# singular_fail = 0
+# for goal in singularity:
+#     if goal in success:
+#         singular_success+=1
+#     elif goal in fail:
+#         singular_fail +=1
+
+# norm_success= 0
+# norm_fail = 0
+# for goal in nope:
+#     if goal in success:
+#         norm_success+=1
+#     elif goal in fail:
+#         norm_fail +=1
+        
+# print(f'when we hit a singularity we succeed {singular_success/(singular_success+singular_fail)*100}% of the time')
+# print(f'when we dont hit a singularity we succeed {norm_success/(norm_success+norm_fail)*100}% of the time')
+# print(singular_success,singular_fail, norm_success,norm_fail)
 # nope = np.array(nope)
 # singularity = np.array(singularity)
 # plt.scatter(nope[:,0], nope[:,1])
 # plt.scatter(singularity[:,0], singularity[:,1])
 # plt.legend(['NO singularity','singularity'])
-# plt.title('Fingers didnt get within 0.0001 rads of singularity')
+# plt.title('Points that reach a singlularity (within 0.01 rads of straight finger)')
+
+
+# angle_difference, singularity = [],[]
+# for i,episode in enumerate(episode_number):
+#     goal, angles = load_pkl_angle(filepath + '/' + filenames[i])
+    
+# nope = np.array(nope)
+# singularity = np.array(singularity)
+# plt.scatter(nope[:,0], nope[:,1])
+# plt.scatter(singularity[:,0], singularity[:,1])
+# plt.legend(['NO singularity','singularity'])
+# plt.title('Fingers didnt get within 0.001 rads of singularity')
