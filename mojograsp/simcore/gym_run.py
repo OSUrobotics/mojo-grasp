@@ -261,11 +261,8 @@ def main():
     # run_pybullet(overall_path+'/demos/rl_demo/data/ftp_friction_fuckery/experiment_config.json', runtype='replay')
 
 
-<<<<<<< HEAD
-    run_pybullet(overall_path+'/demos/rl_demo/data/FTP_new_reward_entropy/experiment_config.json', runtype='run')
-=======
-    run_pybullet(overall_path+'/demos/rl_demo/data/ja_new_rewards/experiment_config.json', runtype='run')
->>>>>>> bbba9f0fb8b986682d44d9e5fc98c6ab4efca1e1
+
+    run_pybullet(overall_path+'/demos/rl_demo/data/ja_abinav_rewards/experiment_config.json', runtype='run')
 
     # run_pybullet(overall_path+'/demos/rl_demo/data/ftp_friction_fuckery/experiment_config.json',runtype='eval')
 
