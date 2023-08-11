@@ -21,18 +21,19 @@ class ExpertReward(Reward):
         old_distance = np.sqrt((goal_position[0] - self.prev_pos[0][0])**2 +
                                (goal_position[1] - self.prev_pos[0][1])**2)
         
-        # print('goal position', goal_position)
-        # print('current cube pose', current_cube_pose)
         f1_dist = p.getClosestPoints(cube.id, hand.id, 10, -1, 1, -1)
         f2_dist = p.getClosestPoints(cube.id, hand.id, 10, -1, 4, -1)
         
+        velocity = cube.get_curr_velocity()
+        
         start_pos_vec = np.array(goal_position[0:2])-self.start_pos[0:2]
         
-        current_pos_vec = np.array(goal_position[0:2])- np.array([current_cube_pose[0][0],current_cube_pose[0][1]])
+        current_pos_vec = np.array(goal_position[0:2]) - np.array([current_cube_pose[0][0],current_cube_pose[0][1]])
         
         if self.start_dist is None:
             self.start_dist = distance.copy()
-            
+        
+        self.current_reward['object_velocity'] = velocity[0]
         self.current_reward['start_dist'] = self.start_dist
         self.current_reward['plane_side'] = np.dot(start_pos_vec,current_pos_vec) <= 0
         try:

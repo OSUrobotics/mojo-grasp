@@ -149,7 +149,7 @@ class GymWrapper(gym.Env):
             state = self.build_state(state)
         if self.STATE_NOISE > 0:
             state = self.noisey_boi.add_noise(state, self.STATE_NOISE)
-        reward = self.build_reward(reward)
+        reward, done2 = self.build_reward(reward)
         # print('about to set state')
         # self.manipulation_phase.state.set_state()
         # print(reward)
@@ -337,7 +337,10 @@ class GymWrapper(gym.Env):
 
         :param state: :func:`~mojograsp.simcore.reward.Reward` object.
         :type state: :func:`~mojograsp.simcore.reward.Reward`
-        """
+        """        
+        done2 = False
+
+
         if self.REWARD_TYPE == 'Sparse':
             tstep_reward = -1 + 2*(reward_container['distance_to_goal'] < self.SUCCESS_THRESHOLD)
         elif self.REWARD_TYPE == 'Distance':
@@ -360,6 +363,11 @@ class GymWrapper(gym.Env):
             temp = -reward_container['distance_to_goal']/reward_container['start_dist'] * (1 + 4*reward_container['plane_side'])
             # print(reward_container['plane_side'])
             tstep_reward = temp*self.DISTANCE_SCALING - ftemp*self.CONTACT_SCALING/0.01
+        elif self.REWARD_TYPE == 'SFS':
+            tstep_reward = reward_container['slope_to_goal'] * self.DISTANCE_SCALING - max(reward_container['f1_dist'],reward_container['f2_dist'])*self.CONTACT_SCALING
+            if (reward_container['distance_to_goal'] < self.SUCCESS_THRESHOLD) & (np.linalg.norm(reward_container['object_velocity']) <= 0.001):
+                tstep_reward += 10
+                done2 = True
         elif self.REWARD_TYPE == 'SmartDistance + SmartFinger':
             ftemp = max(reward_container['f1_dist'],reward_container['f2_dist'])
             if ftemp > 0.001:
@@ -368,7 +376,7 @@ class GymWrapper(gym.Env):
             tstep_reward = max(temp*self.DISTANCE_SCALING - ftemp*self.CONTACT_SCALING,-1)
         else:
             raise Exception('reward type does not match list of known reward types')
-        return float(tstep_reward)
+        return float(tstep_reward), done2
     
     def render(self):
         pass
