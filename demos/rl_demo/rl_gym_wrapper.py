@@ -83,6 +83,7 @@ class GymWrapper(gym.Env):
         self.eval_run = 0
         self.timestep = 0
         self.first = True
+        self.SUCCESS_THRESHOLD = args['sr']/1000
         self.camera_view_matrix = p.computeViewMatrix((0.0,0.1,0.5),(0.0,0.1,0.005), (0.0,1,0.0))
         # self.camera_projection_matrix = p.computeProjectionMatrix(-0.1,0.1,-0.1,0.1,-0.1,0.1)
         self.camera_projection_matrix = p.computeProjectionMatrixFOV(60,4/3,0.1,0.9)
