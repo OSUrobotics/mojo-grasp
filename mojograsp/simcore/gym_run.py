@@ -262,7 +262,7 @@ def main():
 
 
 
-    run_pybullet(overall_path+'/demos/rl_demo/data/ja_abinav_rewards/experiment_config.json', runtype='run')
+    run_pybullet(overall_path+'/demos/rl_demo/data/FTP_actual_abinav_rewards/experiment_config.json', runtype='run')
 
     # run_pybullet(overall_path+'/demos/rl_demo/data/ftp_friction_fuckery/experiment_config.json',runtype='eval')
 
