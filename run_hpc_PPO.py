@@ -25,13 +25,13 @@ import json
 from stable_baselines3 import A2C, PPO
 import sys
 from stable_baselines3.common.evaluation import evaluate_policy
-import wandb
+#import wandb
 # from stable_baselines3.DQN import MlpPolicy
 # from stable_baselines3.common.cmd_util import make_vec_env
 
 def run_pybullet(filepath, window=None, runtype='run', episode_number=None):
     # resource paths
-    wandb.init(project = 'StableBaselinesWandBTest')
+    #wandb.init(project = 'StableBaselinesWandBTest')
     with open(filepath, 'r') as argfile:
         args = json.load(argfile)
     
@@ -214,7 +214,7 @@ def main(run_id):
     folder_names = ['FTP_new_fingers','JA_new_fingers']
     
     overall_path = pathlib.Path(__file__).parent.resolve()
-    run_path = overall_path.joinpath('demos/rl_demo/data/HPC_run2')
+    run_path = overall_path.joinpath('demos/rl_demo/data/HPC_3')
     final_path = run_path.joinpath(folder_names[run_id-1])
     print(str(final_path))
     run_pybullet(str(final_path) + '/experiment_config.json',runtype='run')
