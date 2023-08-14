@@ -61,7 +61,7 @@ class StateRL(StateDefault):
     and :func:`~mojograsp.simcore.replay_buffer.ReplayBufferDefault`.
     """
 
-    def __init__(self, objects: list = None, prev_len=0, physicsClientId=None,eval_goals:GoalHolder =None):
+    def __init__(self, objects: list = None, prev_len=0, physicsClientId=None, eval_goals:GoalHolder =None):
         """
         Default placeholder constructor optionally takes in a list of objects, if no list is provided it defaults
         to None. 
@@ -126,6 +126,8 @@ class StateRL(StateDefault):
         # print(self.objects[0].id)
         # print(self.objects[1].id)
         # print(p.getClosestPoints(self.objects[1].id, self.objects[0].id, 10, -1, 1, -1))
+        # print('expected inertia  ', [0.000029435425,0.000029435425,0.00000725805])
+        # print('cube dynamics info',p.getDynamicsInfo(self.objects[1].id,-1)[2])
         temp1 = p.getClosestPoints(self.objects[1].id, self.objects[0].id, 10, -1, 1, -1)[0]
         temp2 = p.getClosestPoints(self.objects[1].id, self.objects[0].id, 10, -1, 4, -1)[0]
         link1_pose = p.getLinkState(self.objects[0].id, 2)

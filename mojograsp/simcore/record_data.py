@@ -263,7 +263,7 @@ class RecordDataPKL(RecordData):
                         self.data_prefix + "_" + str(self.episode_num) + ".pkl"
                 else:
                     file_path = self.data_path + 'Train/' +  filename
-            print(file_path)
+            print(file_path, len(self.current_episode['timestep_list']))
             
             with open(file_path, 'wb') as fout:
                 pkl.dump(self.current_episode, fout)

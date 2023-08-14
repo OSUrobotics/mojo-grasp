@@ -72,15 +72,59 @@ class data_processor():
                     pkl.dump(self.episodes, fout)
         print('save completed')
      
+    def load_limited(self):
+        """
+        Method called after all episodes are completed. Loads all episodes in
+        a folder into the class to be combined and saved later
+        """
+        all_names = os.listdir(self.data_path)
+        pkl_names = []
+        pkl_nums = []
+        for name in all_names:
+            if "all" in name and ".pkl" in name:
+                if not (('Evaluation' in name) ^ self.eval_flag):
+                    print('Folder already has episode all. Data not loaded')
+                    print(name)
+                    self.episode_data = []
+                    self.save_all_flag = False
+                    return
+            elif '.pkl' in name and 'sampled' not in name:
+                # print('first stage')
+                if not (('Evaluation' in name) ^ self.eval_flag):
+                    print(name)
+                    pkl_names.append(name)
+                    temp = re.search('\d+',name)
+                    pkl_nums.append(int(temp[0]))
+        pkl_sort = np.argsort(pkl_nums)
+        new_pkl_names = []
+        print('going to next')
+        for ind in pkl_sort:
+            new_pkl_names.append(pkl_names[ind])
+        print('found names: ', len(new_pkl_names))
+        for i,name in enumerate(new_pkl_names):
+            if i %500 ==0:
+                print('we are on number',i)
+            with open(self.data_path + name, 'rb') as datafile: 
+                temp = pkl.load(datafile)
+                goal_dists = [f['reward']['distance_to_goal'] for f in temp['timestep_list']]
+                finger_dists = [[f['reward']['f1_dist'],f['reward']['f2_dist']]for f in temp['timestep_list']]
+                
+                ending_dist = goal_dists[-1]
+                min_dist = min(goal_dists)
+                sum_dists = sum(goal_dists)
+                sum_fingers = sum(np.max(np.array(finger_dists),axis=1))
+                # print(np.shape(np.max(np.array(finger_dists),axis=1)))
+                self.episode_data.append({'ending_dist':ending_dist,'min_dist':min_dist,'sum_dist':sum_dists,'sum_finger':sum_fingers})
+        self.save_all_flag = True
 
 def main():
-    path ='/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/PPO_JA_new_physics/'
+
+    path ='/home/mothra/mojo-grasp/demos/rl_demo/data/FTP_actual_abinav_rewards/'
+
     d = data_processor(path + 'Train/')
-    d.load_data()
+    d.load_limited()
     d.save_all()
-    d = data_processor(path + 'Test/', eval_flag=True)
-    d.load_data()
-    d.save_all()
+
         
 if __name__ == '__main__':
     main()
