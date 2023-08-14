@@ -1297,8 +1297,6 @@ class GuiBackend():
     def load_data(self, filename):
         # try:
         self.load_pkl(filename)
-        # except:
-            # self.load_json(filename)
             
             
 

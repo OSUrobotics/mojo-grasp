@@ -221,7 +221,8 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None, acti
             # p.resetJointState(hand_id, 4, -1.45)
         for _ in range(500):
             obs = gym_env.reset()
-            for step in range(151):
+            done = False
+            while not done:
                 action, _ = model.predict(obs, deterministic=True)
                 # print("Step {}".format(step + 1))
                 # print("Action: ", action, type(action))
@@ -262,9 +263,9 @@ def main():
 
 
 
-    run_pybullet(overall_path+'/demos/rl_demo/data/ja_abinav_rewards/experiment_config.json', runtype='run')
+    # run_pybullet(overall_path+'/demos/rl_demo/data/ja_abinav_rewards_higher_speed/experiment_config.json', runtype='run')
 
-    # run_pybullet(overall_path+'/demos/rl_demo/data/ftp_friction_fuckery/experiment_config.json',runtype='eval')
+    run_pybullet(overall_path+'/demos/rl_demo/data/ja_abinav_rewards/experiment_config.json',runtype='eval')
 
 
 # DO A REPLAY OF JA-testing episode 99924, 99918
