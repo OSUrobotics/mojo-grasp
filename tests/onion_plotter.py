@@ -87,10 +87,10 @@ def load_pkls_compare(filepath1, filepath2, thold):
 
 # filepath = '/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/ftp_comparison/EVALUATION/Test'
 # filepath = '/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/ja_testing/Train'
-filepath = '/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/ja_testing/EVALUATION/Test'
+filepath = '/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/ja_abinav_rewards/eval'
 # filepath = '/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/IK_results/'
 
-thold = 0.001
+thold = 0.02
 
 
 filenames = os.listdir(filepath)
@@ -104,15 +104,15 @@ max_num = max(episode_number)
 
 # successful_goals, failed_goals = [],[]
 # for i,episode in enumerate(episode_number):
-#     print(filenames[i])
+#     # print(filenames[i])
 #     goal, end_dist = load_pkl_goal_dist(filepath + '/'+filenames[i])
-#     print(end_dist)
+#     # print(end_dist)
 #     if end_dist < thold:
 #         successful_goals.append(goal)
 #     else:
 #         failed_goals.append(goal)
 
-# print(successful_goals)
+# # print(successful_goals)
 # successful_goals = np.array(successful_goals)
 # failed_goals = np.array(failed_goals)
 # plt.scatter(successful_goals[:,0], successful_goals[:,1])
@@ -137,33 +137,33 @@ max_num = max(episode_number)
 # plt.title(f'Success Threshold: {thold*100} cm')
 
 
-# goals, end_spots = [],[]
-# for i,episode in enumerate(episode_number):
-#     goal, end_dist = load_pkl_end_pos(filepath + '/' + filenames[i])
-#     goals.append(goal)
-#     end_spots.append(end_dist)
-
-# successful_goals = np.array(goals)
-# failed_goals = np.array(end_spots) - np.array([0,0.1,0])
-# plt.scatter(successful_goals[:,0], successful_goals[:,1])
-# plt.scatter(failed_goals[:,0], failed_goals[:,1])
-# plt.legend(['Goal Poses','End Poses'])
-# plt.title('Goal and End Poses')
-
-maintain_contact, failed_contact = [],[]
+goals, end_spots = [],[]
 for i,episode in enumerate(episode_number):
-    goal, finger_dists, tsteps_with_contact = load_pkl_finger_dist(filepath + '/' + filenames[i])
+    goal, end_dist = load_pkl_end_pos(filepath + '/' + filenames[i])
+    goals.append(goal)
+    end_spots.append(end_dist)
+
+successful_goals = np.array(goals)
+failed_goals = np.array(end_spots) - np.array([0,0.1,0])
+plt.scatter(successful_goals[:,0], successful_goals[:,1])
+plt.scatter(failed_goals[:,0], failed_goals[:,1])
+plt.legend(['Goal Poses','End Poses'])
+plt.title('Goal and End Poses')
+
+# maintain_contact, failed_contact = [],[]
+# for i,episode in enumerate(episode_number):
+#     goal, finger_dists, tsteps_with_contact = load_pkl_finger_dist(filepath + '/' + filenames[i])
     
-    if np.max(finger_dists) < thold:
-        maintain_contact.append(goal)
-    else:
-        failed_contact.append(goal)
-maintain_contact = np.array(maintain_contact)
-failed_contact = np.array(failed_contact)
-plt.scatter(maintain_contact[:,0], maintain_contact[:,1])
-plt.scatter(failed_contact[:,0], failed_contact[:,1])
-plt.legend(['successful','failed'])
-plt.title(f'Contact Threshold: {thold*1000} mm')
+#     if np.max(finger_dists) < thold:
+#         maintain_contact.append(goal)
+#     else:
+#         failed_contact.append(goal)
+# maintain_contact = np.array(maintain_contact)
+# failed_contact = np.array(failed_contact)
+# plt.scatter(maintain_contact[:,0], maintain_contact[:,1])
+# plt.scatter(failed_contact[:,0], failed_contact[:,1])
+# plt.legend(['successful','failed'])
+# plt.title(f'Contact Threshold: {thold*1000} mm')
 
 # maintain_contact, failed_contact = [],[]
 # contact_dist = []
