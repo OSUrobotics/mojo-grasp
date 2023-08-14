@@ -96,13 +96,17 @@ class ManipulationRL(Phase):
         # Set the current state before sim is stepped
         # self.state.set_state()
 
-    def execute_action(self, action_to_execute=None):
+    def execute_action(self, action_to_execute=None, pybullet_thing = None):
         # Execute the target that we got from the controller in pre_step()
         for i in range(self.interp_ratio):
-            if action_to_execute:
+            if pybullet_thing is not None:
+                pybullet_thing.setJointMotorControlArray(self.hand.id, jointIndices=self.hand.get_joint_numbers(),
+                                            controlMode=p.POSITION_CONTROL, targetPositions=self.action.get_joint_angles(), positionGains=[0.8,0.8,0.8,0.8], forces=[0.4,0.4,0.4,0.4])
+            elif action_to_execute:
                 p.setJointMotorControlArray(self.hand.id, jointIndices=self.hand.get_joint_numbers(),
                                             controlMode=p.POSITION_CONTROL, targetPositions=action_to_execute, positionGains=[0.8,0.8,0.8,0.8], forces=[0.4,0.4,0.4,0.4])
             else:
+                # print('no action given',self.action.get_joint_angles())
                 p.setJointMotorControlArray(self.hand.id, jointIndices=self.hand.get_joint_numbers(),
                                             controlMode=p.POSITION_CONTROL, targetPositions=self.action.get_joint_angles(), positionGains=[0.8,0.8,0.8,0.8], forces=[0.4,0.4,0.4,0.4])
         self.timestep += 1

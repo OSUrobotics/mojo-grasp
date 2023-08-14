@@ -16,19 +16,19 @@ from demos.rl_demo.rl_state import StateRL
 
 # resource paths
 current_path = str(pathlib.Path().resolve())
-hand_path = current_path+"/resources/2v2_nosensors/2v2_nosensors.urdf"
+hand_path = current_path+"/resources/2v2_Hand_A/hand/2v2_50.50_50.50_1.1_53.urdf"
 cube_path = current_path + \
     "/resources/object_models/2v2_mod/2v2_mod_cuboid_small.urdf"
 data_path = current_path+"/data/"
 points_path = current_path+"/resources/points.csv"
 
 # Load in the cube goal positions
-# df = pd.read_csv(points_path, index_col=False)
-# x = df["x"]
-# y = df["y"]
+df = pd.read_csv(points_path, index_col=False)
+x = df["x"]
+y = df["y"]
 
-x = [0,0.055, 0.055, 0.055, 0, -0.055, -0.055, -0.055]
-y = [0.055, 0.055, 0, -0.055, -0.055, -0.055, 0, 0.055]
+# x = [0,0.055, 0.055, 0.055, 0, -0.055, -0.055, -0.055]
+# y = [0.055, 0.055, 0, -0.055, -0.055, -0.055, 0, 0.055]
 # start pybullet
 physics_client = p.connect(p.GUI)
 p.setAdditionalSearchPath(pybullet_data.getDataPath())
@@ -45,10 +45,10 @@ cube_id = p.loadURDF(cube_path, basePosition=[0.0, 0.16, .05])
 # Create TwoFingerGripper Object and set the initial joint positions
 hand = TwoFingerGripper(hand_id, path=hand_path)
 
-p.resetJointState(hand_id, 0, .75)
-p.resetJointState(hand_id, 1, -1.4)
-p.resetJointState(hand_id, 2, -.75)
-p.resetJointState(hand_id, 3, 1.4)
+p.resetJointState(hand_id, 0, -.725)
+p.resetJointState(hand_id, 1, 1.45)
+p.resetJointState(hand_id, 3, .725)
+p.resetJointState(hand_id, 4, -1.45)
 
 # Create ObjectBase for the cube object
 cube = ObjectBase(cube_id, path=cube_path)
@@ -72,7 +72,7 @@ record_data = RecordDataPKL(
 
 # environment and recording
 env = expert_env.ExpertEnv(hand=hand, obj=cube)
-
+print('we should do this many', len(x))
 # sim manager
 manager = SimManagerDefault(num_episodes=len(x), env=env, record_data=record_data)
 
