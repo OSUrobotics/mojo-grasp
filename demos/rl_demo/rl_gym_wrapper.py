@@ -154,7 +154,7 @@ class GymWrapper(gym.Env):
         # print('about to set state')
         # self.manipulation_phase.state.set_state()
         # print(reward)
-        
+        done = done | done2
         if self.viz | viz:
             
             img = p.getCameraImage(640, 480,viewMatrix=self.camera_view_matrix,
@@ -369,7 +369,8 @@ class GymWrapper(gym.Env):
             if (reward_container['distance_to_goal'] < self.SUCCESS_THRESHOLD) & (np.linalg.norm(reward_container['object_velocity']) <= 0.05):
                 tstep_reward += 10
                 done2 = True
-                print('More success baby!')
+
+                print('SUCCESS BABY!!!!!!!')
         elif self.REWARD_TYPE == 'SmartDistance + SmartFinger':
             ftemp = max(reward_container['f1_dist'],reward_container['f2_dist'])
             if ftemp > 0.001:
