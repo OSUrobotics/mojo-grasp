@@ -259,12 +259,9 @@ def main():
     overall_path = os.path.dirname(os.path.dirname(os.path.dirname(this_path)))
     # run_pybullet(overall_path+'/demos/rl_demo/data/ftp_friction_fuckery/experiment_config.json', runtype='replay')
 
+    run_pybullet(overall_path+'/demos/rl_demo/data/ja_monitor_benchmark/experiment_config.json', runtype='run')
 
-
-    # run_pybullet(overall_path+'/demos/rl_demo/data/ja_dfs_1/experiment_config.json', runtype='run')
-
-    run_pybullet(overall_path+'/demos/rl_demo/data/ja_new_rewards/experiment_config.json',runtype='eval')
-
+    # run_pybullet(overall_path+'/demos/rl_demo/data/ja_monitor_benchmark/experiment_config.json',runtype='eval')
 
 # DO A REPLAY OF JA-testing episode 99924, 99918
 if __name__ == '__main__':

@@ -5,8 +5,9 @@
 #SBATCH -o log/LOG-%a.out                 # name of error file for this submission script
 #SBATCH -e log/ERROR-%a.err                 # name of error file for this submission script
 #SBATCH --mem=10G
-#SBATCH --gres=gpu:1
-#SBATCH --constraint=skylake
+#SBATCH --gres=gpu:4
+#SBATCH --cpus-per-gpu 4
+#SBATCH -t 2-00:00:00
 # load any software environment module required for app (e.g. matlab, gcc, cuda)
 #module load software/version
 #module load python3
