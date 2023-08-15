@@ -119,7 +119,7 @@ class data_processor():
 
 def main():
 
-    path ='/home/mothra/mojo-grasp/demos/rl_demo/data/FTP_actual_abinav_rewards/'
+    path ='/home/mothra/mojo-grasp/demos/rl_demo/data/ja_monitor_benchmark/'
 
     d = data_processor(path + 'Train/')
     d.load_limited()
