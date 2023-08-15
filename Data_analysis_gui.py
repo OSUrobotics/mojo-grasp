@@ -499,7 +499,8 @@ class GuiBackend():
                 rewards = self.rewards
         else: 
             if self.reduced_format:
-                rewards = [-i['sum_dist']-i['sum_finger']/5 for i in self.all_data['episode_list']]
+                rewards = [-i['sum_dist']-i['sum_finger'] for i in self.all_data['episode_list']]
+                print('mew format')
             else:
                 rewards = []
                 temp = 0
@@ -699,8 +700,8 @@ class GuiBackend():
         
     def draw_avg_actor_output(self):
         if self.all_data is None:
-            episode_files = [os.path.join(self.folder, f) for f in os.listdir(self.folder) if f.lower().endswith('.pkl')]
-            filenames_only = [f for f in os.listdir(self.folder) if f.lower().endswith('.pkl')]
+            episode_files = [os.path.join(self.folder, f) for f in os.listdir(self.folder) if (f.lower().endswith('.pkl') & ('all' not in f))]
+            filenames_only = [f for f in os.listdir(self.folder) if (f.lower().endswith('.pkl') & ('all' not in f))]
             
             filenums = [re.findall('\d+',f) for f in filenames_only]
             final_filenums = []
@@ -1231,7 +1232,8 @@ class GuiBackend():
                 rewards = self.finger_rewards
         else: 
             if self.reduced_format:
-                rewards = [-i['sum_finger']/5 for i in self.all_data['episode_list']]
+                rewards = [-i['sum_finger'] for i in self.all_data['episode_list']]
+                print('new one')
             else:
                 rewards = []
                 temp = 0

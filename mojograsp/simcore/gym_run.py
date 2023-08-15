@@ -21,10 +21,12 @@ from mojograsp.simobjects.two_finger_gripper import TwoFingerGripper
 from mojograsp.simobjects.ik_gripper import IKGripper
 from mojograsp.simobjects.object_with_velocity import ObjectWithVelocity
 from mojograsp.simcore.priority_replay_buffer import ReplayBufferPriority
+from mojograsp.simcore.data_combination import data_processor
 import pickle as pkl
 import json
 from stable_baselines3 import A2C, PPO
 from stable_baselines3.common.evaluation import evaluate_policy
+from stable_baselines3.common.monitor import Monitor
 import wandb
 import numpy as np
 import os
@@ -187,6 +189,7 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None, acti
     gym_env = rl_gym_wrapper.GymWrapper(env, manipulation, record_data, args)
     train_timesteps = args['evaluate']*151
     callback = rl_gym_wrapper.EvaluateCallback(gym_env,n_eval_episodes=8, eval_freq=train_timesteps, best_model_save_path=args['save_path'])
+    # gym_env = Monitor(gym_env,args['save_path']+'Test/')
     # p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 0)
     # p.configureDebugVisualizer(p.COV_ENABLE_GUI, 0)
     # check_env(gym_env, warn=True)
@@ -201,14 +204,9 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None, acti
         # gym_env = make_vec_env(lambda: gym_env, n_envs=1)
         gym_env.train()
         model.learn(args['epochs']*151, callback=callback)
-        gym_env.eval = True
-        gym_env.eval_names = names
-
-        for _ in range(8):
-            obs = gym_env.reset()
-            for step in range(151):
-                action, _ = model.predict(obs, deterministic=True)
-                obs, reward, done, info = gym_env.step(action)
+        d = data_processor(args['save_path'] + 'Train/')
+        d.load_limited()
+        d.save_all()
 
     elif runtype == 'eval':
         model = PPO("MlpPolicy", gym_env, tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-1}).load(args['save_path']+'best_model')
@@ -263,9 +261,9 @@ def main():
 
 
 
-    # run_pybullet(overall_path+'/demos/rl_demo/data/ja_abinav_rewards_higher_speed/experiment_config.json', runtype='run')
+    # run_pybullet(overall_path+'/demos/rl_demo/data/ja_dfs_1/experiment_config.json', runtype='run')
 
-    run_pybullet(overall_path+'/demos/rl_demo/data/ja_abinav_rewards/experiment_config.json',runtype='eval')
+    run_pybullet(overall_path+'/demos/rl_demo/data/ja_new_rewards/experiment_config.json',runtype='eval')
 
 
 # DO A REPLAY OF JA-testing episode 99924, 99918
