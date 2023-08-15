@@ -89,7 +89,10 @@ def load_pkls_compare(filepath1, filepath2, thold):
 # filepath = '/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/ja_testing/EVALUATION/Test'
 # filepath = '/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/ja_abinav_rewards/eval'
 # filepath = '/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/ja_abinav_rewards_higher_speed/eval_stuff'
-filepath = '/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/ja_new_rewards/eval'
+# filepath = '/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/ja_new_rewards/eval'
+# filepath = '/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/ja_dfs/eval'
+filepath = '/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/ja_dfs_1/eval'
+
 # filepath = '/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/IK_results/'
 
 thold = 0.01
@@ -123,20 +126,20 @@ max_num = max(episode_number)
 # plt.title(f'Success Threshold: {thold*100} cm')
 
 
-successful_goals, failed_goals = [],[]
-for i,episode in enumerate(episode_number):
-    goal, end_dist = load_pkl_goal_dist(filepath + '/'+filenames[i], True)
-    if end_dist < thold:
-        successful_goals.append(goal)
-    else:
-        failed_goals.append(goal)
+# successful_goals, failed_goals = [],[]
+# for i,episode in enumerate(episode_number):
+#     goal, end_dist = load_pkl_goal_dist(filepath + '/'+filenames[i], True)
+#     if end_dist < thold:
+#         successful_goals.append(goal)
+#     else:
+#         failed_goals.append(goal)
 
-successful_goals = np.array(successful_goals)
-failed_goals = np.array(failed_goals)
-plt.scatter(successful_goals[:,0], successful_goals[:,1])
-plt.scatter(failed_goals[:,0], failed_goals[:,1])
-plt.legend(['successful','failed'])
-plt.title(f'Success Threshold: {thold*100} cm')
+# successful_goals = np.array(successful_goals)
+# failed_goals = np.array(failed_goals)
+# plt.scatter(successful_goals[:,0], successful_goals[:,1])
+# plt.scatter(failed_goals[:,0], failed_goals[:,1])
+# plt.legend(['successful','failed'])
+# plt.title(f'Success Threshold: {thold*100} cm')
 
 
 # goals, end_spots = [],[]

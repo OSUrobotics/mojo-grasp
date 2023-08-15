@@ -371,7 +371,9 @@ class GymWrapper(gym.Env):
                 done2 = True
                 print('SUCCESS BABY!!!!!!!')
         elif self.REWARD_TYPE == 'DFS':
-            tstep_reward = -reward_container['distance_to_goal'] * self.DISTANCE_SCALING  - max(reward_container['f1_dist'],reward_container['f2_dist'])*self.CONTACT_SCALING
+            ftemp = max(reward_container['f1_dist'],reward_container['f2_dist'])
+            assert ftemp >= 0
+            tstep_reward = -reward_container['distance_to_goal'] * self.DISTANCE_SCALING  - ftemp*self.CONTACT_SCALING
             if (reward_container['distance_to_goal'] < self.SUCCESS_THRESHOLD) & (np.linalg.norm(reward_container['object_velocity']) <= 0.05):
                 tstep_reward += 1
                 done2 = True
