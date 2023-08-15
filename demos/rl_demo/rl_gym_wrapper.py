@@ -360,14 +360,20 @@ class GymWrapper(gym.Env):
             # print(reward_container['plane_side'])
             tstep_reward = max(temp*self.DISTANCE_SCALING - ftemp*self.CONTACT_SCALING,-1)
         elif self.REWARD_TYPE == 'ScaledDistance + Finger':
-            ftemp = max(reward_container['f1_dist'],reward_container['f2_dist'])
+            ftemp = max(reward_container['f1_dist'], reward_container['f2_dist']) * 100 # 100 here to make ftemp = -1 when at 1 cm
             temp = -reward_container['distance_to_goal']/reward_container['start_dist'] * (1 + 4*reward_container['plane_side'])
             # print(reward_container['plane_side'])
-            tstep_reward = temp*self.DISTANCE_SCALING - ftemp*self.CONTACT_SCALING/0.01
+            tstep_reward = temp*self.DISTANCE_SCALING - ftemp*self.CONTACT_SCALING
         elif self.REWARD_TYPE == 'SFS':
             tstep_reward = reward_container['slope_to_goal'] * self.DISTANCE_SCALING - max(reward_container['f1_dist'],reward_container['f2_dist'])*self.CONTACT_SCALING
             if (reward_container['distance_to_goal'] < self.SUCCESS_THRESHOLD) & (np.linalg.norm(reward_container['object_velocity']) <= 0.05):
-                tstep_reward += 10
+                tstep_reward += 1
+                done2 = True
+                print('SUCCESS BABY!!!!!!!')
+        elif self.REWARD_TYPE == 'DFS':
+            tstep_reward = -reward_container['distance_to_goal'] * self.DISTANCE_SCALING  - max(reward_container['f1_dist'],reward_container['f2_dist'])*self.CONTACT_SCALING
+            if (reward_container['distance_to_goal'] < self.SUCCESS_THRESHOLD) & (np.linalg.norm(reward_container['object_velocity']) <= 0.05):
+                tstep_reward += 1
                 done2 = True
                 print('SUCCESS BABY!!!!!!!')
         elif self.REWARD_TYPE == 'SmartDistance + SmartFinger':

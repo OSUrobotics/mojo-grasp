@@ -281,6 +281,10 @@ class RecordDataPKL(RecordData):
                 self.episodes = {"episode_list": self.episode_data}
                 pkl.dump(self.episodes, fout)
 
+    def clear(self):
+        self.current_episode = {}
+        self.timesteps = []
+        self.timestep_num = 1
 
 class RecordDataRLPKL(RecordDataPKL):
 

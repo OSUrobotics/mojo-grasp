@@ -119,7 +119,7 @@ class data_processor():
 
 def main():
 
-    path ='/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/ja_abinav_rewards/'
+    path ='/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/ja_new_rewards/'
 
     d = data_processor(path + 'Train/')
     d.load_limited()
