@@ -263,10 +263,10 @@ def main():
 
 
 
-    run_pybullet(overall_path+'/demos/rl_demo/data/FTP_actual_abinav_rewards/experiment_config.json', runtype='run')
+    run_pybullet(overall_path+'/demos/rl_demo/data/ja_monitor_benchmark/experiment_config.json', runtype='run')
 
 
-    run_pybullet(overall_path+'/demos/rl_demo/data/ja_abinav_rewards/experiment_config.json',runtype='eval')
+    # run_pybullet(overall_path+'/demos/rl_demo/data/ja_monitor_benchmark/experiment_config.json',runtype='eval')
 
 
 # DO A REPLAY OF JA-testing episode 99924, 99918
