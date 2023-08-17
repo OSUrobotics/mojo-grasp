@@ -189,7 +189,7 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None, acti
     gym_env = rl_gym_wrapper.GymWrapper(env, manipulation, record_data, args)
     train_timesteps = args['evaluate']*151
     callback = rl_gym_wrapper.EvaluateCallback(gym_env,n_eval_episodes=8, eval_freq=train_timesteps, best_model_save_path=args['save_path'])
-    gym_env = Monitor(gym_env,args['save_path']+'Test/')
+    # gym_env = Monitor(gym_env,args['save_path']+'Test/')
     # p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 0)
     # p.configureDebugVisualizer(p.COV_ENABLE_GUI, 0)
     # check_env(gym_env, warn=True)
@@ -259,9 +259,9 @@ def main():
     overall_path = os.path.dirname(os.path.dirname(os.path.dirname(this_path)))
     # run_pybullet(overall_path+'/demos/rl_demo/data/ftp_friction_fuckery/experiment_config.json', runtype='replay')
 
-    run_pybullet(overall_path+'/demos/rl_demo/data/ja_hail_mary/experiment_config.json', runtype='run')
+    run_pybullet(overall_path+'/demos/rl_demo/data/ja_entropy_control/experiment_config.json', runtype='run')
 
-    run_pybullet(overall_path+'/demos/rl_demo/data/ja_hail_mary/experiment_config.json',runtype='eval')
+    # run_pybullet(overall_path+'/demos/rl_demo/data/ja_more_entropy/experiment_config.json',runtype='eval')
 
 # DO A REPLAY OF JA-testing episode 99924, 99918
 if __name__ == '__main__':
