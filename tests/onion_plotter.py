@@ -33,7 +33,8 @@ def load_pkl_end_pos(filename):
     data = data_dict['timestep_list']
     end_position = data[-1]['state']['obj_2']['pose'][0]
     goal_position = data[0]['state']['goal_pose']['goal_pose'][0:2]
-    return goal_position, end_position
+    ending_dist = data[-1]['reward']['distance_to_goal']
+    return goal_position, end_position, ending_dist
 
 def load_pkl_finger_dist(filename):
     with open(filename, 'rb') as pkl_file:
@@ -83,24 +84,35 @@ def load_pkls_compare(filepath1, filepath2, thold):
             
     
     # return goal_position, end_position
-
-
+    
+'''
+Tue 15 Aug 2023 02∶56∶37 PM PDT vs Wed 16 Aug 2023 04∶54∶31 AM PDT
+'''
 # filepath = '/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/ftp_comparison/EVALUATION/Test'
 # filepath = '/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/ja_testing/EVALUATION/Test'
 # filepath = '/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/ja_abinav_rewards/eval'
 # filepath = '/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/ja_abinav_rewards_higher_speed/eval_stuff'
 # filepath = '/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/ja_new_rewards/eval'
 # filepath = '/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/ja_dfs/eval'
-filepath = '/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/ja_dfs_1/eval'
-
+# filepath = '/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/ja_dfs_1/eval'
+filepath = '/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/ja_hail_mary/eval'
+# filepath = '/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/ja_hail_mary/hunch'
+# filepath = '/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/hpc_new_rewards/07_smart_smart_2_scale/eval'
+# filepath = '/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/hpc_new_rewards/08_smart_smart_10_scale/eval'
+# filepath = '/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/hpc_new_rewards/09_sfs_5mm_10_scale/eval'
+# filepath = '/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/hpc_new_rewards/10_sfs_10mm_10_scale/eval'
+# filepath = '/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/ja_dfs_entropy_all/half'
+# filepath = '/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/ja_dfs_entropy_all/eval'
 # filepath = '/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/IK_results/'
+# filepath = '/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/ja_dfs_entropy_all/Train'
+# filepath = '/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/ja_hail_mary/Train'
 
-thold = 0.01
+thold = 0.005
 
 
 filenames = os.listdir(filepath)
 print(len(filenames))
-episode_number = [int(re.search('\d+',filenam)[0]) for filenam in filenames]
+episode_number = [int(re.search('\d+',filenam)[0]) for filenam in filenames if ('all' not in filenam)]
 einds = np.argsort(episode_number)
 new_name_order = [filenames[i] for i in einds]
 # print(new_name_order)
@@ -142,19 +154,20 @@ max_num = max(episode_number)
 # plt.title(f'Success Threshold: {thold*100} cm')
 
 
-# goals, end_spots = [],[]
-# for i,episode in enumerate(episode_number):
-#     goal, end_dist = load_pkl_end_pos(filepath + '/' + filenames[i])
-#     goals.append(goal)
-#     end_spots.append(end_dist)
+goals, end_spots = [],[]
+for i,episode in enumerate(episode_number):
+    goal, end_pos, end_dist = load_pkl_end_pos(filepath + '/' + filenames[i])
+    goals.append(goal)
+    end_spots.append(end_pos)
 
-# successful_goals = np.array(goals)
-# failed_goals = np.array(end_spots) - np.array([0,0.1,0])
-# plt.scatter(successful_goals[:,0], successful_goals[:,1])
-# plt.scatter(failed_goals[:,0], failed_goals[:,1])
-# plt.legend(['Goal Poses','End Poses'])
-# plt.title('Goal and End Poses')
-
+successful_goals = np.array(goals)
+failed_goals = np.array(end_spots) - np.array([0,0.1,0])
+plt.scatter(successful_goals[:,0], successful_goals[:,1])
+plt.scatter(failed_goals[:,0], failed_goals[:,1])
+plt.legend(['Goal Poses','End Poses'])
+plt.title('Goal and End Poses')
+plt.xlim([-0.07,0.07])
+plt.ylim([-0.07,0.07])
 # maintain_contact, failed_contact = [],[]
 # for i,episode in enumerate(episode_number):
 #     goal, finger_dists, tsteps_with_contact = load_pkl_finger_dist(filepath + '/' + filenames[i])
@@ -236,3 +249,59 @@ max_num = max(episode_number)
 # plt.scatter(singularity[:,0], singularity[:,1])
 # plt.legend(['NO singularity','singularity'])
 # plt.title('Fingers didnt get within 0.001 rads of singularity')
+
+# start_ind = 0
+
+# for i in range(100):
+#     failed_goals = []
+#     failed_end_spots = []
+#     successful_goals = []
+#     successful_end_spots = []
+#     legend = []
+#     for j in range(start_ind,start_ind+500):
+#         goal, end_pos, end_dist = load_pkl_end_pos(filepath + '/' + new_name_order[j])
+#         if end_dist < thold:
+#             successful_goals.append(goal)
+#             successful_end_spots.append(end_pos)
+#         else:
+#             failed_goals.append(goal)
+#             failed_end_spots.append(end_pos)
+#     start_ind += 500
+#     if len(failed_goals) > 0:
+#         failed_goals = np.array(failed_goals)
+#         failed_end_spots = np.array(failed_end_spots) - np.array([0,0.1,0])
+#         legend.append('Failed Goal Poses')
+#         legend.append('Failed End Poses')
+#         plt.scatter(failed_goals[:,0], failed_goals[:,1])
+#         plt.scatter(failed_end_spots[:,0], failed_end_spots[:,1])
+#     if len(successful_goals) > 0:
+#         successful_goals = np.array(successful_goals)
+#         successful_end_spots = np.array(successful_end_spots) - np.array([0,0.1,0])
+#         legend.append('Successful Goal Poses')
+#         legend.append('Successful End Poses')
+#         plt.scatter(successful_goals[:,0], successful_goals[:,1])
+#         plt.scatter(successful_end_spots[:,0], successful_end_spots[:,1])
+    
+#     print(f'Total failed:{len(failed_goals)}, Total Success:{len(successful_goals)}')
+#     plt.legend(legend)
+#     plt.title(f'Goal and End Poses for {start_ind}:{start_ind+500}')
+#     plt.xlim([-0.07,0.07])
+#     plt.ylim([-0.07,0.07])
+#     plt.show()
+#     plt.cla()
+    
+    
+# goals, end_spots = [],[]
+# for i,episode in enumerate(episode_number):
+#     goal, end_pos, end_dist = load_pkl_end_pos(filepath + '/' + new_name_order[i])
+#     if end_dist < thold:
+#         end_spots.append(end_pos)
+#     goals.append(goal)
+        
+
+# successful_goals = np.array(goals)
+# failed_goals = np.array(end_spots) - np.array([0,0.1,0])
+# plt.scatter(successful_goals[:,0], successful_goals[:,1])
+# plt.scatter(failed_goals[:,0], failed_goals[:,1])
+# plt.legend(['Goal Poses','Successful End Poses'])
+# plt.title('Goal and End Poses')
