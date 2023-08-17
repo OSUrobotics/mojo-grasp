@@ -27,12 +27,32 @@ import json
 from stable_baselines3 import A2C, PPO
 from stable_baselines3.common.evaluation import evaluate_policy
 from stable_baselines3.common.monitor import Monitor
+# from stable_baselines3.common.s
 import wandb
 import numpy as np
 import os
 import time
+from typing import Callable
 # from stable_baselines3.DQN import MlpPolicy
 # from stable_baselines3.common.cmd_util import make_vec_env
+def linear_schedule(initial_value: float) -> Callable[[float], float]:
+    """
+    Linear learning rate schedule.
+
+    :param initial_value: Initial learning rate.
+    :return: schedule that computes
+      current learning rate depending on remaining progress
+    """
+    def func(progress_remaining: float) -> float:
+        """
+        Progress will decrease from 1 (beginning) to 0.
+
+        :param progress_remaining:
+        :return: current learning rate
+        """
+        return progress_remaining * initial_value
+
+    return func
 
 def run_pybullet(filepath, window=None, runtype='run', episode_number=None, action_list = None):
     # resource paths
@@ -143,7 +163,7 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None, acti
     
     # For standard loaded goal poses
     if args['task'] == 'unplanned_random':
-        goal_poses = RandomGoalHolder([0.02,0.065])
+        goal_poses = RandomGoalHolder([0.0025,0.065])
     else:    
         goal_poses = GoalHolder(pose_list)
 
@@ -200,7 +220,7 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None, acti
     if runtype == 'run':
         wandb.init(project = 'StableBaselinesWandBTest')
 
-        model = PPO("MlpPolicy", gym_env, tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-1}, ent_coef=ent, use_sde=True, sde_sample_freq=151)
+        model = PPO("MlpPolicy", gym_env, tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-1}, ent_coef=ent, use_sde=True, sde_sample_freq=151,learning_rate=3e-5)
         # gym_env = make_vec_env(lambda: gym_env, n_envs=1)
         gym_env.train()
         model.learn(args['epochs']*151, callback=callback)
@@ -259,9 +279,9 @@ def main():
     overall_path = os.path.dirname(os.path.dirname(os.path.dirname(this_path)))
     # run_pybullet(overall_path+'/demos/rl_demo/data/ftp_friction_fuckery/experiment_config.json', runtype='replay')
 
-    run_pybullet(overall_path+'/demos/rl_demo/data/ja_hail_mary/experiment_config.json', runtype='run')
+    run_pybullet(overall_path+'/demos/rl_demo/data/ja_dfs_overfitt/experiment_config.json', runtype='run')
 
-    run_pybullet(overall_path+'/demos/rl_demo/data/ja_hail_mary/experiment_config.json',runtype='eval')
+    # run_pybullet(overall_path+'/demos/rl_demo/data/ja_dfs_entropy_all/experiment_config.json',runtype='eval')
 
 # DO A REPLAY OF JA-testing episode 99924, 99918
 if __name__ == '__main__':

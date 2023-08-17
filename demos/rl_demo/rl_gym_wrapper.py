@@ -83,6 +83,10 @@ class GymWrapper(gym.Env):
         self.eval_run = 0
         self.timestep = 0
         self.first = True
+        try:
+            self.SUCCESS_REWARD = args['success_reward']
+        except KeyError:
+            self.SUCCESS_REWARD = 1
         self.SUCCESS_THRESHOLD = args['sr']/1000
         self.camera_view_matrix = p.computeViewMatrix((0.0,0.1,0.5),(0.0,0.1,0.005), (0.0,1,0.0))
         # self.camera_projection_matrix = p.computeProjectionMatrix(-0.1,0.1,-0.1,0.1,-0.1,0.1)
@@ -367,7 +371,7 @@ class GymWrapper(gym.Env):
         elif self.REWARD_TYPE == 'SFS':
             tstep_reward = reward_container['slope_to_goal'] * self.DISTANCE_SCALING - max(reward_container['f1_dist'],reward_container['f2_dist'])*self.CONTACT_SCALING
             if (reward_container['distance_to_goal'] < self.SUCCESS_THRESHOLD) & (np.linalg.norm(reward_container['object_velocity']) <= 0.05):
-                tstep_reward += 1
+                tstep_reward += self.SUCCESS_REWARD
                 done2 = True
                 print('SUCCESS BABY!!!!!!!')
         elif self.REWARD_TYPE == 'DFS':
@@ -375,7 +379,7 @@ class GymWrapper(gym.Env):
             assert ftemp >= 0
             tstep_reward = -reward_container['distance_to_goal'] * self.DISTANCE_SCALING  - ftemp*self.CONTACT_SCALING
             if (reward_container['distance_to_goal'] < self.SUCCESS_THRESHOLD) & (np.linalg.norm(reward_container['object_velocity']) <= 0.05):
-                tstep_reward += 1
+                tstep_reward += self.SUCCESS_REWARD
                 done2 = True
 
                 print('SUCCESS BABY!!!!!!!')
@@ -402,6 +406,7 @@ class GymWrapper(gym.Env):
         self.manipulation_phase.state.reset()
         self.manipulation_phase.state.objects[-1].run_num = 0
         self.manipulation_phase.eval = True
+        self.record.clear()
         
     def train(self):
         self.eval = False
