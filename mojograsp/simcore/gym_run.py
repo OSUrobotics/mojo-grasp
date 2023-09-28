@@ -220,7 +220,7 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None, acti
     if runtype == 'run':
         wandb.init(project = 'StableBaselinesWandBTest')
 
-        model = PPO("MlpPolicy", gym_env, tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-1}, ent_coef=ent, use_sde=True, sde_sample_freq=151,learning_rate=3e-5)
+        model = PPO("MlpPolicy", gym_env, tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-1}, ent_coef=ent, use_sde=True, sde_sample_freq=151,learning_rate=linear_schedule(3e-5))
         # gym_env = make_vec_env(lambda: gym_env, n_envs=1)
         gym_env.train()
         model.learn(args['epochs']*151, callback=callback)
@@ -280,7 +280,7 @@ def main():
     # run_pybullet(overall_path+'/demos/rl_demo/data/ftp_friction_fuckery/experiment_config.json', runtype='replay')
 
 
-    run_pybullet(overall_path+'/demos/rl_demo/data/ja_dfs_overfitt/experiment_config.json', runtype='run')
+    run_pybullet(overall_path+'/demos/rl_demo/data/FUCK/experiment_config.json', runtype='run')
 
     # run_pybullet(overall_path+'/demos/rl_demo/data/ja_dfs_entropy_all/experiment_config.json',runtype='eval')
 
