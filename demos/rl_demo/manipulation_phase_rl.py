@@ -99,18 +99,39 @@ class ManipulationRL(Phase):
 
     def execute_action(self, action_to_execute=None, pybullet_thing = None):
         # Execute the target that we got from the controller in pre_step()
+
         for i in range(self.interp_ratio):
             if pybullet_thing is not None:
+                # temp = pybullet_thing.getJointStates(self.hand.id, [0,1,3,4])
+                goal_angs = self.action.get_joint_angles()
+                # print('joint states before motion', temp[0][0], temp[1][0], temp[2][0], temp[3][0])
+                # print('joint goals',goal_angs)
                 pybullet_thing.setJointMotorControlArray(self.hand.id, jointIndices=self.hand.get_joint_numbers(),
-                                            controlMode=p.POSITION_CONTROL, targetPositions=self.action.get_joint_angles(), positionGains=[0.8,0.8,0.8,0.8], forces=[0.4,0.4,0.4,0.4])
+                                            controlMode=p.POSITION_CONTROL, targetPositions=goal_angs, positionGains=[0.8,0.8,0.8,0.8], forces=[0.4,0.4,0.4,0.4])
             elif action_to_execute:
+                # temp = p.getJointStates(self.hand.id, [0,1,3,4])
+                # print('joint states before motion', temp[0][0], temp[1][0], temp[2][0], temp[3][0])
+                # print('joint goals', action_to_execute)
                 p.setJointMotorControlArray(self.hand.id, jointIndices=self.hand.get_joint_numbers(),
                                             controlMode=p.POSITION_CONTROL, targetPositions=action_to_execute, positionGains=[0.8,0.8,0.8,0.8], forces=[0.4,0.4,0.4,0.4])
             else:
+                goal_angs = self.action.get_joint_angles()
+                # temp = p.getJointStates(self.hand.id, [0,1,3,4])
+                # print('joint states before motion', temp[0][0], temp[1][0], temp[2][0], temp[3][0])
+                # print('joint goals',goal_angs)
                 # print('no action given',self.action.get_joint_angles())
                 p.setJointMotorControlArray(self.hand.id, jointIndices=self.hand.get_joint_numbers(),
-                                            controlMode=p.POSITION_CONTROL, targetPositions=self.action.get_joint_angles(), positionGains=[0.8,0.8,0.8,0.8], forces=[0.4,0.4,0.4,0.4])
+                                            controlMode=p.POSITION_CONTROL, targetPositions=goal_angs, positionGains=[0.8,0.8,0.8,0.8], forces=[0.4,0.4,0.4,0.4])
             self.env.step()
+            # if pybullet_thing is not None:
+            #     temp = pybullet_thing.getJointStates(self.hand.id, [0,1,3,4])
+            # elif action_to_execute:
+            #     temp = p.getJointStates(self.hand.id, [0,1,3,4])
+            # else:
+            #     temp = p.getJointStates(self.hand.id, [0,1,3,4])
+
+            # print('joint states after motion', temp[0][0], temp[1][0], temp[2][0], temp[3][0])
+            
         self.timestep += 1
 
     def post_step(self):

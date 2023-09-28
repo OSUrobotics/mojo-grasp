@@ -56,7 +56,9 @@ class NoiseAdder():
         print(np.array(x_tensor)> self.mins )
         print((np.array(x_tensor)> self.mins))
         return x_tensor + t1 * (self.maxes-self.mins)/2
-    
+
+
+
 class GymWrapper(gym.Env):
     '''
     Example environment that follows gym interface to allow us to use openai gym learning algorithms with mojograsp
@@ -65,6 +67,9 @@ class GymWrapper(gym.Env):
     def __init__(self, rl_env, manipulation_phase,record_data, args):
         super(GymWrapper,self).__init__()
         self.env = rl_env
+        self.discrete = False
+        if self.discrete:
+            self.action_space = spaces.MultiDiscrete([3,3,3,3])
         self.action_space = spaces.Box(low=np.array([-1,-1,-1,-1]), high=np.array([1,1,1,1]))
         self.manipulation_phase = manipulation_phase
         self.observation_space = spaces.Box(np.array(args['state_mins']),np.array(args['state_maxes']))
@@ -83,6 +88,7 @@ class GymWrapper(gym.Env):
         self.eval_run = 0
         self.timestep = 0
         self.first = True
+
         try:
             self.SUCCESS_REWARD = args['success_reward']
         except KeyError:
@@ -135,11 +141,11 @@ class GymWrapper(gym.Env):
         None.
 
         '''
-        # print('timestep num', self.timestep)
+        if self.discrete:
+            action = action-1
+            print(action)
         self.manipulation_phase.gym_pre_step(action)
         self.manipulation_phase.execute_action()
-        # self.env.step()
-        # print('just env stepped')
         done = self.manipulation_phase.exit_condition()
         self.manipulation_phase.post_step()
         
