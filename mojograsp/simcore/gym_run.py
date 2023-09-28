@@ -88,6 +88,54 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None, acti
             xeval = [0.045, 0, -0.045, -0.06, -0.045, 0, 0.045, 0.06]
             yeval = [-0.045, -0.06, -0.045, 0, 0.045, 0.06, 0.045, 0]
             eval_names = ['SE','S','SW','W','NW','N','NE','E'] 
+        elif args['task'] == 'forward':
+            x= [0.0]
+            y = [0.04]
+            xeval = x
+            yeval = y
+            eval_names = ['N'] 
+        elif args['task'] == 'backward':
+            x= [0.0]
+            y = [-0.04]
+            xeval = x
+            yeval = y
+            eval_names = ['S'] 
+        elif args['task'] == 'left':
+            x= [-0.04]
+            y = [0.0]
+            xeval = x
+            yeval = y
+            eval_names = ['W'] 
+        elif args['task'] == 'right':
+            x= [0.04]
+            y = [0.0]
+            xeval = x
+            yeval = y
+            eval_names = ['E'] 
+        elif args['task'] == 'forward_left':
+            x= [-0.03]
+            y = [0.03]
+            xeval = x
+            yeval = y
+            eval_names = ['NW'] 
+        elif args['task'] == 'forward_right':
+            x= [0.03]
+            y = [0.03]
+            xeval = x
+            yeval = y
+            eval_names = ['NE'] 
+        elif args['task'] == 'backward_left':
+            x= [-0.03]
+            y = [-0.03]
+            xeval = x
+            yeval = y
+            eval_names = ['SW'] 
+        elif args['task'] == 'backward_right':
+            x= [0.03]
+            y = [-0.03]
+            xeval = x
+            yeval = y
+            eval_names = ['SE'] 
 
     elif runtype=='eval':
         # df = pd.read_csv('/home/orochi/mojo/mojo-grasp/demos/rl_demo/resources/test_points.csv', index_col=False)
@@ -198,7 +246,7 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None, acti
     
     # Create phase
     manipulation = manipulation_phase_rl.ManipulationRL(
-        hand, obj, x, y, state, action, reward, replay_buffer=replay_buffer, args=arg_dict)
+        hand, obj, x, y, state, action, reward, env, replay_buffer=replay_buffer, args=arg_dict)
     
     
     # data recording
@@ -219,8 +267,9 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None, acti
         ent = 0.0
     if runtype == 'run':
         wandb.init(project = 'StableBaselinesWandBTest')
+        
+        model = PPO("MlpPolicy", gym_env, tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-2.3}, ent_coef=ent, use_sde=True, sde_sample_freq=10,learning_rate=linear_schedule(1e-5))
 
-        model = PPO("MlpPolicy", gym_env, tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-1}, ent_coef=ent, use_sde=True, sde_sample_freq=151,learning_rate=3e-5)
         # gym_env = make_vec_env(lambda: gym_env, n_envs=1)
         gym_env.train()
         model.learn(args['epochs']*151, callback=callback)
@@ -279,9 +328,9 @@ def main():
     overall_path = os.path.dirname(os.path.dirname(os.path.dirname(this_path)))
     # run_pybullet(overall_path+'/demos/rl_demo/data/ftp_friction_fuckery/experiment_config.json', runtype='replay')
 
-    run_pybullet(overall_path+'/demos/rl_demo/data/ja_dfs_overfitt/experiment_config.json', runtype='run')
+    # run_pybullet(overall_path+'/demos/rl_demo/data/ja_please/experiment_config.json', runtype='run')
 
-    # run_pybullet(overall_path+'/demos/rl_demo/data/ja_dfs_entropy_all/experiment_config.json',runtype='eval')
+    run_pybullet(overall_path+'/demos/rl_demo/data/ja_single_direction/backward/experiment_config.json',runtype='run')
 
 # DO A REPLAY OF JA-testing episode 99924, 99918
 if __name__ == '__main__':
