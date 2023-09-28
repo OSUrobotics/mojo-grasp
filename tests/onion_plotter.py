@@ -95,7 +95,7 @@ Tue 15 Aug 2023 02∶56∶37 PM PDT vs Wed 16 Aug 2023 04∶54∶31 AM PDT
 # filepath = '/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/ja_new_rewards/eval'
 # filepath = '/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/ja_dfs/eval'
 # filepath = '/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/ja_dfs_1/eval'
-filepath = '/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/ja_hail_mary/eval'
+# filepath = '/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/ja_hail_mary/eval'
 # filepath = '/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/ja_hail_mary/hunch'
 # filepath = '/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/hpc_new_rewards/07_smart_smart_2_scale/eval'
 # filepath = '/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/hpc_new_rewards/08_smart_smart_10_scale/eval'
@@ -106,8 +106,24 @@ filepath = '/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/ja_hail_mary/eval'
 # filepath = '/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/IK_results/'
 # filepath = '/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/ja_dfs_entropy_all/Train'
 # filepath = '/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/ja_hail_mary/Train'
+filepath = '/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/ja_back_to_basic/Eval'
+# filepath = '/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/ja_lower/Eval'
+# filepath = '/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/ja_the_stuff/eval'
 
-thold = 0.005
+
+filenamething='ja scheduler'
+# filenamething ='03_smart_finger_2_scale'
+# filenamething ='04_smart_finger_10_scale'
+# filenamething ='05_scaled_finger_2_scale'
+# filenamething ='06_scaled_finger_10_scale'
+# filenamething ='07_smart_smart_2_scale'
+# filenamething ='08_smart_smart_10_scale'
+
+
+# filepath = '/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/hpc_new_rewards/'+filenamething+'/eval'
+
+
+thold = 0.001
 
 
 filenames = os.listdir(filepath)
@@ -154,20 +170,21 @@ max_num = max(episode_number)
 # plt.title(f'Success Threshold: {thold*100} cm')
 
 
-goals, end_spots = [],[]
-for i,episode in enumerate(episode_number):
-    goal, end_pos, end_dist = load_pkl_end_pos(filepath + '/' + filenames[i])
-    goals.append(goal)
-    end_spots.append(end_pos)
+# goals, end_spots = [],[]
+# for i,episode in enumerate(episode_number):
+#     goal, end_pos, end_dist = load_pkl_end_pos(filepath + '/' + filenames[i])
+#     goals.append(goal)
+#     end_spots.append(end_pos)
 
-successful_goals = np.array(goals)
-failed_goals = np.array(end_spots) - np.array([0,0.1,0])
-plt.scatter(successful_goals[:,0], successful_goals[:,1])
-plt.scatter(failed_goals[:,0], failed_goals[:,1])
-plt.legend(['Goal Poses','End Poses'])
-plt.title('Goal and End Poses')
-plt.xlim([-0.07,0.07])
-plt.ylim([-0.07,0.07])
+# successful_goals = np.array(goals)
+# failed_goals = np.array(end_spots) - np.array([0,0.1,0])
+# plt.scatter(successful_goals[:,0], successful_goals[:,1])
+# plt.scatter(failed_goals[:,0], failed_goals[:,1])
+# plt.legend(['Goal Poses','End Poses'])
+# plt.title(f'Goal and End Poses: {filenamething}')
+# plt.xlim([-0.07,0.07])
+# plt.ylim([-0.07,0.07])
+
 # maintain_contact, failed_contact = [],[]
 # for i,episode in enumerate(episode_number):
 #     goal, finger_dists, tsteps_with_contact = load_pkl_finger_dist(filepath + '/' + filenames[i])
@@ -305,3 +322,17 @@ plt.ylim([-0.07,0.07])
 # plt.scatter(failed_goals[:,0], failed_goals[:,1])
 # plt.legend(['Goal Poses','Successful End Poses'])
 # plt.title('Goal and End Poses')
+
+# goals, end_dists = [],[]
+# for i,episode in enumerate(episode_number):
+#     goal, end_pos, end_dist = load_pkl_end_pos(filepath + '/' + filenames[i])
+#     goals.append(goal)
+#     end_dists.append(end_dist)
+
+# goals = np.array(goals)
+# plt.scatter(goals[:,0], goals[:,1], c = end_dists, cmap='jet')
+# plt.colorbar()
+# # plt.legend(['Goal Poses','End Poses'])
+# plt.title(f'Goal and End Poses: {filenamething}')
+# plt.xlim([-0.07,0.07])
+# plt.ylim([-0.07,0.07])
