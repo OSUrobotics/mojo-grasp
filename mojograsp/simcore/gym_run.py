@@ -330,6 +330,7 @@ def main():
 
     # run_pybullet(overall_path+'/demos/rl_demo/data/ja_please/experiment_config.json', runtype='run')
 
+    run_pybullet(overall_path+'/demos/rl_demo/data/FUCK/experiment_config.json', runtype='run')
 
     run_pybullet(overall_path+'/demos/rl_demo/data/ja_single_direction/backward/experiment_config.json',runtype='run')
 
