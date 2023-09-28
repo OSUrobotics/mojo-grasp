@@ -101,7 +101,6 @@ class GuiBackend():
             
             sorted_inds = np.argsort(final_filenums)
             final_filenums = np.array(final_filenums)
-            temp = final_filenums[sorted_inds]
             episode_files = np.array(episode_files)
             filenames_only = np.array(filenames_only)
     
@@ -309,7 +308,6 @@ class GuiBackend():
         reward_dict_dist = [f['reward']['distance_to_goal'] for f in data]
         reward_dict_f1 = [f['reward']['f1_dist'] for f in data]
         reward_dict_f2 = [f['reward']['f2_dist'] for f in data]
-        reward_dict_penalty = [f['reward']['end_penalty'] for f in data]
         current_reward_dict = [f['reward']['slope_to_goal'] for f in data]
         plane_side = [f['reward']['plane_side'] for f in data]
         start_goal = [f['reward']['start_dist'] for f in data]
@@ -498,7 +496,6 @@ class GuiBackend():
                     if len(i) > 0 :
                         final_filenums.append(int(i[0]))
                 
-                
                 sorted_inds = np.argsort(final_filenums)
                 final_filenums = np.array(final_filenums)
                 temp = final_filenums[sorted_inds]
@@ -514,14 +511,10 @@ class GuiBackend():
                     with open(episode_file, 'rb') as ef:
                         tempdata = pkl.load(ef)
                     data = tempdata['timestep_list']
-                    for timestep in data:
-                        if self.use_distance:
-                            temp += - timestep['reward']['distance_to_goal'] \
-                                    -max(timestep['reward']['f1_dist'],timestep['reward']['f2_dist'])/5
-                        else:
-                            temp += max(timestep['reward']['slope_to_goal']*100-max(timestep['reward']['f1_dist'],timestep['reward']['f2_dist'])/5,-1)
-                    rewards.append(temp)
-                    temp = 0
+                    individual_rewards = []
+                    for tstep in data:
+                        individual_rewards.append(self.build_reward(tstep['reward'])[0])
+                    rewards.append(sum(individual_rewards))
                     if count% 100 ==0:
                         print('count = ', count)
                     count +=1
@@ -537,7 +530,6 @@ class GuiBackend():
                 temp = 0
                 for episode in self.all_data['episode_list']:
                     data = episode['timestep_list']
-                    goal_position = data[0]['state']['goal_pose']['goal_pose']
                     for timestep in data:
                         if self.use_distance:
                             temp += - timestep['reward']['distance_to_goal'] \
@@ -614,7 +606,6 @@ class GuiBackend():
                 temp = 0
                 for episode in self.all_data['episode_list']:
                     data = episode['timestep_list']
-                    goal_position = data[0]['state']['goal_pose']['goal_pose']
                     for timestep in data:
                         temp += - timestep['reward']['distance_to_goal']
                     rewards.append(temp)
@@ -743,7 +734,6 @@ class GuiBackend():
             
             sorted_inds = np.argsort(final_filenums)
             final_filenums = np.array(final_filenums)
-            temp = final_filenums[sorted_inds]
             episode_files = np.array(episode_files)
             filenames_only = np.array(filenames_only)
 
@@ -792,12 +782,20 @@ class GuiBackend():
         if self.clear_plots | (self.curr_graph != 'angles_total'):
             self.ax.cla()
             self.legend = []
-            
         self.ax.errorbar(range(len(avg_actor_output)),avg_actor_output[:,0], avg_actor_std[:,0])
         self.ax.errorbar(range(len(avg_actor_output)),avg_actor_output[:,1], avg_actor_std[:,1])
         self.ax.errorbar(range(len(avg_actor_output)),avg_actor_output[:,2], avg_actor_std[:,2])
         self.ax.errorbar(range(len(avg_actor_output)),avg_actor_output[:,3], avg_actor_std[:,3])
-        self.legend.extend(['Actor 1 - episode ' + str(self.e_num), 'Actor 2 - episode ' + str(self.e_num), 'Actor 3 - episode ' + str(self.e_num), 'Actor 4 - episode ' + str(self.e_num) ])
+        if self.config['action'] == 'Finger Tip Position':
+            self.legend.extend(['Right X', 
+                                'Right Y', 
+                                'Left X', 
+                                'Left Y'])
+        elif self.config['action'] == 'Joint Velocity':            
+            self.legend.extend(['Right Proximal', 
+                                'Right Distal', 
+                                'Left Proximal', 
+                                'Left Distal'])
         self.ax.legend(self.legend)
         self.ax.set_ylabel('Actor Output')
         self.ax.set_xlabel('Episode')
@@ -811,7 +809,6 @@ class GuiBackend():
             print("can't generate data csv unless episode_all is selected")
             return
         # test_dict = {'goal':{'':[]'':[]},'no_goal':{'':[],'':[]},'success_rate':[],'':[],'action_vals':[]}
-        training_dict = {}
         for episode in self.data_dict['episode_list']:
             data = episode['timestep_list']
             for timestep in data:
@@ -833,19 +830,15 @@ class GuiBackend():
                 
                 sorted_inds = np.argsort(final_filenums)
                 final_filenums = np.array(final_filenums)
-                temp = final_filenums[sorted_inds]
-                episode_files = np.array(episode_files)
                 filenames_only = np.array(filenames_only)
     
                 episode_files = episode_files[sorted_inds].tolist()
                 
                 min_dists = []
-                s_f = []
                 for i, episode_file in enumerate(episode_files):
                     with open(episode_file, 'rb') as ef:
                         tempdata = pkl.load(ef)
                     data = tempdata['timestep_list']
-                    goal_position = data[0]['state']['goal_pose']['goal_pose']
                     goal_dists = [f['reward']['distance_to_goal'] for f in data]
                     min_dists.append(min(goal_dists))
                     if i % 100 ==0:
@@ -967,7 +960,6 @@ class GuiBackend():
                 
                 sorted_inds = np.argsort(final_filenums)
                 final_filenums = np.array(final_filenums)
-                temp = final_filenums[sorted_inds]
                 episode_files = np.array(episode_files)
                 filenames_only = np.array(filenames_only)
     
@@ -979,7 +971,6 @@ class GuiBackend():
                     with open(episode_file, 'rb') as ef:
                         tempdata = pkl.load(ef)
                     data = tempdata['timestep_list']
-                    goal_position = data[0]['state']['goal_pose']['goal_pose']
                     goal_dists = [f['reward']['distance_to_goal'] for f in data]
                     min_dists.append(min(goal_dists))
                     if i % 100 ==0:
@@ -1000,7 +991,6 @@ class GuiBackend():
                 min_dists = []
                 for i, episode in enumerate(self.all_data['episode_list']):
                     data = episode['timestep_list']
-                    goal_position = data[0]['state']['goal_pose']['goal_pose']
                     goal_dists = [f['reward']['distance_to_goal'] for f in data]
                     ending_dist = min(goal_dists)
                     min_dists.append(ending_dist)
@@ -1026,8 +1016,6 @@ class GuiBackend():
         self.ax.grid(True)
         self.figure_canvas_agg.draw()
         self.curr_graph = 's_f'
-
-    def draw_path_and_action(self):
         pass
 
     def draw_ending_goal_dist(self):
@@ -1046,7 +1034,6 @@ class GuiBackend():
                 
                 sorted_inds = np.argsort(final_filenums)
                 final_filenums = np.array(final_filenums)
-                temp = final_filenums[sorted_inds]
                 episode_files = np.array(episode_files)
                 filenames_only = np.array(filenames_only)
                 count = 0
@@ -1141,6 +1128,63 @@ class GuiBackend():
         self.figure_canvas_agg.draw()
         self.curr_graph = 'direction_success_thing' 
 
+    def draw_actor_max_percent(self):
+        if len(self.min_dists) == 0:
+            # get list of pkl files in folder
+            episode_files = [os.path.join(self.folder, f) for f in os.listdir(self.folder) if f.lower().endswith('.pkl')]
+            filenames_only = [f for f in os.listdir(self.folder) if f.lower().endswith('.pkl')]
+            
+            filenums = [re.findall('\d+',f) for f in filenames_only]
+            final_filenums = []
+            for i in filenums:
+                if len(i) > 0 :
+                    final_filenums.append(int(i[0]))
+            
+            
+            sorted_inds = np.argsort(final_filenums)
+            final_filenums = np.array(final_filenums)
+            episode_files = np.array(episode_files)
+            filenames_only = np.array(filenames_only)
+
+            episode_files = episode_files[sorted_inds].tolist()
+            
+            actor_max = []
+            
+            for i, episode_file in enumerate(episode_files):
+                with open(episode_file, 'rb') as ef:
+                    tempdata = pkl.load(ef)
+                data = tempdata['timestep_list']
+                actor_list = [abs(f['action']['actor_output'])>0.99 for f in data]
+                actor_list = np.array(actor_list)
+                end_actor = np.sum(actor_list,axis=0)/len(actor_list)
+                actor_max.append(end_actor)
+                if i % 100 ==0:
+                    print('count = ',i)
+        actor_max = np.array(actor_max)
+        if self.clear_plots | (self.curr_graph != 'angles'):
+            self.ax.cla()
+            self.legend = []
+        self.ax.plot(range(len(actor_max)),actor_max[:,0])
+        self.ax.plot(range(len(actor_max)),actor_max[:,1])
+        self.ax.plot(range(len(actor_max)),actor_max[:,2])
+        self.ax.plot(range(len(actor_max)),actor_max[:,3])
+        if self.config['action'] == 'Finger Tip Position':
+            self.legend.extend(['Right X Percent at Max', 
+                                'Right Y Percent at Max', 
+                                'Left X Percent at Max', 
+                                'Left Y Percent at Max'])
+        elif self.config['action'] == 'Joint Velocity':            
+            self.legend.extend(['Right Proximal Percent at Max', 
+                                'Right Distal Percent at Max', 
+                                'Left Proximal Percent at Max', 
+                                'Left Distal Percent at Max'])
+        self.ax.legend(self.legend)
+        self.ax.grid(True)
+        self.ax.set_ylabel('Actor Output')
+        self.ax.set_xlabel('Timestep (1/30 s)')
+        self.ax.set_title('Fraction of Episode that Action is Maxed')
+        self.figure_canvas_agg.draw()
+        self.curr_graph = 'angles'
     
     def draw_goal_s_f(self):
         if self.all_data is None:
@@ -1148,7 +1192,6 @@ class GuiBackend():
             # print('this will be slow, and we both know it')
             return
         
-        keylist = ['forward','backward', 'forwardleft', 'backwardleft','forwardright', 'backwardright', 'left', 'right']
         rewards = {'forward':[[0.0, 0.2],[]],'backward':[[0.0, 0.12],[]],'forwardleft':[[-0.03, 0.19],[]],'backwardleft':[[-0.03,0.13],[]],
                    'forwardright':[[0.03,0.19],[]],'backwardright':[[0.03, 0.13],[]],'left':[[-0.04, 0.16],[]],'right':[[0.04,0.16],[]]}
         # sucessful_dirs = []
@@ -1198,8 +1241,6 @@ class GuiBackend():
         trajectory_points = [f['state']['obj_2']['pose'][0] for f in data]
         fingertip1_points = [f['state']['f1_pos'] for f in data]
         fingertip2_points = [f['state']['f2_pos'] for f in data]
-        finger_contact1 = data[0]['state']['f1_contact_pos']
-        finger_contact2 = data[0]['state']['f2_contact_pos']
         goal_pose = data[1]['reward']['goal_position']
         trajectory_points = np.array(trajectory_points)
         fingertip1_points = np.array(fingertip1_points)
@@ -1248,7 +1289,6 @@ class GuiBackend():
         self.figure_canvas_agg.draw()
         self.curr_graph = 'path'
 
-    
     def draw_obj_contacts(self):
         if self.e_num == -1:
             print("can't draw when episode_all is selected")
@@ -1381,7 +1421,6 @@ class GuiBackend():
                 temp = 0
                 for episode in self.all_data['episode_list']:
                     data = episode['timestep_list']
-                    goal_position = data[0]['state']['goal_pose']['goal_pose']
                     for timestep in data:
                         temp += -max(timestep['reward']['f1_dist'],timestep['reward']['f2_dist'])/5
                     rewards.append(temp)
@@ -1461,10 +1500,8 @@ class GuiBackend():
         
         sorted_inds = np.argsort(final_filenums)
         final_filenums = np.array(final_filenums)
-        temp = final_filenums[sorted_inds]
         episode_files = np.array(episode_files)
         filenames_only = np.array(filenames_only)
-        count = 0
         episode_files = episode_files[sorted_inds].tolist()
         goals, end_dists = [],[]
         for episode_file in episode_files:
@@ -1510,10 +1547,8 @@ class GuiBackend():
         
         sorted_inds = np.argsort(final_filenums)
         final_filenums = np.array(final_filenums)
-        temp = final_filenums[sorted_inds]
         episode_files = np.array(episode_files)
         filenames_only = np.array(filenames_only)
-        count = 0
         episode_files = episode_files[sorted_inds].tolist()
         finger_max_dists, timesteps_until_lost_contact, goal_positions = [],[],[]
         
@@ -1554,7 +1589,6 @@ class GuiBackend():
         self.figure_canvas_agg.draw()
         self.curr_graph = 'scatter'
     
-
     def build_reward(self, reward_container):
         """
         Method takes in a Reward object
@@ -1697,8 +1731,7 @@ class GuiBackend():
         self.figure_canvas_agg.draw()
         self.curr_graph = 'path'
         figure_canvas_agg2.draw()
-        
-        
+            
     def draw_end_poses(self, canvas):
         print('buckle up') 
         
@@ -1720,10 +1753,8 @@ class GuiBackend():
         
         sorted_inds = np.argsort(final_filenums)
         final_filenums = np.array(final_filenums)
-        temp = final_filenums[sorted_inds]
         episode_files = np.array(episode_files)
         filenames_only = np.array(filenames_only)
-        count = 0
         episode_files = episode_files[sorted_inds].tolist()
         goals, end_dists, end_poses = [],[], []
         for episode_file in episode_files:
