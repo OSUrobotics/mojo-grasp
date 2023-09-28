@@ -50,6 +50,8 @@ class RNNGui():
         self.load_path  = '/'
         self.built = False
         self.train_dataset, self.validation_dataset = None, None
+        self.single_names = ['forward','backward','left','right','forward_left','forward_right','backward_right','backward_left']
+        
         
         # define layout, show and read the window
         data_layout =  [ [sg.Text('Model Type'), sg.OptionMenu(values=('DDPG', 'DDPGFD','DDPG+HER', 'DDPGFD+HER', 'gym'),  k='-model', default_value='DDPG')],
@@ -61,7 +63,7 @@ class RNNGui():
                          [sg.Button("Browse",key='-browse-load',button_color='DarkBlue'),sg.Text("/", key='-load-path')],
                          [sg.Text('Object'), sg.OptionMenu(values=('Cube', 'Cylinder'), k='-object', default_value='Cube')],
                          [sg.Text('Hand'), sg.OptionMenu(values=('2v2', '2v2-B'), k='-hand', default_value='2v2')],
-                         [sg.Text("Task"), sg.OptionMenu(values=('asterisk','random','full_random','unplanned_random'), k='-task', default_value='unplanned_random')],
+                         [sg.Text("Task"), sg.OptionMenu(values=('asterisk','random','full_random','unplanned_random','single'), k='-task', default_value='unplanned_random')],
                          [sg.Checkbox("Randomized Start Position", key='-rstart',default=False)],
                          [sg.Text('Replay Buffer Sampling'), sg.OptionMenu(values=('priority','random','random+expert'), k='-sampling', default_value='priority')]]
         
@@ -144,6 +146,7 @@ class RNNGui():
         state_mins = []
         state_maxes = []
         state_list = []
+
         if values['-ftp']:
             if not RW:
                 state_mins.extend([-0.072, 0.018, -0.072, 0.018])
@@ -270,7 +273,6 @@ class RNNGui():
         overall_path = pathlib.Path(__file__).parent.resolve()
         resource_path = overall_path.joinpath('demos/rl_demo/resources')
         run_path = overall_path.joinpath('demos/rl_demo/runs')
-        self.args['tname'] = str(run_path.joinpath(values['-title']))
         if values['-hand'] == '2v2':
             self.args['hand_path'] = str(resource_path.joinpath('2v2_Hand_A/hand/2v2_50.50_50.50_1.1_53.urdf'))
         elif values['-hand'] == '2v2-B':
@@ -283,14 +285,26 @@ class RNNGui():
             self.args['max_action'] = 1.57
         elif values['-action'] == 'Finger Tip Position':
             self.args['max_action'] = 0.01
-        if values['-task'] == 'full_random':
+        if (values['-task'] == 'full_random') | (values['-task'] == 'unplanned_random'):
             self.args['points_path'] = str(resource_path.joinpath('points.csv'))
         else:
             self.args['points_path'] = str(resource_path.joinpath('train_points.csv'))
-        
-        self.built = True
-        
+            
+        if self.args['task'] == 'single':
+            
+            for name in self.single_names:
+                os.mkdir(self.save_path + '/'+name+'/')
+                self.args['save_path'] = self.save_path + '/' + name + '/'
+                self.args['tname'] = str(run_path.joinpath(values['-title']).joinpath(name))
+                self.args['task'] = name
+                self.built = True
+                self.log_params()
+        else:
+            self.args['tname'] = str(run_path.joinpath(values['-title']))
 
+            self.built = True
+            self.log_params()
+        
         return True
         
     def train(self):
@@ -374,7 +388,6 @@ class RNNGui():
             elif event == '-train':
                 ready = self.build_args(values)
                 if ready:
-                    self.log_params()
                     thread = threading.Thread(target=self.train, daemon=True)
                     thread.start()
                 else:
@@ -383,7 +396,6 @@ class RNNGui():
             elif event == '-build':
                 ready = self.build_args(values)        
                 if ready:
-                    self.log_params()
                     print('Build Successful')
                 else:
                     print('Build Not Successful')

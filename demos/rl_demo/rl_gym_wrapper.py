@@ -138,7 +138,7 @@ class GymWrapper(gym.Env):
         # print('timestep num', self.timestep)
         self.manipulation_phase.gym_pre_step(action)
         self.manipulation_phase.execute_action()
-        self.env.step()
+        # self.env.step()
         # print('just env stepped')
         done = self.manipulation_phase.exit_condition()
         self.manipulation_phase.post_step()

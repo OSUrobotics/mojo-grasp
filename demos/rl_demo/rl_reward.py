@@ -36,6 +36,7 @@ class ExpertReward(Reward):
         self.current_reward['object_velocity'] = velocity[0]
         self.current_reward['start_dist'] = self.start_dist
         self.current_reward['plane_side'] = np.dot(start_pos_vec,current_pos_vec) <= 0
+        # print('setting the reward')
         try:
             self.current_reward["distance_to_goal"] = distance
             self.current_reward["goal_position"] = goal_position
@@ -58,6 +59,7 @@ class ExpertReward(Reward):
 
     def get_reward(self) -> dict:
         # print('reward', self.current_reward['distance_to_goal'])
+        # print('getting the reward')
         return self.current_reward.copy()
 
     def setup_reward(self, start_pos):
