@@ -14,7 +14,7 @@ from math import isclose
 
 class ManipulationRL(Phase):
 
-    def __init__(self, hand: TwoFingerGripper, cube: ObjectBase, x, y, state: State, action: Action, reward: Reward, replay_buffer: ReplayBufferDefault = None, args: dict = None,physicsClientId = None):
+    def __init__(self, hand: TwoFingerGripper, cube: ObjectBase, x, y, state: State, action: Action, reward: Reward, env, replay_buffer: ReplayBufferDefault = None, args: dict = None,physicsClientId = None):
         self.name = "manipulation"
         self.hand = hand
         self.cube = cube
@@ -22,6 +22,7 @@ class ManipulationRL(Phase):
         self.action = action
         self.reward = reward
         self.eval = False
+        self.env = env
         try:
             self.terminal_step = args['tsteps']
             self.eval_terminal_step = args['eval-tsteps']
@@ -109,6 +110,7 @@ class ManipulationRL(Phase):
                 # print('no action given',self.action.get_joint_angles())
                 p.setJointMotorControlArray(self.hand.id, jointIndices=self.hand.get_joint_numbers(),
                                             controlMode=p.POSITION_CONTROL, targetPositions=self.action.get_joint_angles(), positionGains=[0.8,0.8,0.8,0.8], forces=[0.4,0.4,0.4,0.4])
+            self.env.step()
         self.timestep += 1
 
     def post_step(self):
