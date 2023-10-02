@@ -332,7 +332,7 @@ def main():
 
     # run_pybullet(overall_path+'/demos/rl_demo/data/FUCK/experiment_config.json', runtype='run')
 
-    run_pybullet(overall_path+'/demos/rl_demo/data/single_direction/backward/experiment_config.json',runtype='run')
+    run_pybullet(overall_path+'/demos/rl_demo/data/single_direction/forward/experiment_config.json',runtype='run')
 
 # DO A REPLAY OF JA-testing episode 99924, 99918
 if __name__ == '__main__':

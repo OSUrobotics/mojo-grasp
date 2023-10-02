@@ -104,6 +104,7 @@ class ManipulationRL(Phase):
             if pybullet_thing is not None:
                 # temp = pybullet_thing.getJointStates(self.hand.id, [0,1,3,4])
                 goal_angs = self.action.get_joint_angles()
+                # print(f'goal angles {goal_angs}')
                 # print('joint states before motion', temp[0][0], temp[1][0], temp[2][0], temp[3][0])
                 # print('joint goals',goal_angs)
                 pybullet_thing.setJointMotorControlArray(self.hand.id, jointIndices=self.hand.get_joint_numbers(),
@@ -116,6 +117,7 @@ class ManipulationRL(Phase):
                                             controlMode=p.POSITION_CONTROL, targetPositions=action_to_execute, positionGains=[0.8,0.8,0.8,0.8], forces=[0.4,0.4,0.4,0.4])
             else:
                 goal_angs = self.action.get_joint_angles()
+                # print(f'goal angles {goal_angs}')
                 # temp = p.getJointStates(self.hand.id, [0,1,3,4])
                 # print('joint states before motion', temp[0][0], temp[1][0], temp[2][0], temp[3][0])
                 # print('joint goals',goal_angs)

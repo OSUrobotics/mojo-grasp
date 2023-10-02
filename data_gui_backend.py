@@ -1669,10 +1669,6 @@ class GuiBackend():
         f2_reward = np.array(f2_reward)
         dist_reward = np.array(dist_reward)
         
-        if self.clear_plots | (self.curr_graph != 'rewards'):
-            self.ax.cla()
-            self.legend = []
-
         data = self.data_dict['timestep_list']
         trajectory_points = [f['state']['obj_2']['pose'][0] for f in data]
         fingertip1_points = [f['state']['f1_pos'] for f in data]
@@ -1728,7 +1724,7 @@ class GuiBackend():
         # axes[0,1].legend(self.legend)
         axes[0,1].set_title('Object and Finger Path - Episode: '+str(self.e_num))
         plt.tight_layout()
-        self.figure_canvas_agg.draw()
+        # self.figure_canvas_agg.draw()
         self.curr_graph = 'path'
         figure_canvas_agg2.draw()
             
