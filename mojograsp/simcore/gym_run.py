@@ -270,6 +270,7 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None, acti
         
         model = PPO("MlpPolicy", gym_env, tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-2.3}, ent_coef=ent,learning_rate=linear_schedule(1e-5))
 
+
         # gym_env = make_vec_env(lambda: gym_env, n_envs=1)
         gym_env.train()
         model.learn(args['epochs']*151, callback=callback)
@@ -332,7 +333,7 @@ def main():
 
     # run_pybullet(overall_path+'/demos/rl_demo/data/FUCK/experiment_config.json', runtype='run')
 
-    run_pybullet(overall_path+'/demos/rl_demo/data/ja_single_direction/backward/experiment_config.json',runtype='run')
+    run_pybullet(overall_path+'/demos/rl_demo/data/single_direction/forward/experiment_config.json',runtype='run')
 
 # DO A REPLAY OF JA-testing episode 99924, 99918
 if __name__ == '__main__':
