@@ -67,10 +67,11 @@ class GymWrapper(gym.Env):
     def __init__(self, rl_env, manipulation_phase,record_data, args):
         super(GymWrapper,self).__init__()
         self.env = rl_env
-        self.discrete = False
+        self.discrete = True
         if self.discrete:
             self.action_space = spaces.MultiDiscrete([3,3,3,3])
-        self.action_space = spaces.Box(low=np.array([-1,-1,-1,-1]), high=np.array([1,1,1,1]))
+        else:
+            self.action_space = spaces.Box(low=np.array([-1,-1,-1,-1]), high=np.array([1,1,1,1]))
         self.manipulation_phase = manipulation_phase
         self.observation_space = spaces.Box(np.array(args['state_mins']),np.array(args['state_maxes']))
         self.STATE_NOISE = args['state_noise']
@@ -143,7 +144,7 @@ class GymWrapper(gym.Env):
         '''
         if self.discrete:
             action = action-1
-            print(action)
+            # print(action)
         self.manipulation_phase.gym_pre_step(action)
         self.manipulation_phase.execute_action()
         done = self.manipulation_phase.exit_condition()
