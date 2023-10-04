@@ -537,6 +537,7 @@ class GymController(ExpertController):
             
             finger_angles = self.gripper.get_joint_angles()
             action_list = []
+            # print(actor_output, finger_angles)
             for i in range(self.num_tsteps):
                 
                 action = ((actor_output)*self.MAX_ANGLE_CHANGE + finger_angles).tolist()

@@ -827,9 +827,10 @@ class GuiBackend():
                     if len(i) > 0 :
                         final_filenums.append(int(i[0]))
                 
-                
                 sorted_inds = np.argsort(final_filenums)
                 final_filenums = np.array(final_filenums)
+                temp = final_filenums[sorted_inds]
+                episode_files = np.array(episode_files)
                 filenames_only = np.array(filenames_only)
     
                 episode_files = episode_files[sorted_inds].tolist()
@@ -1669,6 +1670,9 @@ class GuiBackend():
         f2_reward = np.array(f2_reward)
         dist_reward = np.array(dist_reward)
         
+        min_dists = np.min([f1_reward,f2_reward,dist_reward])
+        max_dists = np.max([f1_reward,f2_reward,dist_reward])
+        
         data = self.data_dict['timestep_list']
         trajectory_points = [f['state']['obj_2']['pose'][0] for f in data]
         fingertip1_points = [f['state']['f1_pos'] for f in data]
@@ -1695,13 +1699,17 @@ class GuiBackend():
         axes[0,1].set_xlabel('X pos (m)')
         axes[0,1].set_ylabel('Y pos (m)')
         
-        axes[0,0].plot(range(len(f1_reward)), -f1_reward)
-        axes[0,0].plot(range(len(f1_reward)), -f2_reward)
+        axes[1,1].plot(range(len(f1_reward)), -f1_reward)
+        axes[1,1].plot(range(len(f1_reward)), -f2_reward)
+        axes[1,1].set_ylim([-max_dists-0.001, -min_dists+0.001])
         axes[1,0].plot(range(len(f1_reward)), -dist_reward)
-        axes[1,1].plot(range(len(f1_reward)), overall_reward)
-        axes[0,0].set_title('Contact Distances')
+        axes[1,0].set_ylim([-max_dists-0.001, -min_dists+0.001])
+        axes[0,0].plot(range(len(f1_reward)), overall_reward)
+        axes[1,1].set_title('Contact Distances')
         axes[1,0].set_title('Object Goal Distance')
-        axes[1,1].set_title('Total Reward')
+        
+        axes[0,0].set_title('Total Reward')
+        
         axes[0,0].grid(True)
         axes[1,0].grid(True)
         axes[1,1].grid(True)

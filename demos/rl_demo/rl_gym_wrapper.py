@@ -67,7 +67,7 @@ class GymWrapper(gym.Env):
     def __init__(self, rl_env, manipulation_phase,record_data, args):
         super(GymWrapper,self).__init__()
         self.env = rl_env
-        self.discrete = True
+        self.discrete = False
         if self.discrete:
             self.action_space = spaces.MultiDiscrete([3,3,3,3])
         else:

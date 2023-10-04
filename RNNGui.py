@@ -63,7 +63,7 @@ class RNNGui():
                          [sg.Button("Browse",key='-browse-load',button_color='DarkBlue'),sg.Text("/", key='-load-path')],
                          [sg.Text('Object'), sg.OptionMenu(values=('Cube', 'Cylinder'), k='-object', default_value='Cube')],
                          [sg.Text('Hand'), sg.OptionMenu(values=('2v2', '2v2-B'), k='-hand', default_value='2v2')],
-                         [sg.Text("Task"), sg.OptionMenu(values=('asterisk','random','full_random','unplanned_random','single'), k='-task', default_value='unplanned_random')],
+                         [sg.Text("Task"), sg.OptionMenu(values=('asterisk','random','full_random','unplanned_random','single', 'wedge'), k='-task', default_value='unplanned_random')],
                          [sg.Checkbox("Randomized Start Position", key='-rstart',default=False)],
                          [sg.Text('Replay Buffer Sampling'), sg.OptionMenu(values=('priority','random','random+expert'), k='-sampling', default_value='priority')]]
         
@@ -297,6 +297,17 @@ class RNNGui():
                 self.args['save_path'] = self.save_path + '/' + name + '/'
                 self.args['tname'] = str(run_path.joinpath(values['-title']).joinpath(name))
                 self.args['task'] = name
+                
+                self.built = True
+                self.log_params()
+        elif self.args['task'] == 'wedge':
+            print('aight')
+            for name in self.single_names:
+                os.mkdir(self.save_path + '/wedge_'+name+'/')
+                self.args['save_path'] = self.save_path + '/wedge_' + name + '/'
+                self.args['tname'] = str(run_path.joinpath(values['-title']).joinpath("wedge_"+name))
+                self.args['task'] = 'wedge_' + name
+                self.args['points_path'] = str(resource_path.joinpath('wedge_'+name+'.csv'))
                 self.built = True
                 self.log_params()
         else:
