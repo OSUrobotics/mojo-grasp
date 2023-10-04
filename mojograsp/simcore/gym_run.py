@@ -88,6 +88,13 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None, acti
             xeval = [0.045, 0, -0.045, -0.06, -0.045, 0, 0.045, 0.06]
             yeval = [-0.045, -0.06, -0.045, 0, 0.045, 0.06, 0.045, 0]
             eval_names = ['SE','S','SW','W','NW','N','NE','E'] 
+        elif 'wedge' in args['task']:
+            df = pd.read_csv(args['points_path'], index_col=False)
+            x = df["x"]
+            y = df["y"]
+            xeval = [0.045, 0, -0.045, -0.06, -0.045, 0, 0.045, 0.06]
+            yeval = [-0.045, -0.06, -0.045, 0, 0.045, 0.06, 0.045, 0]
+            eval_names = ['SE','S','SW','W','NW','N','NE','E'] 
         elif args['task'] == 'forward':
             x= [0.0]
             y = [0.04]
@@ -188,15 +195,6 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None, acti
 
     hand = IKGripper(hand_id, path=args['hand_path'])
     
-    # p.resetJointState(hand_id, 0, -0.4)
-    # p.resetJointState(hand_id, 1, 1.2)
-    # p.resetJointState(hand_id, 3, 0.4)
-    # p.resetJointState(hand_id, 4, -1.2)
-    
-    # p.resetJointState(hand_id, 0, 0)
-    # p.resetJointState(hand_id, 1, 0)
-    # p.resetJointState(hand_id, 3, 0)
-    # p.resetJointState(hand_id, 4, 0)
     # change visual of gripper
     p.changeVisualShape(hand_id, -1, rgbaColor=[0.3, 0.3, 0.3, 1])
     p.changeVisualShape(hand_id, 0, rgbaColor=[1, 0.5, 0, 1])
@@ -255,7 +253,7 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None, acti
     
     
     gym_env = rl_gym_wrapper.GymWrapper(env, manipulation, record_data, args)
-    train_timesteps = args['evaluate']*151
+    train_timesteps = args['evaluate']*(args['tsteps']+1)
     callback = rl_gym_wrapper.EvaluateCallback(gym_env,n_eval_episodes=8, eval_freq=train_timesteps, best_model_save_path=args['save_path'])
     # gym_env = Monitor(gym_env,args['save_path']+'Test/')
     # p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 0)
@@ -273,7 +271,7 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None, acti
 
         # gym_env = make_vec_env(lambda: gym_env, n_envs=1)
         gym_env.train()
-        model.learn(args['epochs']*151, callback=callback)
+        model.learn(args['epochs']*(args['tsteps']+1), callback=callback)
         d = data_processor(args['save_path'] + 'Train/')
         d.load_limited()
         d.save_all()
@@ -313,7 +311,7 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None, acti
             
         for _ in range(1):
             obs = gym_env.reset()
-            for step in range(151):
+            for step in range((args['tsteps']+1)):
                 # action, _ = model.predict(obs, deterministic=True)
                 print(action_list)
                 action = actions[step]
@@ -333,8 +331,16 @@ def main():
 
     # run_pybullet(overall_path+'/demos/rl_demo/data/FUCK/experiment_config.json', runtype='run')
 
-    run_pybullet(overall_path+'/demos/rl_demo/data/single_direction/forward/experiment_config.json',runtype='run')
+    run_pybullet(overall_path+'/demos/rl_demo/data/wedge/wedge_backward/experiment_config.json',runtype='run')
 
-# DO A REPLAY OF JA-testing episode 99924, 99918
+
+    run_pybullet(overall_path+'/demos/rl_demo/data/wedge/wedge_forward/experiment_config.json',runtype='run')
+    run_pybullet(overall_path+'/demos/rl_demo/data/wedge/wedge_forward_right/experiment_config.json',runtype='run')
+    run_pybullet(overall_path+'/demos/rl_demo/data/wedge/wedge_forward_left/experiment_config.json',runtype='run')
+    run_pybullet(overall_path+'/demos/rl_demo/data/wedge/wedge_left/experiment_config.json',runtype='run')
+    run_pybullet(overall_path+'/demos/rl_demo/data/wedge/wedge_right/experiment_config.json',runtype='run')
+    run_pybullet(overall_path+'/demos/rl_demo/data/wedge/wedge_backward_left/experiment_config.json',runtype='run')
+    run_pybullet(overall_path+'/demos/rl_demo/data/wedge/wedge_backward_right/experiment_config.json',runtype='run')
+
 if __name__ == '__main__':
     main()
