@@ -101,6 +101,7 @@ class ManipulationRL(Phase):
         # Execute the target that we got from the controller in pre_step()
 
         for i in range(self.interp_ratio):
+            # print(self.timestep,i)
             if pybullet_thing is not None:
                 # temp = pybullet_thing.getJointStates(self.hand.id, [0,1,3,4])
                 goal_angs = self.action.get_joint_angles()

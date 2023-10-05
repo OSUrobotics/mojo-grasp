@@ -325,22 +325,22 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None, acti
 def main():
     this_path = os.path.abspath(__file__)
     overall_path = os.path.dirname(os.path.dirname(os.path.dirname(this_path)))
-    # run_pybullet(overall_path+'/demos/rl_demo/data/ftp_friction_fuckery/experiment_config.json', runtype='replay')
+    # run_pybullet(overall_path+'/demos/rl_demo/data/single_direction_limited/right/experiment_config.json', runtype='replay', episode_number=9987)
 
     # run_pybullet(overall_path+'/demos/rl_demo/data/ja_please/experiment_config.json', runtype='run')
 
     # run_pybullet(overall_path+'/demos/rl_demo/data/FUCK/experiment_config.json', runtype='run')
 
-    run_pybullet(overall_path+'/demos/rl_demo/data/wedge/wedge_backward/experiment_config.json',runtype='run')
+    # run_pybullet(overall_path+'/demos/rl_demo/data/wedge/wedge_backward/experiment_config.json',runtype='run')
 
 
     run_pybullet(overall_path+'/demos/rl_demo/data/wedge/wedge_forward/experiment_config.json',runtype='run')
-    run_pybullet(overall_path+'/demos/rl_demo/data/wedge/wedge_forward_right/experiment_config.json',runtype='run')
-    run_pybullet(overall_path+'/demos/rl_demo/data/wedge/wedge_forward_left/experiment_config.json',runtype='run')
-    run_pybullet(overall_path+'/demos/rl_demo/data/wedge/wedge_left/experiment_config.json',runtype='run')
-    run_pybullet(overall_path+'/demos/rl_demo/data/wedge/wedge_right/experiment_config.json',runtype='run')
-    run_pybullet(overall_path+'/demos/rl_demo/data/wedge/wedge_backward_left/experiment_config.json',runtype='run')
-    run_pybullet(overall_path+'/demos/rl_demo/data/wedge/wedge_backward_right/experiment_config.json',runtype='run')
+    # run_pybullet(overall_path+'/demos/rl_demo/data/wedge/wedge_forward_right/experiment_config.json',runtype='run')
+    # run_pybullet(overall_path+'/demos/rl_demo/data/wedge/wedge_forward_left/experiment_config.json',runtype='run')
+    # run_pybullet(overall_path+'/demos/rl_demo/data/wedge/wedge_left/experiment_config.json',runtype='run')
+    # run_pybullet(overall_path+'/demos/rl_demo/data/wedge/wedge_right/experiment_config.json',runtype='run')
+    # run_pybullet(overall_path+'/demos/rl_demo/data/wedge/wedge_backward_left/experiment_config.json',runtype='run')
+    # run_pybullet(overall_path+'/demos/rl_demo/data/wedge/wedge_backward_right/experiment_config.json',runtype='run')
 
 if __name__ == '__main__':
     main()
