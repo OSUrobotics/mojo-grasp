@@ -541,7 +541,7 @@ class GymController(ExpertController):
             for i in range(self.num_tsteps):
                 
                 action = ((actor_output)*self.MAX_ANGLE_CHANGE + finger_angles).tolist()
-                
+                '''
                 self.ik_f1.finger_fk.set_joint_angles(finger_angles[0:2])
                 new_f1_pos = self.ik_f1.finger_fk.calculate_forward_kinematics()
                 
@@ -559,7 +559,6 @@ class GymController(ExpertController):
                 
                 ap = new_fpos-old_fpos
 
-
                 if any(abs(ap) > self.MAX_DISTANCE_CHANGE):
                     self.ik_f1.finger_fk.set_joint_angles(finger_angles[0:2])
                     self.ik_f2.finger_fk.set_joint_angles(finger_angles[2:4])
@@ -573,7 +572,7 @@ class GymController(ExpertController):
                     found2, finger_2_angs_kegan, it12 = self.ik_f2.calculate_ik(target=new_finger_poses[2:], ee_location=None)
                     action = [finger_1_angs_kegan[0],finger_1_angs_kegan[1],finger_2_angs_kegan[0],finger_2_angs_kegan[1]]
                     action = clip_angs(action)
-
+                '''
                 action_list.append(action)
                 finger_angles = action
         # print(f'action_list {action_list}')
