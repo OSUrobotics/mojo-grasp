@@ -321,6 +321,7 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None, acti
                 obs, reward, done, info = gym_env.step(np.array(action),viz=True)
                 # print('obs=', obs, 'reward=', reward, 'done=', done)
                 # env.render(mode='console')
+    p.disconnect()
 
 def main():
     this_path = os.path.abspath(__file__)
