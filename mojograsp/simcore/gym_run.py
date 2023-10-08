@@ -321,6 +321,7 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None, acti
                 obs, reward, done, info = gym_env.step(np.array(action),viz=True)
                 # print('obs=', obs, 'reward=', reward, 'done=', done)
                 # env.render(mode='console')
+    p.disconnect()
 
 def main():
     this_path = os.path.abspath(__file__)
@@ -333,8 +334,15 @@ def main():
 
     # run_pybullet(overall_path+'/demos/rl_demo/data/wedge/wedge_backward/experiment_config.json',runtype='run')
 
-
-    run_pybullet(overall_path+'/demos/rl_demo/data/wedge/wedge_forward/experiment_config.json',runtype='run')
+    run_pybullet(overall_path + '/demos/rl_demo/data/single_direction_15/forward/experiment_config.json',runtype='run')
+    run_pybullet(overall_path + '/demos/rl_demo/data/single_direction_15/forward_right/experiment_config.json',runtype='run')
+    run_pybullet(overall_path + '/demos/rl_demo/data/single_direction_15/right/experiment_config.json',runtype='run')
+    run_pybullet(overall_path + '/demos/rl_demo/data/single_direction_15/backward_right/experiment_config.json',runtype='run')
+    run_pybullet(overall_path + '/demos/rl_demo/data/single_direction_15/backward/experiment_config.json',runtype='run')
+    run_pybullet(overall_path + '/demos/rl_demo/data/single_direction_15/backward_left/experiment_config.json',runtype='run')
+    run_pybullet(overall_path + '/demos/rl_demo/data/single_direction_15/left/experiment_config.json',runtype='run')
+    run_pybullet(overall_path + '/demos/rl_demo/data/single_direction_15/forward_left/experiment_config.json',runtype='run')
+    # run_pybullet(overall_path+'/demos/rl_demo/data/wedge/wedge_forward/experiment_config.json',runtype='run')
     # run_pybullet(overall_path+'/demos/rl_demo/data/wedge/wedge_forward_right/experiment_config.json',runtype='run')
     # run_pybullet(overall_path+'/demos/rl_demo/data/wedge/wedge_forward_left/experiment_config.json',runtype='run')
     # run_pybullet(overall_path+'/demos/rl_demo/data/wedge/wedge_left/experiment_config.json',runtype='run')
