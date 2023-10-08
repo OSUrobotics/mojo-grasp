@@ -334,6 +334,14 @@ def main():
 
     # run_pybullet(overall_path+'/demos/rl_demo/data/wedge/wedge_backward/experiment_config.json',runtype='run')
 
+    run_pybullet(overall_path+'/demos/rl_demo/data/single_direction_updated_reward/forward/experiment_config.json',runtype='run')
+    run_pybullet(overall_path+'/demos/rl_demo/data/single_direction_updated_reward/backward/experiment_config.json',runtype='run')
+    run_pybullet(overall_path+'/demos/rl_demo/data/single_direction_updated_reward/left/experiment_config.json',runtype='run')
+    run_pybullet(overall_path+'/demos/rl_demo/data/single_direction_updated_reward/right/experiment_config.json',runtype='run')
+    run_pybullet(overall_path+'/demos/rl_demo/data/single_direction_updated_reward/forward_left/experiment_config.json',runtype='run')
+    run_pybullet(overall_path+'/demos/rl_demo/data/single_direction_updated_reward/forward_right/experiment_config.json',runtype='run')
+    run_pybullet(overall_path+'/demos/rl_demo/data/single_direction_updated_reward/backward_left/experiment_config.json',runtype='run')
+    run_pybullet(overall_path+'/demos/rl_demo/data/single_direction_updated_reward/backward_right/experiment_config.json',runtype='run')
 
     # run_pybullet(overall_path+'/demos/rl_demo/data/wedge/wedge_forward/experiment_config.json',runtype='run')
     # run_pybullet(overall_path+'/demos/rl_demo/data/wedge/wedge_forward_right/experiment_config.json',runtype='run')
