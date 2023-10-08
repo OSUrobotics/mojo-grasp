@@ -89,7 +89,7 @@ class GymWrapper(gym.Env):
         self.eval_run = 0
         self.timestep = 0
         self.first = True
-
+        self.small_enough = args['epochs'] <= 100000
         try:
             self.SUCCESS_REWARD = args['success_reward']
         except KeyError:
@@ -150,7 +150,8 @@ class GymWrapper(gym.Env):
         done = self.manipulation_phase.exit_condition()
         self.manipulation_phase.post_step()
         
-        self.record.record_timestep()
+        if self.eval or self.small_enough:
+            self.record.record_timestep()
         # print('recorded timesteps')
         state, reward = self.manipulation_phase.get_episode_info()
         # print(state['obj_2'])
@@ -178,11 +179,12 @@ class GymWrapper(gym.Env):
         
         if done:
             # print('done, recording stuff')
-            self.record.record_episode(self.eval)
-            if self.eval:
-                self.record.save_episode(self.eval, use_reward_name=True)
-            else:
-                self.record.save_episode(self.eval)
+            if self.eval or self.small_enough:
+                self.record.record_episode(self.eval)
+                if self.eval:
+                    self.record.save_episode(self.eval, use_reward_name=True)
+                else:
+                    self.record.save_episode(self.eval)
 
         self.timestep +=1
         return state, reward, done, info
