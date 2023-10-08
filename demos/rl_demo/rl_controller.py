@@ -73,10 +73,10 @@ class ExpertController():
         p.resetJointState(self.gripper.id, 1, 0)
         p.resetJointState(self.gripper.id, 3, 0)
         p.resetJointState(self.gripper.id, 4, 0)
-        self.ik_f1 = JacobianIK(gripper.id,deepcopy(hand_info['finger1']))
+        self.ik_f1 = JacobianIK(gripper.id,deepcopy(hand_info['finger1']), error=1e-4)
         # self.test_ik_f1 = JacobianIK(gripper.id,deepcopy(hand_info['finger1']))
         
-        self.ik_f2 = JacobianIK(gripper.id,deepcopy(hand_info['finger2']))
+        self.ik_f2 = JacobianIK(gripper.id,deepcopy(hand_info['finger2']), error=1e-4)
         # p.resetJointState(self.gripper.id, 0, .75)
         # p.resetJointState(self.gripper.id, 1, -1.4)
         # p.resetJointState(self.gripper.id, 3, -.75)
