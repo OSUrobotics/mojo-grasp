@@ -145,16 +145,64 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None, acti
             eval_names = ['SE'] 
 
     elif runtype=='eval':
-        # df = pd.read_csv('/home/orochi/mojo/mojo-grasp/demos/rl_demo/resources/test_points.csv', index_col=False)
-        df = pd.read_csv(args['points_path'], index_col=False)
-        print('EVALUATING BOOOIIII')
-        x = df["x"]
-        y = df["y"]
-        xeval = x
-        yeval = y
-        # xeval = [0.045, 0, -0.045, -0.06, -0.045, 0, 0.045, 0.06]
-        # yeval = [-0.045, -0.06, -0.045, 0, 0.045, 0.06, 0.045, 0]
-        eval_names = ['eval']*500 
+        if args['task'] == 'forward':
+            x= [0.0]
+            y = [0.04]
+            xeval = x
+            yeval = y
+            eval_names = ['N'] 
+        elif args['task'] == 'backward':
+            x= [0.0]
+            y = [-0.04]
+            xeval = x
+            yeval = y
+            eval_names = ['S'] 
+        elif args['task'] == 'left':
+            x= [-0.04]
+            y = [0.0]
+            xeval = x
+            yeval = y
+            eval_names = ['W'] 
+        elif args['task'] == 'right':
+            x= [0.04]
+            y = [0.0]
+            xeval = x
+            yeval = y
+            eval_names = ['E'] 
+        elif args['task'] == 'forward_left':
+            x= [-0.03]
+            y = [0.03]
+            xeval = x
+            yeval = y
+            eval_names = ['NW'] 
+        elif args['task'] == 'forward_right':
+            x= [0.03]
+            y = [0.03]
+            xeval = x
+            yeval = y
+            eval_names = ['NE'] 
+        elif args['task'] == 'backward_left':
+            x= [-0.03]
+            y = [-0.03]
+            xeval = x
+            yeval = y
+            eval_names = ['SW'] 
+        elif args['task'] == 'backward_right':
+            x= [0.03]
+            y = [-0.03]
+            xeval = x
+            yeval = y
+            eval_names = ['SE'] 
+        else:
+            df = pd.read_csv(args['points_path'], index_col=False)
+            print('EVALUATING BOOOIIII')
+            x = df["x"]
+            y = df["y"]
+            xeval = x
+            yeval = y
+            # xeval = [0.045, 0, -0.045, -0.06, -0.045, 0, 0.045, 0.06]
+            # yeval = [-0.045, -0.06, -0.045, 0, 0.045, 0.06, 0.045, 0]
+            eval_names = ['eval']*500 
     elif runtype=='replay':
         df = pd.read_csv(args['points_path'], index_col=False)
         x = df["x"]
@@ -171,7 +219,7 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None, acti
     eval_pose_list = [[i,j] for i,j in zip(xeval,yeval)]
     print(args)
     try:
-        if (args['viz']) | (runtype=='replay'):
+        if (args['viz']) | (runtype=='replay') | (runtype =='eval'):
             physics_client = p.connect(p.GUI)
         else:
             physics_client = p.connect(p.DIRECT)
@@ -275,6 +323,7 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None, acti
         d = data_processor(args['save_path'] + 'Train/')
         d.load_limited()
         d.save_all()
+        model.save(args['save_path']+'best_model')
 
     elif runtype == 'eval':
         model = PPO("MlpPolicy", gym_env, tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-1}).load(args['save_path']+'best_model')
@@ -285,7 +334,7 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None, acti
             # p.resetJointState(hand_id, 1, 1.45)
             # p.resetJointState(hand_id, 3, .725)
             # p.resetJointState(hand_id, 4, -1.45)
-        for _ in range(500):
+        for _ in range(5):
             obs = gym_env.reset()
             done = False
             while not done:
@@ -332,16 +381,20 @@ def main():
 
     # run_pybullet(overall_path+'/demos/rl_demo/data/FUCK/experiment_config.json', runtype='run')
 
-    # run_pybullet(overall_path+'/demos/rl_demo/data/wedge/wedge_backward/experiment_config.json',runtype='run')
+    # run_pybullet(overall_path+'/demos/rl_demo/data/wedge/wedge_badckward/experiment_config.json',runtype='run')
+    file_list = ['forward','forward_right','right','backward_right','backward','backward_left','left','forward_left']
+    # run_pybullet(overall_path+'/demos/rl_demo/data/single_direction_updated_reward/forward/experiment_config.json',runtype='run')
+    # run_pybullet(overall_path+'/demos/rl_demo/data/single_direction_updated_reward/backward/experiment_config.json',runtype='run')
+    # run_pybullet(overall_path+'/demos/rl_demo/data/single_direction_updated_reward/left/experiment_config.json',runtype='run')
+    # run_pybullet(overall_path+'/demos/rl_demo/data/single_direction_updated_reward/right/experiment_config.json',runtype='run')
+    # run_pybullet(overall_path+'/demos/rl_demo/data/single_direction_updated_reward/forward_left/experiment_config.json',runtype='run')
+    # run_pybullet(overall_path+'/demos/rl_demo/data/single_direction_updated_reward/forward_right/experiment_config.json',runtype='run')
+    # run_pybullet(overall_path+'/demos/rl_demo/data/single_direction_updated_reward/backward_left/experiment_config.json',runtype='run')
+    # run_pybullet(overall_path+'/demos/rl_demo/data/single_direction_updated_reward/backward_right/experiment_config.json',runtype='run')
 
-    run_pybullet(overall_path+'/demos/rl_demo/data/single_direction_updated_reward/forward/experiment_config.json',runtype='run')
-    run_pybullet(overall_path+'/demos/rl_demo/data/single_direction_updated_reward/backward/experiment_config.json',runtype='run')
-    run_pybullet(overall_path+'/demos/rl_demo/data/single_direction_updated_reward/left/experiment_config.json',runtype='run')
-    run_pybullet(overall_path+'/demos/rl_demo/data/single_direction_updated_reward/right/experiment_config.json',runtype='run')
-    run_pybullet(overall_path+'/demos/rl_demo/data/single_direction_updated_reward/forward_left/experiment_config.json',runtype='run')
-    run_pybullet(overall_path+'/demos/rl_demo/data/single_direction_updated_reward/forward_right/experiment_config.json',runtype='run')
-    run_pybullet(overall_path+'/demos/rl_demo/data/single_direction_updated_reward/backward_left/experiment_config.json',runtype='run')
-    run_pybullet(overall_path+'/demos/rl_demo/data/single_direction_updated_reward/backward_right/experiment_config.json',runtype='run')
+    for name in file_list:
+        run_pybullet(overall_path + '/demos/rl_demo/data/wedge/wedge_' + name + '/experiment_config.json', runtype='run')
+
 
     # run_pybullet(overall_path+'/demos/rl_demo/data/wedge/wedge_forward/experiment_config.json',runtype='run')
     # run_pybullet(overall_path+'/demos/rl_demo/data/wedge/wedge_forward_right/experiment_config.json',runtype='run')
