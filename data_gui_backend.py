@@ -498,14 +498,12 @@ class GuiBackend():
                 
                 sorted_inds = np.argsort(final_filenums)
                 final_filenums = np.array(final_filenums)
-                temp = final_filenums[sorted_inds]
                 episode_files = np.array(episode_files)
                 filenames_only = np.array(filenames_only)
     
                 episode_files = episode_files[sorted_inds].tolist()
                 # filenames_only = filenames_only[sorted_inds].tolist()
                 rewards = []
-                temp = 0
                 count = 0
                 for episode_file in episode_files:
                     with open(episode_file, 'rb') as ef:
@@ -524,21 +522,15 @@ class GuiBackend():
         else: 
             if self.reduced_format:
                 rewards = [-i['sum_dist']-i['sum_finger'] for i in self.all_data['episode_list']]
-                print('mew format')
+                print('new format')
             else:
                 rewards = []
-                temp = 0
                 for episode in self.all_data['episode_list']:
                     data = episode['timestep_list']
+                    individual_rewards = []
                     for timestep in data:
-                        if self.use_distance:
-                            temp += - timestep['reward']['distance_to_goal'] \
-                                    -max(timestep['reward']['f1_dist'],timestep['reward']['f2_dist'])/5
-                                                #timestep['reward']['end_penalty'] \
-                        else:
-                            temp += max(timestep['reward']['slope_to_goal']*100-max(timestep['reward']['f1_dist'],timestep['reward']['f2_dist'])/5,-1)
-                    rewards.append(temp)
-                    temp = 0
+                        individual_rewards.append(self.build_reward(tstep['reward'])[0])
+                    rewards.append(sum(individual_rewards))
                 self.rewards= rewards
         if self.moving_avg != 1:
             rewards = moving_average(rewards,self.moving_avg)
