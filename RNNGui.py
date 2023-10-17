@@ -96,7 +96,7 @@ class RNNGui():
                        [sg.Text("Reward"), sg.OptionMenu(values=('Sparse','Distance','Distance + Finger', 'Hinge Distance + Finger', 'Slope', 'Slope + Finger','SmartDistance + Finger','SmartDistance + SmartFinger','ScaledDistance + Finger','SFS','DFS'), k='-reward',default_value='Distance + Finger'), sg.Text('Success Radius (mm)'), sg.Input(2, key='-sr'),],
                        [sg.Text("Distance Scale"),  sg.Input(1,key='-distance_scale'), sg.Text('Contact Scale'),  sg.Input(0.2,key='-contact_scale'), sg.Text('Success Reward'), sg.Input(1,key='-success_reward')],
                        [sg.Text("Action"), sg.OptionMenu(values=('Joint Velocity','Finger Tip Position'), k='-action',default_value='Finger Tip Position')],
-                       [sg.Checkbox('Vizualize Simulation',default=False, k='-viz'), sg.Checkbox('Real World?',default=False, k='-rw')],
+                       [sg.Checkbox('Vizualize Simulation',default=False, k='-viz'), sg.Checkbox('Real World?',default=False, k='-rw'), sg.Checkbox('IK every sim step?', default=False, key='-ik-freq')],
                        [sg.Button('Begin Training', key='-train', bind_return_key=True)],
                        [sg.Button('Build Config File WITHOUT Training', key='-build')],
                        [sg.Text('Work progress'), sg.ProgressBar(100, size=(20, 20), orientation='h', key='-PROG-')]]
@@ -141,7 +141,8 @@ class RNNGui():
                      'distance_scaling': float(values['-distance_scale']),
                      'contact_scaling': float(values['-contact_scale']),
                      'freq': int(values['-freq']),
-                     'rstart': int(values['-rstart'])}
+                     'rstart': int(values['-rstart']),
+                     'IK_freq': bool(values['-ik-freq'])}
         state_len = 0
         state_mins = []
         state_maxes = []
