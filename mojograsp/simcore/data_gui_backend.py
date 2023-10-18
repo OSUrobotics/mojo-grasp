@@ -1082,7 +1082,7 @@ class PlotBackend():
         arrow_len = max(int(len(trajectory_points)/25),1)
         arrow_points = np.linspace(0,len(trajectory_points)-arrow_len-1,10,dtype=int)
         next_points = arrow_points + arrow_len
-        print(arrow_points, next_points)
+
         self.clear_axes()
          
         self.ax.plot(trajectory_points[:,0], trajectory_points[:,1])
