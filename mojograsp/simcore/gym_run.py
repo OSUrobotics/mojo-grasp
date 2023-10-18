@@ -393,7 +393,7 @@ def main():
     # run_pybullet(overall_path+'/demos/rl_demo/data/single_direction_updated_reward/backward_right/experiment_config.json',runtype='run')
 
     for name in file_list:
-        run_pybullet(overall_path + '/demos/rl_demo/data/single_direction_15_interp_reduced/' + name + '/experiment_config.json', runtype='run')
+        run_pybullet(overall_path + '/demos/rl_demo/data/wedge_15/wedge_' + name + '/experiment_config.json', runtype='run')
 
     #NOTE WE MAY WANT TO UPDATE THE MAGNITUDE OF THE MAXIMUM MOVEMENT TO BE 1/8 THE SIZE THAT IT WAS TO MATCH THE PREVIOUS SETUP
 

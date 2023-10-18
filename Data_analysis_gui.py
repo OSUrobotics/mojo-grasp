@@ -3,8 +3,10 @@ import os
 import numpy as np
 import re
 import pathlib
-from data_gui_backend import GuiBackend
+from mojograsp.simcore.data_gui_backend import PlotBackend
 from PIL import ImageGrab
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+import pickle as pkl
 
 def save_element_as_file(element, filename):
     """
@@ -16,6 +18,11 @@ def save_element_as_file(element, filename):
     box = (widget.winfo_rootx(), widget.winfo_rooty(), widget.winfo_rootx() + widget.winfo_width(), widget.winfo_rooty() + widget.winfo_height())
     grab = ImageGrab.grab(bbox=box)
     grab.save(filename)
+
+def load_data(filepath):
+    with open(filepath, 'rb') as file:
+        data = pkl.load(file)
+    return data
 
 def main():
     toggle_btn_off = b'iVBORw0KGgoAAAANSUhEUgAAACgAAAAoCAYAAACM/rhtAAAABmJLR0QA/wD/AP+gvaeTAAAED0lEQVRYCe1WTWwbRRR+M/vnv9hO7BjHpElMKSlpqBp6gRNHxAFVcKM3qgohQSqoqhQ45YAILUUVDRxAor2VAweohMSBG5ciodJUSVqa/iikaePEP4nj2Ovdnd1l3qqJksZGXscVPaylt7Oe/d6bb9/svO8BeD8vA14GvAx4GXiiM0DqsXv3xBcJU5IO+RXpLQvs5yzTijBmhurh3cyLorBGBVokQG9qVe0HgwiXLowdy9aKsY3g8PA5xYiQEUrsk93JTtjd1x3siIZBkSWQudUK4nZO1w3QuOWXV+HuP/fL85klAJuMCUX7zPj4MW1zvC0Ej4yMp/w++K2rM9b70sHBYCjo34x9bPelsgp/XJksZ7KFuwZjr3732YcL64ttEDw6cq5bVuCvgy/sje7rT0sI8PtkSHSEIRIKgCQKOAUGM6G4VoGlwiqoVd2Za9Vl8u87bGJqpqBqZOj86eEHGNch+M7otwHJNq4NDexJD+59RiCEQG8qzslFgN8ibpvZNsBifgXmFvJg459tiOYmOElzYvr2bbmkD509e1ylGEZk1Y+Ssfan18n1p7vgqVh9cuiDxJPxKPT3dfGXcN4Tp3dsg/27hUQs0qMGpRMYjLz38dcxS7Dm3nztlUAb38p0d4JnLozPGrbFfBFm79c8hA3H2AxcXSvDz7/+XtZE1kMN23hjV7LTRnKBh9/cZnAj94mOCOD32gi2EUw4FIRUMm6LGhyiik86nO5NBdGRpxYH14bbjYfJteN/OKR7UiFZVg5T27QHYu0RBxoONV9W8KQ7QVp0iXdE8fANUGZa0QAvfhhXlkQcmjJZbt631oIBnwKmacYoEJvwiuFgWncWnXAtuVBBEAoVVXWCaQZzxmYuut68b631KmoVBEHMUUrJjQLXRAQVSxUcmrKVHfjWWjC3XOT1FW5QrWpc5IJdQhDKVzOigEqS5dKHMVplnNOqrmsXqUSkn+YzWaHE9RW1FeXL7SKZXBFUrXW6jIV6YTEvMAUu0W/G3kcxPXP5ylQZs4fa6marcWvvZfJu36kuHjlc/nMSuXz+/ejxgqPFpuQ/xVude9eu39Jxu27OLvBGoMjrUN04zrNMbgVmOBZ96iPdPZmYntH5Ls76KuxL9NyoLA/brav7n382emDfHqeooXyhQmARVhSnAwNNMx5bu3V1+habun5nWdXhwJZ2C5mirTesyUR738sv7g88UQ0rEkTDlp+1wwe8Pf0klegUenYlgyg7bby75jUTITs2rhCAXXQ2vwxz84vlB0tZ0wL4NEcLX/04OrrltG1s8aOrHhk51SaK0us+n/K2xexBxljcsm1n6x/Fuv1PCWGiKOaoQCY1Vb9gWPov50+fdEqd21ge3suAlwEvA14G/ucM/AuppqNllLGPKwAAAABJRU5ErkJggg=='
@@ -103,33 +110,26 @@ def main():
     
     canvas = window['-CANVAS-'].TKCanvas
 
-    backend = GuiBackend(canvas)
+    temp = pathlib.Path(folder).parent.resolve()
+    backend = PlotBackend(str(temp))
+    fig, _ = backend.get_figure()
+    figure_canvas_agg = FigureCanvasTkAgg(fig, canvas)
+    figure_canvas_agg.draw()
+    figure_canvas_agg.get_tk_widget().pack(side='top', fill='both', expand=1)
+
     # input('initialized backend')
     # loop reading the user input and displaying image, filename
     filenum, filename = 0, episode_files[0]
-    backend.load_data(filename)
-    temp = pathlib.Path(folder).parent.resolve()
-    backend.load_config(str(temp))
-    # input('about to start loop')
-    while True:
 
+    episode_data = load_data(filename)
+
+    # input('about to start loop')
+    # TODO: add in functionality to check which type of file it is and send in either the epidoe data OR the string to the folder
+    while True:
         event, values = window.read()
         backend.moving_avg = int(values['moving_avg'])
-        backend.succcess_range = int(values['success_range']) * 0.001
-        backend.finger = [values['f1'],values['f2']]
-        backend.distance = [values['d1'],values['d2'],values['d3'],values['d4']]
-        try:
-            backend.dscale = float(values['-distance_scale'])
-        except:
-            print('not valid, keeping old')
-        try:
-            backend.fscale = float(values['-contact_scale'])
-        except:
-            print('not valid, keeping old')
-        try:
-            backend.sscale = float(values['-success_reward'])
-        except:
-            print('not valid, keeping old')
+        success_range = int(values['success_range']) * 0.001
+        print(type(episode_data))
             # --------------------- Button & Keyboard ---------------------
         if event == sg.WIN_CLOSED:
             break
@@ -137,76 +137,108 @@ def main():
             filenum += 1
             filename = os.path.join(folder, filenames_only[filenum])
             window['-LISTBOX-'].update(set_to_index=filenum, scroll_to_index=filenum)
-            backend.load_data(filename)
+            episode_data = load_data(filename)
         elif event in ('MouseWheel:Up', 'Up:38', 'Prior:33') and filenum > 0:
             filenum -= 1
             filename = os.path.join(folder, filenames_only[filenum])
             window['-LISTBOX-'].update(set_to_index=filenum, scroll_to_index=filenum)
-            backend.load_data(filename)
+            episode_data = load_data(filename)
         elif event == 'Exit':
             break
         elif event == '-LISTBOX-':
             filename = os.path.join(folder, values['-LISTBOX-'][0])
             filenum = episode_files.index(filename)
-            backend.load_data(filename)
+            episode_data = load_data(filename)
         elif event == 'Object Path':
-            backend.draw_path()
+            backend.draw_path(episode_data)
+            figure_canvas_agg.draw()
         elif event == 'Finger Angles':
-            backend.draw_angles()
+            backend.draw_angles(episode_data)
+            figure_canvas_agg.draw()
         elif event == 'Actor Output':
-            backend.draw_actor_output()
+            backend.draw_actor_output(episode_data)
+            figure_canvas_agg.draw()
         elif event == 'Critic Output':
-            backend.draw_critic_output()
+            backend.draw_critic_output(episode_data)
+            figure_canvas_agg.draw()
         elif event == 'SimpleRewards':
-            backend.draw_distance_rewards()
+            backend.draw_distance_rewards(episode_data)
+            figure_canvas_agg.draw()
         elif event == 'ContactRewards':
-            backend.draw_contact_rewards()
+            backend.draw_contact_rewards(episode_data)
+            figure_canvas_agg.draw()
         elif event == 'FullRewards':
-            backend.draw_combined_rewards()
+            backend.draw_combined_rewards(episode_data)
+            figure_canvas_agg.draw()
         elif event == 'Explored Region':
-            backend.draw_explored_region()
+            backend.draw_explored_region(episode_data)
+            figure_canvas_agg.draw()
         elif event == 'Episode Rewards':
-            backend.draw_net_reward()
+            backend.draw_net_reward(episode_data)
+            figure_canvas_agg.draw()
         elif event == 'Finger Object Avg':
-            backend.draw_finger_obj_dist_avg()
+            backend.draw_finger_obj_dist_avg(episode_data)
+            figure_canvas_agg.draw()
         elif event == 'Path + Action':
-            backend.draw_asterisk()
+            backend.draw_asterisk(episode_data)
+            figure_canvas_agg.draw()
         elif event == 'Max Percent':
-            backend.draw_actor_max_percent()
+            backend.draw_actor_max_percent(episode_data)
+            figure_canvas_agg.draw()
         elif event == 'Success Rate':
-            backend.draw_success_rate()
+            backend.draw_success_rate(episode_data, success_range)
+            figure_canvas_agg.draw()
         elif event == 'Average Actor Values':
-            backend.draw_avg_actor_output()
+            backend.draw_avg_actor_output(episode_data)
+            figure_canvas_agg.draw()
         elif event == 'Ending Velocity':
-            backend.draw_ending_velocity()
+            backend.draw_ending_velocity(episode_data)
+            figure_canvas_agg.draw()
         elif event == 'Shortest Goal Dist':
-            backend.draw_shortest_goal_dist()
+            backend.draw_shortest_goal_dist(episode_data)
+            figure_canvas_agg.draw()
         elif event == 'Finger Object Max':
-            backend.draw_finger_obj_dist_max()
+            backend.draw_finger_obj_dist_max(episode_data)
+            figure_canvas_agg.draw()
         elif event == 'Asterisk Success':
-            backend.draw_goal_s_f()
+            backend.draw_goal_s_f(episode_data, success_range)
+            figure_canvas_agg.draw()
         elif event == 'Ending Goal Dist':
-            backend.draw_ending_goal_dist()  
+            backend.draw_ending_goal_dist(episode_data)  
+            figure_canvas_agg.draw()
         elif event == 'End Region':
-            backend.draw_end_region()
+            backend.draw_end_region(episode_data)
+            figure_canvas_agg.draw()
         elif event == 'Fingertip Route':
-            backend.draw_fingertip_path()
+            backend.draw_fingertip_path(episode_data)
+            figure_canvas_agg.draw()
         elif event == 'RewardSplit':
-            backend.draw_goal_rewards()
+            backend.draw_goal_rewards(episode_data)
+            figure_canvas_agg.draw()
         elif event =='Average Dist Reward':
-            backend.draw_net_distance_reward()
+            backend.draw_net_distance_reward(episode_data)
+            figure_canvas_agg.draw()
         elif event == 'Average Finger Tip':
-            backend.draw_net_finger_reward()
+            backend.draw_net_finger_reward(episode_data)
+            figure_canvas_agg.draw()
         elif event == 'End Dist':
-            backend.draw_scatter_end_dist()
+            backend.draw_scatter_end_dist(episode_data)
+            figure_canvas_agg.draw()
         elif event =='Contact Dist':
-            backend.draw_scatter_contact_dist()
+            backend.draw_scatter_contact_dist(episode_data)
+            figure_canvas_agg.draw()
         elif event == 'End Poses':
             cancan = sg.Window('Popup figure', [[sg.Canvas(size=(1280*2, 960*2),key='-CANVAS-')],[sg.Button('ok cool')]], finalize=True)
-            backend.draw_end_poses(cancan['-CANVAS-'].TKCanvas)
+            fig2, _ = backend.draw_end_poses(folder)
+            figure_canvas_agg2 = FigureCanvasTkAgg(fig2, cancan['-CANVAS-'].TKCanvas)
+            figure_canvas_agg2.draw()
+            figure_canvas_agg2.get_tk_widget().pack(side='top', fill='both', expand=1)
         elif event == 'Multireward':
             cancan = sg.Window('Popup figure', [[sg.Canvas(size=(1280*2, 960*2),key='-CANVAS-')],[sg.Button('ok cool')]], finalize=True)
-            backend.draw_multifigure_rewards(cancan['-CANVAS-'].TKCanvas)
+            fig2, _  = backend.draw_multifigure_rewards(episode_data)
+            figure_canvas_agg2 = FigureCanvasTkAgg(fig2, cancan['-CANVAS-'].TKCanvas)
+            figure_canvas_agg2.draw()
+            figure_canvas_agg2.get_tk_widget().pack(side='top', fill='both', expand=1)
             cancan.read()
         elif event == '-TOGGLE-GRAPHIC-':  # if the graphical button that changes images
             window['-TOGGLE-GRAPHIC-'].metadata = not window['-TOGGLE-GRAPHIC-'].metadata
@@ -215,16 +247,17 @@ def main():
         elif event == '-TOGGLE-REWARDS-':  # if the graphical button that changes images
             window['-TOGGLE-REWARDS-'].metadata = not window['-TOGGLE-REWARDS-'].metadata
             window['-TOGGLE-REWARDS-'].update(image_data=toggle_btn_on if window['-TOGGLE-REWARDS-'].metadata else toggle_btn_off)
-            backend.use_distance = not backend.use_distance
         elif event == 'Sampled Poses':
-            backend.draw_sampled_region()
+            backend.draw_sampled_region(episode_data)
+            figure_canvas_agg.draw()
         elif event == 'Draw Obj Contacts':
-            backend.draw_obj_contacts()
+            backend.draw_obj_contacts(episode_data)
+            figure_canvas_agg.draw()
         elif event == '-SAVE-':
             if '.png' in values['save_name']:
-                filename = values['save_name']
+                filename = './figs/'+values['save_name']
             else:
-                filename = values['save_name'] + '.png'
+                filename = './figs/'+values['save_name'] + '.png'
             save_element_as_file(window['-CANVAS-'], filename)
         elif event =='Select New Folder':
             # Get the folder containing the episodes
@@ -258,7 +291,7 @@ def main():
             episode_files = episode_files[sorted_inds].tolist()
             filenames_only = filenames_only[sorted_inds].tolist()
             filenum, filename = 0, episode_files[0]
-            backend.load_data(filename)
+            episode_data = load_data(filename)
             window['-LISTBOX-'].update(filenames_only)
             folder_location = os.path.abspath(episode_files[0])
             overall_path = pathlib.Path(folder_location).parent.resolve()
@@ -299,7 +332,7 @@ def main():
             episode_files = episode_files[sorted_inds].tolist()
             filenames_only = filenames_only[sorted_inds].tolist()
             filenum, filename = 0, episode_files[0]
-            backend.load_data(filename)
+            episode_data = load_data(filename)
             window['-LISTBOX-'].update(filenames_only)
             folder_location = os.path.abspath(episode_files[0])
             overall_path = pathlib.Path(folder_location).parent.resolve()

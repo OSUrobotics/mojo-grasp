@@ -247,10 +247,10 @@ class RecordDataPKL(RecordData):
         if self.save_episode_flag and self.data_path != None:
             if evaluated:
                 if filename is not None:
-                    file_path = self.data_path + "Test/"+ filename + str(self.eval_num) + '.pkl'
+                    file_path = self.data_path + "Test/"+ filename + '_' + str(self.eval_num) + '.pkl'
                 elif use_reward_name:
                     name = self.state.get_name()
-                    file_path = self.data_path + "Test/"+ name + str(self.eval_num) + '.pkl'
+                    file_path = self.data_path + "Test/"+ name + '_' + str(self.eval_num) + '.pkl'
                 else:
                     file_path = self.data_path + \
                         "Test/Evaluation_episode_" + str(self.eval_num) + ".pkl" 
