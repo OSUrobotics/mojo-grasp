@@ -23,8 +23,8 @@ def build_first_argument(folder_path, arg_dict):
         else:
             raise IndexError('No episode with episode number'+str(arg_dict['episode_number']))
     else:
-        
         if 'episode_all.pkl' in episode_files:
+            print('yep')
             datafile = load_data(os.path.join(file_path, 'episode_all.pkl'))
             return datafile
         else:
@@ -32,27 +32,27 @@ def build_first_argument(folder_path, arg_dict):
 
 plots_to_generate = [{'type':'net_reward','moving_average':20, 'folder':'Train'},
                      [{'type':'success_rate','moving_average':20, 'folder':'Train','success_threshold':10},{'type':'success_rate','moving_average':20, 'folder':'Train','success_threshold':5}],
-                     [{'type':'ending_goal_dist','moving_average':20, 'folder':'Train'},{'type':'shortest_goal_dist','moving_average':20, 'folder':'Train'}],
-                     {'type':'multifigure_rewards','folder':'Test','episode_number':0}]
+                     [{'type':'ending_goal_dist','moving_average':20, 'folder':'Train'},{'type':'shortest_goal_dist','moving_average':20, 'folder':'Train'}]]
 
 text_to_add = ['Net reward for this direction averaged across 20 episodes. Demonstrates the overall training.',
                'Success rate for this direction for both 5mm and 10 mm. Ideal should have full success at 5mm by end',
-               'Ending and minimum goal distance. Main purpose is to verify that both are reducing consistantly',
-               'Fingertip path for the trained model.']
+               'Ending and minimum goal distance. Main purpose is to verify that both are reducing consistantly']
 
 method_list = [attribute for attribute in dir(PlotBackend) if callable(getattr(PlotBackend, attribute)) and attribute.startswith('draw') is True]
 print(method_list)
 
 valid_types = [a[5:] for a in method_list]
-high_level = '/home/mothra/mojo-grasp/demos/rl_demo/data/single_direction_15_interp_reduced'
+high_level = '/home/mothra/mojo-grasp/demos/rl_demo/data/wedge_15'
 
 mid_levels = os.listdir(high_level)
 folder_path = os.path.join(high_level,mid_levels[0])
 plotter = PlotBackend(folder_path)
 plotter.clear_plots=False
+mid_levels.pop(1)
 for direction in mid_levels:
     folder_path = os.path.join(high_level,direction)
     plotter.load_config(folder_path)
+    print(direction)
     for i,desired_plot in enumerate(plots_to_generate):
         if type(desired_plot) is dict:
             if desired_plot['type'] in valid_types:
