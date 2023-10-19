@@ -33,11 +33,9 @@ def build_first_argument(folder_path, arg_dict):
 plots_to_generate = [{'type':'net_reward','moving_average':20, 'folder':'Train'},
                      [{'type':'success_rate','moving_average':20, 'folder':'Train','success_threshold':10},{'type':'success_rate','moving_average':20, 'folder':'Train','success_threshold':5}],
                      [{'type':'ending_goal_dist','moving_average':20, 'folder':'Train'},{'type':'shortest_goal_dist','moving_average':20, 'folder':'Train'}]]
-
 text_to_add = ['Net reward for this direction averaged across 20 episodes. Demonstrates the overall training.',
                'Success rate for this direction for both 5mm and 10 mm. Ideal should have full success at 5mm by end',
                'Ending and minimum goal distance. Main purpose is to verify that both are reducing consistantly']
-
 method_list = [attribute for attribute in dir(PlotBackend) if callable(getattr(PlotBackend, attribute)) and attribute.startswith('draw') is True]
 print(method_list)
 
@@ -81,7 +79,6 @@ for direction in mid_levels:
         if len(num_plots) > 1:
             plt.close(num_plots[-1])
     pdf_thing = FPDF()
-    # pdf_thing.add_page()
     pdf_thing.set_font('Times', '', 12)
     for i,text in enumerate(text_to_add):
         pdf_thing.add_page()

@@ -25,7 +25,10 @@ class GoalHolder():
         return {'goal_pose':self.pose[self.run_num%self.len]}
     
     def get_name(self):
-        return self.goal_names[self.run_num%self.len]
+        try:
+            return self.goal_names[self.run_num%self.len]
+        except TypeError:
+            return 'Evaluate'
     
     def next_run(self):
         self.run_num +=1
