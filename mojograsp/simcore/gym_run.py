@@ -92,9 +92,8 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None, acti
             df = pd.read_csv(args['points_path'], index_col=False)
             x = df["x"]
             y = df["y"]
-            xeval = [0.045, 0, -0.045, -0.06, -0.045, 0, 0.045, 0.06]
-            yeval = [-0.045, -0.06, -0.045, 0, 0.045, 0.06, 0.045, 0]
-            eval_names = ['SE','S','SW','W','NW','N','NE','E'] 
+            xeval = x
+            yeval = y
         elif args['task'] == 'forward':
             x= [0.0]
             y = [0.04]
@@ -203,6 +202,7 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None, acti
             # xeval = [0.045, 0, -0.045, -0.06, -0.045, 0, 0.045, 0.06]
             # yeval = [-0.045, -0.06, -0.045, 0, 0.045, 0.06, 0.045, 0]
             eval_names = ['eval']*500 
+    
     elif runtype=='replay':
         df = pd.read_csv(args['points_path'], index_col=False)
         x = df["x"]
@@ -261,7 +261,11 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None, acti
     else:    
         goal_poses = GoalHolder(pose_list)
 
-    eval_goal_poses = GoalHolder(eval_pose_list,eval_names)
+    try:
+        eval_goal_poses = GoalHolder(eval_pose_list,eval_names)
+    except NameError:
+        print('No names')
+        eval_goal_poses = GoalHolder(eval_pose_list)
     # time.sleep(10)
     # state, action and reward
     state = StateRL(objects=[hand, obj, goal_poses], prev_len=args['pv'],eval_goals = eval_goal_poses)
@@ -286,8 +290,9 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None, acti
     replay_buffer = ReplayBufferPriority(buffer_size=4080000)
     
     # environment and recording
-    env = rl_env.ExpertEnv(hand=hand, obj=obj, hand_type=arg_dict['hand'], rand_start=args['rstart'])
+    # env = rl_env.ExpertEnv(hand=hand, obj=obj, hand_type=arg_dict['hand'], rand_start=args['rstart'])
 
+    env = rl_env.SingleShapeEnv(hand=hand, obj=obj, hand_type=arg_dict['hand'], rand_start=args['rstart'])
     # env = rl_env.ExpertEnv(hand=hand, obj=cylinder)
     
     # Create phase
@@ -302,7 +307,7 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None, acti
     
     gym_env = rl_gym_wrapper.GymWrapper(env, manipulation, record_data, args)
     train_timesteps = args['evaluate']*(args['tsteps']+1)
-    callback = rl_gym_wrapper.EvaluateCallback(gym_env,n_eval_episodes=8, eval_freq=train_timesteps, best_model_save_path=args['save_path'])
+    callback = rl_gym_wrapper.EvaluateCallback(gym_env,n_eval_episodes=len(eval_pose_list), eval_freq=train_timesteps, best_model_save_path=args['save_path'])
     # gym_env = Monitor(gym_env,args['save_path']+'Test/')
     # p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 0)
     # p.configureDebugVisualizer(p.COV_ENABLE_GUI, 0)
@@ -393,7 +398,7 @@ def main():
     # run_pybullet(overall_path+'/demos/rl_demo/data/single_direction_updated_reward/backward_right/experiment_config.json',runtype='run')
 
     for name in file_list:
-        run_pybullet(overall_path + '/demos/rl_demo/data/wedge_15/wedge_' + name + '/experiment_config.json', runtype='run')
+        run_pybullet(overall_path + '/demos/rl_demo/data/single_direction_longer_training/' + name + '/experiment_config.json', runtype='run')
 
     #NOTE WE MAY WANT TO UPDATE THE MAGNITUDE OF THE MAXIMUM MOVEMENT TO BE 1/8 THE SIZE THAT IT WAS TO MATCH THE PREVIOUS SETUP
 
