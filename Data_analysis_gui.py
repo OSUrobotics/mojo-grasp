@@ -130,7 +130,7 @@ def main():
         event, values = window.read()
         backend.moving_avg = int(values['moving_avg'])
         success_range = int(values['success_range']) * 0.001
-        print(type(episode_data))
+        # print(type(episode_data))
             # --------------------- Button & Keyboard ---------------------
         if event == sg.WIN_CLOSED:
             break
@@ -175,7 +175,10 @@ def main():
             backend.draw_explored_region(episode_data)
             figure_canvas_agg.draw()
         elif event == 'Episode Rewards':
-            backend.draw_net_reward(episode_data)
+            if 'all' in filename:
+                backend.draw_net_reward(episode_data)
+            else:
+                backend.draw_net_reward(folder)
             figure_canvas_agg.draw()
         elif event == 'Finger Object Avg':
             backend.draw_finger_obj_dist_avg(episode_data)
@@ -187,7 +190,10 @@ def main():
             backend.draw_actor_max_percent(episode_data)
             figure_canvas_agg.draw()
         elif event == 'Success Rate':
-            backend.draw_success_rate(episode_data, success_range)
+            if 'all' in filename:
+                backend.draw_success_rate(episode_data, success_range)
+            else:
+                backend.draw_success_rate(folder, success_range)
             figure_canvas_agg.draw()
         elif event == 'Average Actor Values':
             backend.draw_avg_actor_output(episode_data)
@@ -196,7 +202,10 @@ def main():
             backend.draw_ending_velocity(episode_data)
             figure_canvas_agg.draw()
         elif event == 'Shortest Goal Dist':
-            backend.draw_shortest_goal_dist(episode_data)
+            if 'all' in filename:
+                backend.draw_shortest_goal_dist(episode_data)
+            else:
+                backend.draw_shortest_goal_dist(folder)
             figure_canvas_agg.draw()
         elif event == 'Finger Object Max':
             backend.draw_finger_obj_dist_max(episode_data)
@@ -205,10 +214,16 @@ def main():
             backend.draw_goal_s_f(episode_data, success_range)
             figure_canvas_agg.draw()
         elif event == 'Ending Goal Dist':
-            backend.draw_ending_goal_dist(episode_data)  
+            if 'all' in filename:
+                backend.draw_ending_goal_dist(episode_data)  
+            else:
+                backend.draw_ending_goal_dist(folder)
             figure_canvas_agg.draw()
         elif event == 'End Region':
-            backend.draw_end_region(episode_data)
+            if 'all' in filename:
+                backend.draw_end_region(episode_data)
+            else:
+                backend.draw_end_region(folder)
             figure_canvas_agg.draw()
         elif event == 'Fingertip Route':
             backend.draw_fingertip_path(episode_data)
@@ -223,10 +238,10 @@ def main():
             backend.draw_net_finger_reward(episode_data)
             figure_canvas_agg.draw()
         elif event == 'End Dist':
-            backend.draw_scatter_end_dist(episode_data)
+            backend.draw_scatter_end_dist(folder)
             figure_canvas_agg.draw()
         elif event =='Contact Dist':
-            backend.draw_scatter_contact_dist(episode_data)
+            backend.draw_scatter_contact_dist(folder)
             figure_canvas_agg.draw()
         elif event == 'End Poses':
             cancan = sg.Window('Popup figure', [[sg.Canvas(size=(1280*2, 960*2),key='-CANVAS-')],[sg.Button('ok cool')]], finalize=True)

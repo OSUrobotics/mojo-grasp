@@ -168,7 +168,6 @@ class ManipulationRL(Phase):
         return None
 
     def reset(self):
-        print('still reseting')
         # temp = list(range(len(self.x)))
         
         # shuffle(temp)

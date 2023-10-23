@@ -331,11 +331,38 @@ class PlotBackend():
          
         self.curr_graph = 'explored'
 
-    def draw_end_region(self, all_data_dict):
-        datapoints = []
-        for episode in all_data_dict['episode_list']:
-            data = episode['timestep_list']
-            datapoints.append(data[-1]['state']['obj_2']['pose'][0][0:2])
+    def draw_end_region(self, folder_or_data_dict):
+        if type(folder_or_data_dict) is str:
+            episode_files = [os.path.join(folder_or_data_dict, f) for f in os.listdir(folder_or_data_dict) if f.lower().endswith('.pkl')]
+            filenames_only = [f for f in os.listdir(folder_or_data_dict) if f.lower().endswith('.pkl')]
+            
+            filenums = [re.findall('\d+',f) for f in filenames_only]
+            final_filenums = []
+            for i in filenums:
+                if len(i) > 0 :
+                    final_filenums.append(int(i[0]))
+
+            sorted_inds = np.argsort(final_filenums)
+            final_filenums = np.array(final_filenums)
+            episode_files = np.array(episode_files)
+            filenames_only = np.array(filenames_only)
+            count = 0
+            episode_files = episode_files[sorted_inds].tolist()
+            datapoints = []
+            for episode_file in episode_files:
+                with open(episode_file, 'rb') as ef:
+                    tempdata = pkl.load(ef)
+
+                data = tempdata['timestep_list']
+                datapoints.append(data[-1]['state']['obj_2']['pose'][0][0:2])
+                if count% 100 ==0:
+                    print('count = ', count)
+                count +=1
+        elif type(folder_or_data_dict) is dict:
+            datapoints = []
+            for episode in folder_or_data_dict['episode_list']:
+                data = episode['timestep_list']
+                datapoints.append(data[-1]['state']['obj_2']['pose'][0][0:2])
         datapoints = np.array(datapoints)
         print('num poses', np.shape(datapoints))
         nbins=100
@@ -346,8 +373,6 @@ class PlotBackend():
         print('did the gaussian')
         xlim = [np.min(datapoints[:,0]), np.max(datapoints[:,0])]
         ylim = [np.min(datapoints[:,1]), np.max(datapoints[:,1])]
-        # xlim = [min(xlim[0],-0.07), max(xlim[1],0.07)]
-        # ylim = [min(ylim[0],0.1), max(ylim[1],0.22)]
         xlim = [-0.1, 0.1]
         ylim = [0.06, 0.26]
         xi, yi = np.mgrid[xlim[0]:xlim[1]:nbins*1j, ylim[0]:ylim[1]:nbins*1j]
@@ -1477,11 +1502,11 @@ class PlotBackend():
         axes[0,1].set_xlabel('X pos (m)')
         axes[0,1].set_ylabel('Y pos (m)')
         
-        axes[1,1].plot(range(len(f1_reward)), -f1_reward)
-        axes[1,1].plot(range(len(f1_reward)), -f2_reward)
-        axes[1,1].set_ylim([-max_dists-0.001, -min_dists+0.001])
-        axes[1,0].plot(range(len(f1_reward)), -dist_reward)
-        axes[1,0].set_ylim([-max_dists-0.001, -min_dists+0.001])
+        axes[1,1].plot(range(len(f1_reward)), f1_reward)
+        axes[1,1].plot(range(len(f1_reward)), f2_reward)
+        axes[1,1].set_ylim([min_dists-0.001, max_dists+0.001])
+        axes[1,0].plot(range(len(f1_reward)), dist_reward)
+        axes[1,0].set_ylim([min_dists-0.001, max_dists+0.001])
         axes[0,0].plot(range(len(f1_reward)), overall_reward)
         axes[1,1].set_title('Contact Distances')
         axes[1,0].set_title('Object Goal Distance')
@@ -1530,7 +1555,6 @@ class PlotBackend():
             if len(i) > 0 :
                 final_filenums.append(int(i[0]))
         
-        
         sorted_inds = np.argsort(final_filenums)
         final_filenums = np.array(final_filenums)
         episode_files = np.array(episode_files)
@@ -1563,10 +1587,12 @@ class PlotBackend():
             else:
                 fucked.append(pose)
         
-        small_pose = np.array(small_pose)
+        
 
         ax1.scatter(goals[:,0]*100, goals[:,1]*100)
+        self.legend.append('goal poses')
         if len(fucked)>0:
+            
             fucked = np.array(fucked)
             ax1.scatter(fucked[:,0]*100, fucked[:,1]*100)
             self.legend.extend(['> '+str(big_thold*100)+' cm'])
@@ -1578,8 +1604,10 @@ class PlotBackend():
             med_pose = np.array(med_pose)
             ax1.scatter(med_pose[:,0]*100, med_pose[:,1]*100)
             self.legend.extend(['<= '+str(med_thold*100)+' cm'])
-        ax1.scatter(small_pose[:,0]*100, small_pose[:,1]*100)
-        self.legend.extend(['<= '+str(small_thold*100)+' cm'])
+        if len(small_pose)>0:
+            small_pose = np.array(small_pose)
+            ax1.scatter(small_pose[:,0]*100, small_pose[:,1]*100)
+            self.legend.extend(['<= '+str(small_thold*100)+' cm'])
         ax2.bar(['<0.5 cm','<1 cm','<2 cm','>2 cm'], [len(small_pose),len(med_pose),len(large_pose), len(fucked)])
         plt.tight_layout()
         # self.legend.extend(['Ending Goal Distance'])
@@ -1590,6 +1618,7 @@ class PlotBackend():
         ax1.set_ylim([-7,7])
         ax1.set_title('Distance to Goals')
         ax1.grid(False)
+        
         ax1.legend(self.legend)
          
         self.curr_graph = 'scatter'

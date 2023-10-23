@@ -317,7 +317,7 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None, acti
     else:
         ent = 0.0
     if runtype == 'run':
-        wandb.init(project = 'StableBaselinesWandBTest')
+        # wandb.init(project = 'StableBaselinesWandBTest')
         
         model = PPO("MlpPolicy", gym_env, tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-2.3}, ent_coef=ent,learning_rate=linear_schedule(1e-5))
 
@@ -398,7 +398,7 @@ def main():
     # run_pybullet(overall_path+'/demos/rl_demo/data/single_direction_updated_reward/backward_right/experiment_config.json',runtype='run')
 
     for name in file_list:
-        run_pybullet(overall_path + '/demos/rl_demo/data/single_direction_longer_training/' + name + '/experiment_config.json', runtype='run')
+        run_pybullet(overall_path + '/demos/rl_demo/data/wedge_longer/wedge_' + name + '/experiment_config.json', runtype='eval')
 
     #NOTE WE MAY WANT TO UPDATE THE MAGNITUDE OF THE MAXIMUM MOVEMENT TO BE 1/8 THE SIZE THAT IT WAS TO MATCH THE PREVIOUS SETUP
 
