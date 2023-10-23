@@ -46,7 +46,7 @@ mid_levels = os.listdir(high_level)
 folder_path = os.path.join(high_level,mid_levels[0])
 plotter = PlotBackend(folder_path)
 plotter.clear_plots=False
-mid_levels.pop(1)
+# mid_levels.pop(1)
 for direction in mid_levels:
     folder_path = os.path.join(high_level,direction)
     plotter.load_config(folder_path)

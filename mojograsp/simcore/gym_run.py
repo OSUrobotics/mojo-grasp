@@ -211,7 +211,7 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None, acti
         yeval = [-0.045, -0.06, -0.045, 0, 0.045, 0.06, 0.045, 0]
         eval_names = ['SE','S','SW','W','NW','N','NE','E'] 
         if action_list == None:
-            with open('/home/mothra/mojo-grasp/demos/rl_demo/data/ftp_friction_fuckery/Train/episode_99977.pkl','rb') as fol:
+            with open('/home/mothra/mojo-grasp/demos/rl_demo/data/wedge_longer/wedge_left/Test/Evaluate_24938.pkl','rb') as fol:
                 data = pkl.load(fol)
             action_list = data#np.array(data)
     names = ['AsteriskSE.pkl','AsteriskS.pkl','AsteriskSW.pkl','AsteriskW.pkl','AsteriskNW.pkl','AsteriskN.pkl','AsteriskNE.pkl','AsteriskE.pkl']
@@ -367,13 +367,15 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None, acti
             obs = gym_env.reset()
             for step in range((args['tsteps']+1)):
                 # action, _ = model.predict(obs, deterministic=True)
-                print(action_list)
+                # print()
                 action = actions[step]
                 # print("Step {}".format(step + 1))
+                print('step: ',step)
                 # print("Action: ", action, type(action))
                 # mirrored_action = np.array([-action[2], action[3],-action[0],action[1]])
                 obs, reward, done, info = gym_env.step(np.array(action),viz=True)
                 # print('obs=', obs, 'reward=', reward, 'done=', done)
+                time.sleep(0.1)
                 # env.render(mode='console')
     p.disconnect()
 
@@ -388,6 +390,7 @@ def main():
 
     # run_pybullet(overall_path+'/demos/rl_demo/data/wedge/wedge_badckward/experiment_config.json',runtype='run')
     file_list = ['forward','forward_right','right','backward_right','backward','backward_left','left','forward_left']
+    trimmed_list = ['forward','backward_right','left','forward_left']
     # run_pybullet(overall_path+'/demos/rl_demo/data/single_direction_updated_reward/forward/experiment_config.json',runtype='run')
     # run_pybullet(overall_path+'/demos/rl_demo/data/single_direction_updated_reward/backward/experiment_config.json',runtype='run')
     # run_pybullet(overall_path+'/demos/rl_demo/data/single_direction_updated_reward/left/experiment_config.json',runtype='run')
@@ -396,9 +399,9 @@ def main():
     # run_pybullet(overall_path+'/demos/rl_demo/data/single_direction_updated_reward/forward_right/experiment_config.json',runtype='run')
     # run_pybullet(overall_path+'/demos/rl_demo/data/single_direction_updated_reward/backward_left/experiment_config.json',runtype='run')
     # run_pybullet(overall_path+'/demos/rl_demo/data/single_direction_updated_reward/backward_right/experiment_config.json',runtype='run')
-
-    for name in file_list:
-        run_pybullet(overall_path + '/demos/rl_demo/data/wedge_longer/wedge_' + name + '/experiment_config.json', runtype='eval')
+    # run_pybullet(overall_path + '/demos/rl_demo/data/wedge_longer/wedge_left/experiment_config.json', runtype='replay', episode_number=24938)
+    for name in trimmed_list:
+        run_pybullet(overall_path + '/demos/rl_demo/data/wedge_longer/wedge_' + name + '/experiment_config.json', runtype='run')
 
     #NOTE WE MAY WANT TO UPDATE THE MAGNITUDE OF THE MAXIMUM MOVEMENT TO BE 1/8 THE SIZE THAT IT WAS TO MATCH THE PREVIOUS SETUP
 
