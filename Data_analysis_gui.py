@@ -172,8 +172,12 @@ def main():
             backend.draw_combined_rewards(episode_data)
             figure_canvas_agg.draw()
         elif event == 'Explored Region':
-            backend.draw_explored_region(episode_data)
-            figure_canvas_agg.draw()
+            if 'all' in filename:
+                backend.draw_explored_region(episode_data)
+                figure_canvas_agg.draw()
+            else:
+                print('episode all not selected, cant do it')
+            
         elif event == 'Episode Rewards':
             if 'all' in filename:
                 backend.draw_net_reward(episode_data)
@@ -181,13 +185,19 @@ def main():
                 backend.draw_net_reward(folder)
             figure_canvas_agg.draw()
         elif event == 'Finger Object Avg':
-            backend.draw_finger_obj_dist_avg(episode_data)
+            if 'all' in filename:
+                backend.draw_finger_obj_dist_avg(episode_data)
+            else:
+                backend.draw_finger_obj_dist_avg(folder)
             figure_canvas_agg.draw()
         elif event == 'Path + Action':
-            backend.draw_asterisk(episode_data)
+            if 'all' in filename:
+                backend.draw_asterisk(episode_data)
+            else:
+                backend.draw_asterisk(folder)
             figure_canvas_agg.draw()
         elif event == 'Max Percent':
-            backend.draw_actor_max_percent(episode_data)
+            backend.draw_actor_max_percent(folder)
             figure_canvas_agg.draw()
         elif event == 'Success Rate':
             if 'all' in filename:
@@ -196,10 +206,16 @@ def main():
                 backend.draw_success_rate(folder, success_range)
             figure_canvas_agg.draw()
         elif event == 'Average Actor Values':
-            backend.draw_avg_actor_output(episode_data)
+            if 'all' in filename:
+                backend.draw_avg_actor_output(episode_data)
+            else:
+                backend.draw_avg_actor_output(folder)
             figure_canvas_agg.draw()
         elif event == 'Ending Velocity':
-            backend.draw_ending_velocity(episode_data)
+            if 'all' in filename:
+                backend.draw_ending_velocity(episode_data)
+            else:
+                print('Try again with episode all selected')
             figure_canvas_agg.draw()
         elif event == 'Shortest Goal Dist':
             if 'all' in filename:
@@ -208,7 +224,10 @@ def main():
                 backend.draw_shortest_goal_dist(folder)
             figure_canvas_agg.draw()
         elif event == 'Finger Object Max':
-            backend.draw_finger_obj_dist_max(episode_data)
+            if 'all' in filename:
+                backend.draw_finger_obj_dist_max(episode_data)
+            else:
+                backend.draw_finger_obj_dist_max(folder)
             figure_canvas_agg.draw()
         elif event == 'Asterisk Success':
             backend.draw_goal_s_f(episode_data, success_range)
@@ -229,13 +248,22 @@ def main():
             backend.draw_fingertip_path(episode_data)
             figure_canvas_agg.draw()
         elif event == 'RewardSplit':
-            backend.draw_goal_rewards(episode_data)
+            if 'all' in filename:
+                backend.draw_goal_rewards(episode_data)
+            else:
+                print('Nope, needs to be episode all')
             figure_canvas_agg.draw()
         elif event =='Average Dist Reward':
-            backend.draw_net_distance_reward(episode_data)
+            if 'all' in filename:
+                backend.draw_net_distance_reward(episode_data)
+            else:
+                backend.draw_net_distance_reward(folder)
             figure_canvas_agg.draw()
         elif event == 'Average Finger Tip':
-            backend.draw_net_finger_reward(episode_data)
+            if "all" in filename:
+                backend.draw_net_finger_reward(episode_data)
+            else:
+                backend.draw_net_finger_reward(folder)
             figure_canvas_agg.draw()
         elif event == 'End Dist':
             backend.draw_scatter_end_dist(folder)

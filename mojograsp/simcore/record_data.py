@@ -314,5 +314,3 @@ class RecordDataRLPKL(RecordDataPKL):
         self.timesteps.append(timestep_dict)
         self.timestep_num += 1
         
-        
-        
