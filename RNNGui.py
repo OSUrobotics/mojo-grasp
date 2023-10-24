@@ -341,6 +341,14 @@ class RNNGui():
                 os.mkdir(self.args['save_path'] + '/Videos/')
             except FileExistsError:
                 pass
+            try:
+                os.mkdir(self.args['save_path'] + '/Plots/')
+            except FileExistsError:
+                pass
+            try:
+                os.mkdir(self.args['save_path'] + '/Eval/')
+            except FileExistsError:
+                pass
         else:
             print('config not built, parameters not saved')
 

@@ -208,7 +208,11 @@ class PlotBackend():
     def draw_critic_output(self, data_dict):
         episode_number = data_dict['number']
         data = data_dict['timestep_list']
-        critic_list = [f['control']['critic_output'] for f in data]
+        try:
+            critic_list = [f['control']['critic_output'] for f in data]
+        except TypeError:
+            print('pkl file does not contain critic data')
+            return
         print(critic_list[0])
         if self.clear_plots | (self.curr_graph != 'rewards'):
             self.clear_axes()
@@ -315,9 +319,7 @@ class PlotBackend():
             if zi[i] <1:
                 zi[i] = term
         self.clear_axes()
-         
-        if self.colorbar:
-            self.colorbar.remove()
+
         print('about to do the colormesh')
         c = self.ax.pcolormesh(xi, yi, zi.reshape(xi.shape), shading='auto')
 
@@ -384,8 +386,6 @@ class PlotBackend():
                 zi[i] = term
         self.clear_axes()
          
-        if self.colorbar:
-            self.colorbar.remove()
         print('about to do the colormesh')
         c = self.ax.pcolormesh(xi, yi, zi.reshape(xi.shape), shading='auto')
 
@@ -418,8 +418,6 @@ class PlotBackend():
                     zi[i,j] = term
         self.clear_axes()
          
-        if self.colorbar:
-            self.colorbar.remove()
         print('about to do the colormesh')
         c = self.ax.pcolormesh(xi, yi, zi, shading='auto')
         end = time.time()
@@ -572,14 +570,53 @@ class PlotBackend():
         self.curr_graph = 'Group_Reward'
         return return_rewards
 
-    def draw_finger_obj_dist_avg(self, all_data_dict):
-        finger_obj_avgs = np.zeros((len(all_data_dict['episode_list']),2))
-        for i, episode in enumerate(all_data_dict['episode_list']):
-            data = episode['timestep_list']
-            finger_obj_dists = np.zeros((len(data),2))
-            for j, timestep in enumerate(data):
-                finger_obj_dists[j,:]=[timestep['reward']['f1_dist'],timestep['reward']['f2_dist']]
-            finger_obj_avgs[i] = np.average(finger_obj_dists, axis=0)
+    def draw_finger_obj_dist_avg(self, folder_or_data_dict):
+        if type(folder_or_data_dict) is str:
+            print('this will be slow, and we both know it')
+            
+            # get list of pkl files in folder
+            episode_files = [os.path.join(folder_or_data_dict, f) for f in os.listdir(folder_or_data_dict) if f.lower().endswith('.pkl')]
+            filenames_only = [f for f in os.listdir(folder_or_data_dict) if f.lower().endswith('.pkl')]
+            
+            filenums = [re.findall('\d+',f) for f in filenames_only]
+            final_filenums = []
+            for i in filenums:
+                if len(i) > 0 :
+                    final_filenums.append(int(i[0]))
+            
+            
+            sorted_inds = np.argsort(final_filenums)
+            final_filenums = np.array(final_filenums)
+            temp = final_filenums[sorted_inds]
+            episode_files = np.array(episode_files)
+            filenames_only = np.array(filenames_only)
+
+            episode_files = episode_files[sorted_inds].tolist()
+            # filenames_only = filenames_only[sorted_inds].tolist()
+            rewards = []
+            temp = 0
+            count = 0
+            finger_obj_avgs= np.zeros((len(episode_files),2))
+            for i,episode_file in enumerate(episode_files):
+                with open(episode_file, 'rb') as ef:
+                    tempdata = pkl.load(ef)
+                data = tempdata['timestep_list']
+                finger_obj_dists = np.zeros((len(data),2))
+                for j, timestep in enumerate(data):
+                    finger_obj_dists[j,:]=[timestep['reward']['f1_dist'],timestep['reward']['f2_dist']]
+                finger_obj_avgs[i] = np.average(finger_obj_dists, axis=0)
+                temp = 0
+                if count% 100 ==0:
+                    print('count = ', count)
+                count +=1
+        elif type(folder_or_data_dict) is dict:
+            finger_obj_avgs = np.zeros((len(folder_or_data_dict['episode_list']),2))
+            for i, episode in enumerate(folder_or_data_dict['episode_list']):
+                data = episode['timestep_list']
+                finger_obj_dists = np.zeros((len(data),2))
+                for j, timestep in enumerate(data):
+                    finger_obj_dists[j,:]=[timestep['reward']['f1_dist'],timestep['reward']['f2_dist']]
+                finger_obj_avgs[i] = np.average(finger_obj_dists, axis=0)
         
         if self.moving_avg != 1:
             t1 = moving_average(finger_obj_avgs[:,0],self.moving_avg)
@@ -601,14 +638,53 @@ class PlotBackend():
          
         self.curr_graph = 'fing_obj_dist'
 
-    def draw_finger_obj_dist_max(self, all_data_dict):
-        finger_obj_maxs = np.zeros((len(all_data_dict['episode_list']),2))
-        for i, episode in enumerate(all_data_dict['episode_list']):
-            data = episode['timestep_list']
-            finger_obj_dists = np.zeros((len(data),2))
-            for j, timestep in enumerate(data):
-                finger_obj_dists[j,:]=[timestep['reward']['f1_dist'],timestep['reward']['f2_dist']]
-            finger_obj_maxs[i] = np.max(finger_obj_dists, axis=0)
+    def draw_finger_obj_dist_max(self, folder_or_data_dict):
+        if type(folder_or_data_dict) is str:
+            print('this will be slow, and we both know it')
+            
+            # get list of pkl files in folder
+            episode_files = [os.path.join(folder_or_data_dict, f) for f in os.listdir(folder_or_data_dict) if f.lower().endswith('.pkl')]
+            filenames_only = [f for f in os.listdir(folder_or_data_dict) if f.lower().endswith('.pkl')]
+            
+            filenums = [re.findall('\d+',f) for f in filenames_only]
+            final_filenums = []
+            for i in filenums:
+                if len(i) > 0 :
+                    final_filenums.append(int(i[0]))
+            
+            
+            sorted_inds = np.argsort(final_filenums)
+            final_filenums = np.array(final_filenums)
+            temp = final_filenums[sorted_inds]
+            episode_files = np.array(episode_files)
+            filenames_only = np.array(filenames_only)
+
+            episode_files = episode_files[sorted_inds].tolist()
+            # filenames_only = filenames_only[sorted_inds].tolist()
+            rewards = []
+            temp = 0
+            count = 0
+            finger_obj_maxs= np.zeros((len(episode_files),2))
+            for i,episode_file in enumerate(episode_files):
+                with open(episode_file, 'rb') as ef:
+                    tempdata = pkl.load(ef)
+                data = tempdata['timestep_list']
+                finger_obj_dists = np.zeros((len(data),2))
+                for j, timestep in enumerate(data):
+                    finger_obj_dists[j,:]=[timestep['reward']['f1_dist'],timestep['reward']['f2_dist']]
+                finger_obj_maxs[i] = np.max(finger_obj_dists, axis=0)
+                temp = 0
+                if count% 100 ==0:
+                    print('count = ', count)
+                count +=1
+        elif type(folder_or_data_dict) is dict:
+            finger_obj_maxs = np.zeros((len(folder_or_data_dict['episode_list']),2))
+            for i, episode in enumerate(folder_or_data_dict['episode_list']):
+                data = episode['timestep_list']
+                finger_obj_dists = np.zeros((len(data),2))
+                for j, timestep in enumerate(data):
+                    finger_obj_dists[j,:]=[timestep['reward']['f1_dist'],timestep['reward']['f2_dist']]
+                finger_obj_maxs[i] = np.max(finger_obj_dists, axis=0)
 
         if self.moving_avg != 1:
             t1 = moving_average(finger_obj_maxs[:,0],self.moving_avg)
@@ -1322,9 +1398,7 @@ class PlotBackend():
 
             data = tempdata['timestep_list']
             goals.append(data[0]['state']['goal_pose']['goal_pose'][0:2])
-            end_dists.append(data[-1]['reward']['distance_to_goal'])
-        if self.colorbar:
-            self.colorbar.remove()        
+            end_dists.append(data[-1]['reward']['distance_to_goal']) 
         self.clear_axes()
          
         
@@ -1380,8 +1454,6 @@ class PlotBackend():
             finger_max_dists.append(max_dists)
             timesteps_until_lost_contact.append(lost_contact)
             goal_positions.append(goal_position)
-        if self.colorbar:
-            self.colorbar.remove()
         self.clear_axes()
          
         
@@ -1625,10 +1697,11 @@ class PlotBackend():
         return fig, (ax1, ax2)
     
     def clear_axes(self):
+        if self.colorbar:
+            self.colorbar.remove()  
+            self.colorbar = None
         self.ax.cla()
         self.legend = []
-        if self.colorbar:
-            self.colorbar.remove()      
 
     def get_figure(self):
         return self.fig, self.ax

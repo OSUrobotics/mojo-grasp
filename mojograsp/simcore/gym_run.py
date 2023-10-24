@@ -333,23 +333,14 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None, acti
     elif runtype == 'eval':
         model = PPO("MlpPolicy", gym_env, tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-1}).load(args['save_path']+'best_model')
         gym_env.evaluate()
-        # obj_pos = [0.0, 0.1, 0.05]
-        # joint_angs = [ -.85,1.3,0.85,-1.3]
-            # p.resetJointState(hand_id, 0, -.725)
-            # p.resetJointState(hand_id, 1, 1.45)
-            # p.resetJointState(hand_id, 3, .725)
-            # p.resetJointState(hand_id, 4, -1.45)
+
         for _ in range(5):
             obs = gym_env.reset()
             done = False
             while not done:
                 action, _ = model.predict(obs, deterministic=True)
-                # print("Step {}".format(step + 1))
-                # print("Action: ", action, type(action))
                 mirrored_action = np.array([-action[2], action[3],-action[0],action[1]])
-                # print('mirrored action: ', mirrored_action)
                 obs, reward, done, info = gym_env.step(action)
-                # print('obs=', obs, 'reward=', reward, 'done=', done)
 
     elif runtype == 'cont':
         pass
@@ -360,7 +351,6 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None, acti
     elif runtype == 'replay':
         gym_env.evaluate()
         actions = []
-        print(action_list['timestep_list'])
         actions = [a['action']['actor_output'] for a in action_list['timestep_list']]
             
         for _ in range(1):
