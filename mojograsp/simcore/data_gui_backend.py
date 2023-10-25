@@ -1664,8 +1664,6 @@ class PlotBackend():
                 large_pose.append(pose)
             else:
                 fucked.append(pose)
-        
-        
 
         ax1.scatter(goals[:,0]*100, goals[:,1]*100)
         self.legend.append('goal poses')
@@ -1702,6 +1700,49 @@ class PlotBackend():
         self.curr_graph = 'scatter'
         return fig, (ax1, ax2)
     
+    def draw_aout_comparison(self, data_dict):
+        episode_number = data_dict['number']
+        data = data_dict['timestep_list']
+        fingertip1_points = [f['state']['f1_pos'] for f in data]
+        fingertip2_points = [f['state']['f2_pos'] for f in data]
+        finger1_diff = [[fingertip1_points[i+1][0] - fingertip1_points[i][0],fingertip1_points[i+1][1] - fingertip1_points[i][1]]  for i in range(len(fingertip1_points)-1)]
+        finger2_diff = [[fingertip2_points[i+1][0] - fingertip2_points[i][0],fingertip2_points[i+1][1] - fingertip2_points[i][1]]  for i in range(len(fingertip2_points)-1)]
+
+        current_angle_dict = [f['state']['two_finger_gripper']['joint_angles'] for f in data]
+        current_angle_list = []
+        prev_angles = None
+        for angle in current_angle_dict:
+            temp = [angs for angs in angle.values()]
+            if prev_angles is not None:
+                current_angle_list.append(prev_angles-np.array(temp))        
+            prev_angles = np.array(temp)
+        current_angle_list = np.array(current_angle_list)/0.01/80
+        finger1_diff = np.array(finger1_diff)/0.001/80
+        finger2_diff = np.array(finger2_diff)/0.001/80
+        print(finger1_diff,finger2_diff,current_angle_list)
+        
+        if self.clear_plots | (self.curr_graph !='aout'):
+            self.clear_axes()
+            
+        self.ax.plot(range(len(current_angle_list)),current_angle_list[:,0])
+        self.ax.plot(range(len(current_angle_list)),current_angle_list[:,1])
+        self.ax.plot(range(len(current_angle_list)),current_angle_list[:,2])
+        self.ax.plot(range(len(current_angle_list)),current_angle_list[:,3])
+        self.ax.plot(range(len(finger1_diff)),finger1_diff[:,0])
+        self.ax.plot(range(len(finger1_diff)),finger1_diff[:,1])
+        self.ax.plot(range(len(finger2_diff)),finger2_diff[:,0])
+        self.ax.plot(range(len(finger2_diff)),finger2_diff[:,1])
+        self.legend.extend(['Right Proximal - episode '+str( episode_number), 
+                            'Right Distal - episode '+str( episode_number), 
+                            'Left Proximal - episode '+str( episode_number), 
+                            'Left Distal - episode '+str( episode_number)])
+        self.legend.extend(['Right X - episode ' + str( episode_number), 
+                            'Right Y - episode ' + str( episode_number), 
+                            'Left X - episode ' + str( episode_number), 
+                            'Left Y - episode ' + str( episode_number)])
+        self.curr_graph = 'aout'
+        self.ax.legend(self.legend)
+        
     def clear_axes(self):
         if self.colorbar:
             self.colorbar.remove()  
