@@ -1504,6 +1504,12 @@ class PlotBackend():
             temp = -reward_container['distance_to_goal']/reward_container['start_dist'] * (1 + 4*reward_container['plane_side'])
             # print(reward_container['plane_side'])
             tstep_reward = temp*float(self.config['distance_scaling']) - ftemp*float(self.config['contact_scaling'])
+        elif self.REWARD_TYPE == 'ScaledDistance+ScaledFinger':
+            ftemp = -max(reward_container['f1_dist'], reward_container['f2_dist']) * 100 # 100 here to make ftemp = -1 when at 1 cm
+            temp = -reward_container['distance_to_goal']/reward_container['start_dist'] # should scale this so that it is -1 at start 
+            ftemp,temp = max(ftemp,-2), max(temp, -2)
+            # print(reward_container['plane_side'])
+            tstep_reward = temp*self.DISTANCE_SCALING - ftemp*self.CONTACT_SCALING
         elif self.config['reward'] == 'SFS':
             tstep_reward = reward_container['slope_to_goal'] * float(self.config['distance_scaling']) - max(reward_container['f1_dist'],reward_container['f2_dist'])*float(self.config['contact_scaling'])
             if (reward_container['distance_to_goal'] < float(self.config['sr'])/1000) & (np.linalg.norm(reward_container['object_velocity']) <= 0.05):

@@ -217,15 +217,12 @@ class RecordDataPKL(RecordData):
         self.timesteps.append(timestep_dict)
         self.timestep_num += 1
 
-    def record_episode(self,evaluated=False):
+    def record_episode(self,episode_type='train'):
         """
         Method called by :func:`~mojograsp.simcore.sim_manager.SimManager` after every episode. Compiles all of the 
         timestep dictionaries into a list and adds it to the episode dicionary. 
         """
-        if evaluated:
-            episode = {"number": -self.episode_num}
-        else:
-            episode = {"number": self.episode_num+1}
+        episode = {"number": self.episode_num+1}
         episode["timestep_list"] = self.timesteps
         
         self.current_episode = episode
@@ -235,17 +232,17 @@ class RecordDataPKL(RecordData):
 
         self.timesteps = []
         self.timestep_num = 1
-        if not evaluated:
+        if episode_type != 'train':
             self.episode_num += 1
             self.eval_num = self.episode_num
 
-    def save_episode(self,evaluated=False, filename=None, use_reward_name=False):
+    def save_episode(self,episode_type='train', filename=None, use_reward_name=False):
         """
         Method called by :func:`~mojograsp.simcore.sim_manager.SimManager` after every episode. Saves the most recent
         episode dictionary to a pkl file. 
         """
         if self.save_episode_flag and self.data_path != None:
-            if evaluated:
+            if episode_type == 'test':
                 if filename is not None:
                     file_path = self.data_path + "Test/"+ filename + '_' + str(self.eval_num) + '.pkl'
                 elif use_reward_name:
@@ -257,12 +254,19 @@ class RecordDataPKL(RecordData):
                     
                 self.eval_num +=1
                 print('save episode evaluated', self.eval_num)
-            else:
+            elif episode_type == 'train':
                 if filename is None:
                     file_path = self.data_path + 'Train/' + \
                         self.data_prefix + "_" + str(self.episode_num) + ".pkl"
                 else:
                     file_path = self.data_path + 'Train/' +  filename
+            elif episode_type == 'eval':
+                if filename is None:
+                    file_path = self.data_path + 'Eval/' + \
+                        self.data_prefix + "_" + str(self.episode_num) + ".pkl"
+                else:
+                    file_path = self.data_path + 'Eval/' +  filename
+
             print(file_path, len(self.current_episode['timestep_list']))
             
             with open(file_path, 'wb') as fout:

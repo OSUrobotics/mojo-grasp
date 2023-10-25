@@ -90,6 +90,7 @@ class GymWrapper(gym.Env):
         self.timestep = 0
         self.first = True
         self.small_enough = args['epochs'] <= 100000
+        self.episode_type = 'train'
         try:
             self.SUCCESS_REWARD = args['success_reward']
         except KeyError:
@@ -180,11 +181,11 @@ class GymWrapper(gym.Env):
         if done:
             # print('done, recording stuff')
             if self.eval or self.small_enough:
-                self.record.record_episode(self.eval)
+                self.record.record_episode(self.episode_type)
                 if self.eval:
-                    self.record.save_episode(self.eval, use_reward_name=True)
+                    self.record.save_episode(self.episode_type, use_reward_name=True)
                 else:
-                    self.record.save_episode(self.eval)
+                    self.record.save_episode(self.episode_type)
 
         self.timestep +=1
         return state, reward, done, info
@@ -377,6 +378,12 @@ class GymWrapper(gym.Env):
             temp = -reward_container['distance_to_goal']/reward_container['start_dist'] * (1 + 4*reward_container['plane_side'])
             # print(reward_container['plane_side'])
             tstep_reward = temp*self.DISTANCE_SCALING - ftemp*self.CONTACT_SCALING
+        elif self.REWARD_TYPE == 'ScaledDistance+ScaledFinger':
+            ftemp = -max(reward_container['f1_dist'], reward_container['f2_dist']) * 100 # 100 here to make ftemp = -1 when at 1 cm
+            temp = -reward_container['distance_to_goal']/reward_container['start_dist'] # should scale this so that it is -1 at start 
+            ftemp,temp = max(ftemp,-2), max(temp, -2)
+            # print(ftemp,temp)
+            tstep_reward = temp*self.DISTANCE_SCALING - ftemp*self.CONTACT_SCALING
         elif self.REWARD_TYPE == 'SFS':
             tstep_reward = reward_container['slope_to_goal'] * self.DISTANCE_SCALING - max(reward_container['f1_dist'],reward_container['f2_dist'])*self.CONTACT_SCALING
             if (reward_container['distance_to_goal'] < self.SUCCESS_THRESHOLD) & (np.linalg.norm(reward_container['object_velocity']) <= 0.05):
@@ -416,6 +423,7 @@ class GymWrapper(gym.Env):
         self.manipulation_phase.state.objects[-1].run_num = 0
         self.manipulation_phase.eval = True
         self.record.clear()
+        self.episode_type = 'test'
         
     def train(self):
         self.eval = False
@@ -423,3 +431,4 @@ class GymWrapper(gym.Env):
         self.manipulation_phase.state.train()
         self.manipulation_phase.state.reset()
         self.reset()
+        self.episode_type = 'train'
