@@ -329,6 +329,14 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None, acti
         d.load_limited()
         d.save_all()
         model.save(args['save_path']+'best_model')
+        gym_env.eval()
+        gym_env.episode_type = 'eval'
+        for _ in range(len(eval_goal_poses)):
+            obs = gym_env.reset()
+            done = False
+            while not done:
+                action, _ = model.predict(obs, deterministic=True)
+                obs, reward, done, info = gym_env.step(action)
 
     elif runtype == 'eval':
         model = PPO("MlpPolicy", gym_env, tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-1}).load(args['save_path']+'best_model')
@@ -381,6 +389,7 @@ def main():
     # run_pybullet(overall_path+'/demos/rl_demo/data/wedge/wedge_badckward/experiment_config.json',runtype='run')
     file_list = ['forward','forward_right','right','backward_right','backward','backward_left','left','forward_left']
     trimmed_list = ['forward','backward_right','left','forward_left']
+    fast_run_list = ['forward_right','backward_right','backward_left','forward_left']
     # run_pybullet(overall_path+'/demos/rl_demo/data/single_direction_updated_reward/forward/experiment_config.json',runtype='run')
     # run_pybullet(overall_path+'/demos/rl_demo/data/single_direction_updated_reward/backward/experiment_config.json',runtype='run')
     # run_pybullet(overall_path+'/demos/rl_demo/data/single_direction_updated_reward/left/experiment_config.json',runtype='run')
@@ -390,8 +399,8 @@ def main():
     # run_pybullet(overall_path+'/demos/rl_demo/data/single_direction_updated_reward/backward_left/experiment_config.json',runtype='run')
     # run_pybullet(overall_path+'/demos/rl_demo/data/single_direction_updated_reward/backward_right/experiment_config.json',runtype='run')
     # run_pybullet(overall_path + '/demos/rl_demo/data/wedge_longer/wedge_left/experiment_config.json', runtype='replay', episode_number=24938)
-    for name in trimmed_list:
-        run_pybullet(overall_path + '/demos/rl_demo/data/wedge_longer/wedge_' + name + '/experiment_config.json', runtype='run')
+    for name in fast_run_list:
+        run_pybullet(overall_path + '/demos/rl_demo/data/wedge_1_scale/wedge_' + name + '/experiment_config.json', runtype='run')
 
     #NOTE WE MAY WANT TO UPDATE THE MAGNITUDE OF THE MAXIMUM MOVEMENT TO BE 1/8 THE SIZE THAT IT WAS TO MATCH THE PREVIOUS SETUP
 
