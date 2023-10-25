@@ -70,7 +70,7 @@ def main():
     scatter_plot_tab = [[sg.Button('End Dist', size=(8, 2)), sg.Button('End Poses', size=(8, 2)), sg.Button('Contact Dist', size=(8, 2)), sg.Button('', key='',size=(8, 2)), sg.Button('', key='',size=(8, 2))]]
 
     plot_buttons = [[sg.Button('Object Path', size=(8, 2)), sg.Button('Finger Angles', size=(8, 2)),sg.Button('Rewards', size=(8, 2), key='FullRewards'), sg.Button('Contact Rewards', key='ContactRewards',size=(8, 2)), sg.Button('Distance/Slope Rewards', key='SimpleRewards',size=(8, 2))],
-                    [sg.Button('Explored Region', size=(8,2)), sg.Button('Actor Output', size=(8, 2)), sg.Button('Critic Output', size=(8, 2)), sg.Button('RewardSplit',size=(8, 2)), sg.Button('Max Percent', size=(8,2))],
+                    [sg.Button('Explored Region', size=(8,2)), sg.Button('Actor Output', size=(8, 2)), sg.Button('Aout Comparison', size=(8, 2)), sg.Button('RewardSplit',size=(8, 2)), sg.Button('Max Percent', size=(8,2))],
                     [sg.Button('End Region', size=(8,2)), sg.Button('Average Actor Values', size=(8,2)), sg.Button('Episode Rewards', size=(8,2)), sg.Button('Finger Object Avg', size=(8,2)), sg.Button('Shortest Goal Dist', size=(8,2))],
                     [sg.Button('Path + Action', size=(8,2)), sg.Button('Success Rate', size=(8,2)), sg.Button('Ending Velocity', size=(8,2)), sg.Button('Finger Object Max', size=(8,2)), sg.Button('Ending Goal Dist', size=(8,2))],
                     [sg.Button('Fingertip Route', size=(8,2)), sg.Button('Average Finger Tip', size=(8,2)), sg.Button('Average Dist Reward', size=(8,2)), sg.Button('Draw Obj Contacts', size=(8,2)),sg.Button('Multireward', size=(8,2))],
@@ -177,7 +177,9 @@ def main():
                 figure_canvas_agg.draw()
             else:
                 print('episode all not selected, cant do it')
-            
+        elif event == 'Aout Comparison':
+            backend.draw_aout_comparison(episode_data)
+            figure_canvas_agg.draw()
         elif event == 'Episode Rewards':
             if 'all' in filename:
                 backend.draw_net_reward(episode_data)
