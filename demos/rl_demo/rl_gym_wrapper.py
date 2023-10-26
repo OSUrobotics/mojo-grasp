@@ -383,7 +383,7 @@ class GymWrapper(gym.Env):
             temp = -reward_container['distance_to_goal']/reward_container['start_dist'] # should scale this so that it is -1 at start 
             ftemp,temp = max(ftemp,-2), max(temp, -2)
             # print(ftemp,temp)
-            tstep_reward = temp*self.DISTANCE_SCALING - ftemp*self.CONTACT_SCALING
+            tstep_reward = temp*self.DISTANCE_SCALING + ftemp*self.CONTACT_SCALING
         elif self.REWARD_TYPE == 'SFS':
             tstep_reward = reward_container['slope_to_goal'] * self.DISTANCE_SCALING - max(reward_container['f1_dist'],reward_container['f2_dist'])*self.CONTACT_SCALING
             if (reward_container['distance_to_goal'] < self.SUCCESS_THRESHOLD) & (np.linalg.norm(reward_container['object_velocity']) <= 0.05):

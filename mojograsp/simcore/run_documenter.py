@@ -40,7 +40,7 @@ method_list = [attribute for attribute in dir(PlotBackend) if callable(getattr(P
 print(method_list)
 
 valid_types = [a[5:] for a in method_list]
-high_level = '/home/mothra/mojo-grasp/demos/rl_demo/data/wedge_longer'
+high_level = '/home/mothra/mojo-grasp/demos/rl_demo/data/wedge_1_scale'
 
 mid_levels = os.listdir(high_level)
 folder_path = os.path.join(high_level,mid_levels[0])

@@ -329,7 +329,7 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None, acti
         d.load_limited()
         d.save_all()
         model.save(args['save_path']+'best_model')
-        gym_env.eval()
+        gym_env.evaluate()
         gym_env.episode_type = 'eval'
         for _ in range(len(eval_goal_poses)):
             obs = gym_env.reset()
@@ -389,7 +389,7 @@ def main():
     # run_pybullet(overall_path+'/demos/rl_demo/data/wedge/wedge_badckward/experiment_config.json',runtype='run')
     file_list = ['forward','forward_right','right','backward_right','backward','backward_left','left','forward_left']
     trimmed_list = ['forward','backward_right','left','forward_left']
-    fast_run_list = ['forward_right','backward_right','backward_left','forward_left']
+    fast_run_list = ['backward_right','backward_left','forward_left']
     # run_pybullet(overall_path+'/demos/rl_demo/data/single_direction_updated_reward/forward/experiment_config.json',runtype='run')
     # run_pybullet(overall_path+'/demos/rl_demo/data/single_direction_updated_reward/backward/experiment_config.json',runtype='run')
     # run_pybullet(overall_path+'/demos/rl_demo/data/single_direction_updated_reward/left/experiment_config.json',runtype='run')
