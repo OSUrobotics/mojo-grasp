@@ -253,7 +253,7 @@ class RecordDataPKL(RecordData):
                         "Test/Evaluation_episode_" + str(self.eval_num) + ".pkl" 
                     
                 self.eval_num +=1
-                print('save episode evaluated', self.eval_num)
+                # print('save episode evaluated', self.eval_num)
             elif episode_type == 'train':
                 if filename is None:
                     file_path = self.data_path + 'Train/' + \
@@ -263,9 +263,11 @@ class RecordDataPKL(RecordData):
             elif episode_type == 'eval':
                 if filename is None:
                     file_path = self.data_path + 'Eval/' + \
-                        self.data_prefix + "_" + str(self.episode_num) + ".pkl"
+                        self.data_prefix + "_" + str(self.eval_num) + ".pkl"
                 else:
                     file_path = self.data_path + 'Eval/' +  filename
+                self.eval_num +=1
+                # print('save episode evaluated', self.eval_num)
 
             print(file_path, len(self.current_episode['timestep_list']))
             
