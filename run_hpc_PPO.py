@@ -211,10 +211,11 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None):
     
 def main(run_id):
     print(run_id)
-    folder_names = ['FTP_new_fingers','JA_new_fingers']
+    folder_names = ['01_sfs_5mm','02_sfs_10mm','03_smart_finger_2_scale','04_smart_finger_10_scale','05_scaled_finger_2_scale','06_scaled_finger_10_scale',
+'07_smart_smart_2_scale','08_smart_smart_10_scale','09_sfs_5mm_10_scale','10_sfs_10mm_10_scale']
     
     overall_path = pathlib.Path(__file__).parent.resolve()
-    run_path = overall_path.joinpath('demos/rl_demo/data/HPC_3')
+    run_path = overall_path.joinpath('demos/rl_demo/data/hpc_new_rewards')
     final_path = run_path.joinpath(folder_names[run_id-1])
     print(str(final_path))
     run_pybullet(str(final_path) + '/experiment_config.json',runtype='run')
