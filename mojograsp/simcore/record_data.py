@@ -232,7 +232,7 @@ class RecordDataPKL(RecordData):
 
         self.timesteps = []
         self.timestep_num = 1
-        if episode_type != 'train':
+        if episode_type == 'train':
             self.episode_num += 1
             self.eval_num = self.episode_num
 
