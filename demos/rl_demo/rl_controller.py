@@ -73,10 +73,10 @@ class ExpertController():
         p.resetJointState(self.gripper.id, 1, 0)
         p.resetJointState(self.gripper.id, 3, 0)
         p.resetJointState(self.gripper.id, 4, 0)
-        self.ik_f1 = JacobianIK(gripper.id,deepcopy(hand_info['finger1']))
+        self.ik_f1 = JacobianIK(gripper.id,deepcopy(hand_info['finger1']), error=1e-4)
         # self.test_ik_f1 = JacobianIK(gripper.id,deepcopy(hand_info['finger1']))
         
-        self.ik_f2 = JacobianIK(gripper.id,deepcopy(hand_info['finger2']))
+        self.ik_f2 = JacobianIK(gripper.id,deepcopy(hand_info['finger2']), error=1e-4)
         # p.resetJointState(self.gripper.id, 0, .75)
         # p.resetJointState(self.gripper.id, 1, -1.4)
         # p.resetJointState(self.gripper.id, 3, -.75)
@@ -502,67 +502,103 @@ class GymController(ExpertController):
         self.rand_portion = np.array([0,0,0,0])
         self.final_reward = 0
         
+        # print('initializing')
+        if 'IK_freq' in args.keys():
+            self.INTERP_IK = not args['IK_freq']
+        else:
+            self.INTERP_IK = False
+
         self.old_epsilon = self.epsilon
         print('epsilon and edecay', self.epsilon, self.COOLING_RATE)
         self.rand_episode = np.random.rand() < self.epsilon
         self.useIK = args['action']=="Finger Tip Position"
         # self.eval_flag = False
         self.mags = []
-        
+        self.num_tsteps = int(240/args['freq'])
+
+        print('REDUCING THE MAGNITUDE OF THE MOTION')
+        self.MAX_DISTANCE_CHANGE = self.MAX_DISTANCE_CHANGE/8
+        self.MAX_ANGLE_CHANGE = self.MAX_ANGLE_CHANGE/8
+
     def find_angles(self,actor_output):
         if self.useIK:
-            # get current cube position
-            self.get_current_cube_position()
 
             finger_pos1 = p.getLinkState(self.gripper.id, 2) #RIGHT FINGER
             finger_pos2 = p.getLinkState(self.gripper.id, 5) #LEFT FINGER
+            finger_pos1 = finger_pos1[0]
+            finger_pos2 = finger_pos2[0]
             finger_angles = self.gripper.get_joint_angles()
-            
             ap = actor_output * self.MAX_DISTANCE_CHANGE
-            new_finger_poses = [finger_pos1[0][0] + ap[0], finger_pos1[0][1] + ap[1], finger_pos2[0][0] + ap[2], finger_pos2[0][1] + ap[3]]
-            
-            found1, finger_1_angs_kegan, it1 = self.ik_f1.calculate_ik(target=new_finger_poses[:2], ee_location=None)
-            found2, finger_2_angs_kegan, it12 = self.ik_f2.calculate_ik(target=new_finger_poses[2:], ee_location=None)
-            action = [finger_1_angs_kegan[0],finger_1_angs_kegan[1],finger_2_angs_kegan[0],finger_2_angs_kegan[1]]
-            action = clip_angs(action)
-            
-        else:
-            self.get_current_cube_position()
-    
-            finger_angles = self.gripper.get_joint_angles()
-
-
-            action = ((actor_output)*self.MAX_ANGLE_CHANGE + finger_angles).tolist()
-            
-            self.ik_f1.finger_fk.set_joint_angles(finger_angles[0:2])
-            new_f1_pos = self.ik_f1.finger_fk.calculate_forward_kinematics()
-            
-            self.ik_f1.finger_fk.set_joint_angles(action[0:2])
-            old_f1_pos = self.ik_f1.finger_fk.calculate_forward_kinematics()
-                        
-            self.ik_f2.finger_fk.set_joint_angles(finger_angles[2:4])
-            new_f2_pos = self.ik_f2.finger_fk.calculate_forward_kinematics()
-            
-            self.ik_f2.finger_fk.set_joint_angles(action[2:4])
-            old_f2_pos = self.ik_f2.finger_fk.calculate_forward_kinematics()
-            
-            new_fpos = np.array([new_f1_pos[0],new_f1_pos[1],new_f2_pos[0],new_f2_pos[1]])
-            old_fpos = np.array([old_f1_pos[0],old_f1_pos[1],old_f2_pos[0],old_f2_pos[1]])
-            
-            ap = new_fpos-old_fpos
-            if any(abs(ap) > self.MAX_DISTANCE_CHANGE):
-                finger_pos1 = p.getLinkState(self.gripper.id, 2) #RIGHT FINGER
-                finger_pos2 = p.getLinkState(self.gripper.id, 5) #LEFT FINGER
-                self.mags.append(max(abs(ap)))
-                ap = ap/max(abs(ap)) * self.MAX_DISTANCE_CHANGE
-                new_finger_poses = [finger_pos1[0][0] + ap[0], finger_pos1[0][1] + ap[1], finger_pos2[0][0] + ap[2], finger_pos2[0][1] + ap[3]]
-                
+            action_list = []
+            # print(f'actor_output: {actor_output}, finger poses: {finger_pos1},{finger_pos2}')
+            if self.INTERP_IK:
+                new_finger_poses = [finger_pos1[0] + self.num_tsteps*ap[0], finger_pos1[1] + self.num_tsteps*ap[1], 
+                                    finger_pos2[0] + self.num_tsteps*ap[2], finger_pos2[1] + self.num_tsteps*ap[3]]
                 found1, finger_1_angs_kegan, it1 = self.ik_f1.calculate_ik(target=new_finger_poses[:2], ee_location=None)
                 found2, finger_2_angs_kegan, it12 = self.ik_f2.calculate_ik(target=new_finger_poses[2:], ee_location=None)
                 action = [finger_1_angs_kegan[0],finger_1_angs_kegan[1],finger_2_angs_kegan[0],finger_2_angs_kegan[1]]
                 action = clip_angs(action)
+                # print(finger_1_angs_kegan,finger_2_angs_kegan)
+                action_list = np.linspace(finger_angles,action,self.num_tsteps)
+                # print(np.shape(action_list))
+            else:
+                for i in range(self.num_tsteps):
+                    new_finger_poses = [finger_pos1[0] + ap[0], finger_pos1[1] + ap[1], finger_pos2[0] + ap[2], finger_pos2[1] + ap[3]]
+                    found1, finger_1_angs_kegan, it1 = self.ik_f1.calculate_ik(target=new_finger_poses[:2], ee_location=None)
+                    found2, finger_2_angs_kegan, it12 = self.ik_f2.calculate_ik(target=new_finger_poses[2:], ee_location=None)
+                    action = [finger_1_angs_kegan[0],finger_1_angs_kegan[1],finger_2_angs_kegan[0],finger_2_angs_kegan[1]]
+                    action = clip_angs(action)
+                    action_list.append(action)
+                    self.ik_f1.finger_fk.set_joint_angles(action[0:2])
+                    self.ik_f2.finger_fk.set_joint_angles(action[2:4])
+                    finger_pos1 = self.ik_f1.finger_fk.calculate_forward_kinematics()
+                    finger_pos2 = self.ik_f2.finger_fk.calculate_forward_kinematics()
+                # print(np.shape(action_list))
+        else:
+            
+            finger_angles = self.gripper.get_joint_angles()
+            action_list = []
+            # print(actor_output, finger_angles)
+            for i in range(self.num_tsteps):
                 
-        return action, actor_output
+                action = ((actor_output)*self.MAX_ANGLE_CHANGE + finger_angles).tolist()
+                action = clip_angs(action)
+                '''
+                self.ik_f1.finger_fk.set_joint_angles(finger_angles[0:2])
+                new_f1_pos = self.ik_f1.finger_fk.calculate_forward_kinematics()
+                
+                self.ik_f1.finger_fk.set_joint_angles(action[0:2])
+                old_f1_pos = self.ik_f1.finger_fk.calculate_forward_kinematics()
+                            
+                self.ik_f2.finger_fk.set_joint_angles(finger_angles[2:4])
+                new_f2_pos = self.ik_f2.finger_fk.calculate_forward_kinematics()
+                
+                self.ik_f2.finger_fk.set_joint_angles(action[2:4])
+                old_f2_pos = self.ik_f2.finger_fk.calculate_forward_kinematics()
+                
+                new_fpos = np.array([new_f1_pos[0],new_f1_pos[1],new_f2_pos[0],new_f2_pos[1]])
+                old_fpos = np.array([old_f1_pos[0],old_f1_pos[1],old_f2_pos[0],old_f2_pos[1]])
+                
+                ap = new_fpos-old_fpos
+
+                if any(abs(ap) > self.MAX_DISTANCE_CHANGE):
+                    self.ik_f1.finger_fk.set_joint_angles(finger_angles[0:2])
+                    self.ik_f2.finger_fk.set_joint_angles(finger_angles[2:4])
+                    finger_pos1 = self.ik_f1.finger_fk.calculate_forward_kinematics()
+                    finger_pos2 = self.ik_f2.finger_fk.calculate_forward_kinematics()
+                    self.mags.append(max(abs(ap)))
+                    ap = ap/max(abs(ap)) * self.MAX_DISTANCE_CHANGE
+                    new_finger_poses = [finger_pos1[0] + ap[0], finger_pos1[1] + ap[1], finger_pos2[0] + ap[2], finger_pos2[1] + ap[3]]
+                    
+                    found1, finger_1_angs_kegan, it1 = self.ik_f1.calculate_ik(target=new_finger_poses[:2], ee_location=None)
+                    found2, finger_2_angs_kegan, it12 = self.ik_f2.calculate_ik(target=new_finger_poses[2:], ee_location=None)
+                    action = [finger_1_angs_kegan[0],finger_1_angs_kegan[1],finger_2_angs_kegan[0],finger_2_angs_kegan[1]]
+                    action = clip_angs(action)
+                '''
+                action_list.append(action)
+                finger_angles = action
+        # print(f'action_list {action_list}')
+        return action_list, actor_output
         
     def get_network_outputs(self,state):
         return 0

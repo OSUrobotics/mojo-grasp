@@ -25,11 +25,14 @@ class GoalHolder():
         return {'goal_pose':self.pose[self.run_num%self.len]}
     
     def get_name(self):
-        return self.goal_names[self.run_num%self.len]
+        try:
+            return self.goal_names[self.run_num%self.len]
+        except TypeError:
+            return 'Evaluate'
     
     def next_run(self):
         self.run_num +=1
-        print('Run number',self.run_num)
+        # print('Run number',self.run_num)
         
     def reset(self):
         self.run_num = 0
@@ -87,13 +90,13 @@ class StateRL(StateDefault):
         if (self.eval_goals is not None) and self.train_flag:
             self.train_flag = False
             self.objects[-1] = self.eval_goals
-            print('did an evaluate', self.eval_goals.pose[1],self.train_goals.pose[1])
+            # print('did an evaluate', self.eval_goals.pose[1],self.train_goals.pose[1])
             
     def train(self):
         if (self.eval_goals is not None) and not self.train_flag:
             self.train_flag = True
             self.objects[-1] = self.train_goals
-            print('did a train', self.train_goals.pose[1])
+            # print('did a train', self.train_goals.pose[1])
             
     def next_run(self):
         for thing in self.objects:

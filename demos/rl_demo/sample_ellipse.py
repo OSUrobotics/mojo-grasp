@@ -14,52 +14,103 @@ ELLIPSE_Y_MAX = 25
 
 x_max = ELLIPSE_X_MAX * .001
 y_max = ELLIPSE_Y_MAX * .001
-x_train = []
-y_train = []
 
-x_test = []
-y_test = []
-x1 = []
-y1 = []
+x_n = []
+y_n = []
+
+x_ne = []
+y_ne = []
+
+x_nw = []
+y_nw = []
+
+x_w = []
+y_w = []
+
+x_s = []
+y_s = []
+
+x_e = []
+y_e = []
+
+x_sw = []
+y_sw = []
+
+x_se = []
+y_se = []
+
 bin_width = 360/16
 bin_start = bin_width/2
 add_test = True
 add_train = True
+separation_lines = np.array(range(9)) * np.pi/4 - np.pi/8
+
+dirs = [[x_e,y_e],[x_ne, y_ne],[x_n,y_n],[x_nw,y_nw],[x_w,y_w],[x_sw,y_sw],[x_s,y_s],[x_se,y_se]]
+
 # Sample n number of points
-for i in range(NUM_POINTS):
-    in_ellipse = False
-    while not in_ellipse:
-        x = random.uniform(-x_max, x_max)
-        y = random.uniform(-y_max, y_max)
+for i,name in enumerate(dirs):
+    for j in range(NUM_POINTS):
+        theta = random.uniform(separation_lines[i], separation_lines[i+1])
+        r = (1-(random.uniform(0, 0.95))**2) * 35/1000
         # We are sampling a rectangular area, we check to see if the point given is within the ellipse
         # If it is we add it to the list, if not we retry
-        if ((x**2/((x_max*2)/2)**2) + (y**2/((y_max*2)/2)**2) < 1):
-            # temp = np.arctan(y/x)*180/np.pi
-            x1.append(x)
-            y1.append(y)
-            in_ellipse = True
-            # if add_test and (np.floor((temp-bin_start)/bin_width) % 2 ==0):
-            #     print(temp)
-            #     x_test.append(x)
-            #     y_test.append(y)
-            #     in_ellipse = True
-            #     if len(x_test) >= NUM_TEST:
-            #         add_test = False
-            # elif add_train and (np.floor((temp-bin_start)/bin_width) % 2 == 1):
-            #     x_train.append(x)
-            #     y_train.append(y)
-            #     in_ellipse = True
-            #     if len(x_train) >= NUM_TRAIN:
-            #         add_train = False
+        x = r * np.sin(theta)
+        y = r * np.cos(theta)
+        name[0].append(x)
+        name[1].append(y)
+            
 
 # create dataframe from lists
 df = pd.DataFrame(
-    {'x': x1,
-     'y': y1
+    {'x': x_n,
+     'y': y_n
      })
-# save to csv
-df.to_csv("resources/start_points.csv", index=False)
+df.to_csv("resources/N_points.csv", index=False)
 
+df = pd.DataFrame(
+    {'x': x_ne,
+     'y': y_ne
+     })
+df.to_csv("resources/NE_points.csv", index=False)
+
+df = pd.DataFrame(
+    {'x': x_e,
+     'y': y_e
+     })
+df.to_csv("resources/E_points.csv", index=False)
+
+df = pd.DataFrame(
+    {'x': x_se,
+     'y': y_se
+     })
+df.to_csv("resources/SE_points.csv", index=False)
+
+df = pd.DataFrame(
+    {'x': x_s,
+     'y': y_s
+     })
+df.to_csv("resources/S_points.csv", index=False)
+
+df = pd.DataFrame(
+    {'x': x_sw,
+     'y': y_sw
+     })
+df.to_csv("resources/SW_points.csv", index=False)
+
+df = pd.DataFrame(
+    {'x': x_w,
+     'y': y_w
+     })
+df.to_csv("resources/W_points.csv", index=False)
+
+df = pd.DataFrame(
+    {'x': x_nw,
+     'y': y_nw
+     })
+df.to_csv("resources/NW_points.csv", index=False)
+
+for things in dirs:
+    plt.scatter(things[0],things[1])
 # create dataframe from lists
 # df2 = pd.DataFrame(
 #     {'x': x_test,
