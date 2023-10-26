@@ -151,6 +151,7 @@ class JacobianIK():
         self.finger_fk.update_angles_from_sim()
         # Return the new angles, and whether or not we ever found a better set of angles
         # print(count_iterations)
+        # print('found angles', angles)
 
         # print(count_iterations)
         return b_found_better, angles, count_iterations

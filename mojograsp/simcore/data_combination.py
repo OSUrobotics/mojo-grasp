@@ -91,7 +91,7 @@ class data_processor():
             elif '.pkl' in name and 'sampled' not in name:
                 # print('first stage')
                 if not (('Evaluation' in name) ^ self.eval_flag):
-                    print(name)
+                    # print(name)
                     pkl_names.append(name)
                     temp = re.search('\d+',name)
                     pkl_nums.append(int(temp[0]))
@@ -119,7 +119,7 @@ class data_processor():
 
 def main():
 
-    path ='/home/mothra/mojo-grasp/demos/rl_demo/data/FTP_actual_abinav_rewards/'
+    path ='/home/mothra/mojo-grasp/demos/rl_demo/data/ja_overfit_scheduler/'
 
     d = data_processor(path + 'Train/')
     d.load_limited()

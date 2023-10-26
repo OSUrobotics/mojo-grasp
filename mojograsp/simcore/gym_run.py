@@ -21,16 +21,38 @@ from mojograsp.simobjects.two_finger_gripper import TwoFingerGripper
 from mojograsp.simobjects.ik_gripper import IKGripper
 from mojograsp.simobjects.object_with_velocity import ObjectWithVelocity
 from mojograsp.simcore.priority_replay_buffer import ReplayBufferPriority
+from mojograsp.simcore.data_combination import data_processor
 import pickle as pkl
 import json
 from stable_baselines3 import A2C, PPO
 from stable_baselines3.common.evaluation import evaluate_policy
+from stable_baselines3.common.monitor import Monitor
+# from stable_baselines3.common.s
 import wandb
 import numpy as np
 import os
 import time
+from typing import Callable
 # from stable_baselines3.DQN import MlpPolicy
 # from stable_baselines3.common.cmd_util import make_vec_env
+def linear_schedule(initial_value: float) -> Callable[[float], float]:
+    """
+    Linear learning rate schedule.
+
+    :param initial_value: Initial learning rate.
+    :return: schedule that computes
+      current learning rate depending on remaining progress
+    """
+    def func(progress_remaining: float) -> float:
+        """
+        Progress will decrease from 1 (beginning) to 0.
+
+        :param progress_remaining:
+        :return: current learning rate
+        """
+        return progress_remaining * initial_value
+
+    return func
 
 def run_pybullet(filepath, window=None, runtype='run', episode_number=None, action_list = None):
     # resource paths
@@ -66,18 +88,121 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None, acti
             xeval = [0.045, 0, -0.045, -0.06, -0.045, 0, 0.045, 0.06]
             yeval = [-0.045, -0.06, -0.045, 0, 0.045, 0.06, 0.045, 0]
             eval_names = ['SE','S','SW','W','NW','N','NE','E'] 
+        elif 'wedge' in args['task']:
+            df = pd.read_csv(args['points_path'], index_col=False)
+            x = df["x"]
+            y = df["y"]
+            xeval = x
+            yeval = y
+        elif args['task'] == 'forward':
+            x= [0.0]
+            y = [0.04]
+            xeval = x
+            yeval = y
+            eval_names = ['N'] 
+        elif args['task'] == 'backward':
+            x= [0.0]
+            y = [-0.04]
+            xeval = x
+            yeval = y
+            eval_names = ['S'] 
+        elif args['task'] == 'left':
+            x= [-0.04]
+            y = [0.0]
+            xeval = x
+            yeval = y
+            eval_names = ['W'] 
+        elif args['task'] == 'right':
+            x= [0.04]
+            y = [0.0]
+            xeval = x
+            yeval = y
+            eval_names = ['E'] 
+        elif args['task'] == 'forward_left':
+            x= [-0.03]
+            y = [0.03]
+            xeval = x
+            yeval = y
+            eval_names = ['NW'] 
+        elif args['task'] == 'forward_right':
+            x= [0.03]
+            y = [0.03]
+            xeval = x
+            yeval = y
+            eval_names = ['NE'] 
+        elif args['task'] == 'backward_left':
+            x= [-0.03]
+            y = [-0.03]
+            xeval = x
+            yeval = y
+            eval_names = ['SW'] 
+        elif args['task'] == 'backward_right':
+            x= [0.03]
+            y = [-0.03]
+            xeval = x
+            yeval = y
+            eval_names = ['SE'] 
 
     elif runtype=='eval':
-        # df = pd.read_csv('/home/orochi/mojo/mojo-grasp/demos/rl_demo/resources/test_points.csv', index_col=False)
-        df = pd.read_csv(args['points_path'], index_col=False)
-        print('EVALUATING BOOOIIII')
-        x = df["x"]
-        y = df["y"]
-        xeval = x
-        yeval = y
-        # xeval = [0.045, 0, -0.045, -0.06, -0.045, 0, 0.045, 0.06]
-        # yeval = [-0.045, -0.06, -0.045, 0, 0.045, 0.06, 0.045, 0]
-        eval_names = ['eval']*500 
+        if args['task'] == 'forward':
+            x= [0.0]
+            y = [0.04]
+            xeval = x
+            yeval = y
+            eval_names = ['N'] 
+        elif args['task'] == 'backward':
+            x= [0.0]
+            y = [-0.04]
+            xeval = x
+            yeval = y
+            eval_names = ['S'] 
+        elif args['task'] == 'left':
+            x= [-0.04]
+            y = [0.0]
+            xeval = x
+            yeval = y
+            eval_names = ['W'] 
+        elif args['task'] == 'right':
+            x= [0.04]
+            y = [0.0]
+            xeval = x
+            yeval = y
+            eval_names = ['E'] 
+        elif args['task'] == 'forward_left':
+            x= [-0.03]
+            y = [0.03]
+            xeval = x
+            yeval = y
+            eval_names = ['NW'] 
+        elif args['task'] == 'forward_right':
+            x= [0.03]
+            y = [0.03]
+            xeval = x
+            yeval = y
+            eval_names = ['NE'] 
+        elif args['task'] == 'backward_left':
+            x= [-0.03]
+            y = [-0.03]
+            xeval = x
+            yeval = y
+            eval_names = ['SW'] 
+        elif args['task'] == 'backward_right':
+            x= [0.03]
+            y = [-0.03]
+            xeval = x
+            yeval = y
+            eval_names = ['SE'] 
+        else:
+            df = pd.read_csv(args['points_path'], index_col=False)
+            print('EVALUATING BOOOIIII')
+            x = df["x"]
+            y = df["y"]
+            xeval = x
+            yeval = y
+            # xeval = [0.045, 0, -0.045, -0.06, -0.045, 0, 0.045, 0.06]
+            # yeval = [-0.045, -0.06, -0.045, 0, 0.045, 0.06, 0.045, 0]
+            eval_names = ['eval']*500 
+    
     elif runtype=='replay':
         df = pd.read_csv(args['points_path'], index_col=False)
         x = df["x"]
@@ -86,7 +211,7 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None, acti
         yeval = [-0.045, -0.06, -0.045, 0, 0.045, 0.06, 0.045, 0]
         eval_names = ['SE','S','SW','W','NW','N','NE','E'] 
         if action_list == None:
-            with open('/home/mothra/mojo-grasp/demos/rl_demo/data/ftp_friction_fuckery/Train/episode_99977.pkl','rb') as fol:
+            with open('/home/mothra/mojo-grasp/demos/rl_demo/data/wedge_longer/wedge_left/Test/Evaluate_24938.pkl','rb') as fol:
                 data = pkl.load(fol)
             action_list = data#np.array(data)
     names = ['AsteriskSE.pkl','AsteriskS.pkl','AsteriskSW.pkl','AsteriskW.pkl','AsteriskNW.pkl','AsteriskN.pkl','AsteriskNE.pkl','AsteriskE.pkl']
@@ -94,7 +219,7 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None, acti
     eval_pose_list = [[i,j] for i,j in zip(xeval,yeval)]
     print(args)
     try:
-        if (args['viz']) | (runtype=='replay'):
+        if (args['viz']) | (runtype=='replay') | (runtype =='eval'):
             physics_client = p.connect(p.GUI)
         else:
             physics_client = p.connect(p.DIRECT)
@@ -118,15 +243,6 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None, acti
 
     hand = IKGripper(hand_id, path=args['hand_path'])
     
-    # p.resetJointState(hand_id, 0, -0.4)
-    # p.resetJointState(hand_id, 1, 1.2)
-    # p.resetJointState(hand_id, 3, 0.4)
-    # p.resetJointState(hand_id, 4, -1.2)
-    
-    # p.resetJointState(hand_id, 0, 0)
-    # p.resetJointState(hand_id, 1, 0)
-    # p.resetJointState(hand_id, 3, 0)
-    # p.resetJointState(hand_id, 4, 0)
     # change visual of gripper
     p.changeVisualShape(hand_id, -1, rgbaColor=[0.3, 0.3, 0.3, 1])
     p.changeVisualShape(hand_id, 0, rgbaColor=[1, 0.5, 0, 1])
@@ -141,11 +257,15 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None, acti
     
     # For standard loaded goal poses
     if args['task'] == 'unplanned_random':
-        goal_poses = RandomGoalHolder([0.02,0.065])
+        goal_poses = RandomGoalHolder([0.0025,0.065])
     else:    
         goal_poses = GoalHolder(pose_list)
 
-    eval_goal_poses = GoalHolder(eval_pose_list,eval_names)
+    try:
+        eval_goal_poses = GoalHolder(eval_pose_list,eval_names)
+    except NameError:
+        print('No names')
+        eval_goal_poses = GoalHolder(eval_pose_list)
     # time.sleep(10)
     # state, action and reward
     state = StateRL(objects=[hand, obj, goal_poses], prev_len=args['pv'],eval_goals = eval_goal_poses)
@@ -170,13 +290,14 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None, acti
     replay_buffer = ReplayBufferPriority(buffer_size=4080000)
     
     # environment and recording
-    env = rl_env.ExpertEnv(hand=hand, obj=obj, hand_type=arg_dict['hand'], rand_start=args['rstart'])
+    # env = rl_env.ExpertEnv(hand=hand, obj=obj, hand_type=arg_dict['hand'], rand_start=args['rstart'])
 
+    env = rl_env.SingleShapeEnv(hand=hand, obj=obj, hand_type=arg_dict['hand'], rand_start=args['rstart'])
     # env = rl_env.ExpertEnv(hand=hand, obj=cylinder)
     
     # Create phase
     manipulation = manipulation_phase_rl.ManipulationRL(
-        hand, obj, x, y, state, action, reward, replay_buffer=replay_buffer, args=arg_dict)
+        hand, obj, x, y, state, action, reward, env, replay_buffer=replay_buffer, args=arg_dict)
     
     
     # data recording
@@ -185,8 +306,9 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None, acti
     
     
     gym_env = rl_gym_wrapper.GymWrapper(env, manipulation, record_data, args)
-    train_timesteps = args['evaluate']*151
-    callback = rl_gym_wrapper.EvaluateCallback(gym_env,n_eval_episodes=8, eval_freq=train_timesteps, best_model_save_path=args['save_path'])
+    train_timesteps = args['evaluate']*(args['tsteps']+1)
+    callback = rl_gym_wrapper.EvaluateCallback(gym_env,n_eval_episodes=len(eval_pose_list), eval_freq=train_timesteps, best_model_save_path=args['save_path'])
+    # gym_env = Monitor(gym_env,args['save_path']+'Test/')
     # p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 0)
     # p.configureDebugVisualizer(p.COV_ENABLE_GUI, 0)
     # check_env(gym_env, warn=True)
@@ -195,41 +317,38 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None, acti
     else:
         ent = 0.0
     if runtype == 'run':
-        wandb.init(project = 'StableBaselinesWandBTest')
+        # wandb.init(project = 'StableBaselinesWandBTest')
+        
+        model = PPO("MlpPolicy", gym_env, tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-2.3}, ent_coef=ent,learning_rate=linear_schedule(1e-5))
 
-        model = PPO("MlpPolicy", gym_env, tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-1}, ent_coef=ent)
+
         # gym_env = make_vec_env(lambda: gym_env, n_envs=1)
         gym_env.train()
-        model.learn(args['epochs']*151, callback=callback)
-        gym_env.eval = True
-        gym_env.eval_names = names
-
-        for _ in range(8):
+        model.learn(args['epochs']*(args['tsteps']+1), callback=callback)
+        d = data_processor(args['save_path'] + 'Train/')
+        d.load_limited()
+        d.save_all()
+        model.save(args['save_path']+'best_model')
+        gym_env.evaluate()
+        gym_env.episode_type = 'eval'
+        for _ in range(len(eval_goal_poses)):
             obs = gym_env.reset()
-            for step in range(151):
+            done = False
+            while not done:
                 action, _ = model.predict(obs, deterministic=True)
                 obs, reward, done, info = gym_env.step(action)
 
     elif runtype == 'eval':
         model = PPO("MlpPolicy", gym_env, tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-1}).load(args['save_path']+'best_model')
         gym_env.evaluate()
-        # obj_pos = [0.0, 0.1, 0.05]
-        # joint_angs = [ -.85,1.3,0.85,-1.3]
-            # p.resetJointState(hand_id, 0, -.725)
-            # p.resetJointState(hand_id, 1, 1.45)
-            # p.resetJointState(hand_id, 3, .725)
-            # p.resetJointState(hand_id, 4, -1.45)
-        for _ in range(500):
+
+        for _ in range(5):
             obs = gym_env.reset()
             done = False
             while not done:
                 action, _ = model.predict(obs, deterministic=True)
-                # print("Step {}".format(step + 1))
-                # print("Action: ", action, type(action))
                 mirrored_action = np.array([-action[2], action[3],-action[0],action[1]])
-                # print('mirrored action: ', mirrored_action)
                 obs, reward, done, info = gym_env.step(action)
-                # print('obs=', obs, 'reward=', reward, 'done=', done)
 
     elif runtype == 'cont':
         pass
@@ -240,35 +359,58 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None, acti
     elif runtype == 'replay':
         gym_env.evaluate()
         actions = []
-        print(action_list['timestep_list'])
         actions = [a['action']['actor_output'] for a in action_list['timestep_list']]
             
         for _ in range(1):
             obs = gym_env.reset()
-            for step in range(151):
+            for step in range((args['tsteps']+1)):
                 # action, _ = model.predict(obs, deterministic=True)
-                print(action_list)
+                # print()
                 action = actions[step]
                 # print("Step {}".format(step + 1))
+                print('step: ',step)
                 # print("Action: ", action, type(action))
                 # mirrored_action = np.array([-action[2], action[3],-action[0],action[1]])
                 obs, reward, done, info = gym_env.step(np.array(action),viz=True)
                 # print('obs=', obs, 'reward=', reward, 'done=', done)
+                time.sleep(0.1)
                 # env.render(mode='console')
+    p.disconnect()
 
 def main():
     this_path = os.path.abspath(__file__)
     overall_path = os.path.dirname(os.path.dirname(os.path.dirname(this_path)))
-    # run_pybullet(overall_path+'/demos/rl_demo/data/ftp_friction_fuckery/experiment_config.json', runtype='replay')
+    # run_pybullet(overall_path+'/demos/rl_demo/data/single_direction_limited/right/experiment_config.json', runtype='replay', episode_number=9987)
 
+    # run_pybullet(overall_path+'/demos/rl_demo/data/ja_please/experiment_config.json', runtype='run')
 
+    # run_pybullet(overall_path+'/demos/rl_demo/data/FUCK/experiment_config.json', runtype='run')
 
-    run_pybullet(overall_path+'/demos/rl_demo/data/FTP_actual_abinav_rewards/experiment_config.json', runtype='run')
+    # run_pybullet(overall_path+'/demos/rl_demo/data/wedge/wedge_badckward/experiment_config.json',runtype='run')
+    file_list = ['forward','forward_right','right','backward_right','backward','backward_left','left','forward_left']
+    trimmed_list = ['forward','backward_right','left','forward_left']
+    fast_run_list = ['backward_right','backward_left','forward_left']
+    # run_pybullet(overall_path+'/demos/rl_demo/data/single_direction_updated_reward/forward/experiment_config.json',runtype='run')
+    # run_pybullet(overall_path+'/demos/rl_demo/data/single_direction_updated_reward/backward/experiment_config.json',runtype='run')
+    # run_pybullet(overall_path+'/demos/rl_demo/data/single_direction_updated_reward/left/experiment_config.json',runtype='run')
+    # run_pybullet(overall_path+'/demos/rl_demo/data/single_direction_updated_reward/right/experiment_config.json',runtype='run')
+    # run_pybullet(overall_path+'/demos/rl_demo/data/single_direction_updated_reward/forward_left/experiment_config.json',runtype='run')
+    # run_pybullet(overall_path+'/demos/rl_demo/data/single_direction_updated_reward/forward_right/experiment_config.json',runtype='run')
+    # run_pybullet(overall_path+'/demos/rl_demo/data/single_direction_updated_reward/backward_left/experiment_config.json',runtype='run')
+    # run_pybullet(overall_path+'/demos/rl_demo/data/single_direction_updated_reward/backward_right/experiment_config.json',runtype='run')
+    # run_pybullet(overall_path + '/demos/rl_demo/data/wedge_longer/wedge_left/experiment_config.json', runtype='replay', episode_number=24938)
+    for name in fast_run_list:
+        run_pybullet(overall_path + '/demos/rl_demo/data/wedge_1_scale/wedge_' + name + '/experiment_config.json', runtype='run')
 
+    #NOTE WE MAY WANT TO UPDATE THE MAGNITUDE OF THE MAXIMUM MOVEMENT TO BE 1/8 THE SIZE THAT IT WAS TO MATCH THE PREVIOUS SETUP
 
-    run_pybullet(overall_path+'/demos/rl_demo/data/ja_abinav_rewards/experiment_config.json',runtype='eval')
+    # run_pybullet(overall_path+'/demos/rl_demo/data/wedge/wedge_forward/experiment_config.json',runtype='run')
+    # run_pybullet(overall_path+'/demos/rl_demo/data/wedge/wedge_forward_right/experiment_config.json',runtype='run')
+    # run_pybullet(overall_path+'/demos/rl_demo/data/wedge/wedge_forward_left/experiment_config.json',runtype='run')
+    # run_pybullet(overall_path+'/demos/rl_demo/data/wedge/wedge_left/experiment_config.json',runtype='run')
+    # run_pybullet(overall_path+'/demos/rl_demo/data/wedge/wedge_right/experiment_config.json',runtype='run')
+    # run_pybullet(overall_path+'/demos/rl_demo/data/wedge/wedge_backward_left/experiment_config.json',runtype='run')
+    # run_pybullet(overall_path+'/demos/rl_demo/data/wedge/wedge_backward_right/experiment_config.json',runtype='run')
 
-
-# DO A REPLAY OF JA-testing episode 99924, 99918
 if __name__ == '__main__':
     main()

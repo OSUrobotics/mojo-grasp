@@ -135,7 +135,7 @@ class ImageMaker(GuiBackend):
                 for idx, frame in enumerate(frames):
                     print("Adding frame to GIF file: ", idx + 1)
                     writer.append_data(frame)
-    
+
     def standard_plots(self):
         train_path = self.folder.joinpath('Train')
         test_path = self.folder.joinpath('Test')

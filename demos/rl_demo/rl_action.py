@@ -55,11 +55,15 @@ class InterpAction(ExpertAction):
         """Builds the action profile (speed profile to get from old speed to
         new speed)"""
         target = np.array(self.current_action['target_joint_angles'])
-        start = np.array(self.previous_angles)
-        num_angs = len(start)
-        # add_portion = target-start
-        # sin_angle_thing = np.linspace(np.zeros(num_angs),np.ones(num_angs)*np.pi/2, self.interp_ratio)
-        # self.action_profile = add_portion* np.sin(sin_angle_thing) + start
-        self.action_profile = np.ones((self.interp_ratio,num_angs)) * target
-        # self.action_profile = np.linspace(start, target,self.interp_ratio)
-        # alternative using some sinusoidal stuff
+        if np.shape(target) == (self.interp_ratio,4):
+            self.action_profile = target
+        else:
+            start = np.array(self.previous_angles)
+            num_angs = len(start)
+            # add_portion = target-start
+            # sin_angle_thing = np.linspace(np.zeros(num_angs),np.ones(num_angs)*np.pi/2, self.interp_ratio)
+            # self.action_profile = add_portion* np.sin(sin_angle_thing) + start
+            self.action_profile = np.ones((self.interp_ratio,num_angs)) * target
+            # self.action_profile = np.linspace(start, target,self.interp_ratio)
+            # alternative using some sinusoidal stuff
+        # print(f'action profile {self.action_profile}')
