@@ -60,7 +60,7 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None, acti
     with open(filepath, 'r') as argfile:
         args = json.load(argfile)
     
-    if runtype =='run':
+    if (runtype =='run') | (runtype =='transfer'):
         if args['task'] == 'asterisk':
             x = [0.03, 0, -0.03, -0.04, -0.03, 0, 0.03, 0.04]
             y = [-0.03, -0.04, -0.03, 0, 0.03, 0.04, 0.03, 0]
@@ -85,9 +85,10 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None, acti
         elif args['task'] == 'unplanned_random':
             x = [0.02]
             y = [0.065]
-            xeval = [0.045, 0, -0.045, -0.06, -0.045, 0, 0.045, 0.06]
-            yeval = [-0.045, -0.06, -0.045, 0, 0.045, 0.06, 0.045, 0]
-            eval_names = ['SE','S','SW','W','NW','N','NE','E'] 
+            df2 = pd.read_csv('/home/mothra/mojo-grasp/demos/rl_demo/resources/points.csv', index_col=False)
+            xeval = df2["x"]
+            yeval = df2["x"]
+            eval_names = 500 * ['Eval']
         elif 'wedge' in args['task']:
             df = pd.read_csv(args['points_path'], index_col=False)
             x = df["x"]
@@ -216,6 +217,7 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None, acti
             action_list = data#np.array(data)
     names = ['AsteriskSE.pkl','AsteriskS.pkl','AsteriskSW.pkl','AsteriskW.pkl','AsteriskNW.pkl','AsteriskN.pkl','AsteriskNE.pkl','AsteriskE.pkl']
     pose_list = [[i,j] for i,j in zip(x,y)]
+    np.random.shuffle(pose_list)
     eval_pose_list = [[i,j] for i,j in zip(xeval,yeval)]
     print(args)
     try:
@@ -321,7 +323,6 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None, acti
         
         model = PPO("MlpPolicy", gym_env, tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-2.3}, ent_coef=ent,learning_rate=linear_schedule(1e-5))
 
-
         # gym_env = make_vec_env(lambda: gym_env, n_envs=1)
         gym_env.train()
         model.learn(args['epochs']*(args['tsteps']+1), callback=callback)
@@ -342,19 +343,35 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None, acti
         model = PPO("MlpPolicy", gym_env, tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-1}).load(args['save_path']+'best_model')
         gym_env.evaluate()
 
-        for _ in range(5):
+        for _ in range(1):
             obs = gym_env.reset()
             done = False
             while not done:
                 action, _ = model.predict(obs, deterministic=True)
                 mirrored_action = np.array([-action[2], action[3],-action[0],action[1]])
-                obs, reward, done, info = gym_env.step(action)
+                obs, reward, done, info = gym_env.step(action, viz=True)
 
     elif runtype == 'cont':
         pass
     
     elif runtype == 'transfer':
-        pass
+        model = PPO("MlpPolicy", gym_env, tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-2.3}, ent_coef=ent,learning_rate=linear_schedule(1e-5)).load(args['load_path']+'best_model', env=gym_env)
+
+        gym_env.train()
+
+        model.learn(args['epochs']*(args['tsteps']+1), callback=callback)
+        d = data_processor(args['save_path'] + 'Train/')
+        d.load_limited()
+        d.save_all()
+        model.save(args['save_path']+'best_model')
+        gym_env.evaluate()
+        gym_env.episode_type = 'eval'
+        for _ in range(len(eval_goal_poses)):
+            obs = gym_env.reset()
+            done = False
+            while not done:
+                action, _ = model.predict(obs, deterministic=True)
+                obs, reward, done, info = gym_env.step(action)
     
     elif runtype == 'replay':
         gym_env.evaluate()
@@ -390,6 +407,8 @@ def main():
     file_list = ['forward','forward_right','right','backward_right','backward','backward_left','left','forward_left']
     trimmed_list = ['forward','backward_right','left','forward_left']
     fast_run_list = ['backward_right','backward_left','forward_left']
+    double_list = ['f-b', 'l-r', 'diag-up', 'diag-down']
+    alt_list = ['f','b']
     # run_pybullet(overall_path+'/demos/rl_demo/data/single_direction_updated_reward/forward/experiment_config.json',runtype='run')
     # run_pybullet(overall_path+'/demos/rl_demo/data/single_direction_updated_reward/backward/experiment_config.json',runtype='run')
     # run_pybullet(overall_path+'/demos/rl_demo/data/single_direction_updated_reward/left/experiment_config.json',runtype='run')
@@ -399,18 +418,24 @@ def main():
     # run_pybullet(overall_path+'/demos/rl_demo/data/single_direction_updated_reward/backward_left/experiment_config.json',runtype='run')
     # run_pybullet(overall_path+'/demos/rl_demo/data/single_direction_updated_reward/backward_right/experiment_config.json',runtype='run')
     # run_pybullet(overall_path + '/demos/rl_demo/data/wedge_longer/wedge_left/experiment_config.json', runtype='replay', episode_number=24938)
-    for name in fast_run_list:
-        run_pybullet(overall_path + '/demos/rl_demo/data/wedge_1_scale/wedge_' + name + '/experiment_config.json', runtype='run')
+    for name in alt_list:
+        run_pybullet(overall_path + '/demos/rl_demo/data/alt_wedges_full/wedge_' + name + '/experiment_config.json', runtype='run')
 
     #NOTE WE MAY WANT TO UPDATE THE MAGNITUDE OF THE MAXIMUM MOVEMENT TO BE 1/8 THE SIZE THAT IT WAS TO MATCH THE PREVIOUS SETUP
+    # for name in double_list:
+    #     run_pybullet(overall_path + '/demos/rl_demo/data/wedge_double/wedge_' + name + '/experiment_config.json', runtype='run')
+    # run_pybullet(overall_path + '/demos/rl_demo/data/wedge_double/wedge_l-r/experiment_config.json', runtype='eval')
 
-    # run_pybullet(overall_path+'/demos/rl_demo/data/wedge/wedge_forward/experiment_config.json',runtype='run')
+    # run_pybullet(overall_path + '/demos/rl_demo/data/hand_transfer/wedge_l-r/experiment_config.json', runtype='transfer')
+    # run_pybullet(overall_path+'/demos/rl_demo/data/full_15/experiment_config.json',runtype='run')
     # run_pybullet(overall_path+'/demos/rl_demo/data/wedge/wedge_forward_right/experiment_config.json',runtype='run')
     # run_pybullet(overall_path+'/demos/rl_demo/data/wedge/wedge_forward_left/experiment_config.json',runtype='run')
     # run_pybullet(overall_path+'/demos/rl_demo/data/wedge/wedge_left/experiment_config.json',runtype='run')
     # run_pybullet(overall_path+'/demos/rl_demo/data/wedge/wedge_right/experiment_config.json',runtype='run')
     # run_pybullet(overall_path+'/demos/rl_demo/data/wedge/wedge_backward_left/experiment_config.json',runtype='run')
     # run_pybullet(overall_path+'/demos/rl_demo/data/wedge/wedge_backward_right/experiment_config.json',runtype='run')
-
+    # Thoughts: 1. learning to maintain contact within 5k timesteps aka before first evaluation step. might want to tune down contact reward
+    # Thoughts: 2. might want to not cap the negative distance reward at -2. It just lets the thing off the hook when it gets sufficiently bad
+    # Thoughts: 3. maybe try left and right rather than wedge as a way to slowly expand
 if __name__ == '__main__':
     main()

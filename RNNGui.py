@@ -51,7 +51,8 @@ class RNNGui():
         self.built = False
         self.train_dataset, self.validation_dataset = None, None
         self.single_names = ['forward','backward','left','right','forward_left','forward_right','backward_right','backward_left']
-        
+        self.double_names = ['f-b', 'l-r', 'diag-up', 'diag-down']
+        self.alt_double_names = ['l-r','f','b']
         
         # define layout, show and read the window
         data_layout =  [ [sg.Text('Model Type'), sg.OptionMenu(values=('DDPG', 'DDPGFD','DDPG+HER', 'DDPGFD+HER', 'gym'),  k='-model', default_value='DDPG')],
@@ -63,7 +64,7 @@ class RNNGui():
                          [sg.Button("Browse",key='-browse-load',button_color='DarkBlue'),sg.Text("/", key='-load-path')],
                          [sg.Text('Object'), sg.OptionMenu(values=('Cube', 'Cylinder'), k='-object', default_value='Cube')],
                          [sg.Text('Hand'), sg.OptionMenu(values=('2v2', '2v2-B'), k='-hand', default_value='2v2')],
-                         [sg.Text("Task"), sg.OptionMenu(values=('asterisk','random','full_random','unplanned_random','single', 'wedge'), k='-task', default_value='unplanned_random')],
+                         [sg.Text("Task"), sg.OptionMenu(values=('asterisk','random','full_random','unplanned_random','single', 'wedge', 'double_wedge', 'clump_wedge'), k='-task', default_value='unplanned_random')],
                          [sg.Checkbox("Randomized Start Position", key='-rstart',default=False)],
                          [sg.Text('Replay Buffer Sampling'), sg.OptionMenu(values=('priority','random','random+expert'), k='-sampling', default_value='priority')]]
         
@@ -304,6 +305,25 @@ class RNNGui():
         elif self.args['task'] == 'wedge':
             print('aight')
             for name in self.single_names:
+                os.mkdir(self.save_path + '/wedge_'+name+'/')
+                self.args['save_path'] = self.save_path + '/wedge_' + name + '/'
+                self.args['tname'] = str(run_path.joinpath(values['-title']).joinpath("wedge_"+name))
+                self.args['task'] = 'wedge_' + name
+                self.args['points_path'] = str(resource_path.joinpath('wedge_'+name+'.csv'))
+                self.built = True
+                self.log_params()
+        elif self.args['task'] == 'double_wedge':
+            print('aight 2')
+            for name in self.double_names:
+                os.mkdir(self.save_path + '/wedge_'+name+'/')
+                self.args['save_path'] = self.save_path + '/wedge_' + name + '/'
+                self.args['tname'] = str(run_path.joinpath(values['-title']).joinpath("wedge_"+name))
+                self.args['task'] = 'wedge_' + name
+                self.args['points_path'] = str(resource_path.joinpath('wedge_'+name+'.csv'))
+                self.built = True
+                self.log_params()
+        elif self.args['task'] == 'clump_wedge':
+            for name in self.alt_double_names:
                 os.mkdir(self.save_path + '/wedge_'+name+'/')
                 self.args['save_path'] = self.save_path + '/wedge_' + name + '/'
                 self.args['tname'] = str(run_path.joinpath(values['-title']).joinpath("wedge_"+name))

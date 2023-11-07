@@ -9,6 +9,7 @@ from demos.rl_demo import rl_controller
 from mojograsp.simcore.replay_buffer import ReplayBufferDefault
 from numpy.random import shuffle
 from math import isclose
+from PIL import Image
 
 
 
@@ -34,7 +35,7 @@ class ManipulationRL(Phase):
         self.y = y
         self.use_ik = args['ik_flag']
         print('ARE WE USING IK', self.use_ik)
-        
+        self.image_path = args['save_path'] + 'Videos/'
         self.target = None
         self.goal_position = None
         # create controller
@@ -44,7 +45,8 @@ class ManipulationRL(Phase):
         else:
             self.controller = rl_controller.RLController(hand, cube, replay_buffer=replay_buffer, args=args)
         self.end_val = 0
-        
+        self.camera_view_matrix = p.computeViewMatrix((0.0,0.1,0.5),(0.0,0.1,0.005), (0.0,1,0.0))
+        self.camera_projection_matrix = p.computeProjectionMatrixFOV(60,4/3,0.1,0.9)
         # self.controller = rl_controller.ExpertController(hand, cube)
 
     def setup(self):
@@ -97,7 +99,7 @@ class ManipulationRL(Phase):
         # Set the current state before sim is stepped
         # self.state.set_state()
 
-    def execute_action(self, action_to_execute=None, pybullet_thing = None):
+    def execute_action(self, action_to_execute=None, pybullet_thing = None, viz = False):
         # Execute the target that we got from the controller in pre_step()
 
         for i in range(self.interp_ratio):
@@ -126,6 +128,15 @@ class ManipulationRL(Phase):
                 p.setJointMotorControlArray(self.hand.id, jointIndices=self.hand.get_joint_numbers(),
                                             controlMode=p.POSITION_CONTROL, targetPositions=goal_angs, positionGains=[0.8,0.8,0.8,0.8], forces=[0.4,0.4,0.4,0.4])
             self.env.step()
+
+            if viz:
+                img = p.getCameraImage(640, 480,viewMatrix=self.camera_view_matrix,
+                                        projectionMatrix=self.camera_projection_matrix,
+                                        shadow=1,
+                                        lightDirection=[1, 1, 1])
+                img = Image.fromarray(img[2])
+                temp = 'eval'
+                img.save(self.image_path+ temp + '_frame_'+ str(self.timestep)+'_'+str(i)+'.png')
             # if pybullet_thing is not None:
             #     temp = pybullet_thing.getJointStates(self.hand.id, [0,1,3,4])
             # elif action_to_execute:

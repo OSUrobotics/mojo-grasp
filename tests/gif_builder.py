@@ -54,10 +54,14 @@ def make_video(filepath):
     video_path = filepath+'Videos/'
     file_thing = 'eval'
     frame_list = []
-    for i in range(151):
-        frame_path = video_path+file_thing+'_frame_'+str(i)+'.png'
-        frame_list.append(frame_path)
+    frames = []
+    for i in range(15):
+        for j in range(8):
+            frame_path = video_path+file_thing+'_frame_'+str(i)+'_'+str(j*10)+'.png'
+            frame_list.append(frame_path)
     frames = [Image.open(image) for image in frame_list]
     frame_one = frames[0]
     frame_one.save(filepath+"Episode.gif", format="GIF", append_images=frames,
-               save_all=True, duration=151, loop=0)
+               save_all=True, duration=15*8, loop=0)
+
+make_video('/home/mothra/mojo-grasp/demos/rl_demo/data/hand_transfer/wedge_l-r/')
