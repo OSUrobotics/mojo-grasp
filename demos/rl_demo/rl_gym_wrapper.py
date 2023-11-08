@@ -103,7 +103,7 @@ class GymWrapper(gym.Env):
     def reset(self,special=None):
         if not self.first:
             
-            if self.manipulation_phase.episode >= 500:
+            if self.manipulation_phase.episode >= self.manipulation_phase.state.objects[-1].len:
                 self.manipulation_phase.reset()
             self.manipulation_phase.next_phase()
 
@@ -121,7 +121,7 @@ class GymWrapper(gym.Env):
         
         state, _ = self.manipulation_phase.get_episode_info()
         # print('state and prev states')
-        # print(state['f1_pos'],state['f2_pos'])
+        # print(state['goal_pose']['goal_pose'])
         # print(state['previous_state'][0]['f1_pos'],state['previous_state'][0]['f2_pos'])
         state = self.build_state(state)
         
@@ -147,7 +147,7 @@ class GymWrapper(gym.Env):
             action = action-1
             # print(action)
         self.manipulation_phase.gym_pre_step(action)
-        self.manipulation_phase.execute_action()
+        self.manipulation_phase.execute_action(viz=viz)
         done = self.manipulation_phase.exit_condition()
         self.manipulation_phase.post_step()
         
@@ -168,15 +168,7 @@ class GymWrapper(gym.Env):
         # self.manipulation_phase.state.set_state()
         # print(reward)
         done = done | done2
-        if self.viz | viz:
-            
-            img = p.getCameraImage(640, 480,viewMatrix=self.camera_view_matrix,
-                                    projectionMatrix=self.camera_projection_matrix,
-                                    shadow=1,
-                                    lightDirection=[1, 1, 1])
-            img = Image.fromarray(img[2])
-            temp = 'eval'
-            img.save(self.image_path+ temp + '_frame_'+ str(self.timestep)+'.png')
+
         
         if done:
             # print('done, recording stuff')

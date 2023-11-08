@@ -36,6 +36,8 @@ class GoalHolder():
         
     def reset(self):
         self.run_num = 0
+        np.random.shuffle(self.pose)
+        print('shuffling the pose order')
     
     def __len__(self):
         return len(self.pose)
