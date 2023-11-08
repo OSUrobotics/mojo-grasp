@@ -43,6 +43,7 @@ class PlotBackend():
         data = data_dict['timestep_list']
         episode_number=data_dict['number']
         trajectory_points = [f['state']['obj_2']['pose'][0] for f in data]
+        print('goal position in state', data[0]['state']['goal_pose'])
         goal_pose = data[1]['reward']['goal_position']
         trajectory_points = np.array(trajectory_points)
         if self.clear_plots | (self.curr_graph != 'path'):
