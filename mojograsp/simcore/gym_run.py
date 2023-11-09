@@ -71,7 +71,7 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None, acti
             df = pd.read_csv(args['points_path'], index_col=False)
             x = df["x"]
             y = df["y"]
-            df2 = pd.read_csv('/home/mothra/mojo-grasp/demos/rl_demo/resources/test_points.csv', index_col=False)
+            df2 = pd.read_csv('/home/orochi/mojo/mojo-grasp/demos/rl_demo/resources/test_points.csv', index_col=False)
             xeval = [0.045, 0, -0.045, -0.06, -0.045, 0, 0.045, 0.06]
             yeval = [-0.045, -0.06, -0.045, 0, 0.045, 0.06, 0.045, 0]
             eval_names = ['SE','S','SW','W','NW','N','NE','E'] 
@@ -85,7 +85,7 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None, acti
         elif args['task'] == 'unplanned_random':
             x = [0.02]
             y = [0.065]
-            df2 = pd.read_csv('/home/mothra/mojo-grasp/demos/rl_demo/resources/points.csv', index_col=False)
+            df2 = pd.read_csv('/home/orochi/mojo/mojo-grasp/demos/rl_demo/resources/points.csv', index_col=False)
             xeval = df2["x"]
             yeval = df2["x"]
             eval_names = 500 * ['Eval']
@@ -318,7 +318,7 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None, acti
         ent = args['entropy']
     else:
         ent = 0.0
-    if runtype == 'run' and False:
+    if runtype == 'run' and True:
         # wandb.init(project = 'StableBaselinesWandBTest')
         
         model = PPO("MlpPolicy", gym_env, tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-2.3}, ent_coef=ent,learning_rate=linear_schedule(args['learning_rate']))
@@ -338,7 +338,7 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None, acti
             while not done:
                 action, _ = model.predict(obs, deterministic=True)
                 obs, reward, done, info = gym_env.step(action)
-    elif runtype == 'run' and True:
+    elif runtype == 'run' and False:
         # wandb.init(project = 'StableBaselinesWandBTest')
         
         model = TD3("MlpPolicy", gym_env, tensorboard_log=args['tname'], learning_rate=linear_schedule(1e-5))
@@ -437,8 +437,8 @@ def main():
     # run_pybullet(overall_path+'/demos/rl_demo/data/single_direction_updated_reward/backward_left/experiment_config.json',runtype='run')
     # run_pybullet(overall_path+'/demos/rl_demo/data/single_direction_updated_reward/backward_right/experiment_config.json',runtype='run')
     # run_pybullet(overall_path + '/demos/rl_demo/data/wedge_longer/wedge_left/experiment_config.json', runtype='replay', episode_number=24938)
-    for name in double_list:
-        run_pybullet(overall_path + '/demos/rl_demo/data/ftp_her/wedge_' + name + '/experiment_config.json', runtype='run')
+    # for name in double_list:
+        # run_pybullet(overall_path + '/demos/rl_demo/data/ftp_her/wedge_' + name + '/experiment_config.json', runtype='run')
 
     #NOTE WE MAY WANT TO UPDATE THE MAGNITUDE OF THE MAXIMUM MOVEMENT TO BE 1/8 THE SIZE THAT IT WAS TO MATCH THE PREVIOUS SETUP
     # for name in double_list:
@@ -446,7 +446,7 @@ def main():
     # run_pybullet(overall_path + '/demos/rl_demo/data/wedge_double/wedge_l-r/experiment_config.json', runtype='eval')
 
     # run_pybullet(overall_path + '/demos/rl_demo/data/hand_transfer/wedge_l-r/experiment_config.json', runtype='transfer')
-    # run_pybullet(overall_path+'/demos/rl_demo/data/full_15/experiment_config.json',runtype='run')
+    run_pybullet(overall_path+'/demos/rl_demo/data/ja_all/experiment_config.json',runtype='run')
     # run_pybullet(overall_path+'/demos/rl_demo/data/wedge/wedge_forward_right/experiment_config.json',runtype='run')
     # run_pybullet(overall_path+'/demos/rl_demo/data/wedge/wedge_forward_left/experiment_config.json',runtype='run')
     # run_pybullet(overall_path+'/demos/rl_demo/data/wedge/wedge_left/experiment_config.json',runtype='run')
