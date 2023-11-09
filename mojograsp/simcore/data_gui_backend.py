@@ -1335,7 +1335,7 @@ class PlotBackend():
                     tempdata = pkl.load(ef)
                 data = tempdata['timestep_list']
                 for timestep in data:
-                    temp += -max(timestep['reward']['f1_dist'],timestep['reward']['f2_dist'])/5
+                    temp += max(timestep['reward']['f1_dist'],timestep['reward']['f2_dist'])
                 rewards.append(temp)
                 temp = 0
                 if count% 100 ==0:
@@ -1351,7 +1351,7 @@ class PlotBackend():
                 for episode in folder_or_data_dict['episode_list']:
                     data = episode['timestep_list']
                     for timestep in data:
-                        temp += -max(timestep['reward']['f1_dist'],timestep['reward']['f2_dist'])/5
+                        temp += max(timestep['reward']['f1_dist'],timestep['reward']['f2_dist'])
                     rewards.append(temp)
                     temp = 0
         elif type(folder_or_data_dict) is list:
