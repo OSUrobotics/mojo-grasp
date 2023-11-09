@@ -321,7 +321,7 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None, acti
     if runtype == 'run' and False:
         # wandb.init(project = 'StableBaselinesWandBTest')
         
-        model = PPO("MlpPolicy", gym_env, tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-2.3}, ent_coef=ent,learning_rate=linear_schedule(1e-5))
+        model = PPO("MlpPolicy", gym_env, tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-2.3}, ent_coef=ent,learning_rate=linear_schedule(args['learning_rate']))
 
         # gym_env = make_vec_env(lambda: gym_env, n_envs=1)
         gym_env.train()
@@ -374,7 +374,7 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None, acti
         pass
     
     elif runtype == 'transfer':
-        model = PPO("MlpPolicy", gym_env, tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-2.3}, ent_coef=ent,learning_rate=linear_schedule(1e-5)).load(args['load_path']+'best_model', env=gym_env)
+        model = PPO("MlpPolicy", gym_env, tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-2.3}, ent_coef=ent,learning_rate=linear_schedule(args['learning_rate'])).load(args['load_path']+'best_model', env=gym_env)
 
         gym_env.train()
 
