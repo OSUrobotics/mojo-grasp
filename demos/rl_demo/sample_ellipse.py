@@ -5,7 +5,7 @@ import pandas as pd
 import numpy as np
 
 # Number of points to sample in an ellipse
-NUM_POINTS = 500
+NUM_POINTS = 1000
 NUM_TRAIN = int(NUM_POINTS*0.7)
 NUM_TEST = NUM_POINTS - NUM_TRAIN
 # maximums for x and y
@@ -47,70 +47,84 @@ separation_lines = np.array(range(9)) * np.pi/4 - np.pi/8
 
 dirs = [[x_e,y_e],[x_ne, y_ne],[x_n,y_n],[x_nw,y_nw],[x_w,y_w],[x_sw,y_sw],[x_s,y_s],[x_se,y_se]]
 
-# Sample n number of points
-for i,name in enumerate(dirs):
-    for j in range(NUM_POINTS):
-        theta = random.uniform(separation_lines[i], separation_lines[i+1])
-        r = (1-(random.uniform(0, 0.95))**2) * 35/1000
-        # We are sampling a rectangular area, we check to see if the point given is within the ellipse
-        # If it is we add it to the list, if not we retry
-        x = r * np.sin(theta)
-        y = r * np.cos(theta)
-        name[0].append(x)
-        name[1].append(y)
-            
+# # Sample n number of points
+# for i,name in enumerate(dirs):
+#     for j in range(NUM_POINTS):
+#         theta = random.uniform(separation_lines[i], separation_lines[i+1])
+#         r = (1-(random.uniform(0, 0.95))**2) * 35/1000
+#         # We are sampling a rectangular area, we check to see if the point given is within the ellipse
+#         # If it is we add it to the list, if not we retry
+#         x = r * np.sin(theta)
+#         y = r * np.cos(theta)
+#         name[0].append(x)
+#         name[1].append(y)
+x_pts,y_pts = [], []
+for j in range(NUM_POINTS):
+    theta = random.uniform(0, 2*np.pi)
+    r = (1-(random.uniform(0, 0.95))**2) * 35/1000
+    # We are sampling a rectangular area, we check to see if the point given is within the ellipse
+    # If it is we add it to the list, if not we retry
+    x = r * np.sin(theta)
+    y = r * np.cos(theta)
+    x_pts.append(x)
+    y_pts.append(y)
 
+df = pd.DataFrame(
+    {'x': x_pts,
+      'y': y_pts
+      })
+df.to_csv("resources/test_points_new.csv", index=False)            
 # create dataframe from lists
-df = pd.DataFrame(
-    {'x': x_n,
-     'y': y_n
-     })
-df.to_csv("resources/N_points.csv", index=False)
+# df = pd.DataFrame(
+#     {'x': x_n,
+#      'y': y_n
+#      })
+# df.to_csv("resources/N_points.csv", index=False)
 
-df = pd.DataFrame(
-    {'x': x_ne,
-     'y': y_ne
-     })
-df.to_csv("resources/NE_points.csv", index=False)
+# df = pd.DataFrame(
+#     {'x': x_ne,
+#      'y': y_ne
+#      })
+# df.to_csv("resources/NE_points.csv", index=False)
 
-df = pd.DataFrame(
-    {'x': x_e,
-     'y': y_e
-     })
-df.to_csv("resources/E_points.csv", index=False)
+# df = pd.DataFrame(
+#     {'x': x_e,
+#      'y': y_e
+#      })
+# df.to_csv("resources/E_points.csv", index=False)
 
-df = pd.DataFrame(
-    {'x': x_se,
-     'y': y_se
-     })
-df.to_csv("resources/SE_points.csv", index=False)
+# df = pd.DataFrame(
+#     {'x': x_se,
+#      'y': y_se
+#      })
+# df.to_csv("resources/SE_points.csv", index=False)
 
-df = pd.DataFrame(
-    {'x': x_s,
-     'y': y_s
-     })
-df.to_csv("resources/S_points.csv", index=False)
+# df = pd.DataFrame(
+#     {'x': x_s,
+#      'y': y_s
+#      })
+# df.to_csv("resources/S_points.csv", index=False)
 
-df = pd.DataFrame(
-    {'x': x_sw,
-     'y': y_sw
-     })
-df.to_csv("resources/SW_points.csv", index=False)
+# df = pd.DataFrame(
+#     {'x': x_sw,
+#      'y': y_sw
+#      })
+# df.to_csv("resources/SW_points.csv", index=False)
 
-df = pd.DataFrame(
-    {'x': x_w,
-     'y': y_w
-     })
-df.to_csv("resources/W_points.csv", index=False)
+# df = pd.DataFrame(
+#     {'x': x_w,
+#      'y': y_w
+#      })
+# df.to_csv("resources/W_points.csv", index=False)
 
-df = pd.DataFrame(
-    {'x': x_nw,
-     'y': y_nw
-     })
-df.to_csv("resources/NW_points.csv", index=False)
+# df = pd.DataFrame(
+#     {'x': x_nw,
+#      'y': y_nw
+#      })
+# df.to_csv("resources/NW_points.csv", index=False)
 
-for things in dirs:
-    plt.scatter(things[0],things[1])
+# for things in dirs:
+plt.scatter(x_pts,y_pts)
 # create dataframe from lists
 # df2 = pd.DataFrame(
 #     {'x': x_test,
