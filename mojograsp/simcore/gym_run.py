@@ -318,7 +318,7 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None, acti
         ent = args['entropy']
     else:
         ent = 0.0
-    if runtype == 'run' and False:
+    if runtype == 'run' and True:
         # wandb.init(project = 'StableBaselinesWandBTest')
         
         model = PPO("MlpPolicy", gym_env, tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-2.3}, ent_coef=ent,learning_rate=linear_schedule(args['learning_rate']))
@@ -338,7 +338,7 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None, acti
             while not done:
                 action, _ = model.predict(obs, deterministic=True)
                 obs, reward, done, info = gym_env.step(action)
-    elif runtype == 'run' and True:
+    elif runtype == 'run' and False:
         # wandb.init(project = 'StableBaselinesWandBTest')
         
         model = TD3("MlpPolicy", gym_env, tensorboard_log=args['tname'], learning_rate=linear_schedule(1e-5))
@@ -446,7 +446,7 @@ def main():
     # run_pybullet(overall_path + '/demos/rl_demo/data/wedge_double/wedge_l-r/experiment_config.json', runtype='eval')
 
     # run_pybullet(overall_path + '/demos/rl_demo/data/hand_transfer/wedge_l-r/experiment_config.json', runtype='transfer')
-    # run_pybullet(overall_path+'/demos/rl_demo/data/full_15/experiment_config.json',runtype='run')
+    run_pybullet(overall_path+'/demos/rl_demo/data/ja_all/experiment_config.json',runtype='run')
     # run_pybullet(overall_path+'/demos/rl_demo/data/wedge/wedge_forward_right/experiment_config.json',runtype='run')
     # run_pybullet(overall_path+'/demos/rl_demo/data/wedge/wedge_forward_left/experiment_config.json',runtype='run')
     # run_pybullet(overall_path+'/demos/rl_demo/data/wedge/wedge_left/experiment_config.json',runtype='run')
