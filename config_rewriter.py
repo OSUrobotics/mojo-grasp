@@ -9,15 +9,15 @@ import json
 import os
 import pathlib
 
-folder_path = './demos/rl_demo/data/hpc_higher_learning_rate'
+folder_path = './demos/rl_demo/data/full_full_ppo'
 
 overall_path = pathlib.Path(__file__).parent.resolve()
 resource_path = overall_path.joinpath('demos/rl_demo/resources')
 run_path = overall_path.joinpath('demos/rl_demo/runs')
 batch_run_folder = overall_path.joinpath(folder_path)
 
-subfolders = os.listdir(batch_run_folder)
-#subfolders = ['']
+#subfolders = os.listdir(batch_run_folder)
+subfolders = ['']
 for folder in subfolders:
     curr_folder = str(batch_run_folder.joinpath(folder))
     with open(curr_folder+'/experiment_config.json', 'r') as file:
