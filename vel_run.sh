@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH -J PPOInHandManipulation                        # name of job
 #SBATCH -p dgx2                                  # name of partition or queue
-#SBATCH --array=1-4                     # how many tasks in the array
+#SBATCH --array=1                     # how many tasks in the array
 #SBATCH -o log/LOG-%a.out                 # name of error file for this submission script
 #SBATCH -e log/ERROR-%a.err                 # name of error file for this submission script
 #SBATCH --mem=10G
