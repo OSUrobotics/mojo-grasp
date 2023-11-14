@@ -75,6 +75,13 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None, acti
             df2 = pd.read_csv(overall_path + '/demos/rl_demo/resources/test_points.csv', index_col=False)
             xeval = df2['x']
             yeval = df2['y']
+        elif 'big_random' == args['task']:
+            df = pd.read_csv(args['points_path'], index_col=False)
+            x = df["x"]
+            y = df["y"]
+            df2 = pd.read_csv(overall_path + '/demos/rl_demo/resources/test_points_big.csv', index_col=False)
+            xeval = df2['x']
+            yeval = df2['y']
         elif 'full_random' == args['task']:
             df = pd.read_csv(args['points_path'], index_col=False)
             x = df["x"]
@@ -435,7 +442,7 @@ def main():
     # run_pybullet(overall_path+'/demos/rl_demo/data/single_direction_updated_reward/forward_left/experiment_config.json',runtype='run')
     # run_pybullet(overall_path+'/demos/rl_demo/data/single_direction_updated_reward/forward_right/experiment_config.json',runtype='run')
     # run_pybullet(overall_path+'/demos/rl_demo/data/single_direction_updated_reward/backward_left/experiment_config.json',runtype='run')
-    run_pybullet(overall_path+'/demos/rl_demo/data/full_full/experiment_config.json',runtype='run')
+    run_pybullet(overall_path+'/demos/rl_demo/data/full_full_ppo/experiment_config.json',runtype='run')
     # run_pybullet(overall_path + '/demos/rl_demo/data/wedge_longer/wedge_left/experiment_config.json', runtype='replay', episode_number=24938)
     # for name in double_list:
         # run_pybullet(overall_path + '/demos/rl_demo/data/ftp_her/wedge_' + name + '/experiment_config.json', runtype='run')
@@ -446,7 +453,7 @@ def main():
     # run_pybullet(overall_path + '/demos/rl_demo/data/wedge_double/wedge_l-r/experiment_config.json', runtype='eval')
 
     # run_pybullet(overall_path + '/demos/rl_demo/data/hand_transfer/wedge_l-r/experiment_config.json', runtype='transfer')
-    run_pybullet(overall_path+'/demos/rl_demo/data/ja_all/experiment_config.json',runtype='run')
+    # run_pybullet(overall_path+'/demos/rl_demo/data/ja_all/experiment_config.json',runtype='run')
     # run_pybullet(overall_path+'/demos/rl_demo/data/wedge/wedge_forward_right/experiment_config.json',runtype='run')
     # run_pybullet(overall_path+'/demos/rl_demo/data/wedge/wedge_forward_left/experiment_config.json',runtype='run')
     # run_pybullet(overall_path+'/demos/rl_demo/data/wedge/wedge_left/experiment_config.json',runtype='run')
