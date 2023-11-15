@@ -56,7 +56,8 @@ def linear_schedule(initial_value: float) -> Callable[[float], float]:
 
 def run_pybullet(filepath, window=None, runtype='run', episode_number=None, action_list = None):
     # resource paths
-    
+    this_path = os.path.abspath(__file__)
+    overall_path = os.path.dirname(os.path.dirname(os.path.dirname(this_path)))
     with open(filepath, 'r') as argfile:
         args = json.load(argfile)
     
@@ -71,7 +72,14 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None, acti
             df = pd.read_csv(args['points_path'], index_col=False)
             x = df["x"]
             y = df["y"]
-            df2 = pd.read_csv('/home/orochi/mojo/mojo-grasp/demos/rl_demo/resources/test_points.csv', index_col=False)
+            df2 = pd.read_csv(overall_path + '/demos/rl_demo/resources/test_points.csv', index_col=False)
+            xeval = df2['x']
+            yeval = df2['y']
+        elif 'big_random' == args['task']:
+            df = pd.read_csv(args['points_path'], index_col=False)
+            x = df["x"]
+            y = df["y"]
+            df2 = pd.read_csv(overall_path + '/demos/rl_demo/resources/test_points_big.csv', index_col=False)
             xeval = df2['x']
             yeval = df2['y']
         elif 'full_random' == args['task']:
@@ -84,7 +92,7 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None, acti
         elif args['task'] == 'unplanned_random':
             x = [0.02]
             y = [0.065]
-            df2 = pd.read_csv('/home/orochi/mojo/mojo-grasp/demos/rl_demo/resources/points.csv', index_col=False)
+            df2 = pd.read_csv(overall_path + '/demos/rl_demo/resources/points.csv', index_col=False)
             xeval = df2["x"]
             yeval = df2["x"]
             eval_names = 500 * ['Eval']
@@ -212,7 +220,7 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None, acti
         yeval = [-0.045, -0.06, -0.045, 0, 0.045, 0.06, 0.045, 0]
         eval_names = ['SE','S','SW','W','NW','N','NE','E'] 
         if action_list == None:
-            with open('/home/mothra/mojo-grasp/demos/rl_demo/data/wedge_longer/wedge_left/Test/Evaluate_24938.pkl','rb') as fol:
+            with open(overall_path + '/demos/rl_demo/data/wedge_longer/wedge_left/Test/Evaluate_24938.pkl','rb') as fol:
                 data = pkl.load(fol)
             action_list = data#np.array(data)
     names = ['AsteriskSE.pkl','AsteriskS.pkl','AsteriskSW.pkl','AsteriskW.pkl','AsteriskNW.pkl','AsteriskN.pkl','AsteriskNE.pkl','AsteriskE.pkl']
@@ -435,7 +443,6 @@ def main():
     # run_pybullet(overall_path+'/demos/rl_demo/data/single_direction_updated_reward/forward_left/experiment_config.json',runtype='run')
     # run_pybullet(overall_path+'/demos/rl_demo/data/single_direction_updated_reward/forward_right/experiment_config.json',runtype='run')
     # run_pybullet(overall_path+'/demos/rl_demo/data/single_direction_updated_reward/backward_left/experiment_config.json',runtype='run')
-    # run_pybullet(overall_path+'/demos/rl_demo/data/full_full/experiment_config.json',runtype='run')
     # run_pybullet(overall_path + '/demos/rl_demo/data/wedge_longer/wedge_left/experiment_config.json', runtype='replay', episode_number=24938)
     # for name in double_list:
         # run_pybullet(overall_path + '/demos/rl_demo/data/ftp_her/wedge_' + name + '/experiment_config.json', runtype='run')
@@ -447,6 +454,7 @@ def main():
 
     run_pybullet(overall_path + '/demos/rl_demo/data/JA_all_transfer/experiment_config.json', runtype='transfer')
     # run_pybullet(overall_path+'/demos/rl_demo/data/ja_all/experiment_config.json',runtype='run')
+
     # run_pybullet(overall_path+'/demos/rl_demo/data/wedge/wedge_forward_right/experiment_config.json',runtype='run')
     # run_pybullet(overall_path+'/demos/rl_demo/data/wedge/wedge_forward_left/experiment_config.json',runtype='run')
     # run_pybullet(overall_path+'/demos/rl_demo/data/wedge/wedge_left/experiment_config.json',runtype='run')

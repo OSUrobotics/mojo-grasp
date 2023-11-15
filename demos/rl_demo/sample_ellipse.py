@@ -9,8 +9,8 @@ NUM_POINTS = 1000
 NUM_TRAIN = int(NUM_POINTS*0.7)
 NUM_TEST = NUM_POINTS - NUM_TRAIN
 # maximums for x and y
-ELLIPSE_X_MAX = 40
-ELLIPSE_Y_MAX = 25
+ELLIPSE_X_MAX = 80
+ELLIPSE_Y_MAX = 50
 
 x_max = ELLIPSE_X_MAX * .001
 y_max = ELLIPSE_Y_MAX * .001
@@ -61,7 +61,7 @@ dirs = [[x_e,y_e],[x_ne, y_ne],[x_n,y_n],[x_nw,y_nw],[x_w,y_w],[x_sw,y_sw],[x_s,
 x_pts,y_pts = [], []
 for j in range(NUM_POINTS):
     theta = random.uniform(0, 2*np.pi)
-    r = (1-(random.uniform(0, 0.95))**2) * 35/1000
+    r = (1-(random.uniform(0, 0.95))**2) * 70/1000
     # We are sampling a rectangular area, we check to see if the point given is within the ellipse
     # If it is we add it to the list, if not we retry
     x = r * np.sin(theta)
@@ -73,7 +73,7 @@ df = pd.DataFrame(
     {'x': x_pts,
       'y': y_pts
       })
-df.to_csv("resources/test_points_new.csv", index=False)            
+df.to_csv("resources/test_points_big.csv", index=False)            
 # create dataframe from lists
 # df = pd.DataFrame(
 #     {'x': x_n,
@@ -125,6 +125,7 @@ df.to_csv("resources/test_points_new.csv", index=False)
 
 # for things in dirs:
 plt.scatter(x_pts,y_pts)
+plt.show()
 # create dataframe from lists
 # df2 = pd.DataFrame(
 #     {'x': x_test,
