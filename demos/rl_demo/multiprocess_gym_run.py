@@ -29,18 +29,20 @@ from stable_baselines3.common.evaluation import evaluate_policy
 import wandb
 import numpy as np
 import time
+import os
 # from stable_baselines3.DQN import MlpPolicy
 
 def make_env(filepath=None,rank=0):
     def _init():
         import pybullet as p1
-        env, _ = make_pybullet(filepath, p1, rank)
+        env, _, _ = make_pybullet(filepath, p1, rank)
         return env
     return _init
 
 def make_pybullet(filepath, pybullet_instance, rank):
     # resource paths
-    
+    this_path = os.path.abspath(__file__)
+    overall_path = os.path.dirname(os.path.dirname(os.path.dirname(this_path)))
     with open(filepath, 'r') as argfile:
         args = json.load(argfile)
     
@@ -54,10 +56,16 @@ def make_pybullet(filepath, pybullet_instance, rank):
         df = pd.read_csv(args['points_path'], index_col=False)
         x = df["x"]
         y = df["y"]
-        df2 = pd.read_csv('/home/orochi/mojo/mojo-grasp/demos/rl_demo/resources/test_points.csv', index_col=False)
-        xeval = [0.045, 0, -0.045, -0.06, -0.045, 0, 0.045, 0.06]
-        yeval = [-0.045, -0.06, -0.045, 0, 0.045, 0.06, 0.045, 0]
-        eval_names = ['SE','S','SW','W','NW','N','NE','E'] 
+        df2 = pd.read_csv(overall_path + '/demos/rl_demo/resources/test_points.csv', index_col=False)
+        xeval = df2['x']
+        yeval = df2['y']
+    elif 'big_random' == args['task']:
+        df = pd.read_csv(args['points_path'], index_col=False)
+        x = df["x"]
+        y = df["y"]
+        df2 = pd.read_csv(overall_path + '/demos/rl_demo/resources/test_points_big.csv', index_col=False)
+        xeval = df2['x']
+        yeval = df2['y']
     elif 'full_random' == args['task']:
         df = pd.read_csv(args['points_path'], index_col=False)
         x = df["x"]
@@ -68,9 +76,124 @@ def make_pybullet(filepath, pybullet_instance, rank):
     elif args['task'] == 'unplanned_random':
         x = [0.02]
         y = [0.065]
-        xeval = [0.045, 0, -0.045, -0.06, -0.045, 0, 0.045, 0.06]
-        yeval = [-0.045, -0.06, -0.045, 0, 0.045, 0.06, 0.045, 0]
-        eval_names = ['SE','S','SW','W','NW','N','NE','E'] 
+        df2 = pd.read_csv(overall_path + '/demos/rl_demo/resources/points.csv', index_col=False)
+        xeval = df2["x"]
+        yeval = df2["x"]
+        eval_names = 500 * ['Eval']
+    elif 'wedge' in args['task']:
+        df = pd.read_csv(args['points_path'], index_col=False)
+        x = df["x"]
+        y = df["y"]
+        xeval = x
+        yeval = y
+    elif args['task'] == 'forward':
+        x= [0.0]
+        y = [0.04]
+        xeval = x
+        yeval = y
+        eval_names = ['N'] 
+    elif args['task'] == 'backward':
+        x= [0.0]
+        y = [-0.04]
+        xeval = x
+        yeval = y
+        eval_names = ['S'] 
+    elif args['task'] == 'left':
+        x= [-0.04]
+        y = [0.0]
+        xeval = x
+        yeval = y
+        eval_names = ['W'] 
+    elif args['task'] == 'right':
+        x= [0.04]
+        y = [0.0]
+        xeval = x
+        yeval = y
+        eval_names = ['E'] 
+    elif args['task'] == 'forward_left':
+        x= [-0.03]
+        y = [0.03]
+        xeval = x
+        yeval = y
+        eval_names = ['NW'] 
+    elif args['task'] == 'forward_right':
+        x= [0.03]
+        y = [0.03]
+        xeval = x
+        yeval = y
+        eval_names = ['NE'] 
+    elif args['task'] == 'backward_left':
+        x= [-0.03]
+        y = [-0.03]
+        xeval = x
+        yeval = y
+        eval_names = ['SW'] 
+    elif args['task'] == 'backward_right':
+        x= [0.03]
+        y = [-0.03]
+        xeval = x
+        yeval = y
+        eval_names = ['SE'] 
+
+    if args['task'] == 'forward':
+        x= [0.0]
+        y = [0.04]
+        xeval = x
+        yeval = y
+        eval_names = ['N'] 
+    elif args['task'] == 'backward':
+        x= [0.0]
+        y = [-0.04]
+        xeval = x
+        yeval = y
+        eval_names = ['S'] 
+    elif args['task'] == 'left':
+        x= [-0.04]
+        y = [0.0]
+        xeval = x
+        yeval = y
+        eval_names = ['W'] 
+    elif args['task'] == 'right':
+        x= [0.04]
+        y = [0.0]
+        xeval = x
+        yeval = y
+        eval_names = ['E'] 
+    elif args['task'] == 'forward_left':
+        x= [-0.03]
+        y = [0.03]
+        xeval = x
+        yeval = y
+        eval_names = ['NW'] 
+    elif args['task'] == 'forward_right':
+        x= [0.03]
+        y = [0.03]
+        xeval = x
+        yeval = y
+        eval_names = ['NE'] 
+    elif args['task'] == 'backward_left':
+        x= [-0.03]
+        y = [-0.03]
+        xeval = x
+        yeval = y
+        eval_names = ['SW'] 
+    elif args['task'] == 'backward_right':
+        x= [0.03]
+        y = [-0.03]
+        xeval = x
+        yeval = y
+        eval_names = ['SE'] 
+    else:
+        df = pd.read_csv(args['points_path'], index_col=False)
+        print('EVALUATING BOOOIIII')
+        x = df["x"]
+        y = df["y"]
+        xeval = x
+        yeval = y
+        # xeval = [0.045, 0, -0.045, -0.06, -0.045, 0, 0.045, 0.06]
+        # yeval = [-0.045, -0.06, -0.045, 0, 0.045, 0.06, 0.045, 0]
+        eval_names = ['eval']*500 
+    
 
     names = ['AsteriskSE.pkl','AsteriskS.pkl','AsteriskSW.pkl','AsteriskW.pkl','AsteriskNW.pkl','AsteriskN.pkl','AsteriskNE.pkl','AsteriskE.pkl']
     pose_list = [[i,j] for i,j in zip(x,y)]
@@ -105,8 +228,12 @@ def make_pybullet(filepath, pybullet_instance, rank):
         goal_poses = RandomGoalHolder([0.02,0.065])
     else:    
         goal_poses = GoalHolder(pose_list)
-
-    eval_goal_poses = GoalHolder(eval_pose_list,eval_names)
+    try:
+        eval_goal_poses = GoalHolder(eval_pose_list,eval_names)
+    except NameError:
+        print('No names')
+        eval_goal_poses = GoalHolder(eval_pose_list)
+    
     # time.sleep(10)
     # state, action and reward
     state = MultiprocessState(pybullet_instance, objects=[hand, obj, goal_poses], prev_len=args['pv'],eval_goals = eval_goal_poses)
@@ -130,13 +257,13 @@ def make_pybullet(filepath, pybullet_instance, rank):
     replay_buffer = ReplayBufferPriority(buffer_size=4080000)
     
     # environment and recording
-    env = multiprocess_env.MultiprocessEnv(pybullet_instance, hand=hand, obj=obj, hand_type=arg_dict['hand'], rand_start=args['rstart'])
+    env = multiprocess_env.MultiprocessSingleShapeEnv(pybullet_instance, hand=hand, obj=obj, hand_type=arg_dict['hand'], rand_start=args['rstart'])
 
     # env = rl_env.ExpertEnv(hand=hand, obj=cylinder)
     
     # Create phase
     manipulation = multiprocess_manipulation_phase.MultiprocessManipulation(
-        hand, obj, x, y, state, action, reward, replay_buffer=replay_buffer, args=arg_dict)
+        hand, obj, x, y, state, action, reward, env, replay_buffer=replay_buffer, args=arg_dict)
     
     
     # data recording
@@ -145,29 +272,30 @@ def make_pybullet(filepath, pybullet_instance, rank):
     
     
     gym_env = multiprocess_gym_wrapper.MultiprocessGymWrapper(env, manipulation, record_data, args)
-    return gym_env, args
+    return gym_env, args, [pose_list,eval_pose_list]
 
 
 
 def main():
-    num_cpu = 16 # Number of processes to use
+    num_cpu = 4 # Number of processes to use
     # Create the vectorized environment
-    filepath = './data/ftp_multiprocessing_test/experiment_config.json'
+    filepath = './data/multiprocess_test/experiment_config.json'
     vec_env = SubprocVecEnv([make_env(filepath,i) for i in range(num_cpu)])
     import pybullet as p2
-    eval_env, args = make_pybullet(filepath,p2, 100)
-    train_timesteps = int(args['evaluate']*151/num_cpu)
-    callback = multiprocess_gym_wrapper.EvaluateCallback(eval_env,n_eval_episodes=8, eval_freq=train_timesteps, best_model_save_path=args['save_path'])
+    eval_env, args, points = make_pybullet(filepath,p2, 100)
+    train_timesteps = int(args['evaluate']*(args['tsteps']+1)/num_cpu)
+    callback = multiprocess_gym_wrapper.EvaluateCallback(eval_env,n_eval_episodes=len(points[1]), eval_freq=train_timesteps, best_model_save_path=args['save_path'])
     # Stable Baselines provides you with make_vec_env() helper
     # which does exactly the previous steps for you.
     # You can choose between `DummyVecEnv` (usually faster) and `SubprocVecEnv`
     # env = make_vec_env(env_id, n_envs=num_cpu, seed=0, vec_env_cls=SubprocVecEnv)
-    wandb.init(project = 'StableBaselinesWandBTest')
+    # wandb.init(project = 'StableBaselinesWandBTest')
     start = time.time()    
-    model = PPO("MlpPolicy", vec_env, n_steps=151, batch_size=16 ,tensorboard_log=args['tname'])
-    model.learn(total_timesteps=args['epochs']*151, callback=callback)
-    model.save('./data/ftp_multiprocessing_test/best_policy')
+    model = PPO("MlpPolicy", vec_env,tensorboard_log=args['tname'])
+    model.learn(total_timesteps=args['epochs']*(args['tsteps']+1), callback=callback)
+    model.save('./data/multiprocess_test/best_policy')
     end = time.time()
     print(f'multiprocess env takes {end-start} seconds')
+    
 if __name__ == '__main__':
     main()

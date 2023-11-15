@@ -452,7 +452,7 @@ def main():
     #     run_pybullet(overall_path + '/demos/rl_demo/data/wedge_double/wedge_' + name + '/experiment_config.json', runtype='run')
     # run_pybullet(overall_path + '/demos/rl_demo/data/wedge_double/wedge_l-r/experiment_config.json', runtype='eval')
 
-    run_pybullet(overall_path + '/demos/rl_demo/data/JA_all_transfer/experiment_config.json', runtype='transfer')
+    run_pybullet(overall_path + '/demos/rl_demo/data/conventional_test/experiment_config.json', runtype='run')
     # run_pybullet(overall_path+'/demos/rl_demo/data/ja_all/experiment_config.json',runtype='run')
 
     # run_pybullet(overall_path+'/demos/rl_demo/data/wedge/wedge_forward_right/experiment_config.json',runtype='run')

@@ -28,7 +28,7 @@ class GoalHolder():
     
     def next_run(self):
         self.run_num +=1
-        print('Run number',self.run_num)
+        # print('Run number',self.run_num)
         
     def reset(self):
         self.run_num = 0
