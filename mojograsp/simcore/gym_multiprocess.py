@@ -12,11 +12,16 @@ import pybullet_data
 from demos.rl_demo import rl_env
 from demos.rl_demo import manipulation_phase_rl
 # import rl_env
-from demos.rl_demo.rl_state import StateRL, GoalHolder, RandomGoalHolder
+
+from demos.rl_demo import multiprocess_state as rl_state
+from demos.rl_demo.rl_state import GoalHolder, RandomGoalHolder
+
 from demos.rl_demo import rl_action
-from demos.rl_demo import rl_reward
+from demos.rl_demo import multiprocess_reward as rl_reward
 from demos.rl_demo import rl_gym_wrapper
+
 import pandas as pd
+
 from mojograsp.simcore.record_data import RecordDataJSON, RecordDataPKL,  RecordDataRLPKL
 from mojograsp.simobjects.two_finger_gripper import TwoFingerGripper
 from mojograsp.simobjects.object_with_velocity import ObjectWithVelocity
@@ -26,10 +31,32 @@ import json
 from stable_baselines3 import A2C, PPO
 from stable_baselines3.common.vec_env import SubprocVecEnv
 from stable_baselines3.common.evaluation import evaluate_policy
-import wandb
+import os
+import numpy as np
+from typing import Callable
+from mojograsp.simcore.data_combination import data_processor
 
 # from stable_baselines3.DQN import MlpPolicy
 
+
+def linear_schedule(initial_value: float) -> Callable[[float], float]:
+    """
+    Linear learning rate schedule.
+
+    :param initial_value: Initial learning rate.
+    :return: schedule that computes
+      current learning rate depending on remaining progress
+    """
+    def func(progress_remaining: float) -> float:
+        """
+        Progress will decrease from 1 (beginning) to 0.
+
+        :param progress_remaining:
+        :return: current learning rate
+        """
+        return progress_remaining * initial_value
+
+    return func
 
 def make_env(env, manipulation, record_data, args):
     def _init():
@@ -39,25 +66,32 @@ def make_env(env, manipulation, record_data, args):
 
 def run_pybullet(filepath, window=None, runtype='run', episode_number=None):
     # resource paths
-    wandb.init(project = 'StableBaselinesWandBTest')
+    this_path = os.path.abspath(__file__)
+    overall_path = os.path.dirname(os.path.dirname(os.path.dirname(this_path)))
     with open(filepath, 'r') as argfile:
         args = json.load(argfile)
     
-    if runtype =='run':
+    if (runtype =='run') | (runtype =='transfer'):
         if args['task'] == 'asterisk':
             x = [0.03, 0, -0.03, -0.04, -0.03, 0, 0.03, 0.04]
             y = [-0.03, -0.04, -0.03, 0, 0.03, 0.04, 0.03, 0]
             xeval = x
             yeval = y
-            
+            eval_names = ['SE','S','SW','W','NW','N','NE','E'] 
         elif 'random' == args['task']:
             df = pd.read_csv(args['points_path'], index_col=False)
             x = df["x"]
             y = df["y"]
-            df2 = pd.read_csv('/home/orochi/mojo/mojo-grasp/demos/rl_demo/resources/test_points.csv', index_col=False)
-            xeval = [0.045, 0, -0.045, -0.06, -0.045, 0, 0.045, 0.06]
-            yeval = [-0.045, -0.06, -0.045, 0, 0.045, 0.06, 0.045, 0]
-            eval_names = ['SE','S','SW','W','NW','N','NE','E'] 
+            df2 = pd.read_csv(overall_path + '/demos/rl_demo/resources/test_points.csv', index_col=False)
+            xeval = df2['x']
+            yeval = df2['y']
+        elif 'big_random' == args['task']:
+            df = pd.read_csv(args['points_path'], index_col=False)
+            x = df["x"]
+            y = df["y"]
+            df2 = pd.read_csv(overall_path + '/demos/rl_demo/resources/test_points_big.csv', index_col=False)
+            xeval = df2['x']
+            yeval = df2['y']
         elif 'full_random' == args['task']:
             df = pd.read_csv(args['points_path'], index_col=False)
             x = df["x"]
@@ -68,35 +102,136 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None):
         elif args['task'] == 'unplanned_random':
             x = [0.02]
             y = [0.065]
-            xeval = [0.045, 0, -0.045, -0.06, -0.045, 0, 0.045, 0.06]
-            yeval = [-0.045, -0.06, -0.045, 0, 0.045, 0.06, 0.045, 0]
+            df2 = pd.read_csv(overall_path + '/demos/rl_demo/resources/points.csv', index_col=False)
+            xeval = df2["x"]
+            yeval = df2["x"]
+            eval_names = 500 * ['Eval']
+        elif 'wedge' in args['task']:
+            df = pd.read_csv(args['points_path'], index_col=False)
+            x = df["x"]
+            y = df["y"]
+            xeval = x
+            yeval = y
+        elif args['task'] == 'forward':
+            x= [0.0]
+            y = [0.04]
+            xeval = x
+            yeval = y
+            eval_names = ['N'] 
+        elif args['task'] == 'backward':
+            x= [0.0]
+            y = [-0.04]
+            xeval = x
+            yeval = y
+            eval_names = ['S'] 
+        elif args['task'] == 'left':
+            x= [-0.04]
+            y = [0.0]
+            xeval = x
+            yeval = y
+            eval_names = ['W'] 
+        elif args['task'] == 'right':
+            x= [0.04]
+            y = [0.0]
+            xeval = x
+            yeval = y
+            eval_names = ['E'] 
+        elif args['task'] == 'forward_left':
+            x= [-0.03]
+            y = [0.03]
+            xeval = x
+            yeval = y
+            eval_names = ['NW'] 
+        elif args['task'] == 'forward_right':
+            x= [0.03]
+            y = [0.03]
+            xeval = x
+            yeval = y
+            eval_names = ['NE'] 
+        elif args['task'] == 'backward_left':
+            x= [-0.03]
+            y = [-0.03]
+            xeval = x
+            yeval = y
+            eval_names = ['SW'] 
+        elif args['task'] == 'backward_right':
+            x= [0.03]
+            y = [-0.03]
+            xeval = x
+            yeval = y
+            eval_names = ['SE'] 
+
     elif runtype=='eval':
-        df = pd.read_csv('/home/orochi/mojo/mojo-grasp/demos/rl_demo/resources/test_points.csv', index_col=False)
-        print('EVALUATING BOOOIIII')
-        x = df["x"]
-        y = df["y"]
-        xeval = x
-        yeval = y
-        xeval = [0.045, 0, -0.045, -0.06, -0.045, 0, 0.045, 0.06]
-        yeval = [-0.045, -0.06, -0.045, 0, 0.045, 0.06, 0.045, 0]
-        eval_names = ['SE','S','SW','W','NW','N','NE','E'] 
-    elif runtype=='replay':
-        df = pd.read_csv(args['points_path'], index_col=False)
-        x = df["x"]
-        y = df["y"]
-        df2 = pd.read_csv('/home/orochi/mojo/mojo-grasp/demos/rl_demo/resources/test_points.csv', index_col=False)
-        xeval = df2["x"]
-        yeval = df2["y"]
+        if args['task'] == 'forward':
+            x= [0.0]
+            y = [0.04]
+            xeval = x
+            yeval = y
+            eval_names = ['N'] 
+        elif args['task'] == 'backward':
+            x= [0.0]
+            y = [-0.04]
+            xeval = x
+            yeval = y
+            eval_names = ['S'] 
+        elif args['task'] == 'left':
+            x= [-0.04]
+            y = [0.0]
+            xeval = x
+            yeval = y
+            eval_names = ['W'] 
+        elif args['task'] == 'right':
+            x= [0.04]
+            y = [0.0]
+            xeval = x
+            yeval = y
+            eval_names = ['E'] 
+        elif args['task'] == 'forward_left':
+            x= [-0.03]
+            y = [0.03]
+            xeval = x
+            yeval = y
+            eval_names = ['NW'] 
+        elif args['task'] == 'forward_right':
+            x= [0.03]
+            y = [0.03]
+            xeval = x
+            yeval = y
+            eval_names = ['NE'] 
+        elif args['task'] == 'backward_left':
+            x= [-0.03]
+            y = [-0.03]
+            xeval = x
+            yeval = y
+            eval_names = ['SW'] 
+        elif args['task'] == 'backward_right':
+            x= [0.03]
+            y = [-0.03]
+            xeval = x
+            yeval = y
+            eval_names = ['SE'] 
+        else:
+            df = pd.read_csv(args['points_path'], index_col=False)
+            print('EVALUATING BOOOIIII')
+            x = df["x"]
+            y = df["y"]
+            xeval = x
+            yeval = y
+            # xeval = [0.045, 0, -0.045, -0.06, -0.045, 0, 0.045, 0.06]
+            # yeval = [-0.045, -0.06, -0.045, 0, 0.045, 0.06, 0.045, 0]
+            eval_names = ['eval']*500 
     
+            
     names = ['AsteriskSE.pkl','AsteriskS.pkl','AsteriskSW.pkl','AsteriskW.pkl','AsteriskNW.pkl','AsteriskN.pkl','AsteriskNE.pkl','AsteriskE.pkl']
     pose_list = [[i,j] for i,j in zip(x,y)]
+    np.random.shuffle(pose_list)
     eval_pose_list = [[i,j] for i,j in zip(xeval,yeval)]
     print(args)
     
     envs = []
     manipulation_phases = []
     data_recorders = []
-    for _ in range(4):
+    for _ in range(2):
         # physics_client = b1.connect(p.DIRECT)
         b1 = bc.BulletClient(p.DIRECT)
         # print('connected to physics client',physics_client)
@@ -114,27 +249,15 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None):
         
         # Create TwoFingerGripper Object and set the initial joint positions
         hand = TwoFingerGripper(hand_id, path=args['hand_path'],physicsClientId=b1)
-        
-        # b1.resetJointState(hand_id, 0, -0.4)
-        # b1.resetJointState(hand_id, 1, 1.2)
-        # b1.resetJointState(hand_id, 3, 0.4)
-        # b1.resetJointState(hand_id, 4, -1.2)
-        
-        # b1.resetJointState(hand_id, 0, 0)
-        # b1.resetJointState(hand_id, 1, 0)
-        # b1.resetJointState(hand_id, 3, 0)
-        # b1.resetJointState(hand_id, 4, 0)
+
         # change visual of gripper
         b1.changeVisualShape(hand_id, -1, rgbaColor=[0.3, 0.3, 0.3, 1])
         b1.changeVisualShape(hand_id, 0, rgbaColor=[1, 0.5, 0, 1])
         b1.changeVisualShape(hand_id, 1, rgbaColor=[0.3, 0.3, 0.3, 1])
         b1.changeVisualShape(hand_id, 3, rgbaColor=[1, 0.5, 0, 1])
         b1.changeVisualShape(hand_id, 4, rgbaColor=[0.3, 0.3, 0.3, 1])
-        # b1.configureDebugVisualizer(p.COV_ENABLE_RENDERING,0)
-        # b1.setTimeStep(1/2400)
+
         obj = ObjectWithVelocity(obj_id, path=args['object_path'],name='obj_2',physicsClientId=b1)
-        # b1.addUserDebugPoints([[0.2,0.1,0.0],[1,0,0]],[[1,0.0,0],[0.5,0.5,0.5]], 1)
-        # b1.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 1)
         
         # For standard loaded goal poses
         if args['task'] == 'unplanned_random':
@@ -143,22 +266,24 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None):
             goal_poses = GoalHolder(pose_list)
         
         # For randomized poses
-        
-        
-        eval_goal_poses = GoalHolder(eval_pose_list,eval_names)
+        try:
+            eval_goal_poses = GoalHolder(eval_pose_list,eval_names)
+        except NameError:
+            print('No names')
+            eval_goal_poses = GoalHolder(eval_pose_list)
         # time.sleep(10)
         # state, action and reward
-        state = StateRL(objects=[hand, obj, goal_poses], prev_len=args['pv'],eval_goals = eval_goal_poses, physicsClientId=b1)
+        state = rl_state.MultiprocessState(objects=[hand, obj, goal_poses], prev_len=args['pv'],eval_goals = eval_goal_poses, physicsClientId=b1)
         
         if args['freq'] ==240:
             action = rl_action.ExpertAction()
         else:
             action = rl_action.InterpAction(args['freq'])
         
-        reward = rl_reward.ExpertReward(b1)
+        reward = rl_reward.MultiprocessReward(b1)
         b1.changeDynamics(plane_id,-1,lateralFriction=0.05, spinningFriction=0.05, rollingFriction=0.05)
         #argument preprocessing
-        b1.changeDynamics(obj.id, -1, mass=.03, restitution=.95, lateralFriction=1)
+        b1.changeDynamics(obj.id, -1, mass=.03, restitution=.95, lateralFriction=1, localInertiaDiagonal=[0.000029435425,0.000029435425,0.00000725805])
         arg_dict = args.copy()
         if args['action'] == 'Joint Velocity':
             arg_dict['ik_flag'] = False
@@ -172,10 +297,9 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None):
         env = rl_env.ExpertEnv(hand=hand, obj=obj, hand_type=arg_dict['hand'], rand_start=args['rstart'],physicsClientId=b1)
     
         # env = rl_env.ExpertEnv(hand=hand, obj=cylinder)
-        
         # Create phase
         manipulation = manipulation_phase_rl.ManipulationRL(
-            hand, obj, x, y, state, action, reward, replay_buffer=replay_buffer, args=arg_dict,physicsClientId=b1)
+            hand, obj, x, y, state, action, reward,env, replay_buffer=replay_buffer, args=arg_dict,physicsClientId=b1)
         
         
         # data recording
@@ -188,16 +312,22 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None):
         manipulation_phases.append(manipulation)
         data_recorders.append(record_data)
 
-    env = SubprocVecEnv([make_env(envs[i], manipulation_phases[i], data_recorders[i], arg_dict) for i in range(4)])
+    env = SubprocVecEnv([make_env(envs[i], manipulation_phases[i], data_recorders[i], arg_dict) for i in range(2)])
+
     # b1.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 0)
     # b1.configureDebugVisualizer(p.COV_ENABLE_GUI, 0)
     # check_env(gym_env, warn=True)
+    if 'entropy' in args.keys():
+        ent = args['entropy']
+    else:
+        ent = 0.0
     if runtype == 'run':
         # best_performance = -1000
-        model = PPO("MlpPolicy", env, tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-1})
+        model = PPO("MlpPolicy", env, tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-2.3}, ent_coef=ent,learning_rate=linear_schedule(args['learning_rate']))
         # gym_env = make_vec_env(lambda: gym_env, n_envs=1)
         # train_timesteps = args['evaluate']*151
-        model.learn(args['epochs']*151)
+        env.train()
+        model.learn(args['epochs']*(args['tsteps']+1))
         # for epoch in range(int(args['epochs']/args['evaluate'])):
         #     for gym_env in env:
         #         gym_env.train()
@@ -215,22 +345,21 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None):
         # d = data_processor(args['save_path'] + 'Train/')
         # d.load_data()
         # d.save_all()
-        env.eval = True
-        env.eval_names = names
-        
-
-        for _ in range(8):
+        d = data_processor(args['save_path'] + 'Train/')
+        d.load_limited()
+        d.save_all()
+        model.save(args['save_path']+'best_model')
+        env.evaluate()
+        env.episode_type = 'eval'
+        for _ in range(len(eval_goal_poses)):
             obs = env.reset()
-            for step in range(151):
+            done = False
+            while not done:
                 action, _ = model.predict(obs, deterministic=True)
-                # print("Step {}".format(step + 1))
-                # print("Action: ", action)
                 obs, reward, done, info = env.step(action)
-                # print('obs=', obs, 'reward=', reward, 'done=', done)
-                # env.render(mode='console')
 
 def main():
-    run_pybullet('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/ftp_experiment/experiment_config.json',runtype='run')
+    run_pybullet('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/multiprocess_test/experiment_config.json',runtype='run')
     # run_pybullet('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/ftp_experiment/experiment_config.json',runtype='eval')
 if __name__ == '__main__':
     main()

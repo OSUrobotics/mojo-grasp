@@ -10,15 +10,17 @@ class MultiprocessRecordData(RecordDataRLPKL):
         super().__init__(data_path=data_path, data_prefix=data_prefix, save_all=save_all, save_episode=save_episode,state=state,action=action, reward=reward, controller=controller)
         self.record_id = Record_id
 
-    def save_episode(self,evaluated=False, filename=None, use_reward_name=False):
+    def save_episode(self,evaluated='train', filename=None, use_reward_name=False):
         """
         Method called by :func:`~mojograsp.simcore.sim_manager.SimManager` after every episode. Saves the most recent
         episode dictionary to a pkl file. 
         """
         if self.save_episode_flag and self.data_path != None:
-            if evaluated:
-                if filename is not None:
-                    file_path = self.data_path + "Test/"+ self.record_id + filename + str(self.eval_num) + '.pkl'
+            if evaluated == 'test':
+                if filename is None:
+                    print(self.data_path)
+                    print(self.record_id)
+                    file_path = self.data_path + "Test/"+ self.record_id + str(self.eval_num) + '.pkl'
                 elif use_reward_name:
                     name = self.state.get_name()
                     file_path = self.data_path + "Test/"+ self.record_id + name + str(self.eval_num) + '.pkl'
