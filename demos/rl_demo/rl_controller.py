@@ -522,7 +522,6 @@ class GymController(ExpertController):
 
     def find_angles(self,actor_output):
         if self.useIK:
-
             finger_pos1 = p.getLinkState(self.gripper.id, 2) #RIGHT FINGER
             finger_pos2 = p.getLinkState(self.gripper.id, 5) #LEFT FINGER
             finger_pos1 = finger_pos1[0]
@@ -555,7 +554,6 @@ class GymController(ExpertController):
                     finger_pos2 = self.ik_f2.finger_fk.calculate_forward_kinematics()
                 # print(np.shape(action_list))
         else:
-            
             finger_angles = self.gripper.get_joint_angles()
             action_list = []
             # print(actor_output, finger_angles)
