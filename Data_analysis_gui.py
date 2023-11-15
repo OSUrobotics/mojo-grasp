@@ -181,7 +181,8 @@ def main():
             backend.draw_aout_comparison(episode_data)
             figure_canvas_agg.draw()
         elif event == 'Episode Rewards':
-            if 'all' in filename:
+            if 'all' in filename and 'all' not in folder:
+                
                 backend.draw_net_reward(episode_data)
             else:
                 backend.draw_net_reward(folder)
