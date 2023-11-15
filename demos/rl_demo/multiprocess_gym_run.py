@@ -45,7 +45,7 @@ def make_pybullet(filepath, pybullet_instance, rank):
     overall_path = os.path.dirname(os.path.dirname(os.path.dirname(this_path)))
     with open(filepath, 'r') as argfile:
         args = json.load(argfile)
-    
+    print(args['task'])
     if args['task'] == 'asterisk':
         x = [0.03, 0, -0.03, -0.04, -0.03, 0, 0.03, 0.04]
         y = [-0.03, -0.04, -0.03, 0, 0.03, 0.04, 0.03, 0]
@@ -87,55 +87,6 @@ def make_pybullet(filepath, pybullet_instance, rank):
         xeval = x
         yeval = y
     elif args['task'] == 'forward':
-        x= [0.0]
-        y = [0.04]
-        xeval = x
-        yeval = y
-        eval_names = ['N'] 
-    elif args['task'] == 'backward':
-        x= [0.0]
-        y = [-0.04]
-        xeval = x
-        yeval = y
-        eval_names = ['S'] 
-    elif args['task'] == 'left':
-        x= [-0.04]
-        y = [0.0]
-        xeval = x
-        yeval = y
-        eval_names = ['W'] 
-    elif args['task'] == 'right':
-        x= [0.04]
-        y = [0.0]
-        xeval = x
-        yeval = y
-        eval_names = ['E'] 
-    elif args['task'] == 'forward_left':
-        x= [-0.03]
-        y = [0.03]
-        xeval = x
-        yeval = y
-        eval_names = ['NW'] 
-    elif args['task'] == 'forward_right':
-        x= [0.03]
-        y = [0.03]
-        xeval = x
-        yeval = y
-        eval_names = ['NE'] 
-    elif args['task'] == 'backward_left':
-        x= [-0.03]
-        y = [-0.03]
-        xeval = x
-        yeval = y
-        eval_names = ['SW'] 
-    elif args['task'] == 'backward_right':
-        x= [0.03]
-        y = [-0.03]
-        xeval = x
-        yeval = y
-        eval_names = ['SE'] 
-
-    if args['task'] == 'forward':
         x= [0.0]
         y = [0.04]
         xeval = x
@@ -279,7 +230,7 @@ def make_pybullet(filepath, pybullet_instance, rank):
 def main():
     num_cpu = 4 # Number of processes to use
     # Create the vectorized environment
-    filepath = './data/multiprocess_test/experiment_config.json'
+    filepath = './data/JA_big/experiment_config.json'
     vec_env = SubprocVecEnv([make_env(filepath,i) for i in range(num_cpu)])
     import pybullet as p2
     eval_env, args, points = make_pybullet(filepath,p2, 100)
