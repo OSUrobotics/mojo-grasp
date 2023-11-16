@@ -82,6 +82,7 @@ class GymWrapper(gym.Env):
         self.state_list = args['state_list']
         self.CONTACT_SCALING = args['contact_scaling']
         self.DISTANCE_SCALING = args['distance_scaling'] 
+        self.ROTATION_SCALING = args['rotation_scaling']
         self.image_path = args['save_path'] + 'Videos/'
         self.record = record_data
         self.eval = False
@@ -381,7 +382,6 @@ class GymWrapper(gym.Env):
             if (reward_container['distance_to_goal'] < self.SUCCESS_THRESHOLD) & (np.linalg.norm(reward_container['object_velocity']) <= 0.05):
                 tstep_reward += self.SUCCESS_REWARD
                 done2 = True
-                print('SUCCESS BABY!!!!!!!')
         elif self.REWARD_TYPE == 'DFS':
             ftemp = max(reward_container['f1_dist'],reward_container['f2_dist'])
             # assert ftemp >= 0
@@ -389,8 +389,9 @@ class GymWrapper(gym.Env):
             if (reward_container['distance_to_goal'] < self.SUCCESS_THRESHOLD) & (np.linalg.norm(reward_container['object_velocity']) <= 0.05):
                 tstep_reward += self.SUCCESS_REWARD
                 done2 = True
-
-                print('SUCCESS BABY!!!!!!!')
+        elif self.REWARD_TYPE == 'Rotation':
+            temp = -reward_container['distance_to_goal']/reward_container['start_dist'] *  self.DISTANCE_SCALING
+            temp2 = -reward_container['scaled_angle_distance'] * self.ROTATION_SCALING
         elif self.REWARD_TYPE == 'SmartDistance + SmartFinger':
             ftemp = max(reward_container['f1_dist'],reward_container['f2_dist'])
             if ftemp > 0.001:

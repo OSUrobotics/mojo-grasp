@@ -4,6 +4,7 @@ import numpy as np
 import pybullet as p
 from mojograsp.simobjects.two_finger_gripper import TwoFingerGripper
 from copy import deepcopy
+from scipy.spatial.transform import Rotation as R
 
 class ExpertReward(Reward):
     def __init__(self, physics_ID=None):
@@ -11,8 +12,11 @@ class ExpertReward(Reward):
         self.prev_pos = []
         self.start_pos = []
         self.start_dist = None
+        self.start_angle = 0
 
     def set_reward(self, goal_position: list, cube: ObjectBase, hand: TwoFingerGripper, end_reward):
+        # goal position can be a list of length 2 (x,y) or length 3 (x,y,theta)
+        # for only doing rotaion, set goal x,y to 0,0
         current_cube_pose = cube.get_curr_pose()
         # Finds distance between current cube position and goal position
         distance = np.sqrt((goal_position[0] - current_cube_pose[0][0])**2 +
@@ -32,11 +36,22 @@ class ExpertReward(Reward):
         
         if self.start_dist is None:
             self.start_dist = distance.copy()
+            rotation = R.from_quat(current_cube_pose[1])
+            angle = rotation.as_euler('xyz')
+            self.start_angle = angle[-1]
         
         self.current_reward['object_velocity'] = velocity[0]
         self.current_reward['start_dist'] = self.start_dist
         self.current_reward['plane_side'] = np.dot(start_pos_vec,current_pos_vec) <= 0
         # print('setting the reward')
+        if len(goal_position) == 3:
+            rotation = R.from_quat(current_cube_pose[1])
+            angle = rotation.as_euler('xyz')
+            top = min(abs(angle[-1] - goal_position[-1]),abs(angle[-1] - goal_position[-1]-np.pi*2),abs(angle[-1] - goal_position[-1]+ np.pi*2))
+            bot = min(abs(self.start_angle - goal_position[-1]), abs(self.start_angle - goal_position[-1]-np.pi*2),abs(self.start_angle - goal_position[-1]+np.pi*2))
+ 
+            # need to do some fuckery to make sure we are going to the closer one
+            self.current_reward['scaled_angle_difference'] = top/bot
         try:
             self.current_reward["distance_to_goal"] = distance
             self.current_reward["goal_position"] = goal_position
