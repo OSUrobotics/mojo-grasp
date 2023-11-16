@@ -224,7 +224,7 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None, acti
         yeval = [-0.045, -0.06, -0.045, 0, 0.045, 0.06, 0.045, 0]
         eval_names = ['SE','S','SW','W','NW','N','NE','E'] 
         if action_list == None:
-            with open(overall_path + '/demos/rl_demo/data/wedge_longer/wedge_left/Test/Evaluate_24938.pkl','rb') as fol:
+            with open(overall_path + '/demos/rl_demo/data/full_full_ppo/Eval/episode_'+str(episode_number)+'.pkl','rb') as fol:
                 data = pkl.load(fol)
             action_list = data#np.array(data)
     names = ['AsteriskSE.pkl','AsteriskS.pkl','AsteriskSW.pkl','AsteriskW.pkl','AsteriskNW.pkl','AsteriskN.pkl','AsteriskNE.pkl','AsteriskE.pkl']
@@ -431,7 +431,7 @@ def main():
     # run_pybullet(overall_path+'/demos/rl_demo/data/single_direction_updated_reward/forward_left/experiment_config.json',runtype='run')
     # run_pybullet(overall_path+'/demos/rl_demo/data/single_direction_updated_reward/forward_right/experiment_config.json',runtype='run')
     # run_pybullet(overall_path+'/demos/rl_demo/data/single_direction_updated_reward/backward_left/experiment_config.json',runtype='run')
-    # run_pybullet(overall_path + '/demos/rl_demo/data/wedge_longer/wedge_left/experiment_config.json', runtype='replay', episode_number=24938)
+    run_pybullet(overall_path + '/demos/rl_demo/data/full_full_ppo/experiment_config.json', runtype='replay', episode_number=50049)
     # for name in double_list:
         # run_pybullet(overall_path + '/demos/rl_demo/data/ftp_her/wedge_' + name + '/experiment_config.json', runtype='run')
 
@@ -440,8 +440,8 @@ def main():
     #     run_pybullet(overall_path + '/demos/rl_demo/data/wedge_double/wedge_' + name + '/experiment_config.json', runtype='run')
     # run_pybullet(overall_path + '/demos/rl_demo/data/wedge_double/wedge_l-r/experiment_config.json', runtype='eval')
 
-    run_pybullet(overall_path + '/demos/rl_demo/data/hand_transfer_JA/experiment_config.json', runtype='transfer')
-    run_pybullet(overall_path + '/demos/rl_demo/data/hand_transfer_FTP/experiment_config.json', runtype='transfer')
+    # run_pybullet(overall_path + '/demos/rl_demo/data/hand_transfer_JA/experiment_config.json', runtype='transfer')
+    # run_pybullet(overall_path + '/demos/rl_demo/data/hand_transfer_FTP/experiment_config.json', runtype='transfer')
     # run_pybullet(overall_path+'/demos/rl_demo/data/ja_all/experiment_config.json',runtype='run')
 
     # run_pybullet(overall_path+'/demos/rl_demo/data/wedge/wedge_forward_right/experiment_config.json',runtype='run')
