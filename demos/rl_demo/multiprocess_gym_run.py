@@ -149,6 +149,8 @@ def make_pybullet(filepath, pybullet_instance, rank):
     names = ['AsteriskSE.pkl','AsteriskS.pkl','AsteriskSW.pkl','AsteriskW.pkl','AsteriskNW.pkl','AsteriskN.pkl','AsteriskNE.pkl','AsteriskE.pkl']
     pose_list = [[i,j] for i,j in zip(x,y)]
     eval_pose_list = [[i,j] for i,j in zip(xeval,yeval)]
+    num_eval = len(eval_pose_list)
+    eval_pose_list = eval_pose_list[num_eval*rank[0]/rank[1]:num_eval*(rank[0]+1)/rank[1]]
     # print(args)
     physics_client = pybullet_instance.connect(pybullet_instance.DIRECT)
     pybullet_instance.setAdditionalSearchPath(pybullet_data.getDataPath())
@@ -218,7 +220,7 @@ def make_pybullet(filepath, pybullet_instance, rank):
     
     
     # data recording
-    record_data = MultiprocessRecordData('process'+str(rank)+'_',
+    record_data = MultiprocessRecordData('process'+str(rank[0])+'_',
         data_path=args['save_path'], state=state, action=action, reward=reward, save_all=False, controller=manipulation.controller)
     
     
@@ -228,25 +230,35 @@ def make_pybullet(filepath, pybullet_instance, rank):
 
 
 def main():
-    num_cpu = 4 # Number of processes to use
+    num_cpu = 16 # Number of processes to use
     # Create the vectorized environment
-    filepath = './data/JA_big/experiment_config.json'
-    vec_env = SubprocVecEnv([make_env(filepath,i) for i in range(num_cpu)])
-    import pybullet as p2
-    eval_env, args, points = make_pybullet(filepath,p2, 100)
+    filename = 'Big_and_noisy'
+    filepath = './data/' + filename +'/experiment_config.json'
+    vec_env = SubprocVecEnv([make_env(filepath,[i,num_cpu]) for i in range(num_cpu)])
+    # import pybullet as p2
+    # eval_env, args, points = make_pybullet(filepath,p2, 100)
+    # this_path = os.path.abspath(__file__)
+    # overall_path = os.path.dirname(os.path.dirname(os.path.dirname(this_path)))
+    with open(filepath, 'r') as argfile:
+        args = json.load(argfile)
     train_timesteps = int(args['evaluate']*(args['tsteps']+1)/num_cpu)
-    callback = multiprocess_gym_wrapper.EvaluateCallback(eval_env,n_eval_episodes=len(points[1]), eval_freq=train_timesteps, best_model_save_path=args['save_path'])
+    callback = multiprocess_gym_wrapper.EvaluateCallback(vec_env,n_eval_episodes=int(1200/num_cpu), eval_freq=train_timesteps, best_model_save_path=args['save_path'])
     # Stable Baselines provides you with make_vec_env() helper
     # which does exactly the previous steps for you.
     # You can choose between `DummyVecEnv` (usually faster) and `SubprocVecEnv`
     # env = make_vec_env(env_id, n_envs=num_cpu, seed=0, vec_env_cls=SubprocVecEnv)
     # wandb.init(project = 'StableBaselinesWandBTest')
-    start = time.time()    
     model = PPO("MlpPolicy", vec_env,tensorboard_log=args['tname'])
     model.learn(total_timesteps=args['epochs']*(args['tsteps']+1), callback=callback)
-    model.save('./data/multiprocess_test/best_policy')
-    end = time.time()
-    print(f'multiprocess env takes {end-start} seconds')
-    
+    model.save('./data/'+filename+'/best_policy')
+    vec_env[0].evaluate()
+    vec_env[0].episode_type = 'eval'
+    for _ in range(1200):
+        obs = vec_env[0].reset()
+        done = False
+        while not done:
+            action, _ = model.predict(obs, deterministic=True)
+            obs, _, done, _ = vec_env[0].step(action)
+
 if __name__ == '__main__':
     main()

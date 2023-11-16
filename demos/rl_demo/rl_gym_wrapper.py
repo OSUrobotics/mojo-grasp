@@ -43,18 +43,17 @@ class NoiseAdder():
         
     def add_noise(self,x_tensor,noise_percent):
         """
-        normalizes a numpy array to -1 and 1 using provided maximums and minimums
-        :param x_tensor: - array to be normalized
-        :param mins: - array containing minimum values for the parameters in x_tensor
-        :param maxes: - array containing maximum values for the parameters in x_tensor
+        adds noise to an array based on desired noise percent
+        :param x_tensor: - array to get noisey
+        :param noise_percent: - how much noise to add
         """
         t1 = np.random.normal(0,noise_percent, size=len(x_tensor))
-        print('range',(self.maxes-self.mins))
-        print('raw noise', t1)
-        print('end noise',t1 * (self.maxes-self.mins))
-        print('xtensor', x_tensor)
-        print(np.array(x_tensor)> self.mins )
-        print((np.array(x_tensor)> self.mins))
+        # print('range',(self.maxes-self.mins))
+        # print('raw noise', t1)
+        # print('end noise',t1 * (self.maxes-self.mins))
+        # print('xtensor', x_tensor)
+        # print(np.array(x_tensor)> self.mins )
+        # print((np.array(x_tensor)> self.mins))
         return x_tensor + t1 * (self.maxes-self.mins)/2
 
 
@@ -82,7 +81,10 @@ class GymWrapper(gym.Env):
         self.state_list = args['state_list']
         self.CONTACT_SCALING = args['contact_scaling']
         self.DISTANCE_SCALING = args['distance_scaling'] 
-        self.ROTATION_SCALING = args['rotation_scaling']
+        try:
+            self.ROTATION_SCALING = args['rotation_scaling']
+        except:
+            self.ROTATION_SCALING = 0
         self.image_path = args['save_path'] + 'Videos/'
         self.record = record_data
         self.eval = False
