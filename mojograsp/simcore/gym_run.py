@@ -150,7 +150,11 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None, acti
             xeval = x
             yeval = y
             eval_names = ['SE'] 
-
+        elif args['task'] == 'Rotation':
+            x =[0]*500
+            y = [0]*500
+            theta = np.random.uniform(-np.pi,np.pi,500)
+            eval_theta = np.random.uniform(-np.pi,np.pi,500)
     elif runtype=='eval':
         if args['task'] == 'forward':
             x= [0.0]
@@ -212,6 +216,7 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None, acti
             eval_names = ['eval']*500 
     
     elif runtype=='replay':
+
         df = pd.read_csv(args['points_path'], index_col=False)
         x = df["x"]
         y = df["y"]
@@ -219,13 +224,17 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None, acti
         yeval = [-0.045, -0.06, -0.045, 0, 0.045, 0.06, 0.045, 0]
         eval_names = ['SE','S','SW','W','NW','N','NE','E'] 
         if action_list == None:
-            with open(overall_path + '/demos/rl_demo/data/wedge_longer/wedge_left/Test/Evaluate_24938.pkl','rb') as fol:
+            with open(overall_path + '/demos/rl_demo/data/full_full_ppo/Eval/episode_'+str(episode_number)+'.pkl','rb') as fol:
                 data = pkl.load(fol)
             action_list = data#np.array(data)
     names = ['AsteriskSE.pkl','AsteriskS.pkl','AsteriskSW.pkl','AsteriskW.pkl','AsteriskNW.pkl','AsteriskN.pkl','AsteriskNE.pkl','AsteriskE.pkl']
     pose_list = [[i,j] for i,j in zip(x,y)]
-    np.random.shuffle(pose_list)
     eval_pose_list = [[i,j] for i,j in zip(xeval,yeval)]
+    if args['task'] =='Rotation':
+        pose_list = [[i,j,k] for i,j,k in zip(x,y,theta)]
+        eval_pose_list = [[i,j,k] for i,j,k in zip(x,y,eval_theta)]
+    np.random.shuffle(pose_list)
+    
     print(args)
     try:
         if (args['viz']) | (runtype=='replay') | (runtype =='eval'):
@@ -245,8 +254,7 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None, acti
     hand_id = p.loadURDF(args['hand_path'], useFixedBase=True,
                          basePosition=[0.0, 0.0, 0.05], flags=p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
     obj_id = p.loadURDF(args['object_path'], basePosition=[0.0, 0.10, .05], flags=p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
-    # print('expected inertia  ', [0.000029435425,0.000029435425,0.00000725805])
-    # print('cube dynamics info',p.getDynamicsInfo(obj_id,-1))
+
     # Create TwoFingerGripper Object and set the initial joint positions
     # hand = TwoFingerGripper(hand_id, path=args['hand_path'])
 
@@ -325,7 +333,7 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None, acti
         ent = args['entropy']
     else:
         ent = 0.0
-    if runtype == 'run' and True:
+    if runtype == 'run':
         # wandb.init(project = 'StableBaselinesWandBTest')
         
         model = PPO("MlpPolicy", gym_env, tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-2.3}, ent_coef=ent,learning_rate=linear_schedule(args['learning_rate']))
@@ -345,26 +353,7 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None, acti
             while not done:
                 action, _ = model.predict(obs, deterministic=True)
                 obs, reward, done, info = gym_env.step(action)
-    elif runtype == 'run' and False:
-        # wandb.init(project = 'StableBaselinesWandBTest')
-        
-        model = TD3("MlpPolicy", gym_env, tensorboard_log=args['tname'], learning_rate=linear_schedule(1e-5))
 
-        # gym_env = make_vec_env(lambda: gym_env, n_envs=1)
-        gym_env.train()
-        model.learn(args['epochs']*(args['tsteps']+1), callback=callback)
-        d = data_processor(args['save_path'] + 'Train/')
-        d.load_limited()
-        d.save_all()
-        model.save(args['save_path']+'best_model')
-        gym_env.evaluate()
-        gym_env.episode_type = 'eval'
-        for _ in range(len(eval_goal_poses)):
-            obs = gym_env.reset()
-            done = False
-            while not done:
-                action, _ = model.predict(obs, deterministic=True)
-                obs, reward, done, info = gym_env.step(action)
     elif runtype == 'eval':
         model = PPO("MlpPolicy", gym_env, tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-1}).load(args['save_path']+'best_model')
         gym_env.evaluate()
@@ -442,9 +431,7 @@ def main():
     # run_pybullet(overall_path+'/demos/rl_demo/data/single_direction_updated_reward/forward_left/experiment_config.json',runtype='run')
     # run_pybullet(overall_path+'/demos/rl_demo/data/single_direction_updated_reward/forward_right/experiment_config.json',runtype='run')
     # run_pybullet(overall_path+'/demos/rl_demo/data/single_direction_updated_reward/backward_left/experiment_config.json',runtype='run')
-    run_pybullet(overall_path+'/demos/rl_demo/data/full_full_ppo/experiment_config.json',runtype='run')
-    run_pybullet(overall_path+'/demos/rl_demo/data/full_full_ppo/experiment_config.json',runtype='run')
-    # run_pybullet(overall_path + '/demos/rl_demo/data/wedge_longer/wedge_left/experiment_config.json', runtype='replay', episode_number=24938)
+    run_pybullet(overall_path + '/demos/rl_demo/data/full_full_ppo/experiment_config.json', runtype='replay', episode_number=50049)
     # for name in double_list:
         # run_pybullet(overall_path + '/demos/rl_demo/data/ftp_her/wedge_' + name + '/experiment_config.json', runtype='run')
 
@@ -453,8 +440,10 @@ def main():
     #     run_pybullet(overall_path + '/demos/rl_demo/data/wedge_double/wedge_' + name + '/experiment_config.json', runtype='run')
     # run_pybullet(overall_path + '/demos/rl_demo/data/wedge_double/wedge_l-r/experiment_config.json', runtype='eval')
 
-    # run_pybullet(overall_path + '/demos/rl_demo/data/hand_transfer/wedge_l-r/experiment_config.json', runtype='transfer')
-    ## run_pybullet(overall_path+'/demos/rl_demo/data/ja_all/experiment_config.json',runtype='run')
+    # run_pybullet(overall_path + '/demos/rl_demo/data/hand_transfer_JA/experiment_config.json', runtype='transfer')
+    # run_pybullet(overall_path + '/demos/rl_demo/data/hand_transfer_FTP/experiment_config.json', runtype='transfer')
+    # run_pybullet(overall_path+'/demos/rl_demo/data/ja_all/experiment_config.json',runtype='run')
+
     # run_pybullet(overall_path+'/demos/rl_demo/data/wedge/wedge_forward_right/experiment_config.json',runtype='run')
     # run_pybullet(overall_path+'/demos/rl_demo/data/wedge/wedge_forward_left/experiment_config.json',runtype='run')
     # run_pybullet(overall_path+'/demos/rl_demo/data/wedge/wedge_left/experiment_config.json',runtype='run')

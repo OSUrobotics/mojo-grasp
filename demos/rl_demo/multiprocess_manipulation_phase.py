@@ -8,12 +8,12 @@ from demos.rl_demo import rl_controller
 from mojograsp.simcore.replay_buffer import ReplayBufferDefault
 from numpy.random import shuffle
 from math import isclose
-
+from PIL import Image
 
 
 class MultiprocessManipulation(Phase):
 
-    def __init__(self, hand: TwoFingerGripper, cube: ObjectBase, x, y, state: State, action: Action, reward: Reward, replay_buffer: ReplayBufferDefault = None, args: dict = None,physicsClientId = None):
+    def __init__(self, hand: TwoFingerGripper, cube: ObjectBase, x, y, state: State, action: Action, reward: Reward, env, replay_buffer: ReplayBufferDefault = None, args: dict = None,physicsClientId = None):
         self.name = "manipulation"
         self.hand = hand
         self.cube = cube
@@ -21,6 +21,8 @@ class MultiprocessManipulation(Phase):
         self.action = action
         self.reward = reward
         self.eval = False
+        self.env = env
+        self.p = self.env.p
         try:
             self.terminal_step = args['tsteps']
             self.eval_terminal_step = args['eval-tsteps']
@@ -32,7 +34,7 @@ class MultiprocessManipulation(Phase):
         self.y = y
         self.use_ik = args['ik_flag']
         print('ARE WE USING IK', self.use_ik)
-        
+        self.image_path = args['save_path'] + 'Videos/'
         self.target = None
         self.goal_position = None
         # create controller
@@ -42,7 +44,8 @@ class MultiprocessManipulation(Phase):
         else:
             self.controller = rl_controller.RLController(hand, cube, replay_buffer=replay_buffer, args=args)
         self.end_val = 0
-        
+        self.camera_view_matrix = self.p.computeViewMatrix((0.0,0.1,0.5),(0.0,0.1,0.005), (0.0,1,0.0))
+        self.camera_projection_matrix = self.p.computeProjectionMatrixFOV(60,4/3,0.1,0.9)
         # self.controller = rl_controller.ExpertController(hand, cube)
 
     def setup(self):
@@ -95,16 +98,53 @@ class MultiprocessManipulation(Phase):
         # Set the current state before sim is stepped
         # self.state.set_state()
 
-    def execute_action(self, pybullet_thing, action_to_execute=None):
+    def execute_action(self, action_to_execute=None, pybullet_thing = None, viz = False):
         # Execute the target that we got from the controller in pre_step()
+
         for i in range(self.interp_ratio):
-            if action_to_execute:
+            # print(self.timestep,i)
+            if pybullet_thing is not None:
+                # temp = pybullet_thing.getJointStates(self.hand.id, [0,1,3,4])
+                goal_angs = self.action.get_joint_angles()
+                # print(f'goal angles {goal_angs}')
+                # print('joint states before motion', temp[0][0], temp[1][0], temp[2][0], temp[3][0])
+                # print('joint goals',goal_angs)
                 pybullet_thing.setJointMotorControlArray(self.hand.id, jointIndices=self.hand.get_joint_numbers(),
-                                            controlMode=pybullet_thing.POSITION_CONTROL, targetPositions=action_to_execute, positionGains=[0.8,0.8,0.8,0.8], forces=[0.4,0.4,0.4,0.4])
+                                            controlMode=self.p.POSITION_CONTROL, targetPositions=goal_angs, positionGains=[0.8,0.8,0.8,0.8], forces=[0.4,0.4,0.4,0.4])
+            elif action_to_execute:
+                # temp = p.getJointStates(self.hand.id, [0,1,3,4])
+                # print('joint states before motion', temp[0][0], temp[1][0], temp[2][0], temp[3][0])
+                # print('joint goals', action_to_execute)
+                self.p.setJointMotorControlArray(self.hand.id, jointIndices=self.hand.get_joint_numbers(),
+                                            controlMode=self.p.POSITION_CONTROL, targetPositions=action_to_execute, positionGains=[0.8,0.8,0.8,0.8], forces=[0.4,0.4,0.4,0.4])
             else:
+                goal_angs = self.action.get_joint_angles()
+                # print(f'goal angles {goal_angs}')
+                # temp = p.getJointStates(self.hand.id, [0,1,3,4])
+                # print('joint states before motion', temp[0][0], temp[1][0], temp[2][0], temp[3][0])
+                # print('joint goals',goal_angs)
                 # print('no action given',self.action.get_joint_angles())
-                pybullet_thing.setJointMotorControlArray(self.hand.id, jointIndices=self.hand.get_joint_numbers(),
-                                            controlMode=pybullet_thing.POSITION_CONTROL, targetPositions=self.action.get_joint_angles(), positionGains=[0.8,0.8,0.8,0.8], forces=[0.4,0.4,0.4,0.4])
+                self.p.setJointMotorControlArray(self.hand.id, jointIndices=self.hand.get_joint_numbers(),
+                                            controlMode=self.p.POSITION_CONTROL, targetPositions=goal_angs, positionGains=[0.8,0.8,0.8,0.8], forces=[0.4,0.4,0.4,0.4])
+            self.env.step()
+
+            if viz:
+                img = self.p.getCameraImage(640, 480,viewMatrix=self.camera_view_matrix,
+                                        projectionMatrix=self.camera_projection_matrix,
+                                        shadow=1,
+                                        lightDirection=[1, 1, 1])
+                img = Image.fromarray(img[2])
+                temp = 'eval'
+                img.save(self.image_path+ temp + '_frame_'+ str(self.timestep)+'_'+str(i)+'.png')
+            # if pybullet_thing is not None:
+            #     temp = pybullet_thing.getJointStates(self.hand.id, [0,1,3,4])
+            # elif action_to_execute:
+            #     temp = p.getJointStates(self.hand.id, [0,1,3,4])
+            # else:
+            #     temp = p.getJointStates(self.hand.id, [0,1,3,4])
+
+            # print('joint states after motion', temp[0][0], temp[1][0], temp[2][0], temp[3][0])
+            
         self.timestep += 1
 
     def post_step(self):
@@ -138,7 +178,6 @@ class MultiprocessManipulation(Phase):
         return None
 
     def reset(self):
-        # print('still reseting')
         # temp = list(range(len(self.x)))
         
         # shuffle(temp)
