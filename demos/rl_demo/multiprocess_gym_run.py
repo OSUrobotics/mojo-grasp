@@ -232,7 +232,7 @@ def make_pybullet(filepath, pybullet_instance, rank):
 def main():
     num_cpu = 16 # Number of processes to use
     # Create the vectorized environment
-    filename = 'Big_and_noisy'
+    filename = 'big_noise_5'
     filepath = './data/' + filename +'/experiment_config.json'
     vec_env = SubprocVecEnv([make_env(filepath,[i,num_cpu]) for i in range(num_cpu)])
     # import pybullet as p2
@@ -250,7 +250,7 @@ def main():
     # wandb.init(project = 'StableBaselinesWandBTest')
     model = PPO("MlpPolicy", vec_env,tensorboard_log=args['tname'])
     model.learn(total_timesteps=args['epochs']*(args['tsteps']+1), callback=callback)
-    model.save('./data/'+filename+'/best_policy')
+    # model.save('./data/'+filename+'/best_policy')
     vec_env[0].evaluate()
     vec_env[0].episode_type = 'eval'
     for _ in range(1200):
