@@ -150,7 +150,7 @@ def make_pybullet(filepath, pybullet_instance, rank):
     pose_list = [[i,j] for i,j in zip(x,y)]
     eval_pose_list = [[i,j] for i,j in zip(xeval,yeval)]
     num_eval = len(eval_pose_list)
-    eval_pose_list = eval_pose_list[num_eval*rank[0]/rank[1]:num_eval*(rank[0]+1)/rank[1]]
+    eval_pose_list = eval_pose_list[int(num_eval*rank[0]/rank[1]):int(num_eval*(rank[0]+1)/rank[1])]
     # print(args)
     physics_client = pybullet_instance.connect(pybullet_instance.DIRECT)
     pybullet_instance.setAdditionalSearchPath(pybullet_data.getDataPath())
@@ -230,11 +230,13 @@ def make_pybullet(filepath, pybullet_instance, rank):
 
 
 def main():
-    num_cpu = 16 # Number of processes to use
+    num_cpu = 4 # Number of processes to use
     # Create the vectorized environment
     filename = 'big_noise_5'
+
     filepath = './data/' + filename +'/experiment_config.json'
     vec_env = SubprocVecEnv([make_env(filepath,[i,num_cpu]) for i in range(num_cpu)])
+    
     # import pybullet as p2
     # eval_env, args, points = make_pybullet(filepath,p2, 100)
     # this_path = os.path.abspath(__file__)
@@ -242,7 +244,7 @@ def main():
     with open(filepath, 'r') as argfile:
         args = json.load(argfile)
     train_timesteps = int(args['evaluate']*(args['tsteps']+1)/num_cpu)
-    callback = multiprocess_gym_wrapper.EvaluateCallback(vec_env,n_eval_episodes=int(1200/num_cpu), eval_freq=train_timesteps, best_model_save_path=args['save_path'])
+    callback = multiprocess_gym_wrapper.MultiEvaluateCallback(vec_env,n_eval_episodes=int(1200), eval_freq=train_timesteps, best_model_save_path=args['save_path'])
     # Stable Baselines provides you with make_vec_env() helper
     # which does exactly the previous steps for you.
     # You can choose between `DummyVecEnv` (usually faster) and `SubprocVecEnv`

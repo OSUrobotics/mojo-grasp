@@ -18,14 +18,14 @@ from PIL import Image
 from stable_baselines3.common.callbacks import EvalCallback
 from rl_gym_wrapper import NoiseAdder
 
-class EvaluateCallback(EvalCallback):
+class MultiEvaluateCallback(EvalCallback):
 
     def _on_step(self) -> bool:
         if self.eval_freq > 0 and self.n_calls % self.eval_freq == 0:
             print('evaluating')
-            self.eval_env.envs[0].evaluate()
-            temp = super(EvaluateCallback,self)._on_step()
-            self.eval_env.envs[0].train()
+            self.eval_env.env_method('evaluate')
+            temp = super(MultiEvaluateCallback,self)._on_step()
+            self.eval_env.env_method('train')
             return temp
         else:
             return True
