@@ -28,10 +28,12 @@ class GoalHolder():
     
     def next_run(self):
         self.run_num +=1
-        print('Run number',self.run_num)
+        # print('Run number',self.run_num)
         
     def reset(self):
         self.run_num = 0
+        np.random.shuffle(self.pose)
+        print('shuffling the pose order')
     
     def __len__(self):
         return len(self.pose)

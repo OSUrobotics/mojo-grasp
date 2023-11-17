@@ -5,7 +5,7 @@ import pandas as pd
 import numpy as np
 
 # Number of points to sample in an ellipse
-NUM_POINTS = 1000
+NUM_POINTS = 1200
 NUM_TRAIN = int(NUM_POINTS*0.7)
 NUM_TEST = NUM_POINTS - NUM_TRAIN
 # maximums for x and y
