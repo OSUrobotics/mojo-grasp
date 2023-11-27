@@ -64,7 +64,7 @@ class RNNGui():
                          [sg.Button("Browse",key='-browse-load',button_color='DarkBlue'),sg.Text("/", key='-load-path')],
                          [sg.Text('Object'), sg.OptionMenu(values=('Cube', 'Cylinder'), k='-object', default_value='Cube')],
                          [sg.Text('Hand'), sg.OptionMenu(values=('2v2', '2v2-B'), k='-hand', default_value='2v2')],
-                         [sg.Text("Task"), sg.OptionMenu(values=('asterisk','random','full_random','unplanned_random','single', 'wedge', 'double_wedge', 'clump_wedge', "big_random", "Rotation"), k='-task', default_value='unplanned_random')],
+                         [sg.Text("Task"), sg.OptionMenu(values=('asterisk','random','full_random','unplanned_random','single', 'wedge', 'double_wedge', 'clump_wedge', "big_random", "Rotation", 'triple', 'multi'), k='-task', default_value='unplanned_random')],
                          [sg.Checkbox("Randomized Start Position", key='-rstart',default=False)],
                          [sg.Text('Replay Buffer Sampling'), sg.OptionMenu(values=('priority','random','random+expert'), k='-sampling', default_value='priority')]]
         
@@ -290,7 +290,7 @@ class RNNGui():
             self.args['max_action'] = 0.01
         if (values['-task'] == 'full_random') | (values['-task'] == 'unplanned_random'):
             self.args['points_path'] = str(resource_path.joinpath('points.csv'))
-        elif (values['-task'] == 'big_random'):
+        elif (values['-task'] == 'big_random') | (values['-task'] =='multi'):
             self.args['points_path'] = str(resource_path.joinpath('train_points_big.csv'))
         else:
             self.args['points_path'] = str(resource_path.joinpath('train_points.csv'))

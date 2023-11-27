@@ -151,6 +151,13 @@ class MultiprocessManipulation(Phase):
         # Set the reward from the given action after the step
         self.reward.set_reward(self.goal_position, self.cube, self.hand, self.controller.final_reward)
 
+    def next_goal(self):
+        new_goal = self.state.next_run()
+        # print('old goal position', self.goal_position)
+        self.goal_position = [new_goal['goal_pose'][0], new_goal['goal_pose'][1]+0.1, 0]
+        # print('new goal position', self.goal_position)
+        self.reward.update_start(self.goal_position, self.cube)
+
     def get_episode_info(self):
         # DO NOT USE UNLESS THIS IS GYM WRAPPER
         self.state.set_state()

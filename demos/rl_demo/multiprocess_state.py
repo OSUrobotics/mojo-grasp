@@ -101,6 +101,8 @@ class MultiprocessState(StateDefault):
         for thing in self.objects:
             if (type(thing) == GoalHolder) | (type(thing) == RandomGoalHolder):
                 thing.next_run()
+                temp = thing.get_data()
+        return temp
         
     def reset(self):
         self.run_num = 0
@@ -117,27 +119,16 @@ class MultiprocessState(StateDefault):
             self.previous_states[1:] = self.previous_states[0:-1]
             self.previous_states[0] = self.current_state.copy()
         super().set_state()
-        # print('Setting the state. should only see 1 per timestep')
-        # if self.objects:
-        #     data_dict = {}0
-        #     for i in self.objects:
-        #         data_dict[i.name] = i.get_data()
-        #     self.current_state = data_dict
-        # else:
-        #     self.current_state = {}
-        # print(self.objects[0].id)
-        # print(self.objects[1].id)
-        # print(p.getClosestPoints(self.objects[1].id, self.objects[0].id, 10, -1, 1, -1))
+
         temp1 = self.p.getClosestPoints(self.objects[1].id, self.objects[0].id, 10, -1, 1, -1)[0]
         temp2 = self.p.getClosestPoints(self.objects[1].id, self.objects[0].id, 10, -1, 4, -1)[0]
         link1_pose = self.p.getLinkState(self.objects[0].id, 2)
-        # self.p.get
+
         link2_pose = self.p.getLinkState(self.objects[0].id, 5)
         link1_base = self.p.getLinkState(self.objects[0].id, 1)
-        # self.p.get
+
         link2_base = self.p.getLinkState(self.objects[0].id, 4)
-        # print(list(link1_pose[0]))
-        # print(list(temp1[6]))
+
         self.current_state['f1_pos'] = list(link1_pose[0])
         self.current_state['f2_pos'] = list(link2_pose[0])
         self.current_state['f1_base'] = list(link1_base[0])
@@ -146,19 +137,13 @@ class MultiprocessState(StateDefault):
         self.current_state['f2_ang'] = self.current_state['two_finger_gripper']['joint_angles']['finger1_segment0_joint'] + self.current_state['two_finger_gripper']['joint_angles']['finger1_segment1_joint']        
         self.current_state['f1_contact_pos'] = list(temp1[6])
         self.current_state['f2_contact_pos'] = list(temp2[6])
-        # self.current_state['f1_obj_dist'] = temp1[8]
-        # self.current_state['f2_obj_dist'] = temp2[8]
-        # print(self.current_state['f1_obj_dist'], self.current_state['f2_obj_dist'])
-        # print('set state')
-        # print(self.current_state['f1_contact_pos'], self.current_state['f1_pos'])
-        # print(self.current_state['f2_contact_pos'], self.current_state['f2_pos'])
-        
+
     def init_state(self):
         """
         Default method that sets self.current_state to either get_data() for the object or an empty dictionary
         """
         super().set_state()
-        # print('initializing state', self.pflag)
+
         temp1 = self.p.getClosestPoints(self.objects[1].id, self.objects[0].id, 10, -1, 1, -1)[0]
         temp2 = self.p.getClosestPoints(self.objects[1].id, self.objects[0].id, 10, -1, 4, -1)[0]
         link1_pose = self.p.getLinkState(self.objects[0].id, 2)
@@ -169,18 +154,15 @@ class MultiprocessState(StateDefault):
         self.current_state['f2_pos'] = list(link2_pose[0])
         self.current_state['f1_base'] = list(link1_base[0])
         self.current_state['f2_base'] = list(link2_base[0])
-        # self.current_state['f1_obj_dist'] = temp1[8]
-        # self.current_state['f2_obj_dist'] = temp2[8]
+
         self.current_state['f1_ang'] = self.current_state['two_finger_gripper']['joint_angles']['finger0_segment0_joint'] + self.current_state['two_finger_gripper']['joint_angles']['finger0_segment1_joint']
         self.current_state['f2_ang'] = self.current_state['two_finger_gripper']['joint_angles']['finger1_segment0_joint'] + self.current_state['two_finger_gripper']['joint_angles']['finger1_segment1_joint']
         self.current_state['f1_contact_pos'] = list(temp1[6])
         self.current_state['f2_contact_pos'] = list(temp2[6])
         if self.pflag:
-            # print('going through to copy previous states')
             for i in range(len(self.previous_states)):
                 self.previous_states[i] = self.current_state.copy()
                 
-        # print('initialized state')
          
     def get_state(self) -> dict:
         """

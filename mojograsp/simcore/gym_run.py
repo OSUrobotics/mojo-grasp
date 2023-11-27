@@ -395,6 +395,7 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None, acti
             
         for _ in range(1):
             obs = gym_env.reset()
+            input('start thing?')
             for step in range((args['tsteps']+1)):
                 # action, _ = model.predict(obs, deterministic=True)
                 # print()
@@ -405,7 +406,7 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None, acti
                 # mirrored_action = np.array([-action[2], action[3],-action[0],action[1]])
                 obs, reward, done, info = gym_env.step(np.array(action),viz=True)
                 # print('obs=', obs, 'reward=', reward, 'done=', done)
-                time.sleep(0.1)
+                time.sleep(10)
                 # env.render(mode='console')
     p.disconnect()
 

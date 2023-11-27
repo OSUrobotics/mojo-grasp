@@ -44,12 +44,16 @@ class PlotBackend():
         episode_number=data_dict['number']
         trajectory_points = [f['state']['obj_2']['pose'][0] for f in data]
         print('goal position in state', data[0]['state']['goal_pose'])
-        goal_pose = data[1]['reward']['goal_position']
+        goal_poses = np.array([i['state']['goal_pose']['goal_pose'] for i in data])
+        # print(trajectory_points)
         trajectory_points = np.array(trajectory_points)
+        ideal = np.zeros([len(goal_poses)+1,2])
+        ideal[0,:] = trajectory_points[0,0:2]
+        ideal[1:,:] = goal_poses + np.array([0,0.1])
         if self.clear_plots | (self.curr_graph != 'path'):
             self.clear_axes()
         self.ax.plot(trajectory_points[:,0], trajectory_points[:,1])
-        self.ax.plot([trajectory_points[0,0], goal_pose[0]],[trajectory_points[0,1],goal_pose[1]])
+        self.ax.plot(ideal[:,0],ideal[:,1])
         self.ax.set_xlim([-0.07,0.07])
         self.ax.set_ylim([0.04,0.16])
         self.ax.set_xlabel('X pos (m)')
@@ -838,12 +842,15 @@ class PlotBackend():
             episode_files = episode_files[sorted_inds].tolist()
             
             min_dists = []
+            short_names = []
             for i, episode_file in enumerate(episode_files):
                 with open(episode_file, 'rb') as ef:
                     tempdata = pkl.load(ef)
                 data = tempdata['timestep_list']
                 goal_dists = [f['reward']['distance_to_goal'] for f in data]
                 min_dists.append(min(goal_dists))
+                if min(goal_dists) < 0.004:
+                    short_names.append(episode_file)
                 if i % 100 ==0:
                     print('count = ',i)
         elif type(folder_or_data_dict) is dict:
@@ -868,7 +875,7 @@ class PlotBackend():
         if self.clear_plots | (self.curr_graph != 'goal_dist'):
             self.clear_axes()
              
-                
+        print(short_names)
         self.ax.plot(range(len(min_dists)),min_dists)
         self.legend.extend(['Min Goal Distance'])
         self.ax.legend(self.legend)

@@ -68,3 +68,10 @@ class MultiprocessReward(RewardDefault):
         self.start_pos = np.array(start_pos[0])
         self.start_dist = None
         # print(self.start_pos)
+
+    def update_start(self, goal_position, cube):
+        current_cube_pose = cube.get_curr_pose()
+        # Finds distance between current cube position and goal position
+        distance = np.sqrt((goal_position[0] - current_cube_pose[0][0])**2 +
+                           (goal_position[1] - current_cube_pose[0][1])**2)
+        self.start_dist = distance
