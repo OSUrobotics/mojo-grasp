@@ -22,6 +22,8 @@ def save_element_as_file(element, filename):
 def load_data(filepath):
     with open(filepath, 'rb') as file:
         data = pkl.load(file)
+    if type(data) is list:
+        data = {'timestep_list': data, 'number':0}
     return data
 
 def main():

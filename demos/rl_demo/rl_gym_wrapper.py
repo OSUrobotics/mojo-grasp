@@ -48,12 +48,7 @@ class NoiseAdder():
         :param noise_percent: - how much noise to add
         """
         t1 = np.random.normal(0,noise_percent, size=len(x_tensor))
-        # print('range',(self.maxes-self.mins))
-        # print('raw noise', t1)
-        # print('end noise',t1 * (self.maxes-self.mins))
-        # print('xtensor', x_tensor)
-        # print(np.array(x_tensor)> self.mins )
-        # print((np.array(x_tensor)> self.mins))
+
         return x_tensor + t1 * (self.maxes-self.mins)/2
 
 

@@ -45,7 +45,7 @@ def make_pybullet(filepath, pybullet_instance, rank):
     overall_path = os.path.dirname(os.path.dirname(os.path.dirname(this_path)))
     with open(filepath, 'r') as argfile:
         args = json.load(argfile)
-    print(args['task'])
+    # print(args['task'])
     if args['task'] == 'asterisk':
         x = [0.03, 0, -0.03, -0.04, -0.03, 0, 0.03, 0.04]
         y = [-0.03, -0.04, -0.03, 0, 0.03, 0.04, 0.03, 0]
@@ -59,7 +59,7 @@ def make_pybullet(filepath, pybullet_instance, rank):
         df2 = pd.read_csv(overall_path + '/demos/rl_demo/resources/test_points.csv', index_col=False)
         xeval = df2['x']
         yeval = df2['y']
-    elif 'big_random' == args['task']:
+    elif ('big_random' == args['task']) | ('multi' == args['task']):
         df = pd.read_csv(args['points_path'], index_col=False)
         x = df["x"]
         y = df["y"]
@@ -184,7 +184,7 @@ def make_pybullet(filepath, pybullet_instance, rank):
     try:
         eval_goal_poses = GoalHolder(eval_pose_list,eval_names)
     except NameError:
-        print('No names')
+        # print('No names')
         eval_goal_poses = GoalHolder(eval_pose_list)
     
     # time.sleep(10)
@@ -230,9 +230,9 @@ def make_pybullet(filepath, pybullet_instance, rank):
 
 
 def main():
-    num_cpu = 4 # Number of processes to use
+    num_cpu = 16 # Number of processes to use
     # Create the vectorized environment
-    filename = 'big_noise_5'
+    filename = 'multi_ftp_test'
 
     filepath = './data/' + filename +'/experiment_config.json'
     vec_env = SubprocVecEnv([make_env(filepath,[i,num_cpu]) for i in range(num_cpu)])

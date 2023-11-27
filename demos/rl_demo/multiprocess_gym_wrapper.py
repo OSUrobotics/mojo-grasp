@@ -51,6 +51,7 @@ class MultiprocessGymWrapper(gym.Env):
             self.noisey_boi = NoiseAdder(np.array(args['state_mins']), np.array(args['state_maxes']))
         self.PREV_VALS = args['pv']
         self.REWARD_TYPE = args['reward']
+        self.TASK = args['task']
         self.state_list = args['state_list']
         self.CONTACT_SCALING = args['contact_scaling']
         self.DISTANCE_SCALING = args['distance_scaling'] 
@@ -126,7 +127,7 @@ class MultiprocessGymWrapper(gym.Env):
         if self.eval or self.small_enough:
             self.record.record_timestep()
         # print('recorded timesteps')
-        state, reward = self.manipulation_phase.get_episode_info()
+        state, reward_container = self.manipulation_phase.get_episode_info()
         # print(state['obj_2'])
         info = {}
         if mirror:
@@ -135,11 +136,16 @@ class MultiprocessGymWrapper(gym.Env):
             state = self.build_state(state)
         if self.STATE_NOISE > 0:
             state = self.noisey_boi.add_noise(state, self.STATE_NOISE)
-        reward, done2 = self.build_reward(reward)
-        # print('about to set state')
-        # self.manipulation_phase.state.set_state()
-        # print(reward)
-        done = done | done2
+        reward, done2 = self.build_reward(reward_container)
+
+
+        if self.TASK == 'multi':
+            if done2 and not done:
+                # print('doing next goal')
+                # print(reward)
+                self.manipulation_phase.next_goal()
+        else:
+            done = done | done2
 
         
         if done:
@@ -342,7 +348,7 @@ class MultiprocessGymWrapper(gym.Env):
             temp = -reward_container['distance_to_goal']/reward_container['start_dist'] * (1 + 4*reward_container['plane_side'])
             # print(reward_container['plane_side'])
             tstep_reward = temp*self.DISTANCE_SCALING - ftemp*self.CONTACT_SCALING
-        elif self.REWARD_TYPE == 'ScaledDistance+ScaledFinger':
+        elif (self.REWARD_TYPE == 'ScaledDistance+ScaledFinger') and (self.TASK != 'multi'):
             ftemp = -max(reward_container['f1_dist'], reward_container['f2_dist']) * 100 # 100 here to make ftemp = -1 when at 1 cm
             temp = -reward_container['distance_to_goal']/reward_container['start_dist'] # should scale this so that it is -1 at start 
             ftemp,temp = max(ftemp,-2), max(temp, -2)
@@ -369,6 +375,17 @@ class MultiprocessGymWrapper(gym.Env):
                 ftemp = ftemp*ftemp*1000
             temp = -reward_container['distance_to_goal'] * (1 + 4*reward_container['plane_side'])
             tstep_reward = max(temp*self.DISTANCE_SCALING - ftemp*self.CONTACT_SCALING,-1)
+        elif (self.TASK == 'multi') and (self.REWARD_TYPE =='ScaledDistance+ScaledFinger'):
+            ftemp = -max(reward_container['f1_dist'], reward_container['f2_dist']) * 100 # 100 here to make ftemp = -1 when at 1 cm
+            temp = -reward_container['distance_to_goal']/reward_container['start_dist'] # should scale this so that it is -1 at start 
+            ftemp,temp = max(ftemp,-2), max(temp, -2)
+            success = reward_container['distance_to_goal'] < self.SUCCESS_THRESHOLD
+            # print(reward_container['distance_to_goal'], self.SUCCESS_THRESHOLD)
+            done2 = success
+            if done2:
+                print(f'dist:{temp*self.DISTANCE_SCALING}, contact:{ftemp*self.CONTACT_SCALING}, success:{success * self.SUCCESS_REWARD}, start {reward_container["start_dist"]}')
+            tstep_reward = temp*self.DISTANCE_SCALING + ftemp*self.CONTACT_SCALING + success * self.SUCCESS_REWARD
+            
         else:
             raise Exception('reward type does not match list of known reward types')
         return float(tstep_reward), done2
