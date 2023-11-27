@@ -11,7 +11,7 @@ from mojograsp.simcore import gym_run
 
 def main(run_id):
     #print(run_id)
-    folder_names = ['full_full_ppo']
+    folder_names = ['full_big']
     
     overall_path = pathlib.Path(__file__).parent.resolve()
     run_path = overall_path.joinpath('demos/rl_demo/data/')
