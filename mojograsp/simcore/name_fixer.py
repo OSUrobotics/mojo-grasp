@@ -2,7 +2,7 @@ import os
 import re
 
 
-filepath = '/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/hand_B_baseline_JA/Test/'
+filepath = '/home/mothra/mojo-grasp/demos/rl_demo/data/hand_b_FTP_baseline/Test/'
 test_files = os.listdir(filepath)
 num_cores = 16
 # print(test_files)
