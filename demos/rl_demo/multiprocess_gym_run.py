@@ -230,9 +230,9 @@ def make_pybullet(filepath, pybullet_instance, rank):
 
 
 def main():
-    num_cpu = 16 # Number of processes to use
+    num_cpu = 4 # Number of processes to use
     # Create the vectorized environment
-    filename = 'multi_ftp_test'
+    filename = 'hand_B_baseline_JA'
 
     filepath = './data/' + filename +'/experiment_config.json'
     vec_env = SubprocVecEnv([make_env(filepath,[i,num_cpu]) for i in range(num_cpu)])
