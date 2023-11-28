@@ -55,9 +55,10 @@ class MultiprocessEnv():
             self.p.resetJointState(hand_id, 3, .725)
             self.p.resetJointState(hand_id, 4, -1.45)
         if self.hand_type == 'B':
-            self.p.resetJointState(hand_id, 0, -.5)
+            
+            self.p.resetJointState(hand_id, 0, -.46)
             self.p.resetJointState(hand_id, 1, 1.5)
-            self.p.resetJointState(hand_id, 3, .5)
+            self.p.resetJointState(hand_id, 3, .46)
             self.p.resetJointState(hand_id, 4, -1.5)
         mass_link = .036
         self.p.changeDynamics(hand_id, 1, lateralFriction=0.5, rollingFriction=0.04,
@@ -233,9 +234,9 @@ class MultiprocessSingleShapeEnv(Environment):
             self.p.resetJointState(self.hand_id, 3, .725)
             self.p.resetJointState(self.hand_id, 4, -1.45)
         if self.hand_type == 'B':
-            self.p.resetJointState(self.hand_id, 0, -.5)
+            self.p.resetJointState(self.hand_id, 0, -.46)
             self.p.resetJointState(self.hand_id, 1, 1.5)
-            self.p.resetJointState(self.hand_id, 3, .5)
+            self.p.resetJointState(self.hand_id, 3, .46)
             self.p.resetJointState(self.hand_id, 4, -1.5)
         
         self.p.resetBasePositionAndOrientation(self.obj_id, posObj=[0.0+obj_change[0], 0.10+obj_change[1], .05], ornObj=[0,0,0,1])

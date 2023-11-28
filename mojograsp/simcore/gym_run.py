@@ -156,7 +156,15 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None, acti
             theta = np.random.uniform(-np.pi,np.pi,500)
             eval_theta = np.random.uniform(-np.pi,np.pi,500)
     elif runtype=='eval':
-        if args['task'] == 'forward':
+        if (args['task'] == 'big_random') |(args['task']=='random'):
+            print('this is the one ')
+            df = pd.read_csv(args['points_path'], index_col=False)
+            x = df["x"]
+            y = df["y"]
+            df2 = pd.read_csv(overall_path + '/demos/rl_demo/resources/test_points_big.csv', index_col=False)
+            xeval = df2['x']
+            yeval = df2['y']
+        elif args['task'] == 'forward':
             x= [0.0]
             y = [0.04]
             xeval = x
@@ -224,7 +232,7 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None, acti
         yeval = [-0.045, -0.06, -0.045, 0, 0.045, 0.06, 0.045, 0]
         eval_names = ['SE','S','SW','W','NW','N','NE','E'] 
         if action_list == None:
-            with open(overall_path + '/demos/rl_demo/data/full_full_ppo/Eval/episode_'+str(episode_number)+'.pkl','rb') as fol:
+            with open(overall_path + '/demos/rl_demo/data/hand_transfer_FTP/Test/Evaluate_'+str(episode_number)+'.pkl','rb') as fol:
                 data = pkl.load(fol)
             action_list = data#np.array(data)
     names = ['AsteriskSE.pkl','AsteriskS.pkl','AsteriskSW.pkl','AsteriskW.pkl','AsteriskNW.pkl','AsteriskN.pkl','AsteriskNE.pkl','AsteriskE.pkl']
@@ -237,7 +245,7 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None, acti
     
     print(args)
     try:
-        if (args['viz']) | (runtype=='replay') | (runtype =='eval'):
+        if (args['viz']) | (runtype=='replay') :
             physics_client = p.connect(p.GUI)
         else:
             physics_client = p.connect(p.DIRECT)
@@ -358,13 +366,13 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None, acti
         model = PPO("MlpPolicy", gym_env, tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-1}).load(args['save_path']+'best_model')
         gym_env.evaluate()
 
-        for _ in range(1):
+        for _ in range(len(eval_pose_list)):
             obs = gym_env.reset()
             done = False
             while not done:
                 action, _ = model.predict(obs, deterministic=True)
                 mirrored_action = np.array([-action[2], action[3],-action[0],action[1]])
-                obs, reward, done, info = gym_env.step(action, viz=True)
+                obs, reward, done, info = gym_env.step(action, viz=False)
 
     elif runtype == 'cont':
         pass
@@ -402,11 +410,12 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None, acti
                 action = actions[step]
                 # print("Step {}".format(step + 1))
                 print('step: ',step)
+                temp = np.array([0,0,0,0])
                 # print("Action: ", action, type(action))
                 # mirrored_action = np.array([-action[2], action[3],-action[0],action[1]])
-                obs, reward, done, info = gym_env.step(np.array(action),viz=True)
+                obs, reward, done, info = gym_env.step(np.array(temp),viz=False)
                 # print('obs=', obs, 'reward=', reward, 'done=', done)
-                time.sleep(10)
+                time.sleep(0.5)
                 # env.render(mode='console')
     p.disconnect()
 
@@ -432,18 +441,19 @@ def main():
     # run_pybullet(overall_path+'/demos/rl_demo/data/single_direction_updated_reward/forward_left/experiment_config.json',runtype='run')
     # run_pybullet(overall_path+'/demos/rl_demo/data/single_direction_updated_reward/forward_right/experiment_config.json',runtype='run')
     # run_pybullet(overall_path+'/demos/rl_demo/data/single_direction_updated_reward/backward_left/experiment_config.json',runtype='run')
-    run_pybullet(overall_path + '/demos/rl_demo/data/full_full_ppo/experiment_config.json', runtype='replay', episode_number=50049)
+    # run_pybullet(overall_path + '/demos/rl_demo/data/full_full_ppo/experiment_config.json', runtype='replay', episode_number=50049)
     # for name in double_list:
         # run_pybullet(overall_path + '/demos/rl_demo/data/ftp_her/wedge_' + name + '/experiment_config.json', runtype='run')
 
     #NOTE WE MAY WANT TO UPDATE THE MAGNITUDE OF THE MAXIMUM MOVEMENT TO BE 1/8 THE SIZE THAT IT WAS TO MATCH THE PREVIOUS SETUP
     # for name in double_list:
     #     run_pybullet(overall_path + '/demos/rl_demo/data/wedge_double/wedge_' + name + '/experiment_config.json', runtype='run')
-    # run_pybullet(overall_path + '/demos/rl_demo/data/wedge_double/wedge_l-r/experiment_config.json', runtype='eval')
-
-    # run_pybullet(overall_path + '/demos/rl_demo/data/hand_transfer_JA/experiment_config.json', runtype='transfer')
+    # for i in range(1000):
+        # run_pybullet(overall_path + '/demos/rl_demo/data/hand_transfer_FTP/experiment_config.json', runtype='replay',episode_number=i)
+    # run_pybullet(overall_path + '/demos/rl_demo/data/hand_transfer_FTP/experiment_config.json', runtype='eval')
+    # run_pybullet(overall_path + '/demos/rl_demo/data/hand_transfer_JA/experiment_config.json', runtype='eval')
     # run_pybullet(overall_path + '/demos/rl_demo/data/hand_transfer_FTP/experiment_config.json', runtype='transfer')
-    # run_pybullet(overall_path+'/demos/rl_demo/data/ja_all/experiment_config.json',runtype='run')
+    # run_pybullet(overall_path+'/demos/rl_demo/data/full_full_ppo/experiment_config.json',runtype='replay', episode_number=1)
 
     # run_pybullet(overall_path+'/demos/rl_demo/data/wedge/wedge_forward_right/experiment_config.json',runtype='run')
     # run_pybullet(overall_path+'/demos/rl_demo/data/wedge/wedge_forward_left/experiment_config.json',runtype='run')

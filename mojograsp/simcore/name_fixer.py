@@ -2,9 +2,9 @@ import os
 import re
 
 
-filepath = '/home/mothra/mojo-grasp/demos/rl_demo/data/Big_and_noisy/Test/'
+filepath = '/home/mothra/mojo-grasp/demos/rl_demo/data/multi_ftp_test/Test/'
 test_files = os.listdir(filepath)
-num_cores = 1
+num_cores = 16
 # print(test_files)
 for filename in test_files:
     points = re.findall('\d+',filename)
