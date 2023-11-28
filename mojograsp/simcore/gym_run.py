@@ -453,6 +453,7 @@ def main():
     # run_pybullet(overall_path + '/demos/rl_demo/data/hand_transfer_FTP/experiment_config.json', runtype='eval')
     # run_pybullet(overall_path + '/demos/rl_demo/data/hand_transfer_JA/experiment_config.json', runtype='eval')
     run_pybullet(overall_path + '/demos/rl_demo/data/JA_transfer/experiment_config.json', runtype='transfer')
+
     # run_pybullet(overall_path+'/demos/rl_demo/data/full_full_ppo/experiment_config.json',runtype='replay', episode_number=1)
 
     # run_pybullet(overall_path+'/demos/rl_demo/data/wedge/wedge_forward_right/experiment_config.json',runtype='run')

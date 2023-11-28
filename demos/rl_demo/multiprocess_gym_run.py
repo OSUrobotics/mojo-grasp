@@ -232,7 +232,8 @@ def make_pybullet(filepath, pybullet_instance, rank):
 def main():
     num_cpu = 4 # Number of processes to use
     # Create the vectorized environment
-    filename = 'hand_B_baseline_JA'
+    filename = 'JA_transfer'
+    transfer=True
 
     filepath = './data/' + filename +'/experiment_config.json'
     vec_env = SubprocVecEnv([make_env(filepath,[i,num_cpu]) for i in range(num_cpu)])
@@ -250,7 +251,12 @@ def main():
     # You can choose between `DummyVecEnv` (usually faster) and `SubprocVecEnv`
     # env = make_vec_env(env_id, n_envs=num_cpu, seed=0, vec_env_cls=SubprocVecEnv)
     # wandb.init(project = 'StableBaselinesWandBTest')
-    model = PPO("MlpPolicy", vec_env,tensorboard_log=args['tname'])
+    
+    if transfer:
+        model = PPO("MlpPolicy", vec_env, tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-2.3}).load(args['load_path']+'best_model', env=vec_env)
+        print('LOADING A MODEL')
+    else:
+        model = PPO("MlpPolicy", vec_env,tensorboard_log=args['tname'])
     model.learn(total_timesteps=args['epochs']*(args['tsteps']+1), callback=callback)
     # model.save('./data/'+filename+'/best_policy')
     vec_env[0].evaluate()
