@@ -2,7 +2,7 @@ import os
 import re
 
 
-filepath = '/home/mothra/mojo-grasp/demos/rl_demo/data/multi_ftp_test/Test/'
+filepath = '/home/mothra/mojo-grasp/demos/rl_demo/data/hand_b_FTP_baseline/Test/'
 test_files = os.listdir(filepath)
 num_cores = 16
 # print(test_files)
