@@ -57,6 +57,7 @@ class ExpertReward(Reward):
             self.current_reward["goal_position"] = goal_position
             self.current_reward["f1_dist"] = max(f1_dist[0][8], 0)
             self.current_reward["f2_dist"] = max(f2_dist[0][8], 0)
+            # print('f1 and f2 dist',self.current_reward["f1_dist"] , self.current_reward["f2_dist"])
             self.current_reward["end_penalty"] = end_reward
             self.current_reward["slope_to_goal"] = old_distance - distance
             self.prev_pos = deepcopy(current_cube_pose)
