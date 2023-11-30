@@ -232,14 +232,17 @@ def make_pybullet(filepath, pybullet_instance, rank):
 
 
 
-def main():
+def main(filepath = None):
     num_cpu = multiprocessing.cpu_count() # Number of processes to use
     # Create the vectorized environment
-    filename = 'FTP_fullstate_A_rand'
-    thing = 'run'
-    viz = True
+    if filepath is None:
+        filename = 'JA_fullstate_A_rand'
+        filepath = './data/' + filename +'/experiment_config.json'
+        thing = 'run'
+    else:
+        thing = 'run'
 
-    filepath = './data/' + filename +'/experiment_config.json'
+   
     with open(filepath, 'r') as argfile:
         args = json.load(argfile)
     if args['model'] == 'PPO':
