@@ -55,7 +55,7 @@ class RNNGui():
         self.alt_double_names = ['l-r','f','b']
         
         # define layout, show and read the window
-        data_layout =  [ [sg.Text('Model Type'), sg.OptionMenu(values=('DDPG', 'DDPGFD','DDPG+HER', 'DDPGFD+HER', 'gym'),  k='-model', default_value='DDPG')],
+        data_layout =  [ [sg.Text('Model Type'), sg.OptionMenu(values=('TD3', 'TD3+HER', 'DDPG','DDPG+HER', 'PPO'),  k='-model', default_value='PPO')],
                          [sg.Text('Path to Expert Data if using FD')],
                          [sg.Button("Browse",key='-browse-expert',button_color='DarkBlue'),sg.Text("/", key='-expert-path')],
                          [sg.Text('Path to Save Data')],
@@ -69,14 +69,14 @@ class RNNGui():
                          [sg.Text('Replay Buffer Sampling'), sg.OptionMenu(values=('priority','random','random+expert'), k='-sampling', default_value='priority')]]
         
         
-        model_layout = [ [sg.Text('Num Epochs'), sg.Input(100000, key='-epochs'), sg.Text('Batch Size'), sg.Input(100, key='-batch-size')],
+        model_layout = [ [sg.Text('Num Epochs'), sg.Input(1000000, key='-epochs'), sg.Text('Batch Size'), sg.Input(100, key='-batch-size')],
                          [sg.Text('Learning Rate'), sg.Input(0.0001,key='-learning'), sg.Text('Discount Factor'), sg.Input(0.995, key='-df')],
                          [sg.Text('Starting Epsilon'), sg.Input(0.7,key='-epsilon'), sg.Text('Epsilon Decay Rate'), sg.Input(0.998, key='-edecay')],
                          [sg.Text('Rollout Size'), sg.Input(5,key='-rollout_size'), sg.Text('Rollout Weight'), sg.Input(0.5, key='-rollout_weight')],
-                         [sg.Text('Evaluation Period'), sg.Input(1000,key='-eval'), sg.Text('Tau'), sg.Input(0.0005, key='-tau')],
-                         [sg.Text('Timesteps per Episode'), sg.Input(150,key='-tsteps'), sg.Text('Timesteps in Evaluation'), sg.Input(150,key='-eval-tsteps')],
+                         [sg.Text('Evaluation Period'), sg.Input(10000,key='-eval'), sg.Text('Tau'), sg.Input(0.0005, key='-tau')],
+                         [sg.Text('Timesteps per Episode'), sg.Input(15,key='-tsteps'), sg.Text('Timesteps in Evaluation'), sg.Input(15,key='-eval-tsteps')],
                          [sg.Text('State Training Noise'), sg.Input(0.0, key='-snoise'),sg.Text('Start Pos Range (mm)'), sg.Input(0, key='-start-noise')],
-                         [sg.Text('Timestep Frequency'), sg.Input(30,key='-freq'), sg.Text('Entropy'), sg.Input(0.0,key='-entropy')]]
+                         [sg.Text('Timestep Frequency'), sg.Input(3,key='-freq'), sg.Text('Entropy'), sg.Input(0.0,key='-entropy')]]
         
         plotting_layout = [[sg.Text('Model Title')],
                        [sg.Input('test1',key='-title')],
@@ -93,8 +93,8 @@ class RNNGui():
                        [sg.Checkbox('Eigenvalues',default=False,key='-eva')],
                        [sg.Checkbox('Eigenvectors',default=False,key='-evc')],
                        [sg.Checkbox('Eigenvectors Times Eigenvalues',default=False,key='-evv')],
-                       [sg.Text('Num Previous States'),sg.Input('0', k='-pv')],
-                       [sg.Text("Reward"), sg.OptionMenu(values=('Sparse','Distance','Distance + Finger', 'Hinge Distance + Finger', 'Slope', 'Slope + Finger','SmartDistance + Finger','SmartDistance + SmartFinger','ScaledDistance + Finger','ScaledDistance+ScaledFinger', 'SFS','DFS','Rotation'), k='-reward',default_value='Distance + Finger'), sg.Text('Success Radius (mm)'), sg.Input(2, key='-sr'),],
+                       [sg.Text('Num Previous States'),sg.Input(4, k='-pv')],
+                       [sg.Text("Reward"), sg.OptionMenu(values=('Sparse','Distance','Distance + Finger', 'Hinge Distance + Finger', 'Slope', 'Slope + Finger','SmartDistance + Finger','SmartDistance + SmartFinger','ScaledDistance + Finger','ScaledDistance+ScaledFinger', 'SFS','DFS','Rotation'), k='-reward',default_value='ScaledDistance+ScaledFinger'), sg.Text('Success Radius (mm)'), sg.Input(2, key='-sr'),],
                        [sg.Text("Distance Scale"),  sg.Input(1,key='-distance_scale'), sg.Text('Contact Scale'),  sg.Input(0.2,key='-contact_scale'), sg.Text('Success Reward'), sg.Input(1,key='-success_reward'), sg.Text('Rotation Scale'), sg.Input(1,key='-rotation_scale')],
                        [sg.Text("Action"), sg.OptionMenu(values=('Joint Velocity','Finger Tip Position'), k='-action',default_value='Finger Tip Position')],
                        [sg.Checkbox('Vizualize Simulation',default=False, k='-viz'), sg.Checkbox('Real World?',default=False, k='-rw'), sg.Checkbox('IK every sim step?', default=False, key='-ik-freq')],

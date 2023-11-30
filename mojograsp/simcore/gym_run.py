@@ -156,7 +156,7 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None, acti
             theta = np.random.uniform(-np.pi,np.pi,500)
             eval_theta = np.random.uniform(-np.pi,np.pi,500)
     elif runtype=='eval':
-        if (args['task'] == 'big_random') |(args['task']=='random'):
+        if (args['task'] == 'big_random') |(args['task']=='random') | (args['task']=='multi'):
             print('this is the one ')
             df = pd.read_csv(args['points_path'], index_col=False)
             x = df["x"]
@@ -232,7 +232,7 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None, acti
         yeval = [-0.045, -0.06, -0.045, 0, 0.045, 0.06, 0.045, 0]
         eval_names = ['SE','S','SW','W','NW','N','NE','E'] 
         if action_list == None:
-            with open(overall_path + '/demos/rl_demo/data/hand_transfer_FTP/Test/Evaluate_'+str(episode_number)+'.pkl','rb') as fol:
+            with open(overall_path + '/demos/rl_demo/data/eval_best_on_multi/Test/episode_3217.pkl','rb') as fol:
                 data = pkl.load(fol)
             action_list = data#np.array(data)
     names = ['AsteriskSE.pkl','AsteriskS.pkl','AsteriskSW.pkl','AsteriskW.pkl','AsteriskNW.pkl','AsteriskN.pkl','AsteriskNE.pkl','AsteriskE.pkl']
@@ -245,7 +245,7 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None, acti
     
     print(args)
     try:
-        if (args['viz']) | (runtype=='replay') :
+        if (args['viz']) | (runtype=='replay') | (runtype=='eval'):
             physics_client = p.connect(p.GUI)
         else:
             physics_client = p.connect(p.DIRECT)
@@ -369,10 +369,13 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None, acti
         for _ in range(len(eval_pose_list)):
             obs = gym_env.reset()
             done = False
+            step = 0
             while not done:
+                print('step: ',step)
                 action, _ = model.predict(obs, deterministic=True)
                 mirrored_action = np.array([-action[2], action[3],-action[0],action[1]])
                 obs, reward, done, info = gym_env.step(action, viz=False)
+                step +=1
 
     elif runtype == 'cont':
         pass
@@ -410,10 +413,10 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None, acti
                 action = actions[step]
                 # print("Step {}".format(step + 1))
                 print('step: ',step)
-                temp = np.array([0,0,0,0])
+                # temp = np.array([0,0,0,0])
                 # print("Action: ", action, type(action))
                 # mirrored_action = np.array([-action[2], action[3],-action[0],action[1]])
-                obs, reward, done, info = gym_env.step(np.array(temp),viz=False)
+                obs, reward, done, info = gym_env.step(np.array(action),viz=False)
                 # print('obs=', obs, 'reward=', reward, 'done=', done)
                 time.sleep(0.5)
                 # env.render(mode='console')
@@ -452,7 +455,7 @@ def main():
         # run_pybullet(overall_path + '/demos/rl_demo/data/hand_transfer_FTP/experiment_config.json', runtype='replay',episode_number=i)
     # run_pybullet(overall_path + '/demos/rl_demo/data/hand_transfer_FTP/experiment_config.json', runtype='eval')
     # run_pybullet(overall_path + '/demos/rl_demo/data/hand_transfer_JA/experiment_config.json', runtype='eval')
-    run_pybullet(overall_path + '/demos/rl_demo/data/hand_transfer_FTP/experiment_config.json', runtype='transfer')
+    run_pybullet(overall_path + '/demos/rl_demo/data/eval_best_on_multi/experiment_config.json', runtype='replay')
     # run_pybullet(overall_path+'/demos/rl_demo/data/full_full_ppo/experiment_config.json',runtype='replay', episode_number=1)
 
     # run_pybullet(overall_path+'/demos/rl_demo/data/wedge/wedge_forward_right/experiment_config.json',runtype='run')

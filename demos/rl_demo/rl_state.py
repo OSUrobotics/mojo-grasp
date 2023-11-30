@@ -184,7 +184,9 @@ class StateRL(StateDefault):
             # print('going through to copy previous states')
             for i in range(len(self.previous_states)):
                 self.previous_states[i] = self.current_state.copy()
-                
+        print(self.current_state['obj_2'])
+        print(self.current_state['f1_pos'])
+        print(self.current_state['f2_pos'])
         # print('initialized state')
          
     def get_state(self) -> dict:

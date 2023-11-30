@@ -27,7 +27,7 @@ class ExpertReward(Reward):
         
         f1_dist = p.getClosestPoints(cube.id, hand.id, 10, -1, 1, -1)
         f2_dist = p.getClosestPoints(cube.id, hand.id, 10, -1, 4, -1)
-        
+
         velocity = cube.get_curr_velocity()
         
         start_pos_vec = np.array(goal_position[0:2])-self.start_pos[0:2]
@@ -82,6 +82,7 @@ class ExpertReward(Reward):
         self.prev_pos = start_pos
         self.start_pos = np.array(start_pos[0])
         self.start_dist = None
+
         # print(self.start_pos)
 
 

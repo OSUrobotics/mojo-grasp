@@ -39,10 +39,7 @@ class MultiprocessManipulation(Phase):
         self.goal_position = None
         # create controller
         self.interp_ratio = int(240/args['freq'])
-        if args['model'] == 'gym':
-            self.controller = rl_controller.GymController(hand, cube, args=args)
-        else:
-            self.controller = rl_controller.RLController(hand, cube, replay_buffer=replay_buffer, args=args)
+        self.controller = rl_controller.GymController(hand, cube, args=args)
         self.end_val = 0
         self.camera_view_matrix = self.p.computeViewMatrix((0.0,0.1,0.5),(0.0,0.1,0.005), (0.0,1,0.0))
         self.camera_projection_matrix = self.p.computeProjectionMatrixFOV(60,4/3,0.1,0.9)

@@ -23,7 +23,7 @@ from mojograsp.simobjects.object_with_velocity import ObjectWithVelocity
 from mojograsp.simcore.priority_replay_buffer import ReplayBufferPriority
 import pickle as pkl
 import json
-from stable_baselines3 import A2C, PPO
+from stable_baselines3 import TD3, PPO, DDPG, HerReplayBuffer
 from stable_baselines3.common.vec_env import SubprocVecEnv
 from stable_baselines3.common.evaluation import evaluate_policy
 import wandb
@@ -232,17 +232,40 @@ def make_pybullet(filepath, pybullet_instance, rank):
 def main():
     num_cpu = 16 # Number of processes to use
     # Create the vectorized environment
-    filename = 'hand_transfer_FTP'
-    transfer=True
+    filename = 'eval_best_on_multi'
+    thing = 'eval'
+    viz = True
     filepath = './data/' + filename +'/experiment_config.json'
+    with open(filepath, 'r') as argfile:
+        args = json.load(argfile)
+    if args['model'] == 'PPO':
+        model_type = PPO
+    elif 'DDPG' in args['model']:
+        model_type = DDPG
+    elif 'TD3' in args['model']:
+        model_type = TD3
+    if thing == 'eval':
+        print('LOADING A MODEL')
+        import pybullet as p2
+        eval_env , _, poses= make_pybullet(filepath,p2, [1,16])
+        eval_env.evaluate()
+        model = model_type("MlpPolicy", eval_env, tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-2.3}).load(args['load_path']+'best_model', env=eval_env)
+        for _ in range(1200):
+            obs = eval_env.reset()
+            done = False
+            # print(np.shape(obs))
+            while not done:
+                action, _ = model.predict(obs, deterministic=True)
+                obs, _, done, _ = eval_env.step(action)
+        return
     vec_env = SubprocVecEnv([make_env(filepath,[i,num_cpu]) for i in range(num_cpu)])
-    
+
+
     # import pybullet as p2
     # eval_env, args, points = make_pybullet(filepath,p2, 100)
     # this_path = os.path.abspath(__file__)
     # overall_path = os.path.dirname(os.path.dirname(os.path.dirname(this_path)))
-    with open(filepath, 'r') as argfile:
-        args = json.load(argfile)
+
     train_timesteps = int(args['evaluate']*(args['tsteps']+1)/num_cpu)
     callback = multiprocess_gym_wrapper.MultiEvaluateCallback(vec_env,n_eval_episodes=int(1200), eval_freq=train_timesteps, best_model_save_path=args['save_path'])
     # Stable Baselines provides you with make_vec_env() helper
@@ -251,18 +274,19 @@ def main():
     # env = make_vec_env(env_id, n_envs=num_cpu, seed=0, vec_env_cls=SubprocVecEnv)
     # wandb.init(project = 'StableBaselinesWandBTest')
     
-    if transfer:
-        model = PPO("MlpPolicy", vec_env, tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-2.3}).load(args['load_path']+'best_model', env=vec_env)
+    if thing == 'transfer':
+        model = model_type("MlpPolicy", vec_env, tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-2.3}).load(args['load_path']+'best_model', env=vec_env)
         print('LOADING A MODEL')
-    else:
-        model = PPO("MlpPolicy", vec_env,tensorboard_log=args['tname'])
+    elif thing == 'run':
+        model = model_type("MlpPolicy", vec_env,tensorboard_log=args['tname'])
+
     model.learn(total_timesteps=args['epochs']*(args['tsteps']+1), callback=callback)
     # model.save('./data/'+filename+'/best_policy')
-    vec_env[0].evaluate()
-    vec_env[0].episode_type = 'eval'
+    vec_env.env_method('evaluate')
     for _ in range(1200):
-        obs = vec_env[0].reset()
+        obs =  vec_env.env_method('reset')
         done = False
+        print(np.shape(obs))
         while not done:
             action, _ = model.predict(obs, deterministic=True)
             obs, _, done, _ = vec_env[0].step(action)
