@@ -30,6 +30,9 @@ import wandb
 import numpy as np
 import time
 import os
+import multiprocessing
+
+
 # from stable_baselines3.DQN import MlpPolicy
 
 def make_env(filepath=None,rank=0):
@@ -230,10 +233,10 @@ def make_pybullet(filepath, pybullet_instance, rank):
 
 
 def main():
-    num_cpu = 4 # Number of processes to use
+    num_cpu = multiprocessing.cpu_count() # Number of processes to use
     # Create the vectorized environment
-    filename = 'eval_best_on_multi'
-    thing = 'eval'
+    filename = 'FTP_fullstate_A_rand'
+    thing = 'run'
     viz = True
 
     filepath = './data/' + filename +'/experiment_config.json'
