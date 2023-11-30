@@ -179,7 +179,7 @@ class MultiprocessEnv():
         self.p.stepSimulation()
 
 class MultiprocessSingleShapeEnv(Environment):
-    def __init__(self,pybulletInstance, hand: TwoFingerGripper, obj: ObjectBase, hand_type ,rand_start = False):
+    def __init__(self,pybulletInstance, hand: TwoFingerGripper, obj: ObjectBase, hand_type ,rand_start = 'N'):
         self.hand = hand
         self.obj = obj
         self.p = pybulletInstance
@@ -189,7 +189,16 @@ class MultiprocessSingleShapeEnv(Environment):
         else:
             self.hand_type = 'A'
             
-        self.rand_start = rand_start
+        if rand_start =='obj':
+            self.rand_start = True
+            self.rand_finger_pos = False
+        elif rand_start =='finger':
+            self.rand_finger_pos = True
+            self.rand_start = False
+        else:
+            self.rand_finger_pos = False
+            self.rand_start = False
+        
         self.p.resetSimulation()
         self.plane_id = self.p.loadURDF("plane.urdf", flags=self.p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
         self.hand_id = self.p.loadURDF(self.hand.path, useFixedBase=True,
@@ -258,7 +267,24 @@ class MultiprocessSingleShapeEnv(Environment):
                                             controlMode=self.p.POSITION_CONTROL, targetPositions=action_to_execute,
                                             positionGains=[0.8,0.8,0.8,0.8], forces=[0.4,0.4,0.4,0.4])
                 self.step()
-
+        if self.rand_finger_pos:
+            y_change = np.random.uniform(-0.01,0.01,2)
+            f1_pos = [0.026749999999999996, 0.10778391676312778 + y_change[0], 0.05]
+            f2_pos = [-0.026749999999999996, 0.10778391676312778 + y_change[1], 0.05]
+            
+            f1_angs = self.p.calculateInverseKinematics(self.hand_id, 2, f1_pos, maxNumIterations=3000)
+            f2_angs = self.p.calculateInverseKinematics(self.hand_id, 5, f2_pos, maxNumIterations=3000)
+            self.p.resetJointState(self.hand_id, 0, -np.pi/2)
+            self.p.resetJointState(self.hand_id, 1, np.pi/4)
+            self.p.resetJointState(self.hand_id, 3, np.pi/2)
+            self.p.resetJointState(self.hand_id, 4, -np.pi/4)
+            
+            positions = np.linspace([-np.pi/2,np.pi/4,np.pi/2,-np.pi/4],[f1_angs[0],f1_angs[1],f2_angs[2],f2_angs[3]],20)
+            for action_to_execute in positions:
+                self.p.setJointMotorControlArray(self.hand_id, jointIndices=self.hand.get_joint_numbers(),
+                                            controlMode=self.p.POSITION_CONTROL, targetPositions=action_to_execute,
+                                            positionGains=[0.8,0.8,0.8,0.8], forces=[0.4,0.4,0.4,0.4])
+                self.step()
         
 
     def reset_to_pos(self, object_pos, finger_angles):

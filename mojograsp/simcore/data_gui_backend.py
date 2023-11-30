@@ -1406,16 +1406,22 @@ class PlotBackend():
 
             data = tempdata['timestep_list']
             goals.append(data[0]['state']['goal_pose']['goal_pose'][0:2])
-            end_dists.append(data[-1]['reward']['distance_to_goal']) 
+            end_dists.append(data[-1]['reward']['distance_to_goal'])
         self.clear_axes()
-         
-        
+        linea = np.array([[0.0,0.06],[0.0,-0.06]])*100
+        lineb = np.array([[0.0424,-0.0424],[-0.0424,0.0424]])*100
+        linec = np.array([[0.0424,0.0424],[-0.0424,-0.0424]])*100
+        lined = np.array([[0.06,0.0],[-0.06,0.0]])*100
         goals = np.array(goals)
         end_dists = np.array(end_dists)
 
         a = self.ax.scatter(goals[:,0]*100, goals[:,1]*100, c = end_dists*100, cmap='jet')
         # self.legend.extend(['Ending Goal Distance'])
         # self.ax.legend(self.legend)
+        self.ax.plot(linea[:,0],linea[:,1])
+        self.ax.plot(lineb[:,0],lineb[:,1])
+        self.ax.plot(linec[:,0],linec[:,1])
+        self.ax.plot(lined[:,0],lined[:,1])
         self.ax.set_ylabel('Y position (cm)')
         self.ax.set_xlabel('X position (cm)')
         self.ax.set_xlim([-7,7])
@@ -1702,7 +1708,14 @@ class PlotBackend():
         ax1.set_ylim([-7,7])
         ax1.set_title('Distance to Goals')
         ax1.grid(False)
-        
+        linea = np.array([[0.0,0.06],[0.0,-0.06]])*100
+        lineb = np.array([[0.0424,-0.0424],[-0.0424,0.0424]])*100
+        linec = np.array([[0.0424,0.0424],[-0.0424,-0.0424]])*100
+        lined = np.array([[0.06,0.0],[-0.06,0.0]])*100
+        ax1.plot(linea[:,0],linea[:,1])
+        ax1.plot(lineb[:,0],lineb[:,1])
+        ax1.plot(linec[:,0],linec[:,1])
+        ax1.plot(lined[:,0],lined[:,1])
         ax1.legend(self.legend)
          
         self.curr_graph = 'scatter'
@@ -1760,3 +1773,41 @@ class PlotBackend():
 
     def get_figure(self):
         return self.fig, self.ax
+    
+    def draw_avg_num_goals(self, folder_or_data_dict):
+        episode_files = [os.path.join(folder_or_data_dict, f) for f in os.listdir(folder_or_data_dict) if f.lower().endswith('.pkl')]
+        filenames_only = [f for f in os.listdir(folder_or_data_dict) if f.lower().endswith('.pkl')]
+        
+        filenums = [re.findall('\d+',f) for f in filenames_only]
+        final_filenums = []
+        for i in filenums:
+            if len(i) > 0 :
+                final_filenums.append(int(i[0]))
+        
+        sorted_inds = np.argsort(final_filenums)
+        final_filenums = np.array(final_filenums)
+        temp = final_filenums[sorted_inds]
+        episode_files = np.array(episode_files)
+        filenames_only = np.array(filenames_only)
+
+        episode_files = episode_files[sorted_inds].tolist()
+        
+        num_goals = []
+        for i, episode_file in enumerate(episode_files):
+            with open(episode_file, 'rb') as ef:
+                tempdata = pkl.load(ef)
+            data = tempdata['timestep_list']
+            goal_poses = len(np.unique([i['state']['goal_pose']['goal_pose'] for i in data], axis=0))
+            num_goals.append(goal_poses)
+            if i % 100 ==0:
+                print('count = ',i)
+        moveing_avg = 100
+        num_goals = moving_average(num_goals,moveing_avg)
+
+        self.ax.plot(range(len(num_goals)),num_goals)
+        self.ax.set_xlabel('Episode_num')
+        self.ax.set_ylabel('Avg goal num')                                                                                                                                                                                                                                   
+        self.legend.extend(['Goals'])
+        self.ax.legend(self.legend)
+        self.ax.set_title('Average goals in 100 episodes')
+        self.curr_graph = 'path'
