@@ -149,7 +149,7 @@ class ExpertEnv(Environment):
         super().step()
 
 class SingleShapeEnv(Environment):
-    def __init__(self, hand: TwoFingerGripper, obj: ObjectBase, hand_type, physicsClientId=None,rand_start = False):
+    def __init__(self, hand: TwoFingerGripper, obj: ObjectBase, hand_type, physicsClientId=None,rand_start = 'no'):
         self.hand = hand
         self.obj = obj
         mass_link = .036
@@ -157,8 +157,15 @@ class SingleShapeEnv(Environment):
             self.hand_type = 'B'
         else:
             self.hand_type = 'A'
-        self.rand_finger_pos = True
-        self.rand_start = rand_start
+        if rand_start =='obj':
+            self.rand_start = True
+            self.rand_finger_pos = False
+        elif rand_start =='finger':
+            self.rand_finger_pos = True
+            self.rand_start = False
+        else:
+            self.rand_finger_pos = False
+            self.rand_start = False
         p.resetSimulation()
         self.plane_id = p.loadURDF("plane.urdf", flags=p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
         self.hand_id = p.loadURDF(self.hand.path, useFixedBase=True,

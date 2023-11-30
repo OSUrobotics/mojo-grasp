@@ -65,7 +65,7 @@ class RNNGui():
                          [sg.Text('Object'), sg.OptionMenu(values=('Cube', 'Cylinder'), k='-object', default_value='Cube')],
                          [sg.Text('Hand'), sg.OptionMenu(values=('2v2', '2v2-B'), k='-hand', default_value='2v2')],
                          [sg.Text("Task"), sg.OptionMenu(values=('asterisk','random','full_random','unplanned_random','single', 'wedge', 'double_wedge', 'clump_wedge', "big_random", "Rotation", 'triple', 'multi'), k='-task', default_value='unplanned_random')],
-                         [sg.Checkbox("Randomized Start Position", key='-rstart',default=False)],
+                         [sg.Checkbox("Randomized Start Position", key='-rstart',default=False), sg.sg.Checkbox("Randomized Finger Position", key='-rfinger',default=False)],
                          [sg.Text('Replay Buffer Sampling'), sg.OptionMenu(values=('priority','random','random+expert'), k='-sampling', default_value='priority')]]
         
         
@@ -142,13 +142,20 @@ class RNNGui():
                      'distance_scaling': float(values['-distance_scale']),
                      'contact_scaling': float(values['-contact_scale']),
                      'freq': int(values['-freq']),
-                     'rstart': int(values['-rstart']),
                      'IK_freq': bool(values['-ik-freq']),
                      'rotation_scale': float(values['-rotation_scale'])}
         state_len = 0
         state_mins = []
         state_maxes = []
         state_list = []
+        if self.args['-rstart'] and self.args['-rfinger']:
+            self.args['rstart']= 'both'
+        elif not self.args['-rstart'] and self.args['-rfinger']:
+            self.args['rstart']= 'finger'
+        elif not self.args['-rstart'] and not self.args['-rfinger']:
+            self.args['rstart']= 'no'
+        elif self.args['-rstart'] and not self.args['-rfinger']:
+            self.args['rstart']= 'obj'
 
         if values['-ftp']:
             if not RW:
