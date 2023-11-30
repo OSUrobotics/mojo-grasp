@@ -230,11 +230,12 @@ def make_pybullet(filepath, pybullet_instance, rank):
 
 
 def main():
-    num_cpu = 16 # Number of processes to use
+    num_cpu = 4 # Number of processes to use
     # Create the vectorized environment
     filename = 'eval_best_on_multi'
     thing = 'eval'
     viz = True
+
     filepath = './data/' + filename +'/experiment_config.json'
     with open(filepath, 'r') as argfile:
         args = json.load(argfile)
