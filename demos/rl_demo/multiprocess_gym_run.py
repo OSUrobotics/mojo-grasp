@@ -17,7 +17,7 @@ from demos.rl_demo import multiprocess_reward
 from demos.rl_demo import multiprocess_gym_wrapper
 from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv
 import pandas as pd
-from multiprocess_record import MultiprocessRecordData
+from demos.rl_demo.multiprocess_record import MultiprocessRecordData
 from mojograsp.simobjects.two_finger_gripper import TwoFingerGripper
 from mojograsp.simobjects.object_with_velocity import ObjectWithVelocity
 from mojograsp.simcore.priority_replay_buffer import ReplayBufferPriority
