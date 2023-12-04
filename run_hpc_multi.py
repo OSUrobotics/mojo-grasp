@@ -8,7 +8,7 @@ Created on Thu Nov 30 12:35:23 2023
 
 import pathlib
 import sys
-from demos.rl_demp import multiprocess_gym_run
+from demos.rl_demo import multiprocess_gym_run
 
 def main(run_id):
     #print(run_id)
