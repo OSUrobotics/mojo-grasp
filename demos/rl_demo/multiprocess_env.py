@@ -271,7 +271,6 @@ class MultiprocessSingleShapeEnv(Environment):
             y_change = np.random.uniform(-0.01,0.01,2)
             f1_pos = [0.026749999999999996, 0.10778391676312778 + y_change[0], 0.05]
             f2_pos = [-0.026749999999999996, 0.10778391676312778 + y_change[1], 0.05]
-            
             f1_angs = self.p.calculateInverseKinematics(self.hand_id, 2, f1_pos, maxNumIterations=3000)
             f2_angs = self.p.calculateInverseKinematics(self.hand_id, 5, f2_pos, maxNumIterations=3000)
             self.p.resetJointState(self.hand_id, 0, -np.pi/2)
