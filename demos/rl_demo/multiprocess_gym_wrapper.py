@@ -16,7 +16,7 @@ from mojograsp.simcore.state import State
 from mojograsp.simcore.reward import Reward
 from PIL import Image
 from stable_baselines3.common.callbacks import EvalCallback
-from rl_gym_wrapper import NoiseAdder
+from demos.rl_demo.rl_gym_wrapper import NoiseAdder
 
 class MultiEvaluateCallback(EvalCallback):
 
