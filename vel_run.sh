@@ -13,4 +13,4 @@
 #module load python3
 source /nfs/hpc/share/swensoni/mojo-env/bin/activate
 # run my job (e.g. matlab, python)
-srun --export=ALL python3 run_hpc_PPO.py $SLURM_ARRAY_TASK_ID 
+srun --export=ALL python3 run_hpc_multi.py $SLURM_ARRAY_TASK_ID 
