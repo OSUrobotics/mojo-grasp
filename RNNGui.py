@@ -65,18 +65,18 @@ class RNNGui():
                          [sg.Text('Object'), sg.OptionMenu(values=('Cube', 'Cylinder'), k='-object', default_value='Cube')],
                          [sg.Text('Hand'), sg.OptionMenu(values=('2v2', '2v2-B'), k='-hand', default_value='2v2')],
                          [sg.Text("Task"), sg.OptionMenu(values=('asterisk','random','full_random','unplanned_random','single', 'wedge', 'double_wedge', 'clump_wedge', "big_random", "Rotation", 'triple', 'multi'), k='-task', default_value='unplanned_random')],
-                         [sg.Checkbox("Randomized Start Position", key='-rstart',default=False), sg.sg.Checkbox("Randomized Finger Position", key='-rfinger',default=False)],
+                         [sg.Checkbox("Randomized Start Position", key='-rstart',default=False), sg.Checkbox("Randomized Finger Position", key='-rfinger',default=False)],
                          [sg.Text('Replay Buffer Sampling'), sg.OptionMenu(values=('priority','random','random+expert'), k='-sampling', default_value='priority')]]
         
         
-        model_layout = [ [sg.Text('Num Epochs'), sg.Input(1000000, key='-epochs'), sg.Text('Batch Size'), sg.Input(100, key='-batch-size')],
-                         [sg.Text('Learning Rate'), sg.Input(0.0001,key='-learning'), sg.Text('Discount Factor'), sg.Input(0.995, key='-df')],
-                         [sg.Text('Starting Epsilon'), sg.Input(0.7,key='-epsilon'), sg.Text('Epsilon Decay Rate'), sg.Input(0.998, key='-edecay')],
-                         [sg.Text('Rollout Size'), sg.Input(5,key='-rollout_size'), sg.Text('Rollout Weight'), sg.Input(0.5, key='-rollout_weight')],
-                         [sg.Text('Evaluation Period'), sg.Input(10000,key='-eval'), sg.Text('Tau'), sg.Input(0.0005, key='-tau')],
-                         [sg.Text('Timesteps per Episode'), sg.Input(15,key='-tsteps'), sg.Text('Timesteps in Evaluation'), sg.Input(15,key='-eval-tsteps')],
-                         [sg.Text('State Training Noise'), sg.Input(0.0, key='-snoise'),sg.Text('Start Pos Range (mm)'), sg.Input(0, key='-start-noise')],
-                         [sg.Text('Timestep Frequency'), sg.Input(3,key='-freq'), sg.Text('Entropy'), sg.Input(0.0,key='-entropy')]]
+        model_layout = [ [sg.Text('Num Epochs'), sg.Input(1000000, key='-epochs',size=(8, 2)), sg.Text('Batch Size'), sg.Input(100, key='-batch-size',size=(8, 2))],
+                         [sg.Text('Learning Rate'), sg.Input(0.0001,key='-learning',size=(8, 2)), sg.Text('Discount Factor'), sg.Input(0.995, key='-df',size=(8, 2))],
+                         [sg.Text('Starting Epsilon'), sg.Input(0.7,key='-epsilon',size=(8, 2)), sg.Text('Epsilon Decay Rate'), sg.Input(0.998, key='-edecay',size=(8, 2))],
+                         [sg.Text('Rollout Size'), sg.Input(5,key='-rollout_size',size=(8, 2)), sg.Text('Rollout Weight'), sg.Input(0.5, key='-rollout_weight',size=(8, 2))],
+                         [sg.Text('Evaluation Period'), sg.Input(10000,key='-eval',size=(8, 2)), sg.Text('Tau'), sg.Input(0.0005, key='-tau',size=(8, 2))],
+                         [sg.Text('Timesteps per Episode'), sg.Input(15,key='-tsteps',size=(8, 2)), sg.Text('Timesteps in Evaluation'), sg.Input(15,key='-eval-tsteps',size=(8, 2))],
+                         [sg.Text('State Training Noise'), sg.Input(0.0, key='-snoise',size=(8, 2)),sg.Text('Start Pos Range (mm)'), sg.Input(0, key='-start-noise',size=(8, 2))],
+                         [sg.Text('Timestep Frequency'), sg.Input(3,key='-freq',size=(8, 2)), sg.Text('Entropy'), sg.Input(0.0,key='-entropy',size=(8, 2))]]
         
         plotting_layout = [[sg.Text('Model Title')],
                        [sg.Input('test1',key='-title')],
@@ -93,9 +93,9 @@ class RNNGui():
                        [sg.Checkbox('Eigenvalues',default=False,key='-eva')],
                        [sg.Checkbox('Eigenvectors',default=False,key='-evc')],
                        [sg.Checkbox('Eigenvectors Times Eigenvalues',default=False,key='-evv')],
-                       [sg.Text('Num Previous States'),sg.Input(4, k='-pv')],
-                       [sg.Text("Reward"), sg.OptionMenu(values=('Sparse','Distance','Distance + Finger', 'Hinge Distance + Finger', 'Slope', 'Slope + Finger','SmartDistance + Finger','SmartDistance + SmartFinger','ScaledDistance + Finger','ScaledDistance+ScaledFinger', 'SFS','DFS','Rotation'), k='-reward',default_value='ScaledDistance+ScaledFinger'), sg.Text('Success Radius (mm)'), sg.Input(2, key='-sr'),],
-                       [sg.Text("Distance Scale"),  sg.Input(1,key='-distance_scale'), sg.Text('Contact Scale'),  sg.Input(0.2,key='-contact_scale'), sg.Text('Success Reward'), sg.Input(1,key='-success_reward'), sg.Text('Rotation Scale'), sg.Input(1,key='-rotation_scale')],
+                       [sg.Text('Num Previous States'),sg.Input(4, k='-pv',size=(8, 2))],
+                       [sg.Text("Reward"), sg.OptionMenu(values=('Sparse','Distance','Distance + Finger', 'Hinge Distance + Finger', 'Slope', 'Slope + Finger','SmartDistance + Finger','SmartDistance + SmartFinger','ScaledDistance + Finger','ScaledDistance+ScaledFinger', 'SFS','DFS','Rotation'), k='-reward',default_value='ScaledDistance+ScaledFinger'), sg.Text('Success Radius (mm)'), sg.Input(2, key='-sr',size=(8, 2)),],
+                       [sg.Text("Distance Scale"),  sg.Input(1,key='-distance_scale',size=(8, 2)), sg.Text('Contact Scale'),  sg.Input(0.2,key='-contact_scale',size=(8, 2)), sg.Text('Success Reward'), sg.Input(1,key='-success_reward',size=(8, 2)), sg.Text('Rotation Scale'), sg.Input(1,key='-rotation_scale',size=(8, 2))],
                        [sg.Text("Action"), sg.OptionMenu(values=('Joint Velocity','Finger Tip Position'), k='-action',default_value='Finger Tip Position')],
                        [sg.Checkbox('Vizualize Simulation',default=False, k='-viz'), sg.Checkbox('Real World?',default=False, k='-rw'), sg.Checkbox('IK every sim step?', default=False, key='-ik-freq')],
                        [sg.Button('Begin Training', key='-train', bind_return_key=True)],
@@ -148,13 +148,13 @@ class RNNGui():
         state_mins = []
         state_maxes = []
         state_list = []
-        if self.args['-rstart'] and self.args['-rfinger']:
+        if bool(values['-rstart']) and bool(values['-rfinger']):
             self.args['rstart']= 'both'
-        elif not self.args['-rstart'] and self.args['-rfinger']:
+        elif not bool(values['-rstart']) and bool(values['-rfinger']):
             self.args['rstart']= 'finger'
-        elif not self.args['-rstart'] and not self.args['-rfinger']:
+        elif not bool(values['-rstart']) and not bool(values['-rfinger']):
             self.args['rstart']= 'no'
-        elif self.args['-rstart'] and not self.args['-rfinger']:
+        elif bool(values['-rstart']) and not bool(values['-rfinger']):
             self.args['rstart']= 'obj'
 
         if values['-ftp']:
