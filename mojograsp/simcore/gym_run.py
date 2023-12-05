@@ -54,13 +54,19 @@ def linear_schedule(initial_value: float) -> Callable[[float], float]:
 
     return func
 
-def run_pybullet(filepath, window=None, runtype='run', episode_number=None, action_list = None):
+def run_pybullet(filepath, window=None, runtype='run', episode_number=None, action_list = None, hand = None):
     # resource paths
     this_path = os.path.abspath(__file__)
     overall_path = os.path.dirname(os.path.dirname(os.path.dirname(this_path)))
     with open(filepath, 'r') as argfile:
         args = json.load(argfile)
-    
+    if hand is not None:
+        args['hand'] = hand
+        args['rstart'] = 'none'
+        if hand=='2v2-B':
+            args['hand_path']="/home/mothra/mojo-grasp/demos/rl_demo/resources/2v2_Hand_B/hand/2v2_65.35_65.35_1.1_53.urdf"
+        elif hand=='2v2':
+            args['hand_path']="/home/mothra/mojo-grasp/demos/rl_demo/resources/2v2_Hand_A/hand/2v2_50.50_50.50_1.1_53.urdf"
     if (runtype =='run') | (runtype =='transfer'):
         if args['task'] == 'asterisk':
             x = [0.03, 0, -0.03, -0.04, -0.03, 0, 0.03, 0.04]
@@ -371,7 +377,7 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None, acti
             done = False
             step = 0
             while not done:
-                print('step: ',step)
+                # print('step: ',step)
                 action, _ = model.predict(obs, deterministic=True)
                 mirrored_action = np.array([-action[2], action[3],-action[0],action[1]])
                 obs, reward, done, info = gym_env.step(action, viz=False)
@@ -426,7 +432,8 @@ def main():
     this_path = os.path.abspath(__file__)
     overall_path = os.path.dirname(os.path.dirname(os.path.dirname(this_path)))
     # run_pybullet(overall_path+'/demos/rl_demo/data/single_direction_limited/right/experiment_config.json', runtype='replay', episode_number=9987)
-
+    hand_b_key = "2v2-B"
+    hand_a_key = "2v2"
     # run_pybullet(overall_path+'/demos/rl_demo/data/ja_please/experiment_config.json', runtype='run')
 
     # run_pybullet(overall_path+'/demos/rl_demo/data/FUCK/experiment_config.json', runtype='run')
@@ -455,7 +462,7 @@ def main():
         # run_pybullet(overall_path + '/demos/rl_demo/data/hand_transfer_FTP/experiment_config.json', runtype='replay',episode_number=i)
     # run_pybullet(overall_path + '/demos/rl_demo/data/hand_transfer_FTP/experiment_config.json', runtype='eval')
     # run_pybullet(overall_path + '/demos/rl_demo/data/hand_transfer_JA/experiment_config.json', runtype='eval')
-    run_pybullet(overall_path + '/demos/rl_demo/data/eval_best_on_multi/experiment_config.json', runtype='replay')
+    run_pybullet(overall_path + '/demos/rl_demo/data/FTP_fullstate_A_rand/experiment_config.json', runtype='eval', hand=hand_b_key)
 
     # run_pybullet(overall_path+'/demos/rl_demo/data/full_full_ppo/experiment_config.json',runtype='replay', episode_number=1)
 
