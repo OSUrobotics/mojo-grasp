@@ -1408,20 +1408,20 @@ class PlotBackend():
             goals.append(data[0]['state']['goal_pose']['goal_pose'][0:2])
             end_dists.append(data[-1]['reward']['distance_to_goal'])
         self.clear_axes()
-        linea = np.array([[0.0,0.06],[0.0,-0.06]])*100
-        lineb = np.array([[0.0424,-0.0424],[-0.0424,0.0424]])*100
-        linec = np.array([[0.0424,0.0424],[-0.0424,-0.0424]])*100
-        lined = np.array([[0.06,0.0],[-0.06,0.0]])*100
+        # linea = np.array([[0.0,0.06],[0.0,-0.06]])*100
+        # lineb = np.array([[0.0424,-0.0424],[-0.0424,0.0424]])*100
+        # linec = np.array([[0.0424,0.0424],[-0.0424,-0.0424]])*100
+        # lined = np.array([[0.06,0.0],[-0.06,0.0]])*100
         goals = np.array(goals)
         end_dists = np.array(end_dists)
 
         a = self.ax.scatter(goals[:,0]*100, goals[:,1]*100, c = end_dists*100, cmap='jet')
         # self.legend.extend(['Ending Goal Distance'])
         # self.ax.legend(self.legend)
-        self.ax.plot(linea[:,0],linea[:,1])
-        self.ax.plot(lineb[:,0],lineb[:,1])
-        self.ax.plot(linec[:,0],linec[:,1])
-        self.ax.plot(lined[:,0],lined[:,1])
+        # self.ax.plot(linea[:,0],linea[:,1])
+        # self.ax.plot(lineb[:,0],lineb[:,1])
+        # self.ax.plot(linec[:,0],linec[:,1])
+        # self.ax.plot(lined[:,0],lined[:,1])
         self.ax.set_ylabel('Y position (cm)')
         self.ax.set_xlabel('X position (cm)')
         self.ax.set_xlim([-7,7])
@@ -1708,14 +1708,14 @@ class PlotBackend():
         ax1.set_ylim([-7,7])
         ax1.set_title('Distance to Goals')
         ax1.grid(False)
-        linea = np.array([[0.0,0.06],[0.0,-0.06]])*100
-        lineb = np.array([[0.0424,-0.0424],[-0.0424,0.0424]])*100
-        linec = np.array([[0.0424,0.0424],[-0.0424,-0.0424]])*100
-        lined = np.array([[0.06,0.0],[-0.06,0.0]])*100
-        ax1.plot(linea[:,0],linea[:,1])
-        ax1.plot(lineb[:,0],lineb[:,1])
-        ax1.plot(linec[:,0],linec[:,1])
-        ax1.plot(lined[:,0],lined[:,1])
+        # linea = np.array([[0.0,0.06],[0.0,-0.06]])*100
+        # lineb = np.array([[0.0424,-0.0424],[-0.0424,0.0424]])*100
+        # linec = np.array([[0.0424,0.0424],[-0.0424,-0.0424]])*100
+        # lined = np.array([[0.06,0.0],[-0.06,0.0]])*100
+        # ax1.plot(linea[:,0],linea[:,1])
+        # ax1.plot(lineb[:,0],lineb[:,1])
+        # ax1.plot(linec[:,0],linec[:,1])
+        # ax1.plot(lined[:,0],lined[:,1])
         ax1.legend(self.legend)
          
         self.curr_graph = 'scatter'
