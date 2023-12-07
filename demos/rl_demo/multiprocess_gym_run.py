@@ -219,7 +219,8 @@ def make_pybullet(filepath, pybullet_instance, rank):
     replay_buffer = ReplayBufferPriority(buffer_size=4080000)
     
     # environment and recording
-    env = multiprocess_env.MultiprocessSingleShapeEnv(pybullet_instance, hand=hand, obj=obj, hand_type=arg_dict['hand'], rand_start=args['rstart'])
+    hand_type = this_hand.split('/')[0]
+    env = multiprocess_env.MultiprocessSingleShapeEnv(pybullet_instance, hand=hand, obj=obj, hand_type=hand_type, rand_start=args['rstart'])
 
     # env = rl_env.ExpertEnv(hand=hand, obj=cylinder)
     
