@@ -321,7 +321,7 @@ def run_pybullet(filepath, runtype='run', episode_number=None, action_list = Non
     
     # environment and recording
     # env = rl_env.ExpertEnv(hand=hand, obj=obj, hand_type=arg_dict['hand'], rand_start=args['rstart'])
-    hand_type = arg_dict['hand_file_list'].split('/')[0]
+    hand_type = arg_dict['hand_file_list'][0].split('/')[0]
     env = rl_env.SingleShapeEnv(hand=hand, obj=obj, hand_type=hand_type, rand_start=args['rstart'])
     # env = rl_env.ExpertEnv(hand=hand, obj=cylinder)
     

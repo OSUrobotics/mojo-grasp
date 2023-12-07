@@ -184,10 +184,10 @@ class MultiprocessSingleShapeEnv(Environment):
         self.obj = obj
         self.p = pybulletInstance
         mass_link = .036
-        if 'B' in hand_type:
-            self.hand_type = 'B'
-        else:
-            self.hand_type = 'A'
+        key_nums = hand_type.split('_')
+        self.f1 = key_nums[1]
+        self.f2 = key_nums[2]
+        self.width = key_nums[-1]
             
         if rand_start =='obj':
             self.rand_start = True
@@ -237,16 +237,19 @@ class MultiprocessSingleShapeEnv(Environment):
             obj_change = np.array([0,0])
 
         
-        if self.hand_type =='A':
-            self.p.resetJointState(self.hand_id, 0, -.725)
-            self.p.resetJointState(self.hand_id, 1, 1.45)
-            self.p.resetJointState(self.hand_id, 3, .725)
-            self.p.resetJointState(self.hand_id, 4, -1.45)
-        if self.hand_type == 'B':
-            self.p.resetJointState(self.hand_id, 0, -.46)
-            self.p.resetJointState(self.hand_id, 1, 1.5)
-            self.p.resetJointState(self.hand_id, 3, .46)
-            self.p.resetJointState(self.hand_id, 4, -1.5)
+        if self.width == '53':
+            if self.f1 =='50.50':
+                self.p.resetJointState(self.hand_id, 0, -.725)
+                self.p.resetJointState(self.hand_id, 1, 1.45)
+            elif self.f1 == '70.30':
+                self.p.resetJointState(self.hand_id, 0, -.46)
+                self.p.resetJointState(self.hand_id, 1, 1.5)
+            if self.f2 =='50.50':
+                self.p.resetJointState(self.hand_id, 3, .725)
+                self.p.resetJointState(self.hand_id, 4, -1.45)
+            elif self.f2 == '70.30':
+                self.p.resetJointState(self.hand_id, 3, .46)
+                self.p.resetJointState(self.hand_id, 4, -1.5)
         
         self.p.resetBasePositionAndOrientation(self.obj_id, posObj=[0.0+obj_change[0], 0.10+obj_change[1], .05], ornObj=[0,0,0,1])
 
@@ -269,8 +272,10 @@ class MultiprocessSingleShapeEnv(Environment):
                 self.step()
         if self.rand_finger_pos:
             y_change = np.random.uniform(-0.01,0.01,2)
-            f1_pos = [0.026749999999999996, 0.10778391676312778 + y_change[0], 0.05]
-            f2_pos = [-0.026749999999999996, 0.10778391676312778 + y_change[1], 0.05]
+            link1_pose = self.p.getLinkState(self.hand_id, 2)[0]
+            link2_pose = self.p.getLinkState(self.hand_id, 5)[0]
+            f1_pos = [link1_pose[0], link1_pose[1] + y_change[0], 0.05]
+            f2_pos = [link2_pose[0], link2_pose[1] + y_change[1], 0.05]
             f1_angs = self.p.calculateInverseKinematics(self.hand_id, 2, f1_pos, maxNumIterations=3000)
             f2_angs = self.p.calculateInverseKinematics(self.hand_id, 5, f2_pos, maxNumIterations=3000)
             self.p.resetJointState(self.hand_id, 0, -np.pi/2)
