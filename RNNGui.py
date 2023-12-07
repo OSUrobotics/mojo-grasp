@@ -12,8 +12,6 @@ import pickle as pkl
 import numpy as np
 import json
 from PIL import ImageGrab
-
-
 # from itertools import islice
 import threading
 from mojograsp.simcore.run_from_file import run_pybullet
@@ -63,7 +61,11 @@ class RNNGui():
                          [sg.Text('Path to Previous Policy if Transferring')],
                          [sg.Button("Browse",key='-browse-load',button_color='DarkBlue'),sg.Text("/", key='-load-path')],
                          [sg.Text('Object'), sg.OptionMenu(values=('Cube', 'Cylinder'), k='-object', default_value='Cube')],
-                         [sg.Text('Hand'), sg.OptionMenu(values=('2v2', '2v2-B'), k='-hand', default_value='2v2')],
+                         [sg.Text('Hands Used For Training and Testing')],
+                         [sg.Checkbox('2v2_50.50_50.50_1.1_43',key='2v2_50.50_50.50_1.1_43',default=False),sg.Checkbox('2v2_70.30_50.50_1.1_43',key='2v2_70.30_50.50_1.1_43', default=False),sg.Checkbox('2v2_50.50_70.30_1.1_43',key='2v2_50.50_70.30_1.1_43', default=False),sg.Checkbox('2v2_70.30_70.30_1.1_43',key='2v2_70.30_70.30_1.1_43', default=False)],
+                         [sg.Checkbox('2v2_50.50_50.50_1.1_53',key='2v2_50.50_50.50_1.1_53', default=True),sg.Checkbox('2v2_70.30_50.50_1.1_53',key='2v2_70.30_50.50_1.1_53', default=False),sg.Checkbox('2v2_50.50_70.30_1.1_53',key='2v2_50.50_70.30_1.1_53', default=False),sg.Checkbox('2v2_70.30_70.30_1.1_53',key='2v2_70.30_70.30_1.1_53', default=False)],
+                         [sg.Checkbox('2v2_50.50_50.50_1.1_63',key='2v2_50.50_50.50_1.1_63', default=False),sg.Checkbox('2v2_70.30_50.50_1.1_63',key='2v2_70.30_50.50_1.1_63', default=False),sg.Checkbox('2v2_50.50_70.30_1.1_63',key='2v2_50.50_70.30_1.1_63', default=False),sg.Checkbox('2v2_70.30_70.30_1.1_63',key='2v2_70.30_70.30_1.1_63', default=False)],
+                         [sg.Checkbox('2v2_50.50_50.50_1.1_73',key='2v2_50.50_50.50_1.1_73', default=False),sg.Checkbox('2v2_70.30_50.50_1.1_73',key='2v2_70.30_50.50_1.1_73', default=False),sg.Checkbox('2v2_50.50_70.30_1.1_73',key='2v2_50.50_70.30_1.1_73', default=False),sg.Checkbox('2v2_70.30_70.30_1.1_73',key='2v2_70.30_70.30_1.1_73', default=False)],
                          [sg.Text("Task"), sg.OptionMenu(values=('asterisk','random','full_random','unplanned_random','single', 'wedge', 'double_wedge', 'clump_wedge', "big_random", "Rotation", 'triple', 'multi'), k='-task', default_value='unplanned_random')],
                          [sg.Checkbox("Randomized Start Position", key='-rstart',default=False), sg.Checkbox("Randomized Finger Position", key='-rfinger',default=False)],
                          [sg.Text('Replay Buffer Sampling'), sg.OptionMenu(values=('priority','random','random+expert'), k='-sampling', default_value='priority')]]
@@ -99,8 +101,7 @@ class RNNGui():
                        [sg.Text("Action"), sg.OptionMenu(values=('Joint Velocity','Finger Tip Position'), k='-action',default_value='Finger Tip Position')],
                        [sg.Checkbox('Vizualize Simulation',default=False, k='-viz'), sg.Checkbox('Real World?',default=False, k='-rw'), sg.Checkbox('IK every sim step?', default=False, key='-ik-freq')],
                        [sg.Button('Begin Training', key='-train', bind_return_key=True)],
-                       [sg.Button('Build Config File WITHOUT Training', key='-build')],
-                       [sg.Text('Work progress'), sg.ProgressBar(100, size=(20, 20), orientation='h', key='-PROG-')]]
+                       [sg.Button('Build Config File WITHOUT Training', key='-build')]]
 
         layout = [[sg.TabGroup([[sg.Tab('Task and General parameters', data_layout, key='-mykey-'),
                                 sg.Tab('Hyperparameters', model_layout),
@@ -122,7 +123,6 @@ class RNNGui():
                      'edecay': float(values['-edecay']),
                      'entropy': float(values['-entropy']),
                      'object': values['-object'],
-                     'hand': values['-hand'],
                      'task': values['-task'],
                      'evaluate': int(values['-eval']),
                      'sampling': values['-sampling'],
@@ -283,10 +283,15 @@ class RNNGui():
         overall_path = pathlib.Path(__file__).parent.resolve()
         resource_path = overall_path.joinpath('demos/rl_demo/resources')
         run_path = overall_path.joinpath('demos/rl_demo/runs')
-        if values['-hand'] == '2v2':
-            self.args['hand_path'] = str(resource_path.joinpath('2v2_Hand_A/hand/2v2_50.50_50.50_1.1_53.urdf'))
-        elif values['-hand'] == '2v2-B':
-            self.args['hand_path'] = str(resource_path.joinpath('2v2_Hand_B/hand/2v2_65.35_65.35_1.1_53.urdf'))
+        self.args['hand_path'] = str(resource_path.joinpath("hand_bank"))
+        self.args['hand_file_list'] = []
+        for k,v in values.items():
+            print(k)
+            if type(k) == str:
+                if '2v2' in k:
+                    if v:
+                        print('adding thing', k+'/hand/'+k+'.urdf')
+                        self.args['hand_file_list'].append(k+'/hand/'+k+'.urdf')
         if values['-object'] == 'Cube':
             self.args['object_path'] = str(resource_path.joinpath('object_models/2v2_mod/2v2_mod_cuboid_small.urdf'))
         elif values['-object'] == 'Cylinder':
@@ -350,7 +355,7 @@ class RNNGui():
         return True
         
     def train(self):
-        run_pybullet(self.args['save_path'] + 'experiment_config.json', self.window)
+        run_pybullet(self.args['save_path'] + 'experiment_config.json')
         print('model finished, saving now')
 
     def log_params(self):
@@ -383,6 +388,7 @@ class RNNGui():
             print('config not built, parameters not saved')
 
     def run_gui(self):
+        p1 = pathlib.Path(__file__).parent.resolve()
         while True:
 
             event, values = self.window.read()
@@ -403,7 +409,7 @@ class RNNGui():
                 break
             # ----------------- Menu choices -----------------
             if event == '-browse-expert':
-                newfolder = sg.popup_get_folder('Select Folder Containing Expert Data', no_window=True)
+                newfolder = sg.popup_get_folder('Select Folder Containing Expert Data',initial_folder=str(p1)+'/demos/rl_demo/data', no_window=True)
                 if newfolder is None:
                     continue
     
@@ -414,7 +420,7 @@ class RNNGui():
                 self.window.refresh()
             
             elif event == '-browse-save':
-                newfolder = sg.popup_get_folder('Select Folder To Save Data In', no_window=True)
+                newfolder = sg.popup_get_folder('Select Folder To Save Data In',initial_folder=str(p1)+'/demos/rl_demo/data', no_window=True)
                 if newfolder is None:
                     continue
     
@@ -425,7 +431,7 @@ class RNNGui():
                 self.window.refresh()
 
             elif event == '-browse-load':
-                newfolder = sg.popup_get_folder('Select Folder To Save Data In', no_window=True)
+                newfolder = sg.popup_get_folder('Select Folder To Save Data In',initial_folder=str(p1)+'/demos/rl_demo/data', no_window=True)
                 if newfolder is None:
                     continue
     

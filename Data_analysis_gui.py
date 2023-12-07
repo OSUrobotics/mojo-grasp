@@ -277,14 +277,14 @@ def main():
             backend.draw_scatter_contact_dist(folder)
             figure_canvas_agg.draw()
         elif event == 'End Poses':
-            cancan = sg.Window('Popup figure', [[sg.Canvas(size=(1280*2, 960*2),key='-CANVAS-')],[sg.Button('ok cool')]], finalize=True)
+            cancan = sg.Window('Popup figure', [[sg.Canvas(size=(1280*2, 960*2),key='-CANVAS-')]], finalize=True)
             fig2, _ = backend.draw_end_poses(folder)
             figure_canvas_agg2 = FigureCanvasTkAgg(fig2, cancan['-CANVAS-'].TKCanvas)
             figure_canvas_agg2.draw()
             figure_canvas_agg2.get_tk_widget().pack(side='top', fill='both', expand=1)
             cancan.move(1000, 20)
         elif event == 'Multireward':
-            cancan = sg.Window('Popup figure', [[sg.Canvas(size=(1280*2, 960*2),key='-CANVAS-')],[sg.Button('ok cool')]], finalize=True)
+            cancan = sg.Window('Popup figure', [[sg.Canvas(size=(1280*2, 960*2),key='-CANVAS-')]], finalize=True)
             fig2, _  = backend.draw_multifigure_rewards(episode_data)
             figure_canvas_agg2 = FigureCanvasTkAgg(fig2, cancan['-CANVAS-'].TKCanvas)
             figure_canvas_agg2.draw()

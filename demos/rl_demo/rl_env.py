@@ -220,7 +220,6 @@ class SingleShapeEnv(Environment):
         p.resetBasePositionAndOrientation(self.obj_id, posObj=[0.0+obj_change[0], 0.10+obj_change[1], .05], ornObj=[0,0,0,1])
 
         if self.rand_start:
-            print('if you see me you fucked up')
             f1_pos = [0.026749999999999996+obj_change[0], 0.10778391676312778+obj_change[1], 0.05]
             f2_pos = [-0.026749999999999996+obj_change[0], 0.10778391676312778+obj_change[1], 0.05]
             f1_angs = p.calculateInverseKinematics(self.hand_id, 2, f1_pos, maxNumIterations=3000)
@@ -237,7 +236,6 @@ class SingleShapeEnv(Environment):
                                             positionGains=[0.8,0.8,0.8,0.8], forces=[0.4,0.4,0.4,0.4])
                 self.step()
         if self.rand_finger_pos:
-            print('if you see me you fucked up')
             y_change = np.random.uniform(-0.01,0.01,2)
             # hand a
             f1_pos = [0.026749999999999996, 0.10778391676312778 + y_change[0], 0.05]
