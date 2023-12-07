@@ -2,7 +2,7 @@ import os
 import re
 
 
-filepath = '/home/mothra/mojo-grasp/demos/rl_demo/data/FTP_fullstate_A_rand/Test/'
+filepath = '/home/mothra/mojo-grasp/demos/rl_demo/data/JA_halfstate_A_rand/Test/Test/'
 test_files = os.listdir(filepath)
 num_cores = 16
 for filename in test_files:

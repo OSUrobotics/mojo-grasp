@@ -162,14 +162,20 @@ def make_pybullet(filepath, pybullet_instance, rank):
     pybullet_instance.resetDebugVisualizerCamera(cameraDistance=.02, cameraYaw=0, cameraPitch=-89.9999,
                                  cameraTargetPosition=[0, 0.1, 0.5])
     
+    if rank[1] < len(args['hand_file_list']):
+        raise IndexError('TOO MANY HANDS FOR NUMBER OF PROVIDED CORES')
+    elif rank[1] % len(args['hand_file_list']) != 0:
+        print('WARNING: number of hands does not evenly divide into number of pybullet instances. Hands will have uneven number of samples')
+    
+    this_hand = args['hand_file_list'][rank[1]%len(args['hand_file_list'])]
     # load objects into pybullet
     plane_id = pybullet_instance.loadURDF("plane.urdf", flags=pybullet_instance.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
-    hand_id = pybullet_instance.loadURDF(args['hand_path'], useFixedBase=True,
+    hand_id = pybullet_instance.loadURDF(args['hand_path'] + '/' + this_hand, useFixedBase=True,
                          basePosition=[0.0, 0.0, 0.05], flags=pybullet_instance.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
     obj_id = pybullet_instance.loadURDF(args['object_path'], basePosition=[0.0, 0.10, .05], flags=pybullet_instance.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
     
     # Create TwoFingerGripper Object and set the initial joint positions
-    hand = TwoFingerGripper(hand_id, path=args['hand_path'])
+    hand = TwoFingerGripper(hand_id, path=args['hand_path'] + '/' + this_hand)
     
     # change visual of gripper
     pybullet_instance.changeVisualShape(hand_id, -1, rgbaColor=[0.3, 0.3, 0.3, 1])
@@ -223,7 +229,7 @@ def make_pybullet(filepath, pybullet_instance, rank):
     
     
     # data recording
-    record_data = MultiprocessRecordData('process'+str(rank[0])+'_',
+    record_data = MultiprocessRecordData(rank,
         data_path=args['save_path'], state=state, action=action, reward=reward, save_all=False, controller=manipulation.controller)
     
     
@@ -236,7 +242,7 @@ def main(filepath = None):
     num_cpu = multiprocessing.cpu_count() # Number of processes to use
     # Create the vectorized environment
     if filepath is None:
-        filename = 'JA_fullstate_A_rand'
+        filename = 'FTP_halfstate_A_rand'
         filepath = './data/' + filename +'/experiment_config.json'
         thing = 'run'
     else:
