@@ -4,7 +4,7 @@ from mojograsp.simobjects.object_base import ObjectBase
 from mojograsp.simcore.state import State
 from mojograsp.simcore.reward import Reward
 from mojograsp.simcore.action import Action
-from demos.rl_demo import rl_controller
+from demos.rl_demo import multiprocess_control
 from mojograsp.simcore.replay_buffer import ReplayBufferDefault
 from numpy.random import shuffle
 from math import isclose
@@ -13,7 +13,7 @@ from PIL import Image
 
 class MultiprocessManipulation(Phase):
 
-    def __init__(self, hand: TwoFingerGripper, cube: ObjectBase, x, y, state: State, action: Action, reward: Reward, env, replay_buffer: ReplayBufferDefault = None, args: dict = None,physicsClientId = None):
+    def __init__(self, hand: TwoFingerGripper, cube: ObjectBase, x, y, state: State, action: Action, reward: Reward, env, replay_buffer: ReplayBufferDefault = None, args: dict = None,physicsClientId = None, hand_type=None):
         self.name = "manipulation"
         self.hand = hand
         self.cube = cube
@@ -39,7 +39,7 @@ class MultiprocessManipulation(Phase):
         self.goal_position = None
         # create controller
         self.interp_ratio = int(240/args['freq'])
-        self.controller = rl_controller.GymController(hand, cube, args=args)
+        self.controller = multiprocess_control.MultiprocessController(self.p, hand, cube, args=args,hand_type=hand_type)
         self.end_val = 0
         self.camera_view_matrix = self.p.computeViewMatrix((0.0,0.1,0.5),(0.0,0.1,0.005), (0.0,1,0.0))
         self.camera_projection_matrix = self.p.computeProjectionMatrixFOV(60,4/3,0.1,0.9)

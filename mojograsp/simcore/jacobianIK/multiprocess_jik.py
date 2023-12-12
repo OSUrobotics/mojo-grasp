@@ -5,9 +5,9 @@ from mojograsp.simcore.jacobianIK import multiprocess_mh as mh
 
 class JacobianIK():
 
-    def __init__(self, hand_id, finger_info, max_iterations=200, max_step=.01, starting_step=1, error=1e-4) -> None:
+    def __init__(self, pybullet_instance, hand_id, finger_info, max_iterations=200, max_step=.01, starting_step=1, error=1e-4) -> None:
         # Get forward IK info for each finger
-        self.finger_fk = multiprocess_fk.ForwardKinematicsSIM(hand_id, finger_info)
+        self.finger_fk = multiprocess_fk.ForwardKinematicsSIM(hand_id, finger_info, pybullet_instance)
         self.MAX_ITERATIONS = max_iterations
         self.MAX_STEP = max_step
         self.STARTING_STEP = starting_step
