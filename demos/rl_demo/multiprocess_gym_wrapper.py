@@ -48,6 +48,7 @@ class MultiprocessGymWrapper(gym.Env):
         self.observation_space = spaces.Box(np.array(args['state_mins']),np.array(args['state_maxes']))
         self.STATE_NOISE = args['state_noise']
         if self.STATE_NOISE > 0:
+            print('we are getting noisey')
             self.noisey_boi = NoiseAdder(np.array(args['state_mins']), np.array(args['state_maxes']))
         self.PREV_VALS = args['pv']
         self.REWARD_TYPE = args['reward']

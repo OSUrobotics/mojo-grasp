@@ -40,12 +40,9 @@ class MultiprocessController():
     # Maximum move per step
     MAX_MOVE = .01
 
-    def __init__(self, pybullet_instance, gripper: TwoFingerGripper, cube: ObjectBase, data_file: str = None, args=None):
+    def __init__(self, pybullet_instance, gripper: TwoFingerGripper, cube: ObjectBase, data_file: str = None, args=None, hand_type=None):
         self.p = pybullet_instance
-        if 'B' in args['hand']:
-            super().__init__(gripper, cube, data_file,'B')
-        else:
-            super().__init__(gripper, cube, data_file)
+
         self.train_flag = False
         self.MAX_ANGLE_CHANGE = 0.01
         self.MAX_DISTANCE_CHANGE = 0.001
@@ -74,28 +71,34 @@ class MultiprocessController():
         self.prev_distance = 0
         self.distance_count = 0
         self.retry_count = 0
-        if 'A' in args['hand']:
-            hand_info = {"finger1": {"name": "finger0", "num_links": 2, "link_lengths": [[0, .072, 0], [0, .072, 0]]},
-                         "finger2": {"name": "finger1", "num_links": 2, "link_lengths": [[0, .072, 0], [0, .072, 0]]}}
-        elif 'B' in args['hand']:
-            hand_info = {"finger1": {"name": "finger0", "num_links": 2, "link_lengths": [[0, .0936, 0], [0, .0504, 0]]},
-                         "finger2": {"name": "finger1", "num_links": 2, "link_lengths": [[0, .0936, 0], [0, .0504, 0]]}}
+        keys = hand_type.split('_')
+        if keys[1] == '50.50':
+            f1 = {"name": "finger0", "num_links": 2, "link_lengths": [[0, .072, 0], [0, .072, 0]]}
+        elif keys[1] == "70.30":
+            f1 = {"name": "finger0", "num_links": 2, "link_lengths": [[0, .1008, 0], [0, .0432, 0]]}
+        if keys[2] == '50.50':
+            f2 = {"name": "finger0", "num_links": 2, "link_lengths": [[0, .072, 0], [0, .072, 0]]}
+        elif keys[2] == "70.30":
+            f2 = {"name": "finger0", "num_links": 2, "link_lengths": [[0, .1008, 0], [0, .0432, 0]]}
+        hand_info = {"finger1": f1,"finger2": f2}
         self.p.resetJointState(self.gripper.id, 0, 0)
         self.p.resetJointState(self.gripper.id, 1, 0)
         self.p.resetJointState(self.gripper.id, 3, 0)
         self.p.resetJointState(self.gripper.id, 4, 0)
-        self.ik_f1 = JacobianIK(gripper.id,deepcopy(hand_info['finger1']))
+        self.ik_f1 = JacobianIK(self.p, gripper.id,deepcopy(hand_info['finger1']))
         
-        self.ik_f2 = JacobianIK(gripper.id,deepcopy(hand_info['finger2']))
+        self.ik_f2 = JacobianIK(self.p, gripper.id,deepcopy(hand_info['finger2']))
 
-        if 'A' in args['hand']:
+        if keys[1] == '50.50':
             self.p.resetJointState(self.gripper.id, 0, -.725)
             self.p.resetJointState(self.gripper.id, 1, 1.45)
-            self.p.resetJointState(self.gripper.id, 3, .725)
-            self.p.resetJointState(self.gripper.id, 4, -1.45)
-        elif 'B' in args['hand']:
+        elif keys[1] == "70.30":
             self.p.resetJointState(self.gripper.id, 0, -.5)
             self.p.resetJointState(self.gripper.id, 1, 1.5)
+        if keys[2] == '50.50':
+            self.p.resetJointState(self.gripper.id, 3, .725)
+            self.p.resetJointState(self.gripper.id, 4, -1.45)
+        elif keys[2] == "70.30":
             self.p.resetJointState(self.gripper.id, 3, .5)
             self.p.resetJointState(self.gripper.id, 4, -1.5)
         self.p.stepSimulation()
@@ -185,10 +188,9 @@ class MultiprocessController():
         return False
 
     def set_goal_position(self, position: List[float]):
-        self.update_random_size()
+        self.goal_position = position
         self.ik_f1.finger_fk.update_angles_from_sim()
         self.ik_f2.finger_fk.update_angles_from_sim()
-        return super().set_goal_position(position)
     
     def evaluate(self):
         if not self.train_flag:
