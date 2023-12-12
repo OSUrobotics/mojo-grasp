@@ -157,7 +157,7 @@ class SingleShapeEnv(Environment):
         self.f1 = key_nums[1]
         self.f2 = key_nums[2]
         self.width = key_nums[-1]
-
+        np.random.seed(42)
         if rand_start =='obj':
             self.rand_start = True
             self.rand_finger_pos = False
@@ -208,13 +208,13 @@ class SingleShapeEnv(Environment):
             if self.f1 =='50.50':
                 p.resetJointState(self.hand_id, 0, -.725)
                 p.resetJointState(self.hand_id, 1, 1.45)
-            elif self.f1 == '70.30':
+            elif self.f1 == '65.35':
                 p.resetJointState(self.hand_id, 0, -.46)
                 p.resetJointState(self.hand_id, 1, 1.5)
             if self.f2 =='50.50':
                 p.resetJointState(self.hand_id, 3, .725)
                 p.resetJointState(self.hand_id, 4, -1.45)
-            elif self.f2 == '70.30':
+            elif self.f2 == '65.35':
                 p.resetJointState(self.hand_id, 3, .46)
                 p.resetJointState(self.hand_id, 4, -1.5)
         else:
@@ -244,7 +244,7 @@ class SingleShapeEnv(Environment):
             link2_pose = p.getLinkState(self.hand_id, 5)[0]
             f1_pos = [link1_pose[0], link1_pose[1] + y_change[0], 0.05]
             f2_pos = [link2_pose[0], link2_pose[1] + y_change[1], 0.05]
-            
+            # p.gofuckyuorself
             f1_angs = p.calculateInverseKinematics(self.hand_id, 2, f1_pos, maxNumIterations=3000)
             f2_angs = p.calculateInverseKinematics(self.hand_id, 5, f2_pos, maxNumIterations=3000)
             p.resetJointState(self.hand_id, 0, -np.pi/2)

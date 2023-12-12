@@ -492,10 +492,10 @@ class PlotBackend():
         if self.clear_plots | (self.curr_graph !='Group_Reward'):
             self.clear_axes()
              
-        self.legend.append('Average Agent Reward')
+        self.legend = ['Non-Agnostic SS, Joint Angle AS','Non-Agnostic SS, Finger Tip AS','Agnostic SS, Joint Angle AS','Agnostic SS, Finger Tip AS']
         self.ax.plot(range(len(rewards)), rewards)
         self.ax.set_xlabel('Episode Number')
-        self.ax.set_ylabel('Total Reward Over the Entire Episode')
+        self.ax.set_ylabel('Average Total Reward Over the Entire Episode')
         self.ax.set_title("Agent Reward over Episode")
         # self.ax.set_ylim([-12, 0])
         self.ax.legend(self.legend)
@@ -1414,7 +1414,7 @@ class PlotBackend():
         # lined = np.array([[0.06,0.0],[-0.06,0.0]])*100
         goals = np.array(goals)
         end_dists = np.array(end_dists)
-
+        end_dists = np.clip(end_dists, 0, 0.025)
         a = self.ax.scatter(goals[:,0]*100, goals[:,1]*100, c = end_dists*100, cmap='jet')
         # self.legend.extend(['Ending Goal Distance'])
         # self.ax.legend(self.legend)
@@ -1428,7 +1428,7 @@ class PlotBackend():
         self.ax.set_ylim([-7,7])
         self.ax.set_title('Distance to Goals')
         self.ax.grid(False)
-        self.colorbar = self.fig.colorbar(a, ax=self.ax)
+        self.colorbar = self.fig.colorbar(a, ax=self.ax, extend='max')
          
         self.curr_graph = 'scatter'
         
@@ -1635,8 +1635,13 @@ class PlotBackend():
     def draw_end_poses(self, folder_path):
         print('buckle up') 
         
-        fig, (ax1,ax2) = plt.subplots(2,1)
-        
+        # fig, (ax1,ax2) = plt.subplots(2,1,height_ratios=[2,1])
+
+        fig = plt.figure(constrained_layout=True, figsize=(8,6))
+        ax = fig.add_gridspec(4, 3)
+        ax1 = fig.add_subplot(ax[0:3, :])
+        ax2 = fig.add_subplot(ax[-1, :])
+
         # print('need to load in episode all first')
         episode_files = [os.path.join(folder_path, f) for f in os.listdir(folder_path) if f.lower().endswith('.pkl')]
         filenames_only = [f for f in os.listdir(folder_path) if f.lower().endswith('.pkl')]
@@ -1663,6 +1668,8 @@ class PlotBackend():
             end_dists.append(data[-1]['reward']['distance_to_goal'])
             end_poses.append(data[-1]['state']['obj_2']['pose'][0])
 
+        bins = np.linspace(0,0.05,100) + 0.05/100
+        num_things = np.zeros(100)
         small_thold = max(0.005,min(end_dists))
         med_thold = small_thold+0.005
         big_thold = med_thold + 0.01
@@ -1678,6 +1685,12 @@ class PlotBackend():
                 large_pose.append(pose)
             else:
                 fucked.append(pose)
+            a= np.where(dist<bins)
+            try:
+                num_things[a[0][0]] +=1
+            except IndexError:
+                print('super far away point')
+                num_things[-1] +=1
 
         ax1.scatter(goals[:,0]*100, goals[:,1]*100)
         self.legend.append('goal poses')
@@ -1698,7 +1711,8 @@ class PlotBackend():
             small_pose = np.array(small_pose)
             ax1.scatter(small_pose[:,0]*100, small_pose[:,1]*100)
             self.legend.extend(['<= '+str(small_thold*100)+' cm'])
-        ax2.bar(['<0.5 cm','<1 cm','<2 cm','>2 cm'], [len(small_pose),len(med_pose),len(large_pose), len(fucked)])
+        # ax2.bar(['<0.5 cm','<1 cm','<2 cm','>2 cm'], [len(small_pose),len(med_pose),len(large_pose), len(fucked)])
+        ax2.bar(bins, num_things, width=0.05/100)
         plt.tight_layout()
         # self.legend.extend(['Ending Goal Distance'])
         # self.ax.legend(self.legend)

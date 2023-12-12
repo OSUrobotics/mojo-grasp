@@ -58,11 +58,16 @@ def run_pybullet(filepath, runtype='run', episode_number=None, action_list = Non
     # resource paths
     this_path = os.path.abspath(__file__)
     overall_path = os.path.dirname(os.path.dirname(os.path.dirname(this_path)))
+    
     with open(filepath, 'r') as argfile:
         args = json.load(argfile)
+    args['hand_file_list'] =["2v2_50.50_50.50_1.1_53/hand/2v2_50.50_50.50_1.1_53.urdf"]
+    # args['rstart'] = 'no'
     if hand is not None:
-        args['hand_file_list'] =[hand + "/hand/" + hand+".urdf"]
-
+        args['hand_file_list'] =["2v2_65.35_65.35_1.1_53/hand/2v2_65.35_65.35_1.1_53.urdf"]
+        args['hand_path'] = '/home/mothra/mojo-grasp/demos/rl_demo/resources/2v2_Hand_B/hand/2v2_65.35_65.35_1.1_53.urdf'
+        args['hand'] = '2v2-B'
+        # args['rstart'] = 'no'
     if (runtype =='run') | (runtype =='transfer'):
         if args['task'] == 'asterisk':
             x = [0.03, 0, -0.03, -0.04, -0.03, 0, 0.03, 0.04]
@@ -234,7 +239,7 @@ def run_pybullet(filepath, runtype='run', episode_number=None, action_list = Non
         yeval = [-0.045, -0.06, -0.045, 0, 0.045, 0.06, 0.045, 0]
         eval_names = ['SE','S','SW','W','NW','N','NE','E'] 
         if action_list == None:
-            with open(overall_path + '/demos/rl_demo/data/FTP_fullstate_A_rand/transfer_eval_stationary/Evaluate_'+str(episode_number)+'.pkl','rb') as fol:
+            with open(overall_path + '/demos/rl_demo/data/FTP_halfstate_A_rand/eval_b_moving/Evaluate_'+str(episode_number)+'.pkl','rb') as fol:
                 data = pkl.load(fol)
             action_list = data#np.array(data)
     names = ['AsteriskSE.pkl','AsteriskS.pkl','AsteriskSW.pkl','AsteriskW.pkl','AsteriskNW.pkl','AsteriskN.pkl','AsteriskNE.pkl','AsteriskE.pkl']
@@ -264,15 +269,19 @@ def run_pybullet(filepath, runtype='run', episode_number=None, action_list = Non
     if len(args['hand_file_list']) > 1:
         print('multiple hands not supported for gym_run.py, try with multiprocess_gym_run.py instead')
         return
-    hand_id = p.loadURDF(args['hand_path']+'/'+args['hand_file_list'][0], useFixedBase=True,
+    # print(args['hand_path']+'/'+args['hand_file_list'][0])
+    hand_id = p.loadURDF(args['hand_path'], useFixedBase=True,
                          basePosition=[0.0, 0.0, 0.05], flags=p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
+    # hand_id = p.loadURDF(args['hand_path']+'/'+args['hand_file_list'][0], useFixedBase=True,
+    #                      basePosition=[0.0, 0.0, 0.05], flags=p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
     obj_id = p.loadURDF(args['object_path'], basePosition=[0.0, 0.10, .05], flags=p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
 
     # Create TwoFingerGripper Object and set the initial joint positions
     # hand = TwoFingerGripper(hand_id, path=args['hand_path'])
 
-    hand = IKGripper(hand_id, path=args['hand_path']+'/'+args['hand_file_list'][0])
+    hand = IKGripper(hand_id, path=args['hand_path'])
     
+    # hand = IKGripper(hand_id, path=args['hand_path']+'/'+args['hand_file_list'][0])
     # change visual of gripper
     p.changeVisualShape(hand_id, -1, rgbaColor=[0.3, 0.3, 0.3, 1])
     p.changeVisualShape(hand_id, 0, rgbaColor=[1, 0.5, 0, 1])
@@ -461,9 +470,9 @@ def main():
         # run_pybullet(overall_path + '/demos/rl_demo/data/hand_transfer_FTP/experiment_config.json', runtype='replay',episode_number=i)
     # run_pybullet(overall_path + '/demos/rl_demo/data/hand_transfer_FTP/experiment_config.json', runtype='eval')
     # run_pybullet(overall_path + '/demos/rl_demo/data/hand_transfer_JA/experiment_config.json', runtype='eval')
-    run_pybullet(overall_path + '/demos/rl_demo/data/JA_halfstate_A_rand/experiment_config.json', runtype='eval', hand=hand_b_key)
+    run_pybullet(overall_path + '/demos/rl_demo/data/FTP_halfstate_A_rand/experiment_config.json', runtype='eval', hand=hand_b_key)
 
-    # run_pybullet(overall_path+'/demos/rl_demo/data/full_full_ppo/experiment_config.json',runtype='replay', episode_number=1)
+    # run_pybullet(overall_path+'/demos/rl_demo/data/FTP_halfstate_A_rand/experiment_config.json',runtype='replay', episode_number=23, hand=hand_b_key)
 
     # run_pybullet(overall_path+'/demos/rl_demo/data/wedge/wedge_forward_right/experiment_config.json',runtype='run')
     # run_pybullet(overall_path+'/demos/rl_demo/data/wedge/wedge_forward_left/experiment_config.json',runtype='run')
