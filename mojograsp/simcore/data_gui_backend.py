@@ -1021,6 +1021,9 @@ class PlotBackend():
         else:
             raise TypeError('argument should be string pointing to folder containing episode pickles, dictionary containing all episode data, or list of ending dists')
 
+        mean, std = np.average(ending_dists), np.std(ending_dists)
+
+
         if self.moving_avg != 1:
             ending_dists = moving_average(ending_dists,self.moving_avg)
             
@@ -1037,6 +1040,7 @@ class PlotBackend():
         self.ax.grid(True)
          
         self.curr_graph = 'goal_dist'
+        return [mean, std]
         
     def draw_goal_rewards(self, all_data_dict): # Depreciated
         
@@ -1825,3 +1829,56 @@ class PlotBackend():
         self.ax.legend(self.legend)
         self.ax.set_title('Average goals in 100 episodes')
         self.curr_graph = 'path'
+    
+    def draw_average_efficiency(self, folder_or_data_dict):
+        episode_files = [os.path.join(folder_or_data_dict, f) for f in os.listdir(folder_or_data_dict) if f.lower().endswith('.pkl')]
+        filenames_only = [f for f in os.listdir(folder_or_data_dict) if f.lower().endswith('.pkl')]
+        
+        filenums = [re.findall('\d+',f) for f in filenames_only]
+        final_filenums = []
+        for i in filenums:
+            if len(i) > 0 :
+                final_filenums.append(int(i[0]))
+        
+        sorted_inds = np.argsort(final_filenums)
+        final_filenums = np.array(final_filenums)
+        temp = final_filenums[sorted_inds]
+        episode_files = np.array(episode_files)
+        filenames_only = np.array(filenames_only)
+        count = 0
+        episode_files = episode_files[sorted_inds].tolist()
+        ending_dists = []
+        efficiency=[]
+        for episode_file in episode_files:
+            with open(episode_file, 'rb') as ef:
+                tempdata = pkl.load(ef)
+
+            data = tempdata['timestep_list']
+            ending_dists.append(data[-1]['reward']['distance_to_goal'])
+            poses = np.array([i['state']['obj_2']['pose'][0][0:2] for i in data])
+            end_pos = poses[-1].copy()
+            goal_pose = data[-1]['state']['goal_pose']['goal_pose'][0:2]
+            end_pos[1] -= 0.1
+            dist_along_vec = np.dot(end_pos,np.array(goal_pose)/np.linalg.norm(goal_pose))
+            dtemp = dist_along_vec
+            dist_along_vec = dist_along_vec - abs(np.linalg.norm(goal_pose)-dist_along_vec)
+            dist_traveled = [poses[i+1]-poses[i] for i in range(len(poses)-1)]
+            temp = [np.linalg.norm(d) for d in dist_traveled]
+            mag_dist = np.sum(temp)
+            efficiency.append(dist_along_vec/mag_dist)
+            if count% 100 ==0:
+                print('count = ', count)
+            count +=1
+
+        moveing_avg = 100
+        mean, std = np.average(efficiency), np.std(efficiency)
+        efficiency = moving_average(efficiency,moveing_avg)
+        self.ax.plot(range(len(efficiency)),efficiency)
+        self.ax.set_xlabel('Episode_num')
+        self.ax.set_ylabel('Avg Movement Efficiency')       
+        self.ax.set_ylim(-0.01,1.01)                                                                                                                                                                                                                            
+        # self.legend.extend(['Goals'])
+        # self.ax.legend(self.legend)
+        self.ax.set_title('Average Movement Efficiency')
+        self.curr_graph = 'path'
+        return [mean, std]
