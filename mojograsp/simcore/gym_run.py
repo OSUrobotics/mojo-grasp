@@ -64,10 +64,13 @@ def run_pybullet(filepath, runtype='run', episode_number=None, action_list = Non
     args['hand_file_list'] =["2v2_50.50_50.50_1.1_53/hand/2v2_50.50_50.50_1.1_53.urdf"]
     # args['rstart'] = 'no'
     if hand is not None:
-        args['hand_file_list'] =["2v2_65.35_65.35_1.1_53/hand/2v2_65.35_65.35_1.1_53.urdf"]
-        args['hand_path'] = '/home/mothra/mojo-grasp/demos/rl_demo/resources/2v2_Hand_B/hand/2v2_65.35_65.35_1.1_53.urdf'
-        args['hand'] = '2v2-B'
-        # args['rstart'] = 'no'
+        args['hand'] = hand
+        args['rstart'] = 'none'
+        if hand=='2v2-B':
+            args['hand_path']="/home/orochi/mojo/mojo-grasp/demos/rl_demo/resources/2v2_Hand_B/hand/2v2_65.35_65.35_1.1_53.urdf"
+        elif hand=='2v2':
+            args['hand_path']="/home/orochi/mojo/mojo-grasp/demos/rl_demo/resources/2v2_Hand_A/hand/2v2_50.50_50.50_1.1_53.urdf"
+
     if (runtype =='run') | (runtype =='transfer'):
         if args['task'] == 'asterisk':
             x = [0.03, 0, -0.03, -0.04, -0.03, 0, 0.03, 0.04]
@@ -470,7 +473,8 @@ def main():
         # run_pybullet(overall_path + '/demos/rl_demo/data/hand_transfer_FTP/experiment_config.json', runtype='replay',episode_number=i)
     # run_pybullet(overall_path + '/demos/rl_demo/data/hand_transfer_FTP/experiment_config.json', runtype='eval')
     # run_pybullet(overall_path + '/demos/rl_demo/data/hand_transfer_JA/experiment_config.json', runtype='eval')
-    run_pybullet(overall_path + '/demos/rl_demo/data/FTP_halfstate_A_rand/experiment_config.json', runtype='eval', hand=hand_b_key)
+    run_pybullet(overall_path + '/demos/rl_demo/data/JA_fullstate_A_rand/experiment_config.json', runtype='eval', hand=hand_b_key)
+
 
     # run_pybullet(overall_path+'/demos/rl_demo/data/FTP_halfstate_A_rand/experiment_config.json',runtype='replay', episode_number=23, hand=hand_b_key)
 
