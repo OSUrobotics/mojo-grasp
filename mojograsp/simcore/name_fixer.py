@@ -2,6 +2,7 @@ import os
 import re
 
 
+
 filepath = '/home/mothra/mojo-grasp/demos/rl_demo/data/FTP_halfstate_A_rand/Test/'
 test_files = os.listdir(filepath)
 num_cores = 16
