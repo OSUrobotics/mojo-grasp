@@ -306,6 +306,6 @@ def main(filepath = None):
             obs, _, done, _ = vec_env[0].step(action)
 
 if __name__ == '__main__':
-    filpaths=['./data/FTP_halfstate_noise/experiment_config.json', './data/JA_halfstate_noise/experiment_config.json']
+    filpaths=['./data/FTP_fullstate_noise/experiment_config.json', './data/JA_fullstate_noise/experiment_config.json']
     for namei in filpaths:
         main(namei)
