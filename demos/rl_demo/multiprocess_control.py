@@ -77,9 +77,9 @@ class MultiprocessController():
         elif keys[1] == "70.30":
             f1 = {"name": "finger0", "num_links": 2, "link_lengths": [[0, .1008, 0], [0, .0432, 0]]}
         if keys[2] == '50.50':
-            f2 = {"name": "finger0", "num_links": 2, "link_lengths": [[0, .072, 0], [0, .072, 0]]}
+            f2 = {"name": "finger1", "num_links": 2, "link_lengths": [[0, .072, 0], [0, .072, 0]]}
         elif keys[2] == "70.30":
-            f2 = {"name": "finger0", "num_links": 2, "link_lengths": [[0, .1008, 0], [0, .0432, 0]]}
+            f2 = {"name": "finger1", "num_links": 2, "link_lengths": [[0, .1008, 0], [0, .0432, 0]]}
         hand_info = {"finger1": f1,"finger2": f2}
         self.p.resetJointState(self.gripper.id, 0, 0)
         self.p.resetJointState(self.gripper.id, 1, 0)
