@@ -561,38 +561,6 @@ class GymController(ExpertController):
                 
                 action = ((actor_output)*self.MAX_ANGLE_CHANGE + finger_angles).tolist()
                 action = clip_angs(action)
-                '''
-                self.ik_f1.finger_fk.set_joint_angles(finger_angles[0:2])
-                new_f1_pos = self.ik_f1.finger_fk.calculate_forward_kinematics()
-                
-                self.ik_f1.finger_fk.set_joint_angles(action[0:2])
-                old_f1_pos = self.ik_f1.finger_fk.calculate_forward_kinematics()
-                            
-                self.ik_f2.finger_fk.set_joint_angles(finger_angles[2:4])
-                new_f2_pos = self.ik_f2.finger_fk.calculate_forward_kinematics()
-                
-                self.ik_f2.finger_fk.set_joint_angles(action[2:4])
-                old_f2_pos = self.ik_f2.finger_fk.calculate_forward_kinematics()
-                
-                new_fpos = np.array([new_f1_pos[0],new_f1_pos[1],new_f2_pos[0],new_f2_pos[1]])
-                old_fpos = np.array([old_f1_pos[0],old_f1_pos[1],old_f2_pos[0],old_f2_pos[1]])
-                
-                ap = new_fpos-old_fpos
-
-                if any(abs(ap) > self.MAX_DISTANCE_CHANGE):
-                    self.ik_f1.finger_fk.set_joint_angles(finger_angles[0:2])
-                    self.ik_f2.finger_fk.set_joint_angles(finger_angles[2:4])
-                    finger_pos1 = self.ik_f1.finger_fk.calculate_forward_kinematics()
-                    finger_pos2 = self.ik_f2.finger_fk.calculate_forward_kinematics()
-                    self.mags.append(max(abs(ap)))
-                    ap = ap/max(abs(ap)) * self.MAX_DISTANCE_CHANGE
-                    new_finger_poses = [finger_pos1[0] + ap[0], finger_pos1[1] + ap[1], finger_pos2[0] + ap[2], finger_pos2[1] + ap[3]]
-                    
-                    found1, finger_1_angs_kegan, it1 = self.ik_f1.calculate_ik(target=new_finger_poses[:2], ee_location=None)
-                    found2, finger_2_angs_kegan, it12 = self.ik_f2.calculate_ik(target=new_finger_poses[2:], ee_location=None)
-                    action = [finger_1_angs_kegan[0],finger_1_angs_kegan[1],finger_2_angs_kegan[0],finger_2_angs_kegan[1]]
-                    action = clip_angs(action)
-                '''
                 action_list.append(action)
                 finger_angles = action
         # print(f'action_list {action_list}')

@@ -295,17 +295,16 @@ def main(filepath = None):
         model = model_type("MlpPolicy", vec_env,tensorboard_log=args['tname'])
 
     model.learn(total_timesteps=args['epochs']*(args['tsteps']+1), callback=callback)
-    # model.save('./data/'+filename+'/best_policy')
-    vec_env.env_method('evaluate')
-    for _ in range(1200):
-        obs =  vec_env.env_method('reset')
-        done = False
-        print(np.shape(obs))
-        while not done:
-            action, _ = model.predict(obs, deterministic=True)
-            obs, _, done, _ = vec_env[0].step(action)
+    model.save('./data/'+filename+'/last_model')
+    # vec_env.env_method('evaluate')
+    # for _ in range(1200):
+    #     obs =  vec_env.env_method('reset')
+    #     done = False
+    #     while not done:
+    #         action, _ = model.predict(obs, deterministic=True)
+    #         obs, _, done, _ = vec_env[0].step(action)
 
 if __name__ == '__main__':
-    filpaths=['/home/mothra/mojo-grasp/demos/rl_demo/data/FTP_halfstate_noise/experiment_config.json']
+    filpaths=['/home/mothra/mojo-grasp/demos/rl_demo/data/FTP_halfstate_noise/experiment_config.json','/home/mothra/mojo-grasp/demos/rl_demo/data/JA_halfstate_noise/experiment_config.json']
     for namei in filpaths:
         main(namei)
