@@ -107,28 +107,48 @@ class MultiprocessController():
 
     def find_angles(self,actor_output):
         if self.useIK:
-            # get current cube position
-            self.get_current_cube_position()
-
             finger_pos1 = self.p.getLinkState(self.gripper.id, 2) #RIGHT FINGER
             finger_pos2 = self.p.getLinkState(self.gripper.id, 5) #LEFT FINGER
+            finger_pos1 = finger_pos1[0]
+            finger_pos2 = finger_pos2[0]
             finger_angles = self.gripper.get_joint_angles()
-            
             ap = actor_output * self.MAX_DISTANCE_CHANGE
-            new_finger_poses = [finger_pos1[0][0] + ap[0], finger_pos1[0][1] + ap[1], finger_pos2[0][0] + ap[2], finger_pos2[0][1] + ap[3]]
-            
-            found1, finger_1_angs_kegan, it1 = self.ik_f1.calculate_ik(target=new_finger_poses[:2], ee_location=None)
-            found2, finger_2_angs_kegan, it12 = self.ik_f2.calculate_ik(target=new_finger_poses[2:], ee_location=None)
-            action = [finger_1_angs_kegan[0],finger_1_angs_kegan[1],finger_2_angs_kegan[0],finger_2_angs_kegan[1]]
-            action = clip_angs(action)
-            
+            action_list = []
+            # print(f'actor_output: {actor_output}, finger poses: {finger_pos1},{finger_pos2}')
+            if self.INTERP_IK:
+                new_finger_poses = [finger_pos1[0] + self.num_tsteps*ap[0], finger_pos1[1] + self.num_tsteps*ap[1], 
+                                    finger_pos2[0] + self.num_tsteps*ap[2], finger_pos2[1] + self.num_tsteps*ap[3]]
+                found1, finger_1_angs_kegan, it1 = self.ik_f1.calculate_ik(target=new_finger_poses[:2], ee_location=None)
+                found2, finger_2_angs_kegan, it12 = self.ik_f2.calculate_ik(target=new_finger_poses[2:], ee_location=None)
+                action = [finger_1_angs_kegan[0],finger_1_angs_kegan[1],finger_2_angs_kegan[0],finger_2_angs_kegan[1]]
+                action = clip_angs(action)
+                # print(finger_1_angs_kegan,finger_2_angs_kegan)
+                action_list = np.linspace(finger_angles,action,self.num_tsteps)
+                # print(np.shape(action_list))
+            else:
+                for i in range(self.num_tsteps):
+                    new_finger_poses = [finger_pos1[0] + ap[0], finger_pos1[1] + ap[1], finger_pos2[0] + ap[2], finger_pos2[1] + ap[3]]
+                    found1, finger_1_angs_kegan, it1 = self.ik_f1.calculate_ik(target=new_finger_poses[:2], ee_location=None)
+                    found2, finger_2_angs_kegan, it12 = self.ik_f2.calculate_ik(target=new_finger_poses[2:], ee_location=None)
+                    action = [finger_1_angs_kegan[0],finger_1_angs_kegan[1],finger_2_angs_kegan[0],finger_2_angs_kegan[1]]
+                    action = clip_angs(action)
+                    action_list.append(action)
+                    self.ik_f1.finger_fk.set_joint_angles(action[0:2])
+                    self.ik_f2.finger_fk.set_joint_angles(action[2:4])
+                    finger_pos1 = self.ik_f1.finger_fk.calculate_forward_kinematics()
+                    finger_pos2 = self.ik_f2.finger_fk.calculate_forward_kinematics()
+                # print(np.shape(action_list))
         else:
-            self.get_current_cube_position()
-    
             finger_angles = self.gripper.get_joint_angles()
-
-            action = ((actor_output)*self.MAX_ANGLE_CHANGE + finger_angles).tolist()
-        return action, actor_output
+            action_list = []
+            # print(actor_output, finger_angles)
+            for i in range(self.num_tsteps):
+                action = ((actor_output)*self.MAX_ANGLE_CHANGE + finger_angles).tolist()
+                action = clip_angs(action)
+                action_list.append(action)
+                finger_angles = action
+        # print(f'action_list {action_list}')
+        return action_list, actor_output
         
     def get_network_outputs(self,state):
         return 0
