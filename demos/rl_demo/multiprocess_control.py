@@ -105,6 +105,14 @@ class MultiprocessController():
         self.ik_f1.finger_fk.update_angles_from_sim()
         self.ik_f2.finger_fk.update_angles_from_sim()
 
+        if 'IK_freq' in args.keys():
+            self.INTERP_IK = not args['IK_freq']
+        else:
+            self.INTERP_IK = False
+        self.num_tsteps = int(240/args['freq'])
+        self.MAX_DISTANCE_CHANGE = self.MAX_DISTANCE_CHANGE/8
+        self.MAX_ANGLE_CHANGE = self.MAX_ANGLE_CHANGE/8
+
     def find_angles(self,actor_output):
         if self.useIK:
             finger_pos1 = self.p.getLinkState(self.gripper.id, 2) #RIGHT FINGER
