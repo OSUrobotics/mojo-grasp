@@ -101,6 +101,7 @@ class MultiprocessGymWrapper(gym.Env):
         
         # print('Episode ',self.manipulation_phase.episode,' goal pose', self.manipulation_phase.goal_position)
         # print('fack',self.manipulation_phase.state.objects[-1].run_num)
+        # input('going?')
         return state
 
     def step(self, action, mirror=False, viz=False):
