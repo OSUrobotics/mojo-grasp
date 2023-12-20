@@ -266,14 +266,14 @@ def run_pybullet(filepath, runtype='run', episode_number=None, action_list = Non
     p.setPhysicsEngineParameter(contactBreakingThreshold=.001)
     p.resetDebugVisualizerCamera(cameraDistance=.02, cameraYaw=0, cameraPitch=-89.9999,
                                  cameraTargetPosition=[0, 0.1, 0.5])
-    
     # load objects into pybullet
     plane_id = p.loadURDF("plane.urdf", flags=p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
     if len(args['hand_file_list']) > 1:
         print('multiple hands not supported for gym_run.py, try with multiprocess_gym_run.py instead')
         return
     # print(args['hand_path']+'/'+args['hand_file_list'][0])
-    hand_id = p.loadURDF(args['hand_path'], useFixedBase=True,
+    print("loading hand",args['hand_path'] +'/'+ args['hand_file_list'][0])
+    hand_id = p.loadURDF(args['hand_path'] +'/'+ args['hand_file_list'][0], useFixedBase=True,
                          basePosition=[0.0, 0.0, 0.05], flags=p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
     # hand_id = p.loadURDF(args['hand_path']+'/'+args['hand_file_list'][0], useFixedBase=True,
     #                      basePosition=[0.0, 0.0, 0.05], flags=p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
@@ -473,7 +473,7 @@ def main():
         # run_pybullet(overall_path + '/demos/rl_demo/data/hand_transfer_FTP/experiment_config.json', runtype='replay',episode_number=i)
     # run_pybullet(overall_path + '/demos/rl_demo/data/hand_transfer_FTP/experiment_config.json', runtype='eval')
     # run_pybullet(overall_path + '/demos/rl_demo/data/hand_transfer_JA/experiment_config.json', runtype='eval')
-    run_pybullet(overall_path + '/demos/rl_demo/data/JA_fullstate_A_rand/experiment_config.json', runtype='eval', hand=hand_b_key)
+    run_pybullet(overall_path + '/demos/rl_demo/data/a_hand_fuckery/experiment_config.json', runtype='run')
 
 
     # run_pybullet(overall_path+'/demos/rl_demo/data/FTP_halfstate_A_rand/experiment_config.json',runtype='replay', episode_number=23, hand=hand_b_key)
