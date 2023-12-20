@@ -381,7 +381,19 @@ class RNNGui():
             except FileExistsError:
                 pass
             try:
-                os.mkdir(self.args['save_path'] + '/Eval/')
+                os.mkdir(self.args['save_path'] + '/Eval_A/')
+            except FileExistsError:
+                pass
+            try:
+                os.mkdir(self.args['save_path'] + '/Real_B/')
+            except FileExistsError:
+                pass
+            try:
+                os.mkdir(self.args['save_path'] + '/Real_A/')
+            except FileExistsError:
+                pass
+            try:
+                os.mkdir(self.args['save_path'] + '/Eval_B/')
             except FileExistsError:
                 pass
         else:
