@@ -209,19 +209,27 @@ class SingleShapeEnv(Environment):
                 p.resetJointState(self.hand_id, 0, -.725)
                 p.resetJointState(self.hand_id, 1, 1.45)
             elif self.f1 == '65.35':
-                p.resetJointState(self.hand_id, 0, -.46)
-                p.resetJointState(self.hand_id, 1, 1.5)
+                p.resetJointState(self.hand_id, 0, -.4)
+                p.resetJointState(self.hand_id, 1, 1.4)
             if self.f2 =='50.50':
                 p.resetJointState(self.hand_id, 3, .725)
                 p.resetJointState(self.hand_id, 4, -1.45)
             elif self.f2 == '65.35':
+                p.resetJointState(self.hand_id, 3, .45)
+                p.resetJointState(self.hand_id, 4, -1.45)
+            elif self.f1 == '35.65':
+                p.resetJointState(self.hand_id, 0, -.46)
+                p.resetJointState(self.hand_id, 1, 1.5)
+            elif self.f2 == '35.65':
                 p.resetJointState(self.hand_id, 3, .46)
                 p.resetJointState(self.hand_id, 4, -1.5)
         else:
             raise KeyError('width other than 53 are not accepted at this time')
-   
+        f1_dist = p.getClosestPoints(self.obj.id, self.hand.id, 10, -1, 1, -1)
+        f2_dist = p.getClosestPoints(self.obj.id, self.hand.id, 10, -1, 4, -1)
+        print('f1 dist', max(f1_dist[0][8], 0))
+        print('f2_dist', max(f2_dist[0][8], 0))
         p.resetBasePositionAndOrientation(self.obj_id, posObj=[0.0+obj_change[0], 0.10+obj_change[1], .05], ornObj=[0,0,0,1])
-
         if self.rand_start:
             f1_pos = [0.026749999999999996+obj_change[0], 0.10778391676312778+obj_change[1], 0.05]
             f2_pos = [-0.026749999999999996+obj_change[0], 0.10778391676312778+obj_change[1], 0.05]
@@ -259,10 +267,7 @@ class SingleShapeEnv(Environment):
                                             controlMode=p.POSITION_CONTROL, targetPositions=action_to_execute,
                                             positionGains=[0.8,0.8,0.8,0.8], forces=[0.4,0.4,0.4,0.4])
                 self.step()
-        f1_dist = p.getClosestPoints(self.obj.id, self.hand.id, 10, -1, 1, -1)
-        f2_dist = p.getClosestPoints(self.obj.id, self.hand.id, 10, -1, 4, -1)
-        print('f1 dist', max(f1_dist[0][8], 0))
-        print('f2_dist', max(f2_dist[0][8], 0))
+
         
 
     def reset_to_pos(self, object_pos, finger_angles):
