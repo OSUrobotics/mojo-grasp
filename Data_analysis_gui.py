@@ -69,7 +69,8 @@ def main():
     menu = [['File', ['Open Folder', 'Exit']], ['Help', ['About', ]]]
 
 
-    scatter_plot_tab = [[sg.Button('End Dist', size=(8, 2)), sg.Button('End Poses', size=(8, 2)), sg.Button('Contact Dist', size=(8, 2)), sg.Button('Average Goals', key='Average Goals',size=(8, 2)), sg.Button('Average Efficiency', key='Average Efficiency',size=(8, 2))]]
+    scatter_plot_tab = [[sg.Button('End Dist', size=(8, 2)), sg.Button('End Poses', size=(8, 2)), sg.Button('Contact Dist', size=(8, 2)), sg.Button('Average Goals', key='Average Goals',size=(8, 2)), sg.Button('Average Efficiency', key='Average Efficiency',size=(8, 2))],
+                        [sg.Button('End Pose no color', size=(8,2))]]
 
     plot_buttons = [[sg.Button('Object Path', size=(8, 2)), sg.Button('Finger Angles', size=(8, 2)),sg.Button('Rewards', size=(8, 2), key='FullRewards'), sg.Button('Contact Rewards', key='ContactRewards',size=(8, 2)), sg.Button('Distance/Slope Rewards', key='SimpleRewards',size=(8, 2))],
                     [sg.Button('Explored Region', size=(8,2)), sg.Button('Actor Output', size=(8, 2)), sg.Button('Aout Comparison', size=(8, 2)), sg.Button('RewardSplit',size=(8, 2)), sg.Button('Max Percent', size=(8,2))],
@@ -248,6 +249,9 @@ def main():
                 backend.draw_end_region(episode_data)
             else:
                 backend.draw_end_region(folder)
+            figure_canvas_agg.draw()
+        elif event == 'End Pose no color':
+            backend.draw_end_pos_no_color(folder)
             figure_canvas_agg.draw()
         elif event == 'Fingertip Route':
             backend.draw_fingertip_path(episode_data)

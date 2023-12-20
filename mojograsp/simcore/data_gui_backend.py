@@ -1882,3 +1882,46 @@ class PlotBackend():
         self.ax.set_title('Average Movement Efficiency')
         self.curr_graph = 'path'
         return [mean, std]
+
+    def draw_end_pos_no_color(self,folder_or_data_dict):
+        episode_files = [os.path.join(folder_or_data_dict, f) for f in os.listdir(folder_or_data_dict) if f.lower().endswith('.pkl')]
+        filenames_only = [f for f in os.listdir(folder_or_data_dict) if f.lower().endswith('.pkl')]
+        
+        filenums = [re.findall('\d+',f) for f in filenames_only]
+        final_filenums = []
+        for i in filenums:
+            if len(i) > 0 :
+                final_filenums.append(int(i[0]))
+        
+        sorted_inds = np.argsort(final_filenums)
+        final_filenums = np.array(final_filenums)
+        temp = final_filenums[sorted_inds]
+        episode_files = np.array(episode_files)
+        filenames_only = np.array(filenames_only)
+        count = 0
+        episode_files = episode_files[sorted_inds].tolist()
+        end_poses = []
+        goal_poses=[]
+        for episode_file in episode_files:
+            with open(episode_file, 'rb') as ef:
+                tempdata = pkl.load(ef)
+
+            data = tempdata['timestep_list']
+            
+            end_poses.append(data[-1]['state']['obj_2']['pose'][0][0:2])
+            goal_poses.append(data[-1]['state']['goal_pose']['goal_pose'])
+            if count% 100 ==0:
+                print('count = ', count)
+            count +=1
+        end_poses = np.array(end_poses)
+        goal_poses = np.array(goal_poses)
+        self.ax.scatter(goal_poses[:,0], goal_poses[:,1]+0.1)
+        self.ax.scatter(end_poses[:,0],end_poses[:,1])
+
+        self.ax.set_xlabel('X position (m)')
+        self.ax.set_ylabel('y position (m)')
+
+        self.ax.set_title('Just the things')
+        self.ax.legend(['Goal Poses', 'End Poses'])
+        self.ax.set_xlim([-0.1,0.1])
+        self.ax.set_ylim([0.0,0.2])
