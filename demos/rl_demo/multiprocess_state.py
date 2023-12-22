@@ -9,7 +9,7 @@ Created on Thu Aug 25 10:33:32 2022
 from mojograsp.simcore.state import StateDefault
 import numpy as np
 from copy import deepcopy
-
+from mojograsp.simobjects.two_finger_gripper import TwoFingerGripper
 class GoalHolder():
     def __init__(self, goal_pose, goal_names = None):
         self.pose = goal_pose
@@ -73,6 +73,10 @@ class MultiprocessState(StateDefault):
         super().__init__()
         self.p = pybullet_instance
         self.objects = objects 
+        for object in self.objects:
+            if type(object) == TwoFingerGripper:
+                temp = object.link_lengths
+                self.hand_params = [temp[0][0][1],temp[0][1][1],temp[1][0][1],temp[1][1][1], object.palm_width]
         if prev_len > 0:            
             self.previous_states = [{}]*prev_len
             self.pflag = True
@@ -137,7 +141,8 @@ class MultiprocessState(StateDefault):
         self.current_state['f2_ang'] = self.current_state['two_finger_gripper']['joint_angles']['finger1_segment0_joint'] + self.current_state['two_finger_gripper']['joint_angles']['finger1_segment1_joint']        
         self.current_state['f1_contact_pos'] = list(temp1[6])
         self.current_state['f2_contact_pos'] = list(temp2[6])
-
+        self.current_state['hand_params'] = self.hand_params.copy()
+        
     def init_state(self):
         """
         Default method that sets self.current_state to either get_data() for the object or an empty dictionary
