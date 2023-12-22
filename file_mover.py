@@ -20,4 +20,4 @@ for sname,ename in zip(start_names,end_names):
         all_files = [file for file in all_files if 'RL' in file]
         all_files2 = [all_files[j][:-4] + str(int(j+i*len(all_files))) + all_files[j][-4:] for j in range(len(all_files))]
         for oldfile,newfile in zip(all_files,all_files2):
-            shutil.move(full.joinpath(oldfile), Path(end_folder).joinpath(ename,'real_b',newfile))
+            shutil.move(full.joinpath(oldfile), Path(end_folder).joinpath(ename,'Real_B',newfile))

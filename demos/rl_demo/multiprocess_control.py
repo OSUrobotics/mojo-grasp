@@ -53,6 +53,7 @@ class MultiprocessController():
         
         self.old_epsilon = self.epsilon
         print('epsilon and edecay', self.epsilon, self.COOLING_RATE)
+        
         self.rand_episode = np.random.rand() < self.epsilon
         self.useIK = args['action']=="Finger Tip Position"
         # self.eval_flag = False
@@ -71,19 +72,10 @@ class MultiprocessController():
         self.prev_distance = 0
         self.distance_count = 0
         self.retry_count = 0
-        keys = hand_type.split('_')
-        if keys[1] == '50.50':
-            f1 = {"name": "finger0", "num_links": 2, "link_lengths": [[0, .072, 0], [0, .072, 0]]}
-        elif keys[1] == "70.30":
-            f1 = {"name": "finger0", "num_links": 2, "link_lengths": [[0, .1008, 0], [0, .0432, 0]]}
-        elif keys[1] == "65.35":
-            f1 = {"name": "finger0", "num_links": 2, "link_lengths": [[0, 0.0936, 0], [0, .0504, 0]]}
-        if keys[2] == '50.50':
-            f2 = {"name": "finger1", "num_links": 2, "link_lengths": [[0, .072, 0], [0, .072, 0]]}
-        elif keys[2] == "70.30":
-            f2 = {"name": "finger1", "num_links": 2, "link_lengths": [[0, .1008, 0], [0, .0432, 0]]}
-        elif keys[2] == "65.35":
-            f2 = {"name": "finger1", "num_links": 2, "link_lengths": [[0, 0.0936, 0], [0, .0504, 0]]}
+
+        f1 = {"name": "finger0", "num_links": 2, "link_lengths": self.gripper.link_lengths[0]}
+        f2 = {"name": "finger0", "num_links": 2, "link_lengths": self.gripper.link_lengths[1]}
+
 
         hand_info = {"finger1": f1,"finger2": f2}
         self.p.resetJointState(self.gripper.id, 0, 0)
@@ -91,27 +83,13 @@ class MultiprocessController():
         self.p.resetJointState(self.gripper.id, 3, 0)
         self.p.resetJointState(self.gripper.id, 4, 0)
         self.ik_f1 = JacobianIK(self.p, gripper.id,deepcopy(hand_info['finger1']))
-        
         self.ik_f2 = JacobianIK(self.p, gripper.id,deepcopy(hand_info['finger2']))
 
-        if keys[1] == '50.50':
-            self.p.resetJointState(self.gripper.id, 0, -.725)
-            self.p.resetJointState(self.gripper.id, 1, 1.45)
-        elif keys[1] == "70.30":
-            self.p.resetJointState(self.gripper.id, 0, -.5)
-            self.p.resetJointState(self.gripper.id, 1, 1.5)
-        elif keys[1] == "65.35":
-            self.p.resetJointState(self.gripper.id, 0, -.45)
-            self.p.resetJointState(self.gripper.id, 1, 1.45)
-        if keys[2] == '50.50':
-            self.p.resetJointState(self.gripper.id, 3, .725)
-            self.p.resetJointState(self.gripper.id, 4, -1.45)
-        elif keys[2] == "70.30":
-            self.p.resetJointState(self.gripper.id, 3, .5)
-            self.p.resetJointState(self.gripper.id, 4, -1.5)
-        elif keys[2] == "65.35":
-            self.p.resetJointState(self.gripper.id, 3, .4)
-            self.p.resetJointState(self.gripper.id, 4, -1.4)
+        self.p.resetJointState(self.gripper.id, 0, self.gripper.starting_angles[0])
+        self.p.resetJointState(self.gripper.id, 1, self.gripper.starting_angles[1])
+        self.p.resetJointState(self.gripper.id, 3, self.gripper.starting_angles[2])
+        self.p.resetJointState(self.gripper.id, 4, self.gripper.starting_angles[3])
+
         self.p.stepSimulation()
         self.ik_f1.finger_fk.update_angles_from_sim()
         self.ik_f2.finger_fk.update_angles_from_sim()

@@ -62,10 +62,14 @@ class RNNGui():
                          [sg.Button("Browse",key='-browse-load',button_color='DarkBlue'),sg.Text("/", key='-load-path')],
                          [sg.Text('Object'), sg.OptionMenu(values=('Cube', 'Cylinder'), k='-object', default_value='Cube')],
                          [sg.Text('Hands Used For Training and Testing')],
-                         [sg.Checkbox('2v2_50.50_50.50_43',key='2v2_50.50_50.50_1.1_43',default=False),sg.Checkbox('2v2_65.35_50.50_43',key='2v2_65.35_50.50_1.1_43', default=False),sg.Checkbox('2v2_35.65_50.50_43',key='2v2_35.65_50.50_1.1_43', default=False),sg.Checkbox('2v2_65.35_65.35_43',key='2v2_65.35_65.35_1.1_43', default=False)],
-                         [sg.Checkbox('2v2_50.50_50.50_53',key='2v2_50.50_50.50_1.1_53', default=True),sg.Checkbox('2v2_65.35_50.50_53',key='2v2_65.35_50.50_1.1_53', default=False),sg.Checkbox('2v2_35.65_50.50_53',key='2v2_35.65_50.50_1.1_53', default=False),sg.Checkbox('2v2_65.35_65.35_53',key='2v2_65.35_65.35_1.1_53', default=False)],
-                         [sg.Checkbox('2v2_50.50_50.50_63',key='2v2_50.50_50.50_1.1_63', default=False),sg.Checkbox('2v2_65.35_50.50_63',key='2v2_65.35_50.50_1.1_63', default=False),sg.Checkbox('2v2_35.65_50.50_63',key='2v2_35.65_50.50_1.1_63', default=False),sg.Checkbox('2v2_65.35_65.35_63',key='2v2_65.35_65.35_1.1_63', default=False)],
-                         [sg.Checkbox('2v2_50.50_50.50_73',key='2v2_50.50_50.50_1.1_73', default=False),sg.Checkbox('2v2_65.35_50.50_73',key='2v2_65.35_50.50_1.1_73', default=False),sg.Checkbox('2v2_35.65_50.50_73',key='2v2_35.65_50.50_1.1_73', default=False),sg.Checkbox('2v2_65.35_65.35_73',key='2v2_65.35_65.35_1.1_73', default=False)],
+                         [sg.Checkbox('2v2_50.50_50.50_43',key='2v2_50.50_50.50_1.1_43',default=False),sg.Checkbox('2v2_50.50_50.50_53',key='2v2_50.50_50.50_1.1_53', default=True),sg.Checkbox('2v2_50.50_50.50_63',key='2v2_50.50_50.50_1.1_63', default=False),sg.Checkbox('2v2_50.50_50.50_73',key='2v2_50.50_50.50_1.1_73', default=False)],
+                         [sg.Checkbox('2v2_65.35_50.50_43',key='2v2_65.35_50.50_1.1_43', default=False),sg.Checkbox('2v2_65.35_50.50_53',key='2v2_65.35_50.50_1.1_53', default=False),sg.Checkbox('2v2_65.35_50.50_63',key='2v2_65.35_50.50_1.1_63', default=False),sg.Checkbox('2v2_65.35_50.50_73',key='2v2_65.35_50.50_1.1_73', default=False)],
+                         [sg.Checkbox('2v2_35.65_50.50_43',key='2v2_35.65_50.50_1.1_43', default=False),sg.Checkbox('2v2_35.65_50.50_53',key='2v2_35.65_50.50_1.1_53', default=False),sg.Checkbox('2v2_35.65_50.50_63',key='2v2_35.65_50.50_1.1_63', default=False),sg.Checkbox('2v2_35.65_50.50_73',key='2v2_35.65_50.50_1.1_73', default=False)],
+                         [sg.Checkbox('2v2_65.35_65.35_43',key='2v2_65.35_65.35_1.1_43', default=False),sg.Checkbox('2v2_65.35_65.35_53',key='2v2_65.35_65.35_1.1_53', default=False),sg.Checkbox('2v2_65.35_65.35_63',key='2v2_65.35_65.35_1.1_63', default=False),sg.Checkbox('2v2_65.35_65.35_73',key='2v2_65.35_65.35_1.1_73', default=False)],
+                         [sg.Checkbox('2v2_35.65_35.65_43',key='2v2_35.65_35.65_1.1_43', default=False),sg.Checkbox('2v2_35.65_35.65_53',key='2v2_35.65_35.65_1.1_53', default=False),sg.Checkbox('2v2_35.65_35.65_63',key='2v2_35.65_35.65_1.1_63', default=False),sg.Checkbox('2v2_35.65_35.65_73',key='2v2_35.65_35.65_1.1_73', default=False)],
+                         [sg.Checkbox('2v2_35.65_65.35_43',key='2v2_35.65_65.35_1.1_43', default=False),sg.Checkbox('2v2_35.65_65.35_53',key='2v2_35.65_65.35_1.1_53', default=False),sg.Checkbox('2v2_35.65_65.35_63',key='2v2_35.65_65.35_1.1_63', default=False),sg.Checkbox('2v2_35.65_65.35_73',key='2v2_35.65_65.35_1.1_73', default=False)],
+                         [sg.Checkbox('2v2_70.30_70.30_43',key='2v2_70.30_70.30_1.1_43', default=False),sg.Checkbox('2v2_70.30_70.30_53',key='2v2_70.30_70.30_1.1_53', default=False),sg.Checkbox('2v2_70.30_70.30_63',key='2v2_70.30_70.30_1.1_63', default=False),sg.Checkbox('2v2_70.30_70.30_73',key='2v2_70.30_70.30_1.1_73', default=False)],
+                         [sg.Checkbox('2v2_70.30_50.50_43',key='2v2_70.30_50.50_1.1_43', default=False),sg.Checkbox('2v2_70.30_50.50_53',key='2v2_70.30_50.50_1.1_53', default=False),sg.Checkbox('2v2_70.30_50.50_63',key='2v2_70.30_50.50_1.1_63', default=False),sg.Checkbox('2v2_70.30_50.50_73',key='2v2_70.30_50.50_1.1_73', default=False)],
                          [sg.Text("Task"), sg.OptionMenu(values=('asterisk','random','full_random','unplanned_random','single', 'wedge', 'double_wedge', 'clump_wedge', "big_random", "Rotation", 'triple', 'multi'), k='-task', default_value='unplanned_random')],
                          [sg.Checkbox("Randomized Start Position", key='-rstart',default=False), sg.Checkbox("Randomized Finger Position", key='-rfinger',default=False)],
                          [sg.Text('Replay Buffer Sampling'), sg.OptionMenu(values=('priority','random','random+expert'), k='-sampling', default_value='priority')]]
@@ -286,7 +290,6 @@ class RNNGui():
         self.args['hand_path'] = str(resource_path.joinpath("hand_bank"))
         self.args['hand_file_list'] = []
         for k,v in values.items():
-            print(k)
             if type(k) == str:
                 if '2v2' in k:
                     if v:

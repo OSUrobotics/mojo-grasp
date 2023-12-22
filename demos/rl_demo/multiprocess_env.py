@@ -3,6 +3,7 @@ from mojograsp.simobjects.two_finger_gripper import TwoFingerGripper
 from mojograsp.simobjects.object_base import ObjectBase
 import numpy as np
 import time
+import os
 
 class MultiprocessEnv():
     def __init__(self, pybullet_import, hand: TwoFingerGripper, obj: ObjectBase, hand_type, physicsClientId=None,rand_start = False):
@@ -236,27 +237,11 @@ class MultiprocessSingleShapeEnv(Environment):
             #no noise
             obj_change = np.array([0,0])
 
-        
-        if self.width == '53':
-            if self.f1 =='50.50':
-                self.p.resetJointState(self.hand_id, 0, -.725)
-                self.p.resetJointState(self.hand_id, 1, 1.45)
-            elif self.f1 == '70.30':
-                self.p.resetJointState(self.hand_id, 0, -.46)
-                self.p.resetJointState(self.hand_id, 1, 1.5)
-            elif self.f1 == '65.35':
-                self.p.resetJointState(self.hand_id, 0, -.45)
-                self.p.resetJointState(self.hand_id, 1, 1.45)
 
-            if self.f2 =='50.50':
-                self.p.resetJointState(self.hand_id, 3, .725)
-                self.p.resetJointState(self.hand_id, 4, -1.45)
-            elif self.f2 == '70.30':
-                self.p.resetJointState(self.hand_id, 3, .46)
-                self.p.resetJointState(self.hand_id, 4, -1.5)
-            elif self.f2 == '65.35':
-                self.p.resetJointState(self.hand_id, 3, .4)
-                self.p.resetJointState(self.hand_id, 4, -1.4)
+        self.p.resetJointState(self.hand.id, 0, self.hand.starting_angles[0])
+        self.p.resetJointState(self.hand.id, 1, self.hand.starting_angles[1])
+        self.p.resetJointState(self.hand.id, 3, self.hand.starting_angles[2])
+        self.p.resetJointState(self.hand.id, 4, self.hand.starting_angles[3])
         
         self.p.resetBasePositionAndOrientation(self.obj_id, posObj=[0.0+obj_change[0], 0.10+obj_change[1], .05], ornObj=[0,0,0,1])
         # f1_dist = self.p.getClosestPoints(self.obj.id, self.hand.id, 10, -1, 1, -1)
@@ -264,6 +249,7 @@ class MultiprocessSingleShapeEnv(Environment):
         # print('f1 dist', max(f1_dist[0][8], 0))
         # print('f2_dist', max(f2_dist[0][8], 0))
         # print('finger pos', self.p.getLinkState(self.hand.id, 2)[0], self.p.getLinkState(self.hand.id, 5)[0])
+
         if self.rand_start:
             f1_pos = [0.03+obj_change[0], 0.10+obj_change[1], 0.05]
             f2_pos = [-0.03+obj_change[0], 0.10+obj_change[1], 0.05]

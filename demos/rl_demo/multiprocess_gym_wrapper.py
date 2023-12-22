@@ -104,7 +104,7 @@ class MultiprocessGymWrapper(gym.Env):
         # input('going?')
         return state
 
-    def step(self, action, mirror=False, viz=False):
+    def step(self, action, mirror=False, viz=False,hand_type=None):
         '''
         currently this does not use the action fed in in action, it uses the action applied to self.action in the sim manager
 
@@ -155,7 +155,7 @@ class MultiprocessGymWrapper(gym.Env):
             if self.eval or self.small_enough:
                 self.record.record_episode(self.episode_type)
                 if self.eval:
-                    self.record.save_episode(self.episode_type, use_reward_name=True)
+                    self.record.save_episode(self.episode_type, hand_type=hand_type)
                 else:
                     self.record.save_episode(self.episode_type)
 
