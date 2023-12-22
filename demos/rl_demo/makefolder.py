@@ -11,4 +11,4 @@ for k1 in JAs:
         for k3 in Action_space:
             for k4 in hands:
                 temp = '_'.join([k1,k2,k3,k4])
-                os.mkdir(temp)
+                print(temp)

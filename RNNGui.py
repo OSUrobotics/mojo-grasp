@@ -98,6 +98,7 @@ class RNNGui():
                        [sg.Checkbox('Goal Position',default=True, k='-gp')],
                        [sg.Checkbox('Eigenvalues',default=False,key='-eva')],
                        [sg.Checkbox('Eigenvectors',default=False,key='-evc')],
+                       [sg.Checkbox('HandParameters',default=False,key='-params')],
                        [sg.Checkbox('Eigenvectors Times Eigenvalues',default=False,key='-evv')],
                        [sg.Text('Num Previous States'),sg.Input(4, k='-pv',size=(8, 2))],
                        [sg.Text("Reward"), sg.OptionMenu(values=('Sparse','Distance','Distance + Finger', 'Hinge Distance + Finger', 'Slope', 'Slope + Finger','SmartDistance + Finger','SmartDistance + SmartFinger','ScaledDistance + Finger','ScaledDistance+ScaledFinger', 'SFS','DFS','Rotation'), k='-reward',default_value='ScaledDistance+ScaledFinger'), sg.Text('Success Radius (mm)'), sg.Input(2, key='-sr',size=(8, 2)),],
@@ -235,6 +236,11 @@ class RNNGui():
             state_maxes.extend([1, 1, 1, 1, 1, 1, 1, 1])
             state_len += 8
             state_list.append('evc')
+        if values['-params']:
+            state_mins.extend([0.0504,0.0432,0.0504,0.0432,0.053])
+            state_maxes.extend([0.1008,0.0936,0.1008,0.0936,0.073])
+            state_len += 5
+            state_list.append('params')
         if values['-evv']:
             state_mins.extend([-1, -1, -1, -1, -1, -1, -1, -1])
             state_maxes.extend([1, 1, 1, 1, 1, 1, 1, 1])
