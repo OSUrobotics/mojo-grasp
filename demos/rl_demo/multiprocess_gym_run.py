@@ -174,7 +174,8 @@ def make_pybullet(arg_dict, pybullet_instance, rank, hand_info):
     info_1 = hand_info[hand_keys[-1]][hand_keys[1]]
     info_2 = hand_info[hand_keys[-1]][hand_keys[2]]
     hand_param_dict = {"link_lengths":[info_1['link_lengths'],info_2['link_lengths']],
-                       "starting_angles":[info_1['start_angles'][0],info_1['start_angles'][1],-info_2['start_angles'][0],-info_2['start_angles'][1]]}
+                       "starting_angles":[info_1['start_angles'][0],info_1['start_angles'][1],-info_2['start_angles'][0],-info_2['start_angles'][1]],
+                       "palm_width":info_1['palm_width']}
     # load objects into pybullet
     
     plane_id = pybullet_instance.loadURDF("plane.urdf", flags=pybullet_instance.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
@@ -296,6 +297,8 @@ def main(filepath = None,learn_type='run'):
    
     with open(filepath, 'r') as argfile:
         args = json.load(argfile)
+    if num_cpu%len(args['hand_file_list'])!= 0:
+        num_cpu = int(int(num_cpu/len(args['hand_file_list']))*len(args['hand_file_list']))
     
     key_file = os.path.abspath(__file__)
     key_file = os.path.dirname(key_file)
