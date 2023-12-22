@@ -10,6 +10,7 @@ from mojograsp.simcore.state import StateDefault
 import numpy as np
 import pybullet as p
 from copy import deepcopy
+from mojograsp.simobjects.two_finger_gripper import TwoFingerGripper
 
 class GoalHolder():
     def __init__(self, goal_pose, goal_names = None):
@@ -76,6 +77,10 @@ class StateRL(StateDefault):
         """
         super().__init__()
         self.objects = objects 
+        for object in self.objects:
+            if type(object) == TwoFingerGripper:
+                temp = object.link_lengths
+                self.hand_params = [temp[0][0][1],temp[0][1][1],temp[1][0][1],temp[1][1][1], object.palm_width]
         if prev_len > 0:            
             self.previous_states = [{}]*prev_len
             self.pflag = True
@@ -151,6 +156,7 @@ class StateRL(StateDefault):
         self.current_state['f2_ang'] = self.current_state['two_finger_gripper']['joint_angles']['finger1_segment0_joint'] + self.current_state['two_finger_gripper']['joint_angles']['finger1_segment1_joint']        
         self.current_state['f1_contact_pos'] = list(temp1[6])
         self.current_state['f2_contact_pos'] = list(temp2[6])
+        self.current_state['hand_params'] = self.hand_params.copy()
         # self.current_state['f1_obj_dist'] = temp1[8]
         # self.current_state['f2_obj_dist'] = temp2[8]
         # print(self.current_state['f1_obj_dist'], self.current_state['f2_obj_dist'])

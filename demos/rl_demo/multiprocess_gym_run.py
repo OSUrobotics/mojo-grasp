@@ -345,7 +345,23 @@ def main(filepath = None,learn_type='run'):
 if __name__ == '__main__':
     filpaths=['./data/JA_fullstate_noise/experiment_config.json','./data/JA_halfstate_noise/experiment_config.json',
               './data/FTP_fullstate_noise/experiment_config.json','./data/FTP_halfstate_noise/experiment_config.json']
-    for namei in filpaths:
-        # main(namei)
-        evaluate(namei,'A')
-        evaluate(namei,'B')
+    
+    
+    JAs = ['Full', 'Half']
+    hand_params = ['Hand', 'NoHand']
+    Action_space = ['FTP','JA']
+    hands = ['PalmInterp','FingerInterp', 'Everything']
+
+    things = []
+    for k1 in JAs:
+        for k2 in hand_params:
+            for k3 in Action_space:
+                for k4 in hands:
+                    temp = '_'.join([k1,k2,k3,k4])
+                    things.append(temp)
+    precursor = './data/'
+    post = '/experiment_config.json'
+    for folder_name in things:
+        main(precursor+folder_name+post)
+        evaluate(precursor+folder_name+post,'A')
+        evaluate(precursor+folder_name+post,'B')

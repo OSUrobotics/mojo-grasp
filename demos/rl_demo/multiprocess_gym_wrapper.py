@@ -205,6 +205,8 @@ class MultiprocessGymWrapper(gym.Env):
                         scaled = [evals[0]*evecs[0],evals[0]*evecs[2],evals[1]*evecs[1],evals[1]*evecs[3],
                                   evals[2]*evecs[4],evals[2]*evecs[6],evals[3]*evecs[5],evals[3]*evecs[7]]
                         state.extend(scaled)
+                    elif key == 'params':
+                        state.extend(state_container['hand_params'])
                     elif key == 'gp':
                         state.extend(state_container['previous_state'][i]['goal_pose']['goal_pose'])
                     else:
@@ -238,6 +240,8 @@ class MultiprocessGymWrapper(gym.Env):
                 scaled = [evals[0]*evecs[0],evals[0]*evecs[2],evals[1]*evecs[1],evals[1]*evecs[3],
                           evals[2]*evecs[4],evals[2]*evecs[6],evals[3]*evecs[5],evals[3]*evecs[7]]
                 state.extend(scaled)
+            elif key == 'params':
+                state.extend(state_container['hand_params'])
             elif key == 'gp':
                 state.extend(state_container['goal_pose']['goal_pose'])
             else:

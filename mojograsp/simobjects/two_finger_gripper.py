@@ -27,6 +27,7 @@ class TwoFingerGripper(ActuatedObject):
         self.create_sensor_index()
         self.link_lengths = hand_params['link_lengths']
         self.starting_angles = hand_params['starting_angles']
+        self.palm_width = hand_params['palm_width']
 
     def create_sensor_index(self):
         """
