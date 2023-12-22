@@ -9,7 +9,7 @@ from pybullet_utils.bullet_client import BulletClient
 class TwoFingerGripper(ActuatedObject):
     """TwoFingerGripper Class is a child class of ActuatedObject"""
 
-    def __init__(self, id: int = None, path: str = None, name: str = "two_finger_gripper", physicsClientId:BulletClient=None):
+    def __init__(self, id: int = None, path: str = None, name: str = "two_finger_gripper", physicsClientId:BulletClient=None, hand_params=None):
         """
         Constructor takes in object id, path to urdf or sdf files (If one exists) and an object name. 
         This serves as the base class that all other object types should inherit from. 
@@ -25,6 +25,8 @@ class TwoFingerGripper(ActuatedObject):
         self.sensor_dict = {}
         self.num_joints = p.getNumJoints(self.id)
         self.create_sensor_index()
+        self.link_lengths = hand_params['link_lengths']
+        self.starting_angles = hand_params['starting_angles']
 
     def create_sensor_index(self):
         """
