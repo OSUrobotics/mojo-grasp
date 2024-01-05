@@ -175,7 +175,8 @@ def make_pybullet(arg_dict, pybullet_instance, rank, hand_info):
     info_2 = hand_info[hand_keys[-1]][hand_keys[2]]
     hand_param_dict = {"link_lengths":[info_1['link_lengths'],info_2['link_lengths']],
                        "starting_angles":[info_1['start_angles'][0],info_1['start_angles'][1],-info_2['start_angles'][0],-info_2['start_angles'][1]],
-                       "palm_width":info_1['palm_width']}
+                       "palm_width":info_1['palm_width'],
+                       "hand_name":hand_type}
     # load objects into pybullet
     
     plane_id = pybullet_instance.loadURDF("plane.urdf", flags=pybullet_instance.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
@@ -253,7 +254,9 @@ def evaluate(filepath=None,aorb = 'A'):
     print('Hand B: 2v2_65.35_65.35_53')
     with open(filepath, 'r') as argfile:
         args = json.load(argfile)
-    
+    high_level_folder = os.path.abspath(filepath)
+    high_level_folder = os.path.dirname(high_level_folder)
+    print(high_level_folder)
     key_file = os.path.abspath(__file__)
     key_file = os.path.dirname(key_file)
     key_file = os.path.join(key_file,'resources','hand_bank','hand_params.json')
@@ -269,8 +272,18 @@ def evaluate(filepath=None,aorb = 'A'):
 
     if aorb =='A':
         args['hand_file_list'] = ["2v2_50.50_50.50_1.1_53/hand/2v2_50.50_50.50_1.1_53.urdf"]
+        ht = aorb
     elif aorb =='B':
         args['hand_file_list'] = ["2v2_65.35_65.35_1.1_53/hand/2v2_65.35_65.35_1.1_53.urdf"]
+        ht = aorb
+    elif aorb.endswith('.urdf'):
+        args['hand_file_list'] = [aorb]
+        ht = aorb.split('/')[0]
+        try:
+            folder_to_save = os.path.join(high_level_folder,'Eval_'+ht)
+            os.mkdir(folder_to_save)
+        except FileExistsError:
+            pass
     else:
         print('not going to evaluate, aorb is wrong')
         return
@@ -284,12 +297,11 @@ def evaluate(filepath=None,aorb = 'A'):
         # print(np.shape(obs))
         while not done:
             action, _ = model.predict(obs, deterministic=True)
-            obs, _, done, _ = eval_env.step(action,hand_type=aorb)
+            obs, _, done, _ = eval_env.step(action,hand_type=ht)
 
 def main(filepath = None,learn_type='run'):
     num_cpu = multiprocessing.cpu_count() # Number of processes to use
     # Create the vectorized environment
-
 
     if filepath is None:
         filename = 'FTP_full_53'
@@ -348,8 +360,22 @@ def main(filepath = None,learn_type='run'):
 if __name__ == '__main__':
     filpaths=['./data/JA_fullstate_noise/experiment_config.json','./data/JA_halfstate_noise/experiment_config.json',
               './data/FTP_fullstate_noise/experiment_config.json','./data/FTP_halfstate_noise/experiment_config.json']
-    
-    
+    """
+    "2v2_65.35_65.35_1.1_53/hand/2v2_65.35_65.35_1.1_53.urdf",
+         "2v2_50.50_50.50_1.1_53/hand/2v2_50.50_50.50_1.1_53.urdf",
+    """
+    aorbs = ["2v2_70.30_70.30_1.1_53/hand/2v2_70.30_70.30_1.1_53.urdf",
+         "2v2_35.65_35.65_1.1_53/hand/2v2_35.65_35.65_1.1_53.urdf",
+
+         "2v2_65.35_65.35_1.1_63/hand/2v2_65.35_65.35_1.1_63.urdf",
+         "2v2_50.50_50.50_1.1_63/hand/2v2_50.50_50.50_1.1_63.urdf",
+         "2v2_70.30_70.30_1.1_63/hand/2v2_70.30_70.30_1.1_63.urdf",
+         "2v2_35.65_35.65_1.1_63/hand/2v2_35.65_35.65_1.1_63.urdf",
+         
+         "2v2_65.35_65.35_1.1_73/hand/2v2_65.35_65.35_1.1_73.urdf",
+         "2v2_50.50_50.50_1.1_73/hand/2v2_50.50_50.50_1.1_73.urdf",
+         "2v2_70.30_70.30_1.1_73/hand/2v2_70.30_70.30_1.1_73.urdf",
+         "2v2_35.65_35.65_1.1_73/hand/2v2_35.65_35.65_1.1_73.urdf"]
     JAs = ['Full', 'Half']
     hand_params = ['Hand', 'NoHand']
     Action_space = ['FTP','JA']
@@ -365,6 +391,8 @@ if __name__ == '__main__':
     precursor = './data/'
     post = '/experiment_config.json'
     for folder_name in things:
-        main(precursor+folder_name+post)
-        evaluate(precursor+folder_name+post,'A')
-        evaluate(precursor+folder_name+post,'B')
+        # main(precursor+folder_name+post)
+        # evaluate(precursor+folder_name+post,'A')
+        # evaluate(precursor+folder_name+post,'B')
+        for aorb in aorbs:
+            evaluate(precursor+folder_name+post,aorb)

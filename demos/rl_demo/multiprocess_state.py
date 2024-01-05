@@ -77,6 +77,7 @@ class MultiprocessState(StateDefault):
             if type(object) == TwoFingerGripper:
                 temp = object.link_lengths
                 self.hand_params = [temp[0][0][1],temp[0][1][1],temp[1][0][1],temp[1][1][1], object.palm_width]
+                self.hand_name = object.record_name
         if prev_len > 0:            
             self.previous_states = [{}]*prev_len
             self.pflag = True
@@ -114,6 +115,10 @@ class MultiprocessState(StateDefault):
             if (type(thing) == GoalHolder) | (type(thing) == RandomGoalHolder):
                 thing.reset()
     
+    def get_hand_name(self):
+        # print('got hand name',self.hand_name)
+        return self.hand_name
+
     def set_state(self):
         """
         Default method that sets self.current_state to either get_data() for the object or an empty dictionary
@@ -148,7 +153,7 @@ class MultiprocessState(StateDefault):
         Default method that sets self.current_state to either get_data() for the object or an empty dictionary
         """
         super().set_state()
-
+        # print(self.current_state)
         temp1 = self.p.getClosestPoints(self.objects[1].id, self.objects[0].id, 10, -1, 1, -1)[0]
         temp2 = self.p.getClosestPoints(self.objects[1].id, self.objects[0].id, 10, -1, 4, -1)[0]
         link1_pose = self.p.getLinkState(self.objects[0].id, 2)

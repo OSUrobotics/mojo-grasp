@@ -17,8 +17,8 @@ class MultiprocessRecordData(RecordDataRLPKL):
         Method called by :func:`~mojograsp.simcore.sim_manager.SimManager` after every episode. Saves the most recent
         episode dictionary to a pkl file. 
         """
-        print(self.eval_num,self.num_threads, self.my_thread)
-        print(int(self.eval_num*self.num_threads+self.my_thread))
+        # print(self.eval_num,self.num_threads, self.my_thread)
+        # print(int(self.eval_num*self.num_threads+self.my_thread))
         if self.save_episode_flag and self.data_path != None:
             if evaluated == 'test':
                 if hand_type is None:
@@ -27,7 +27,8 @@ class MultiprocessRecordData(RecordDataRLPKL):
                     file_path = self.data_path + "Eval_A/Episode_"+ str(int(self.eval_num*self.num_threads+self.my_thread)) + '.pkl'
                 elif hand_type=='B':
                     file_path = self.data_path + "Eval_B/Episode_"+ str(int(self.eval_num*self.num_threads+self.my_thread)) + '.pkl'
-                    
+                else:
+                    file_path = self.data_path + "Eval_"+hand_type+"/Episode_"+ str(int(self.eval_num*self.num_threads+self.my_thread)) + '.pkl'
                 self.eval_num +=1
                 print('save episode evaluated', self.eval_num*self.num_threads+self.my_thread)
             else:

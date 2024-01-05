@@ -10,7 +10,7 @@ from reportlab.pdfgen import canvas
 # from reportlab.lib import utils
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Image, Spacer
 from reportlab.lib.pagesizes import letter
-from Data_analysis_gui import GuiBackend
+from mojograsp.simcore.data_gui_backend import PlotBackend
 import matplotlib.pyplot as plt
 import json
 # from PIL import Image
@@ -19,13 +19,14 @@ import numpy as np
 from io import BytesIO
 import os
 import cv2
-import imageio
+import csv
+# import imageio
 class CanvasMock():
     def draw(self):
         pass
     
-class ImageMaker(GuiBackend):
-    def __init__(self, save_path):
+class ImageMaker():
+    def __init__(self, save_path,not_stand=False):
         self.folder = pathlib.Path(save_path)
         self.data_type = None
         self.fig, self.ax = plt.subplots()
@@ -36,13 +37,17 @@ class ImageMaker(GuiBackend):
         self.curr_graph = None
         self.e_num = -2
         self.all_data = None
-        self.moving_avg = 20
         self.colorbar = None
         self.big_data = False
         self.succcess_range = 0.002
         self.use_distance = False
+        self.backend = PlotBackend(str(self.folder))
+        self.backend.moving_avg = 20
         # self.pdf_canvas = canvas.Canvas(str(self.folder)+'/StandardPlots.pdf', pagesize=letter)
-        self.doc = SimpleDocTemplate(str(self.folder)+'/StandardPlots.pdf', pagesize=letter)
+        if not_stand:
+            self.doc = SimpleDocTemplate(str(self.folder)+'/OtherPlots.pdf', pagesize=letter)
+        else:
+            self.doc = SimpleDocTemplate(str(self.folder)+'/StandardPlots.pdf', pagesize=letter)
         self.images =[]
         self.imnames = []
         self.flowables =[]
@@ -112,85 +117,115 @@ class ImageMaker(GuiBackend):
         polyg = plt.Polygon(poly, color=color, alpha=0.4)
         #plt.gca().add_patch(polyg)
         axes.add_patch(polyg)  
-        
-    def make_gifs(self):
-        print("Saving GIF file")
-        path = str(self.folder.joinpath('Videos'))+'/'
-        filenames = os.listdir(path)
-        print(filenames)
-        direction = [filenam.split('_')[0] for filenam in filenames]
-        valid_keys = np.unique(direction)
-        for key in valid_keys:
-            frame_names = [file for file in filenames if key+'_' in file]
-            tstep = [int(filenam.split('_')[-1].split('.')[0]) for filenam in frame_names]
-            tstepinds = np.argsort(tstep)
-
-            frames = []
-            
-            for ind in tstepinds:
-                img = cv2.imread(path+frame_names[ind])
-                
-                frames.append(cv2.cvtColor(img, cv2.COLOR_RGB2BGR))
-            with imageio.get_writer(path+key+".gif", mode="I") as writer:
-                for idx, frame in enumerate(frames):
-                    print("Adding frame to GIF file: ", idx + 1)
-                    writer.append_data(frame)
 
     def standard_plots(self):
-        train_path = self.folder.joinpath('Train')
-        test_path = self.folder.joinpath('Test')
-        comparison_path = self.folder.parent.parent.joinpath('resources/GD_runs')
-        
-        # Training plots
-        '''
-        print('starting the training plots')
-        self.load_data(str(train_path.joinpath('episode_all.pkl')))
-        print('loaded episode all')
-        self.draw_ending_goal_dist()
-        self.plot_to_png('Average Ending Goal Distance')
-        self.succcess_range = 0.02
-        self.draw_success_rate()
-        self.clear_plots = False
-        self.succcess_range = 0.01
-        self.draw_success_rate()
-        self.succcess_range = 0.005
-        self.draw_success_rate()
-        self.plot_to_png('Average Success Rate')
-        self.clear_plots = True
-        self.draw_net_reward()
-        self.plot_to_png('Average Net Reward')
-        '''
-        #Asterisk Test in one plot
-        #TODO add in the code from cindy stuff
-        
-        #Asterisk Joint Angle Plots
-        print('starting the joint angle plots')
-        directions = ['N','NE','E','SE','S','SW','W','NW']
-        direction_full_names = ['North','North East','East','South East','South','South West','West', 'North West']
-        for direction,nam in zip(directions,direction_full_names):
-            self.load_data(str(test_path.joinpath('Asterisk'+direction+'.pkl')))
-            self.draw_angles()
-            self.clear_plots = False
-            self.load_data(str(comparison_path)+'/Asterisk'+nam+'.pkl')
-            self.draw_angles()
-            self.plot_to_png(nam+' Angles Compared to Gradient Descent')
-            self.clear_plots = True
-    
-        #Actor Output Plots
-        print('starting the actor output plots')
-        for direction,nam in zip(directions,direction_full_names):
-            self.load_data(str(test_path.joinpath('Asterisk'+direction+'.pkl')))
-            self.draw_actor_output()
-            self.plot_to_png(nam+' Actor Output')
+        train_path = str(self.folder.joinpath('Train'))
+        test_path = str(self.folder.joinpath('Test'))
+        eval_a_path = str(self.folder.joinpath('Eval_A'))
+        eval_b_path = str(self.folder.joinpath('Eval_B'))
+        print(test_path)
+        #episode rewards
+        print('starting standard plots')
+        self.backend.draw_net_reward(test_path)
+        self.plot_to_png('Net Reward')
+        #ending distance
+        self.backend.draw_shortest_goal_dist(test_path)
+        self.plot_to_png('Average Ending Distance')
+        #eval ending distance for hand A
+        self.backend.draw_scatter_end_dist(eval_a_path)
+        self.plot_to_png('Hand A Trained Ending Distance')
+        #eval ending distance for hand B
+        self.backend.draw_scatter_end_dist(eval_b_path)
+        self.plot_to_png('Hand B Trained Ending Distance')
     
         print('saving to pdf')
         self.save_pdf()
-        self.make_gifs()
+        # self.make_gifs()
 
+    def eval_plots(self):
+        # this one makes all the ending distance plots and records the mean and std dev of that and the efficiency to a csv file while doing it
+        suffixes = ["B","A",
+         "2v2_70.30_70.30_1.1_53",
+         "2v2_35.65_35.65_1.1_53",
+         "2v2_65.35_65.35_1.1_63",
+         "2v2_50.50_50.50_1.1_63",
+         "2v2_70.30_70.30_1.1_63",
+         "2v2_35.65_35.65_1.1_63",
+         "2v2_65.35_65.35_1.1_73",
+         "2v2_50.50_50.50_1.1_73",
+         "2v2_70.30_70.30_1.1_73",
+         "2v2_35.65_35.65_1.1_73"]
+        csv_lists = [self.folder.stem]
+        top_row = ["2v2_65.35_65.35_1.1_53",'','','',
+         "2v2_50.50_50.50_1.1_53",'','','',
+         "2v2_70.30_70.30_1.1_53",'','','',
+         "2v2_35.65_35.65_1.1_53",'','','',
+         "2v2_65.35_65.35_1.1_63",'','','',
+         "2v2_50.50_50.50_1.1_63",'','','',
+         "2v2_70.30_70.30_1.1_63",'','','',
+         "2v2_35.65_35.65_1.1_63",'','','',
+         "2v2_65.35_65.35_1.1_73",'','','',
+         "2v2_50.50_50.50_1.1_73",'','','',
+         "2v2_70.30_70.30_1.1_73",'','','',
+         "2v2_35.65_35.65_1.1_73",'','','']
+        middle_row = []
+        for suf in suffixes:
+            eval_path = str(self.folder.joinpath('Eval_'+suf))
+            dist_nums = self.backend.draw_scatter_end_dist(eval_path)
+            self.plot_to_png(suf)
+            efficiency_nums = self.backend.draw_average_efficiency(eval_path)
+            csv_lists.extend(dist_nums)
+            csv_lists.extend(efficiency_nums)
+            middle_row.extend(['Average Goal Distance','STD Dev','Average Efficiency','STD Dev'])
+        self.save_pdf()
         
-    
+        with open('./distance_and_efficiency.csv', 'a', newline='') as csvfile:
+            writer = csv.writer(csvfile, delimiter=',',
+                                    quotechar='|', quoting=csv.QUOTE_MINIMAL)
+            writer.writerow(csv_lists)
+
 if __name__ == '__main__':
-    a = ImageMaker('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/PPO_JA_new_physics')
-    a.standard_plots()
+    base_path = pathlib.Path(__file__)
+    base_path = base_path.parent
+    
+    base_path = base_path.joinpath('demos/rl_demo/data')
+    # print(base_path)
+    JAs = ['Full', 'Half']
+    hand_params = ['Hand', 'NoHand']
+    Action_space = ['FTP','JA']
+    hands = ['PalmInterp','FingerInterp', 'Everything']
+
+    things = []
+    for k1 in JAs:
+        for k2 in hand_params:
+            for k3 in Action_space:
+                for k4 in hands:
+                    temp = '_'.join([k1,k2,k3,k4])
+                    things.append(temp)
+    precursor = './data/'
+    post = '/experiment_config.json'
+    top_row = ['',"2v2_65.35_65.35_1.1_53",'','','',
+    "2v2_50.50_50.50_1.1_53",'','','',
+    "2v2_70.30_70.30_1.1_53",'','','',
+    "2v2_35.65_35.65_1.1_53",'','','',
+    "2v2_65.35_65.35_1.1_63",'','','',
+    "2v2_50.50_50.50_1.1_63",'','','',
+    "2v2_70.30_70.30_1.1_63",'','','',
+    "2v2_35.65_35.65_1.1_63",'','','',
+    "2v2_65.35_65.35_1.1_73",'','','',
+    "2v2_50.50_50.50_1.1_73",'','','',
+    "2v2_70.30_70.30_1.1_73",'','','',
+    "2v2_35.65_35.65_1.1_73",'','','']
+    middle_row = ['Average Goal Distance','STD Dev','Average Efficiency','STD Dev']*12
+    middle_row.insert(0,'')
+    with open('./distance_and_efficiency.csv', 'w', newline='') as csvfile:
+        writer = csv.writer(csvfile, delimiter=',',
+                                quotechar='|', quoting=csv.QUOTE_MINIMAL)
+        writer.writerow(top_row)
+        writer.writerow(middle_row)
+    for folder_name in things:
+        a = ImageMaker(str(base_path)+'/'+folder_name,False)
+        a.eval_plots()
+        input('continue?')
     # image_path = 'snakehead.jpg'
     # add_image(image_path)
