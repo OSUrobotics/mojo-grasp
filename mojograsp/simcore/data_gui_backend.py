@@ -1417,6 +1417,7 @@ class PlotBackend():
         # linec = np.array([[0.0424,0.0424],[-0.0424,-0.0424]])*100
         # lined = np.array([[0.06,0.0],[-0.06,0.0]])*100
         goals = np.array(goals)
+        print(goals)
         end_dists = np.array(end_dists)
         end_dists = np.clip(end_dists, 0, 0.025)
         a = self.ax.scatter(goals[:,0]*100, goals[:,1]*100, c = end_dists*100, cmap='jet')
@@ -1426,6 +1427,8 @@ class PlotBackend():
         # self.ax.plot(lineb[:,0],lineb[:,1])
         # self.ax.plot(linec[:,0],linec[:,1])
         # self.ax.plot(lined[:,0],lined[:,1])
+        mean, std = np.average(end_dists), np.std(end_dists)
+
         self.ax.set_ylabel('Y position (cm)')
         self.ax.set_xlabel('X position (cm)')
         self.ax.set_xlim([-7,7])
@@ -1435,6 +1438,7 @@ class PlotBackend():
         self.colorbar = self.fig.colorbar(a, ax=self.ax, extend='max')
          
         self.curr_graph = 'scatter'
+        return [mean, std]
         
     def draw_scatter_contact_dist(self,folder_path):
         
