@@ -353,7 +353,7 @@ if __name__ == '__main__':
     JAs = ['Full', 'Half']
     hand_params = ['Hand', 'NoHand']
     Action_space = ['FTP','JA']
-    hands = ['PalmInterp','FingerInterp', 'Everything']
+    hands = ['BothInterp','PalmExtrap','FingerExtrap']
 
     things = []
     for k1 in JAs:
