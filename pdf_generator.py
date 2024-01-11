@@ -226,6 +226,6 @@ if __name__ == '__main__':
     for folder_name in things:
         a = ImageMaker(str(base_path)+'/'+folder_name,False)
         a.eval_plots()
-        input('continue?')
+        # input('continue?')
     # image_path = 'snakehead.jpg'
     # add_image(image_path)

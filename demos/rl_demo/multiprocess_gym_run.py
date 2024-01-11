@@ -167,7 +167,7 @@ def make_pybullet(arg_dict, pybullet_instance, rank, hand_info):
     elif rank[1] % len(args['hand_file_list']) != 0:
         print('WARNING: number of hands does not evenly divide into number of pybullet instances. Hands will have uneven number of samples')
     
-    this_hand = args['hand_file_list'][rank[1]%len(args['hand_file_list'])]
+    this_hand = args['hand_file_list'][rank[0]%len(args['hand_file_list'])]
     hand_type = this_hand.split('/')[0]
     print(hand_type)
     hand_keys = hand_type.split('_')
@@ -252,6 +252,8 @@ def evaluate(filepath=None,aorb = 'A'):
     print('Evaluating on hands A and B')
     print('Hand A: 2v2_50.50_50.50_53')
     print('Hand B: 2v2_65.35_65.35_53')
+    actions = np.array([[1, 1, -1, -1], [1, 1, -1, -1], [1, 1, -1, -1], [1, 1, -1, -1], [1, 1, -1, -1], [1, -1, 1, 1], [1, -1, -1, 1], [1, -1, -1, 1], [-1, -1, -1, 1], [-1, -1, -1, 1], [-1, -1, 1, 1], [-1, -1, 1, 1], [-1, -1, 1, 1], [-1, -1, 1, 1], [-1, -1, 1, 1], [0, 0, 0, 0]])
+
     with open(filepath, 'r') as argfile:
         args = json.load(argfile)
     high_level_folder = os.path.abspath(filepath)
@@ -291,13 +293,18 @@ def evaluate(filepath=None,aorb = 'A'):
     eval_env , _, poses= make_pybullet(args,p2, [0,1], hand_params)
     eval_env.evaluate()
     model = model_type("MlpPolicy", eval_env, tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-2.3}).load(args['save_path']+'best_model', env=eval_env)
-    for _ in range(1200):
+    for _ in range(8):
         obs = eval_env.reset()
         done = False
         # print(np.shape(obs))
+        thing = 0
         while not done:
             action, _ = model.predict(obs, deterministic=True)
             obs, _, done, _ = eval_env.step(action,hand_type=ht)
+            thing +=1
+            # time.sleep(0.5)
+        # p2.disconnect()
+            # return
 
 def main(filepath = None,learn_type='run'):
     num_cpu = multiprocessing.cpu_count() # Number of processes to use
@@ -339,7 +346,7 @@ def main(filepath = None,learn_type='run'):
     # You can choose between `DummyVecEnv` (usually faster) and `SubprocVecEnv`
     # env = make_vec_env(env_id, n_envs=num_cpu, seed=0, vec_env_cls=SubprocVecEnv)
     # wandb.init(project = 'StableBaselinesWandBTest')
-    
+
     if learn_type == 'transfer':
         model = model_type("MlpPolicy", vec_env, tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-2.3}).load(args['load_path']+'best_model', env=vec_env)
         print('LOADING A MODEL')
@@ -358,13 +365,13 @@ def main(filepath = None,learn_type='run'):
     #         obs, _, done, _ = vec_env[0].step(action)
 
 if __name__ == '__main__':
+    # evaluate("./data/JA_fullstate_A_rand/experiment_config.json")
+    # evaluate("./data/JA_fullstate_A_rand/experiment_config.json","B")
+    '''
     filpaths=['./data/JA_fullstate_noise/experiment_config.json','./data/JA_halfstate_noise/experiment_config.json',
               './data/FTP_fullstate_noise/experiment_config.json','./data/FTP_halfstate_noise/experiment_config.json']
-    """
-    "2v2_65.35_65.35_1.1_53/hand/2v2_65.35_65.35_1.1_53.urdf",
-         "2v2_50.50_50.50_1.1_53/hand/2v2_50.50_50.50_1.1_53.urdf",
-    """
-    aorbs = ["2v2_70.30_70.30_1.1_53/hand/2v2_70.30_70.30_1.1_53.urdf",
+    aorbs = ["2v2_50.50_50.50_1.1_53/hand/2v2_50.50_50.50_1.1_53.urdf",
+         "2v2_70.30_70.30_1.1_53/hand/2v2_70.30_70.30_1.1_53.urdf",
          "2v2_35.65_35.65_1.1_53/hand/2v2_35.65_35.65_1.1_53.urdf",
 
          "2v2_65.35_65.35_1.1_63/hand/2v2_65.35_65.35_1.1_63.urdf",
@@ -396,3 +403,7 @@ if __name__ == '__main__':
         # evaluate(precursor+folder_name+post,'B')
         for aorb in aorbs:
             evaluate(precursor+folder_name+post,aorb)
+    
+    '''
+    main("./data/FTP_newstate_A_rand/experiment_config.json",'run')
+    main("./data/FTP_newstate_A_noisy/experiment_config.json",'run')

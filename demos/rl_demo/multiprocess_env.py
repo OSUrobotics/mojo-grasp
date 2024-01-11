@@ -244,13 +244,15 @@ class MultiprocessSingleShapeEnv(Environment):
         self.p.resetJointState(self.hand.id, 4, self.hand.starting_angles[3])
         
         self.p.resetBasePositionAndOrientation(self.obj_id, posObj=[0.0+obj_change[0], 0.10+obj_change[1], .05], ornObj=[0,0,0,1])
-        # f1_dist = self.p.getClosestPoints(self.obj.id, self.hand.id, 10, -1, 1, -1)
-        # f2_dist = self.p.getClosestPoints(self.obj.id, self.hand.id, 10, -1, 4, -1)
-        # print('f1 dist', max(f1_dist[0][8], 0))
-        # print('f2_dist', max(f2_dist[0][8], 0))
+        f1_dist = self.p.getClosestPoints(self.obj.id, self.hand.id, 10, -1, 1, -1)
+        f2_dist = self.p.getClosestPoints(self.obj.id, self.hand.id, 10, -1, 4, -1)
+        # print('f1 dist', f1_dist)
+        # print('f2_dist', f2_dist)
         # print('finger pos', self.p.getLinkState(self.hand.id, 2)[0], self.p.getLinkState(self.hand.id, 5)[0])
+        # print('joint info', self.p.getJointInfo(self.hand.id,0), self.p.getJointInfo(self.hand.id,1),self.p.getJointInfo(self.hand.id,3),self.p.getJointInfo(self.hand.id,4))
 
         if self.rand_start:
+            # print('are we here?')
             f1_pos = [0.03+obj_change[0], 0.10+obj_change[1], 0.05]
             f2_pos = [-0.03+obj_change[0], 0.10+obj_change[1], 0.05]
             
@@ -268,9 +270,12 @@ class MultiprocessSingleShapeEnv(Environment):
                                             positionGains=[0.8,0.8,0.8,0.8], forces=[0.4,0.4,0.4,0.4])
                 self.step()
         if self.rand_finger_pos:
+            # print('we here')
             y_change = np.random.uniform(-0.01,0.01,2)
+            # print(y_change)
             link1_pose = self.p.getLinkState(self.hand_id, 2)[0]
             link2_pose = self.p.getLinkState(self.hand_id, 5)[0]
+            # print('starting link poses',link1_pose,link2_pose)
             f1_pos = [link1_pose[0], link1_pose[1] + y_change[0], 0.05]
             f2_pos = [link2_pose[0], link2_pose[1] + y_change[1], 0.05]
             f1_angs = self.p.calculateInverseKinematics(self.hand_id, 2, f1_pos, maxNumIterations=3000)
@@ -286,7 +291,10 @@ class MultiprocessSingleShapeEnv(Environment):
                                             controlMode=self.p.POSITION_CONTROL, targetPositions=action_to_execute,
                                             positionGains=[0.8,0.8,0.8,0.8], forces=[0.4,0.4,0.4,0.4])
                 self.step()
-        
+            # print('positions', f1_angs,f2_angs)
+            # print('fuck')
+            # print('finger tip poses', f1_pos, f2_pos)
+        # input('fak')
 
     def reset_to_pos(self, object_pos, finger_angles):
         # reset the simulator
