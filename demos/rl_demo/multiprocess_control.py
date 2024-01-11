@@ -74,7 +74,7 @@ class MultiprocessController():
         self.retry_count = 0
 
         f1 = {"name": "finger0", "num_links": 2, "link_lengths": self.gripper.link_lengths[0]}
-        f2 = {"name": "finger0", "num_links": 2, "link_lengths": self.gripper.link_lengths[1]}
+        f2 = {"name": "finger1", "num_links": 2, "link_lengths": self.gripper.link_lengths[1]}
 
 
         hand_info = {"finger1": f1,"finger2": f2}
@@ -82,8 +82,8 @@ class MultiprocessController():
         self.p.resetJointState(self.gripper.id, 1, 0)
         self.p.resetJointState(self.gripper.id, 3, 0)
         self.p.resetJointState(self.gripper.id, 4, 0)
-        self.ik_f1 = JacobianIK(self.p, gripper.id,deepcopy(hand_info['finger1']))
-        self.ik_f2 = JacobianIK(self.p, gripper.id,deepcopy(hand_info['finger2']))
+        self.ik_f1 = JacobianIK(self.p, gripper.id,deepcopy(hand_info['finger1']), error=1e-4)
+        self.ik_f2 = JacobianIK(self.p, gripper.id,deepcopy(hand_info['finger2']), error=1e-4)
 
         self.p.resetJointState(self.gripper.id, 0, self.gripper.starting_angles[0])
         self.p.resetJointState(self.gripper.id, 1, self.gripper.starting_angles[1])
@@ -112,13 +112,17 @@ class MultiprocessController():
             ap = actor_output * self.MAX_DISTANCE_CHANGE
             action_list = []
             # print(f'actor_output: {actor_output}, finger poses: {finger_pos1},{finger_pos2}')
+            # print(self.INTERP_IK, self.num_tsteps, ap)
             if self.INTERP_IK:
+
                 new_finger_poses = [finger_pos1[0] + self.num_tsteps*ap[0], finger_pos1[1] + self.num_tsteps*ap[1], 
                                     finger_pos2[0] + self.num_tsteps*ap[2], finger_pos2[1] + self.num_tsteps*ap[3]]
+                # print("target finger pose", new_finger_poses)
                 found1, finger_1_angs_kegan, it1 = self.ik_f1.calculate_ik(target=new_finger_poses[:2], ee_location=None)
                 found2, finger_2_angs_kegan, it12 = self.ik_f2.calculate_ik(target=new_finger_poses[2:], ee_location=None)
                 action = [finger_1_angs_kegan[0],finger_1_angs_kegan[1],finger_2_angs_kegan[0],finger_2_angs_kegan[1]]
                 action = clip_angs(action)
+                # print(f"action: {action}, finger angles: {finger_angles}")
                 # print(finger_1_angs_kegan,finger_2_angs_kegan)
                 action_list = np.linspace(finger_angles,action,self.num_tsteps)
                 # print(np.shape(action_list))
