@@ -30,6 +30,7 @@
             <geometry>
                 <mesh filename="obj_files/finger0_segment0_collision.obj" scale="1 1 1"/>
             </geometry>
+        </collision>
         <inertial>
             <mass value="0.1"/>
             <inertia ixx="0.4" ixy="0.0" ixz="0.0" iyy="0.4" iyz="0.0" izz="0.2"/>
@@ -55,6 +56,7 @@
             <geometry>
                 <mesh filename="obj_files/finger0_segment1_collision.obj" scale="1 1 1"/>
             </geometry>
+        </collision>
         <inertial>
             <mass value="0.1"/>
             <inertia ixx="0.4" ixy="0.0" ixz="0.0" iyy="0.4" iyz="0.0" izz="0.2"/>
@@ -80,6 +82,7 @@
             <geometry>
                 <mesh filename="obj_files/finger1_segment0_collision.obj" scale="1 1 1"/>
             </geometry>
+        </collision>
         <inertial>
             <mass value="0.1"/>
             <inertia ixx="0.4" ixy="0.0" ixz="0.0" iyy="0.4" iyz="0.0" izz="0.2"/>
@@ -105,6 +108,7 @@
             <geometry>
                 <mesh filename="obj_files/finger1_segment1_collision.obj" scale="1 1 1"/>
             </geometry>
+        </collision>
         <inertial>
             <mass value="0.1"/>
             <inertia ixx="0.4" ixy="0.0" ixz="0.0" iyy="0.4" iyz="0.0" izz="0.2"/>
@@ -128,7 +132,7 @@
     <joint name="finger0_sensor1_joint" type="fixed">
         <parent link="finger0_segment1"/>
         <child link="finger0_sensor"/>
-        <origin rpy="0 0 0" xyz="0 0.072 0"/>
+        <origin rpy="0 0 0" xyz="0 0.0432 0"/>
         <axis xyz="0 0 1"/>
         <limit effort="1000.0" lower="-3.14" upper="3.14" velocity="0.5"/>
     </joint>
@@ -144,7 +148,7 @@
     <joint name="finger1_sensor2_joint" type="fixed">
         <parent link="finger1_segment1"/>
         <child link="finger1_sensor"/>
-        <origin rpy="0 0 0" xyz="0 0.072 0"/>
+        <origin rpy="0 0 0" xyz="0 0.0432 0"/>
         <axis xyz="0 0 1"/>
         <limit effort="1000.0" lower="-3.14" upper="3.14" velocity="0.5"/>
     </joint>

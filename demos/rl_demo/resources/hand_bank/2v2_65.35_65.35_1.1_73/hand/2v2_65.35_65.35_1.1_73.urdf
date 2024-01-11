@@ -132,7 +132,7 @@
     <joint name="finger0_sensor1_joint" type="fixed">
         <parent link="finger0_segment1"/>
         <child link="finger0_sensor"/>
-        <origin rpy="0 0 0" xyz="0 0.072 0"/>
+        <origin rpy="0 0 0" xyz="0 0.0504 0"/>
         <axis xyz="0 0 1"/>
         <limit effort="1000.0" lower="-3.14" upper="3.14" velocity="0.5"/>
     </joint>
@@ -148,7 +148,7 @@
     <joint name="finger1_sensor2_joint" type="fixed">
         <parent link="finger1_segment1"/>
         <child link="finger1_sensor"/>
-        <origin rpy="0 0 0" xyz="0 0.072 0"/>
+        <origin rpy="0 0 0" xyz="0 0.0504 0"/>
         <axis xyz="0 0 1"/>
         <limit effort="1000.0" lower="-3.14" upper="3.14" velocity="0.5"/>
     </joint>
