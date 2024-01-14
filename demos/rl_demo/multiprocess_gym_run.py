@@ -147,10 +147,15 @@ def make_pybullet(arg_dict, pybullet_instance, rank, hand_info):
         # yeval = [-0.045, -0.06, -0.045, 0, 0.045, 0.06, 0.045, 0]
         eval_names = ['eval']*500 
     
-
+    asterisk_test_points = [[0,0.07],[0.0495,0.0495],[0.07,0.0],[0.0495,-0.0495],[0.0,-0.07],[-0.0495,-0.0495],[-0.07,0.0],[-0.0495,0.0495]]
     names = ['AsteriskSE.pkl','AsteriskS.pkl','AsteriskSW.pkl','AsteriskW.pkl','AsteriskNW.pkl','AsteriskN.pkl','AsteriskNE.pkl','AsteriskE.pkl']
     pose_list = [[i,j] for i,j in zip(x,y)]
     eval_pose_list = [[i,j] for i,j in zip(xeval,yeval)]
+
+    #uncomment for asterisk test
+    pose_list = asterisk_test_points
+    eval_pose_list = asterisk_test_points
+
     num_eval = len(eval_pose_list)
     eval_pose_list = eval_pose_list[int(num_eval*rank[0]/rank[1]):int(num_eval*(rank[0]+1)/rank[1])]
     # print(args)
@@ -368,6 +373,7 @@ def main(filepath = None,learn_type='run'):
 if __name__ == '__main__':
     evaluate("./data/JA_newstate_A_rand/experiment_config.json")
     evaluate("./data/JA_newstate_A_rand/experiment_config.json","B")
+
     '''
     filpaths=['./data/JA_fullstate_noise/experiment_config.json','./data/JA_halfstate_noise/experiment_config.json',
               './data/FTP_fullstate_noise/experiment_config.json','./data/FTP_halfstate_noise/experiment_config.json']
@@ -408,3 +414,4 @@ if __name__ == '__main__':
     '''
     # main("./data/JA_newstate_A_rand/experiment_config.json",'run')
     # main("./data/JA_newstate_A_noisy/experiment_config.json",'run')
+
