@@ -259,6 +259,7 @@ def evaluate(filepath=None,aorb = 'A'):
     high_level_folder = os.path.abspath(filepath)
     high_level_folder = os.path.dirname(high_level_folder)
     print(high_level_folder)
+    # args['rstart'] = 'N'
     key_file = os.path.abspath(__file__)
     key_file = os.path.dirname(key_file)
     key_file = os.path.join(key_file,'resources','hand_bank','hand_params.json')
@@ -293,7 +294,7 @@ def evaluate(filepath=None,aorb = 'A'):
     eval_env , _, poses= make_pybullet(args,p2, [0,1], hand_params)
     eval_env.evaluate()
     model = model_type("MlpPolicy", eval_env, tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-2.3}).load(args['save_path']+'best_model', env=eval_env)
-    for _ in range(8):
+    for _ in range(1200):
         obs = eval_env.reset()
         done = False
         # print(np.shape(obs))
@@ -365,8 +366,8 @@ def main(filepath = None,learn_type='run'):
     #         obs, _, done, _ = vec_env[0].step(action)
 
 if __name__ == '__main__':
-    # evaluate("./data/JA_fullstate_A_rand/experiment_config.json")
-    # evaluate("./data/JA_fullstate_A_rand/experiment_config.json","B")
+    evaluate("./data/JA_newstate_A_rand/experiment_config.json")
+    evaluate("./data/JA_newstate_A_rand/experiment_config.json","B")
     '''
     filpaths=['./data/JA_fullstate_noise/experiment_config.json','./data/JA_halfstate_noise/experiment_config.json',
               './data/FTP_fullstate_noise/experiment_config.json','./data/FTP_halfstate_noise/experiment_config.json']
@@ -405,5 +406,5 @@ if __name__ == '__main__':
             evaluate(precursor+folder_name+post,aorb)
     
     '''
-    main("./data/FTP_newstate_A_rand/experiment_config.json",'run')
-    main("./data/FTP_newstate_A_noisy/experiment_config.json",'run')
+    # main("./data/JA_newstate_A_rand/experiment_config.json",'run')
+    # main("./data/JA_newstate_A_noisy/experiment_config.json",'run')
