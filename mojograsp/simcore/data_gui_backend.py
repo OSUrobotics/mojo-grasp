@@ -491,8 +491,7 @@ class PlotBackend():
             rewards = moving_average(rewards,self.moving_avg)
         if self.clear_plots | (self.curr_graph !='Group_Reward'):
             self.clear_axes()
-             
-        self.legend = ['Non-Agnostic SS, Joint Angle AS','Non-Agnostic SS, Finger Tip AS','Agnostic SS, Joint Angle AS','Agnostic SS, Finger Tip AS']
+        self.legend = ['State 1 Joint Angle', 'State 2 Joint Angle','State 3 Joint Angle','State 1 Finger Tip','State 2 Finger Tip', 'State 3 Finger Tip']
         self.ax.plot(range(len(rewards)), rewards)
         self.ax.set_xlabel('Episode Number')
         self.ax.set_ylabel('Average Total Reward Over the Entire Episode')
@@ -1953,8 +1952,10 @@ class PlotBackend():
         episode_files = episode_files[sorted_inds].tolist()
         end_poses = []
         goal_poses = []
-        name_key = [[-0.06,0],[-0.0424,0.0424],[0.0,0.06],[0.0424,0.0424],[0.06,0.0],[0.0424,-0.0424],[0.0,-0.06],[-0.0424,-0.0424]]
-        name_key2 = ["E","NE","N","NW","W","SW","S","SE"]
+        name_key_og = [[-0.06,0],[-0.0424,0.0424],[0.0,0.06],[0.0424,0.0424],[0.06,0.0],[0.0424,-0.0424],[0.0,-0.06],[-0.0424,-0.0424]]
+        name_key = [[0,0.07],[0.0495,0.0495],[0.07,0.0],[0.0495,-0.0495],[0.0,-0.07],[-0.0495,-0.0495],[-0.07,0.0],[-0.0495,0.0495]]
+        name_key2 = ["N","NE","E","SE","S","SW", "W","NW"]
+        name_key_og2 = ["E","NE","N","NW","W","SW","S","SE"]
         dist_traveled_list = []
         for episode_file in episode_files:
             with open(episode_file, 'rb') as ef:
@@ -1981,6 +1982,11 @@ class PlotBackend():
                     dtemp = g/np.linalg.norm(g)*np.dot(e,g/np.linalg.norm(g))
                     dist_along_thing[name_key2[i]].append(dtemp)
                     efficiency[name_key2[i]].append(np.linalg.norm(dtemp)/dt)
+            for i,name in enumerate(name_key_og):
+                if name == g:
+                    dtemp = g/np.linalg.norm(g)*np.dot(e,g/np.linalg.norm(g))
+                    dist_along_thing[name_key_og2[i]].append(dtemp)
+                    efficiency[name_key_og2[i]].append(np.linalg.norm(dtemp)/dt)
         print(dist_along_thing)
         print('efficiency', efficiency, dist_traveled_list)
         # print(np.unique(goal_poses,axis=0))
@@ -1991,10 +1997,10 @@ class PlotBackend():
             print(k, dist_along_thing[k])
             finals.append(np.average(dist_along_thing[k],axis=0))
             alls.append(np.linalg.norm(dist_along_thing[k][0]))
-            # alls.append(np.linalg.norm(dist_along_thing[k][1]))
             net_efficiency.append(efficiency[k][0])
-            # net_efficiency.append(efficiency[k][1])
             try:
+                alls.append(np.linalg.norm(dist_along_thing[k][1]))
+                net_efficiency.append(efficiency[k][1])
                 alls.append(np.linalg.norm(dist_along_thing[k][2]))
                 net_efficiency.append(efficiency[k][2])
             except:
@@ -2004,12 +2010,12 @@ class PlotBackend():
         print(finals)
         print(f'net efficiency: {np.average(net_efficiency)}, {np.std(net_efficiency)}')
         print('total distance from the avg',np.sum(np.linalg.norm(finals[0:8],axis=1)))
-        print(f'what we need. mean: {np.sum(alls)}, {np.std(alls)}')
+        print(f'what we need. mean: {np.sum(alls)/3}, {np.std(alls)}')
         self.ax.plot(finals[:,0],finals[:,1]+0.1)
         # self.ax.fill(finals[:,0],finals[:,1]+0.1, alpha=0.3)
         self.ax.set_xlim([-0.07,0.07])
         self.ax.set_ylim([0.04,0.16])
         self.ax.set_xlabel('X pos (m)')
         self.ax.set_ylabel('Y pos (m)')
-        self.ax.legend(['1','2','3','4'])  
+        self.ax.legend(['State 1, Agnostic Action','State 2, Agnostic Action','State 3, Agnostic Action'])  
         # self.ax.scatter(end_poses[:,0],end_poses[:,1])

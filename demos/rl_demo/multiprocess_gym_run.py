@@ -153,8 +153,8 @@ def make_pybullet(arg_dict, pybullet_instance, rank, hand_info):
     eval_pose_list = [[i,j] for i,j in zip(xeval,yeval)]
 
     #uncomment for asterisk test
-    pose_list = asterisk_test_points
-    eval_pose_list = asterisk_test_points
+    # pose_list = asterisk_test_points
+    # eval_pose_list = asterisk_test_points
 
     num_eval = len(eval_pose_list)
     eval_pose_list = eval_pose_list[int(num_eval*rank[0]/rank[1]):int(num_eval*(rank[0]+1)/rank[1])]
@@ -299,7 +299,7 @@ def evaluate(filepath=None,aorb = 'A'):
     eval_env , _, poses= make_pybullet(args,p2, [0,1], hand_params)
     eval_env.evaluate()
     model = model_type("MlpPolicy", eval_env, tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-2.3}).load(args['save_path']+'best_model', env=eval_env)
-    for _ in range(8):
+    for _ in range(1200):
         obs = eval_env.reset()
         done = False
         # print(np.shape(obs))
@@ -371,8 +371,10 @@ def main(filepath = None,learn_type='run'):
     #         obs, _, done, _ = vec_env[0].step(action)
 
 if __name__ == '__main__':
-    evaluate("./data/FTP_newstate_A_rand/experiment_config.json")
-    evaluate("./data/FTP_newstate_A_rand/experiment_config.json","B")
+    # evaluate("./data/FTP_halfstate_A_rand/experiment_config.json")
+    # evaluate("./data/FTP_halfstate_A_rand/experiment_config.json","B")
+    # evaluate("./data/FTP_fullstate_A_rand/experiment_config.json")
+    # evaluate("./data/FTP_fullstate_A_rand/experiment_config.json","B")
     '''
     filpaths=['./data/JA_fullstate_noise/experiment_config.json','./data/JA_halfstate_noise/experiment_config.json',
               './data/FTP_fullstate_noise/experiment_config.json','./data/FTP_halfstate_noise/experiment_config.json']
@@ -411,5 +413,7 @@ if __name__ == '__main__':
             evaluate(precursor+folder_name+post,aorb)
     
     '''
-    # main("./data/FTP_newstate_A_rand/experiment_config.json",'run')
+    main("./data/FTP_fullstate_A_rand/experiment_config.json",'run')
+    evaluate("./data/FTP_fullstate_A_rand/experiment_config.json")
+    evaluate("./data/FTP_fullstate_A_rand/experiment_config.json","B")
     # main("./data/FTP_newstate_A_noisy/experiment_config.json",'run')
