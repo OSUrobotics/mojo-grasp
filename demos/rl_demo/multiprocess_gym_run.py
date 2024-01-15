@@ -394,7 +394,7 @@ if __name__ == '__main__':
     JAs = ['Full', 'Half']
     hand_params = ['Hand', 'NoHand']
     Action_space = ['FTP','JA']
-    hands = ['PalmInterp','FingerInterp', 'Everything']
+    hands = ['BothInterp','PalmExtrap','FingerExtrap']
 
     things = []
     for k1 in JAs:
@@ -413,7 +413,6 @@ if __name__ == '__main__':
             evaluate(precursor+folder_name+post,aorb)
     
     '''
-    main("./data/FTP_fullstate_A_rand/experiment_config.json",'run')
-    evaluate("./data/FTP_fullstate_A_rand/experiment_config.json")
-    evaluate("./data/FTP_fullstate_A_rand/experiment_config.json","B")
-    # main("./data/FTP_newstate_A_noisy/experiment_config.json",'run')
+    # main("./data/JA_newstate_A_rand/experiment_config.json",'run')
+    # main("./data/JA_newstate_A_noisy/experiment_config.json",'run')
+
