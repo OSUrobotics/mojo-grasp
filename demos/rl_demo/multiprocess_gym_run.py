@@ -299,7 +299,7 @@ def evaluate(filepath=None,aorb = 'A'):
     eval_env , _, poses= make_pybullet(args,p2, [0,1], hand_params)
     eval_env.evaluate()
     model = model_type("MlpPolicy", eval_env, tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-2.3}).load(args['save_path']+'best_model', env=eval_env)
-    for _ in range(1200):
+    for _ in range(8):
         obs = eval_env.reset()
         done = False
         # print(np.shape(obs))
@@ -371,8 +371,10 @@ def main(filepath = None,learn_type='run'):
     #         obs, _, done, _ = vec_env[0].step(action)
 
 if __name__ == '__main__':
-    evaluate("./data/JA_newstate_A_rand/experiment_config.json")
-    evaluate("./data/JA_newstate_A_rand/experiment_config.json","B")
+    evaluate("./data/JA_fullstate_A_rand/experiment_config.json")
+    evaluate("./data/JA_fullstate_A_rand/experiment_config.json","B")
+    evaluate("./data/JA_halfstate_A_rand/experiment_config.json")
+    evaluate("./data/JA_halfstate_A_rand/experiment_config.json","B")
 
     '''
     filpaths=['./data/JA_fullstate_noise/experiment_config.json','./data/JA_halfstate_noise/experiment_config.json',
