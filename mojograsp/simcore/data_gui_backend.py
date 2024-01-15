@@ -2011,5 +2011,5 @@ class PlotBackend():
         self.ax.set_ylim([0.04,0.16])
         self.ax.set_xlabel('X pos (m)')
         self.ax.set_ylabel('Y pos (m)')
-        self.ax.legend(['1','2','3','4'])  
+        self.ax.legend(['State 1','State 2','State 3'])
         # self.ax.scatter(end_poses[:,0],end_poses[:,1])
