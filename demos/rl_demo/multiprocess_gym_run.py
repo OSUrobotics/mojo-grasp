@@ -305,9 +305,9 @@ def evaluate(filepath=None,aorb = 'A'):
         # print(np.shape(obs))
         thing = 0
         while not done:
-            action, _ = model.predict(obs, deterministic=True)
+            action, _ = model.predict(obs,deterministic=True)
             obs, _, done, _ = eval_env.step(action,hand_type=ht)
-            thing +=1
+            # thing +=1
             # time.sleep(0.5)
         # p2.disconnect()
             # return
@@ -413,6 +413,24 @@ if __name__ == '__main__':
             evaluate(precursor+folder_name+post,aorb)
     
     '''
+    # main('./data/FTP_halfstate_A_rand_old_finger_poses/experiment_config.json','run')
     # main("./data/JA_newstate_A_rand/experiment_config.json",'run')
     # main("./data/JA_newstate_A_noisy/experiment_config.json",'run')
+    # main("./data/FTP_halfstate_A_rand/experiment_config.json",'run')
+    # evaluate("./data/FTP_halfstate_A_rand/experiment_config.json")
+    # evaluate("./data/FTP_halfstate_A_rand/experiment_config.json","B")
+    # evaluate("./data/FTP_fullstate_A_rand/experiment_config.json")
+    # evaluate("./data/FTP_fullstate_A_rand/experiment_config.json","B")
+    
+    # evaluate("./data/JA_fullstate_A_rand/experiment_config.json")
+    # evaluate("./data/JA_fullstate_A_rand/experiment_config.json","B")
+    # evaluate("./data/JA_halfstate_A_rand/experiment_config.json")
+    # evaluate("./data/JA_halfstate_A_rand/experiment_config.json","B")
 
+    # evaluate("./data/FTP_newstate_A_rand/experiment_config.json")
+    # evaluate("./data/FTP_newstate_A_rand/experiment_config.json","B")
+    # evaluate("./data/JA_newstate_A_rand/experiment_config.json")
+    # evaluate("./data/JA_newstate_A_rand/experiment_config.json","B")
+
+    evaluate("./data/FTP_halfstate_A_rand_old_finger_poses/experiment_config.json")
+    # evaluate("./data/FTP_halfstate_A_rand_old_finger_poses/experiment_config.json","B")
