@@ -371,10 +371,10 @@ def main(filepath = None,learn_type='run'):
     #         obs, _, done, _ = vec_env[0].step(action)
 
 if __name__ == '__main__':
-    # evaluate("./data/FTP_halfstate_A_rand/experiment_config.json")
-    # evaluate("./data/FTP_halfstate_A_rand/experiment_config.json","B")
-    # evaluate("./data/FTP_fullstate_A_rand/experiment_config.json")
-    # evaluate("./data/FTP_fullstate_A_rand/experiment_config.json","B")
+    # evaluate("./data/JA_halfstate_A_rand/experiment_config.json")
+    # evaluate("./data/JA_halfstate_A_rand/experiment_config.json","B")
+    # evaluate("./data/JA_fullstate_A_rand/experiment_config.json")
+    # evaluate("./data/JA_fullstate_A_rand/experiment_config.json","B")
     '''
     filpaths=['./data/JA_fullstate_noise/experiment_config.json','./data/JA_halfstate_noise/experiment_config.json',
               './data/FTP_fullstate_noise/experiment_config.json','./data/FTP_halfstate_noise/experiment_config.json']
@@ -414,5 +414,7 @@ if __name__ == '__main__':
     
     '''
     # main("./data/JA_newstate_A_rand/experiment_config.json",'run')
-    # main("./data/JA_newstate_A_noisy/experiment_config.json",'run')
-
+    
+    main("./data/JA_halfstate_A_rand/experiment_config.json",'run')
+    evaluate("./data/JA_halfstate_A_rand/experiment_config.json")
+    evaluate("./data/JA_halfstate_A_rand/experiment_config.json","B")
