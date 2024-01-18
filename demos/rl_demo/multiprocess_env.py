@@ -275,6 +275,8 @@ class MultiprocessSingleShapeEnv(Environment):
             # print(y_change)
             link1_pose = self.p.getLinkState(self.hand_id, 2)[0]
             link2_pose = self.p.getLinkState(self.hand_id, 5)[0]
+            # link1_pose = [0.026749999999999996, 0.10778391676312778, 0.05]
+            # link2_pose = [-0.026749999999999996, 0.10778391676312778, 0.05]
             # print('starting link poses',link1_pose,link2_pose)
             f1_pos = [link1_pose[0], link1_pose[1] + y_change[0], 0.05]
             f2_pos = [link2_pose[0], link2_pose[1] + y_change[1], 0.05]
@@ -294,6 +296,10 @@ class MultiprocessSingleShapeEnv(Environment):
             # print('positions', f1_angs,f2_angs)
             # print('fuck')
             # print('finger tip poses', f1_pos, f2_pos)
+            f1_dist = self.p.getClosestPoints(self.obj.id, self.hand.id, 10, -1, 1, -1)
+            f2_dist = self.p.getClosestPoints(self.obj.id, self.hand.id, 10, -1, 4, -1)
+            # print('f1 dist', f1_dist)
+            # print('f2_dist', f2_dist)
         # input('fak')
 
     def reset_to_pos(self, object_pos, finger_angles):
