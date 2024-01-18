@@ -1933,7 +1933,7 @@ class PlotBackend():
         self.ax.set_xlim([-0.1,0.1])
         self.ax.set_ylim([0.0,0.2])
 
-    def draw_radar(self,folder_or_data_dict):
+    def draw_radar(self,folder_or_data_dict,legend_thing):
         episode_files = [os.path.join(folder_or_data_dict, f) for f in os.listdir(folder_or_data_dict) if f.lower().endswith('.pkl')]
         filenames_only = [f for f in os.listdir(folder_or_data_dict) if f.lower().endswith('.pkl')]
         
@@ -1969,8 +1969,8 @@ class PlotBackend():
             dist_traveled_list.append(mag_dist)
             end_poses.append(data[-1]['state']['obj_2']['pose'][0][0:2])
             goal_poses.append(data[-1]['state']['goal_pose']['goal_pose'])
-            if count% 100 ==0:
-                print('count = ', count)
+            # if count% 100 ==0:
+            #     print('count = ', count)
             count +=1
         end_poses = np.array(end_poses)
         end_poses = end_poses - np.array([0,0.1])
@@ -1987,14 +1987,14 @@ class PlotBackend():
                     dtemp = g/np.linalg.norm(g)*np.dot(e,g/np.linalg.norm(g))
                     dist_along_thing[name_key_og2[i]].append(dtemp)
                     efficiency[name_key_og2[i]].append(np.linalg.norm(dtemp)/dt)
-        print(dist_along_thing)
-        print('efficiency', efficiency, dist_traveled_list)
+        # print(dist_along_thing)
+        # print('efficiency', efficiency, dist_traveled_list)
         # print(np.unique(goal_poses,axis=0))
         finals = []
         alls = []
         net_efficiency = []
         for k in name_key2:
-            print(k, dist_along_thing[k])
+            # print(k, dist_along_thing[k])
             finals.append(np.average(dist_along_thing[k],axis=0))
             alls.append(np.linalg.norm(dist_along_thing[k][0]))
             net_efficiency.append(efficiency[k][0])
@@ -2007,15 +2007,17 @@ class PlotBackend():
                 pass
         finals.append(finals[0])
         finals = np.array(finals)
-        print(finals)
+        print(legend_thing)
         print(f'net efficiency: {np.average(net_efficiency)}, {np.std(net_efficiency)}')
-        print('total distance from the avg',np.sum(np.linalg.norm(finals[0:8],axis=1)))
+        # print('total distance from the avg',np.sum(np.linalg.norm(finals[0:8],axis=1)))
         print(f'what we need. mean: {np.sum(alls)/3}, {np.std(alls)}')
+        print()
         self.ax.plot(finals[:,0],finals[:,1]+0.1)
         # self.ax.fill(finals[:,0],finals[:,1]+0.1, alpha=0.3)
         self.ax.set_xlim([-0.07,0.07])
         self.ax.set_ylim([0.04,0.16])
         self.ax.set_xlabel('X pos (m)')
         self.ax.set_ylabel('Y pos (m)')
-        self.ax.legend(['State 1','State 2','State 3'])
+        self.legend.append(legend_thing)
+        self.ax.legend(self.legend)
         # self.ax.scatter(end_poses[:,0],end_poses[:,1])
