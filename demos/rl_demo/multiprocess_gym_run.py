@@ -236,7 +236,7 @@ def main(filepath = None):
     num_cpu = multiprocessing.cpu_count() # Number of processes to use
     # Create the vectorized environment
     if filepath is None:
-        filename = 'JA_fullstate_A_rand'
+        filename = 'FTP_state_3_old'
         filepath = './data/' + filename +'/experiment_config.json'
         thing = 'run'
     else:
@@ -289,14 +289,16 @@ def main(filepath = None):
 
     model.learn(total_timesteps=args['epochs']*(args['tsteps']+1), callback=callback)
     # model.save('./data/'+filename+'/best_policy')
-    vec_env.env_method('evaluate')
-    for _ in range(1200):
-        obs =  vec_env.env_method('reset')
-        done = False
-        print(np.shape(obs))
-        while not done:
-            action, _ = model.predict(obs, deterministic=True)
-            obs, _, done, _ = vec_env[0].step(action)
+    # vec_env.env_method('evaluate')
+    # for _ in range(1200):
+    #     obs =  vec_env.env_method('reset')
+    #     done = False
+    #     print(np.shape(obs))
+    #     while not done:
+    #         action, _ = model.predict(obs, deterministic=True)
+    #         obs, _, done, _ = vec_env[0].step(action)
 
 if __name__ == '__main__':
-    main()
+    # main('./data/FTP_halfstate_B_rand/experiment_config.json')
+    main('./data/FTP_fullstate_B_rand/experiment_config.json')
+    main('./data/FTP_state_3_B_old/experiment_config.json')
