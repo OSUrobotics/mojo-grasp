@@ -54,8 +54,8 @@ class PlotBackend():
             self.clear_axes()
         self.ax.plot(trajectory_points[:,0], trajectory_points[:,1])
         self.ax.plot(ideal[:,0],ideal[:,1])
-        self.ax.set_xlim([-0.07,0.07])
-        self.ax.set_ylim([0.04,0.16])
+        self.ax.set_xlim([-0.08,0.08])
+        self.ax.set_ylim([0.02,0.18])
         self.ax.set_xlabel('X pos (m)')
         self.ax.set_ylabel('Y pos (m)')                                                                                                                                                                                                                                   
         self.legend.extend(['RL Object Trajectory - episode '+str(episode_number), 'Ideal Path to Goal - episode '+str(episode_number)])
@@ -437,7 +437,7 @@ class PlotBackend():
          
         self.curr_graph = 'explored'
     
-    def draw_net_reward(self, folder_or_data_dict):
+    def draw_net_reward(self, folder_or_data_dict,plot_args=None):
         if type(folder_or_data_dict) is str:
             print('this will be slow, and we both know it')
             
@@ -491,8 +491,12 @@ class PlotBackend():
             rewards = moving_average(rewards,self.moving_avg)
         if self.clear_plots | (self.curr_graph !='Group_Reward'):
             self.clear_axes()
-        self.legend = ['State 1 Joint Angle', 'State 2 Joint Angle','State 3 Joint Angle','State 1 Finger Tip','State 2 Finger Tip', 'State 3 Finger Tip']
-        self.ax.plot(range(len(rewards)), rewards)
+             
+        self.legend.append('Average Agent Reward')
+        if plot_args is None:
+            self.ax.plot(range(len(rewards)), rewards)
+        else:
+            self.ax.plot(range(len(rewards)), rewards, color=plot_args[0], linestyle=plot_args[1])
         self.ax.set_xlabel('Episode Number')
         self.ax.set_ylabel('Average Total Reward Over the Entire Episode')
         self.ax.set_title("Agent Reward over Episode")
@@ -1211,8 +1215,8 @@ class PlotBackend():
         #              markerfacecolor='darkorange',markeredgecolor='darkorange')
         # self.ax.plot(finger_contact2[0], finger_contact2[1], marker='s', markersize=5,
         #              markerfacecolor='darkgreen',markeredgecolor='darkgreen')
-        self.ax.set_xlim([-0.07,0.07])
-        self.ax.set_ylim([0.04,0.16])
+        self.ax.set_xlim([-0.08,0.08])
+        self.ax.set_ylim([0.02,0.18])
         self.ax.set_xlabel('X pos (m)')
         self.ax.set_ylabel('Y pos (m)')
         for i,j in zip(arrow_points,next_points):
@@ -1388,7 +1392,7 @@ class PlotBackend():
         self.curr_graph = 'Group_Reward'
         return return_finger_rewards
             
-    def draw_scatter_end_dist(self, folder_path):
+    def draw_scatter_end_dist(self, folder_path, cmap='plasma'):
         
         episode_files = [os.path.join(folder_path, f) for f in os.listdir(folder_path) if f.lower().endswith('.pkl')]
         filenames_only = [f for f in os.listdir(folder_path) if f.lower().endswith('.pkl')]
@@ -1421,7 +1425,12 @@ class PlotBackend():
         # print(goals)
         end_dists = np.array(end_dists)
         end_dists = np.clip(end_dists, 0, 0.025)
-        a = self.ax.scatter(goals[:,0]*100, goals[:,1]*100, c = end_dists*100, cmap='jet')
+
+        num_success = end_dists < 0.005
+        try:
+            a = self.ax.scatter(goals[:,0]*100, goals[:,1]*100, c = end_dists*100, cmap=cmap)
+        except:
+            a = self.ax.scatter(goals[:,0]*100, goals[:,1]*100, c = end_dists*100, cmap='plasma')
         # self.legend.extend(['Ending Goal Distance'])
         # self.ax.legend(self.legend)
         # self.ax.plot(linea[:,0],linea[:,1])
@@ -1432,14 +1441,15 @@ class PlotBackend():
 
         self.ax.set_ylabel('Y position (cm)')
         self.ax.set_xlabel('X position (cm)')
-        self.ax.set_xlim([-7,7])
-        self.ax.set_ylim([-7,7])
+        self.ax.set_xlim([-8,8])
+        self.ax.set_ylim([-8,8])
         self.ax.set_title('Distance to Goals')
         self.ax.grid(False)
         self.colorbar = self.fig.colorbar(a, ax=self.ax, extend='max')
          
         self.curr_graph = 'scatter'
         print(f'average end distance {mean} +/- {std}')
+        print(f'success percent = {np.sum(num_success)/len(num_success)*100}')
         return [mean, std]
         
     def draw_scatter_contact_dist(self,folder_path):

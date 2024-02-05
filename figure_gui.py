@@ -17,8 +17,11 @@ class FigureGui():
                          [sg.Checkbox('JA_Real_S1_A_A',key='JA_Real_S1_A_A', default=False),sg.Checkbox('JA_Real_S2_A_A',key='JA_Real_S2_A_A', default=False),sg.Checkbox('JA_Real_S3_A_A',key='JA_Real_S3_A_A', default=False)],
                          [sg.Button("Go Avanced")]]
         self.high_level_folders = ['FTP_halfstate_A_rand','FTP_fullstate_A_rand',
-                                   'FTP_newstate_A_rand','JA_halfstate_A_rand',
-                                   'JA_fullstate_A_rand','JA_newstate_A_rand']
+                                   'FTP_state_3_old','JA_halfstate_A_rand',
+                                   'JA_fullstate_A_rand','JA_state_3_old',
+                                   'FTP_halfstate_B_rand','FTP_fullstate_B_rand',
+                                   'FTP_state_3_B_old', 'JA_halfstate_B_rand',
+                                   'JA_fullstate_B_rand','JA_state_3_B_old']
         self.low_level_folders = ['ast_a','ast_b','Real_A','Real_B']
 
         data_layout2 = [[sg.Checkbox('States',key='State',default=False), sg.Checkbox('Actions',key='Action',default=False),sg.Checkbox('Hands',key='Hand',default=False),sg.Checkbox('Domains',key='Domain',default=False)],
@@ -34,6 +37,7 @@ class FigureGui():
 
     def tick(self):
         event, values = self.window.read()
+        linstyle = ['solid','dotted','dashed']
         if event == 'Go':
             key = [values['State'],values['Action'],values['Hand'],values['Domain']]
             combinations = [[],[]]
@@ -41,14 +45,15 @@ class FigureGui():
                 highs = [self.high_level_folders[0],self.high_level_folders[1],self.high_level_folders[2],self.high_level_folders[3],self.high_level_folders[4],self.high_level_folders[5]]
             elif key[0] and not key[1]:
                 highs = [[self.high_level_folders[0],self.high_level_folders[1],self.high_level_folders[2]],
-                         [self.high_level_folders[3],self.high_level_folders[4],self.high_level_folders[5]]]
+                         [self.high_level_folders[3],self.high_level_folders[4],self.high_level_folders[5]],
+                         [self.high_level_folders[6],self.high_level_folders[7],self.high_level_folders[8]],
+                         [self.high_level_folders[9],self.high_level_folders[10],self.high_level_folders[11]]]
             elif not key[0] and key[1]:
                 highs = [[self.high_level_folders[0],self.high_level_folders[3]],
                          [self.high_level_folders[1],self.high_level_folders[4]],
                          [self.high_level_folders[2],self.high_level_folders[5]]]
             else:
                 highs = [[self.high_level_folders[0]],[self.high_level_folders[1]],[self.high_level_folders[2]],[self.high_level_folders[3]],[self.high_level_folders[4]],[self.high_level_folders[5]]]
-
             if key[2] and key[3]:
                 lows = self.low_level_folders
             elif key[2] and not key[3]:
@@ -69,8 +74,8 @@ class FigureGui():
                     elif (len(pre) > 1) and (len(post) > 1):
                         path_folders = [p + '/' + p2 for p in pre for p2 in post]
                     try:
-                        [self.backend.draw_radar(self.base_path + fold, fold) for fold in path_folders] 
-                        self.plot_to_png()
+                        [self.backend.draw_radar(self.base_path + fold, fold, linstyle[i]) for i,fold in enumerate(path_folders)] 
+                        self.plot_to_png(pre)
                     except:
                         pass
                     self.backend.clear_axes()
@@ -84,7 +89,7 @@ class FigureGui():
     def plot_to_png(self,fig_name=''):
         self.fig.canvas.draw()
         
-        plt.savefig(f'temp{self.count}.png')
+        plt.savefig(f'{fig_name}_{self.count}.png')
         self.count +=1
         return True
 
@@ -92,5 +97,5 @@ if __name__ == '__main__':
     thing = FigureGui()
 
     while True:
-        event, values = thing.tick()
+        thing.tick()
     thing.close()
