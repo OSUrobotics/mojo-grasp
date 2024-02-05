@@ -54,8 +54,8 @@ class PlotBackend():
             self.clear_axes()
         self.ax.plot(trajectory_points[:,0], trajectory_points[:,1])
         self.ax.plot(ideal[:,0],ideal[:,1])
-        self.ax.set_xlim([-0.07,0.07])
-        self.ax.set_ylim([0.04,0.16])
+        self.ax.set_xlim([-0.08,0.08])
+        self.ax.set_ylim([0.02,0.18])
         self.ax.set_xlabel('X pos (m)')
         self.ax.set_ylabel('Y pos (m)')                                                                                                                                                                                                                                   
         self.legend.extend(['RL Object Trajectory - episode '+str(episode_number), 'Ideal Path to Goal - episode '+str(episode_number)])
@@ -437,7 +437,7 @@ class PlotBackend():
          
         self.curr_graph = 'explored'
     
-    def draw_net_reward(self, folder_or_data_dict):
+    def draw_net_reward(self, folder_or_data_dict,plot_args=None):
         if type(folder_or_data_dict) is str:
             print('this will be slow, and we both know it')
             
@@ -493,7 +493,10 @@ class PlotBackend():
             self.clear_axes()
              
         self.legend.append('Average Agent Reward')
-        self.ax.plot(range(len(rewards)), rewards)
+        if plot_args is None:
+            self.ax.plot(range(len(rewards)), rewards)
+        else:
+            self.ax.plot(range(len(rewards)), rewards, color=plot_args[0], linestyle=plot_args[1])
         self.ax.set_xlabel('Episode Number')
         self.ax.set_ylabel('Total Reward Over the Entire Episode')
         self.ax.set_title("Agent Reward over Episode")
@@ -1206,8 +1209,8 @@ class PlotBackend():
         #              markerfacecolor='darkorange',markeredgecolor='darkorange')
         # self.ax.plot(finger_contact2[0], finger_contact2[1], marker='s', markersize=5,
         #              markerfacecolor='darkgreen',markeredgecolor='darkgreen')
-        self.ax.set_xlim([-0.07,0.07])
-        self.ax.set_ylim([0.04,0.16])
+        self.ax.set_xlim([-0.08,0.08])
+        self.ax.set_ylim([0.02,0.18])
         self.ax.set_xlabel('X pos (m)')
         self.ax.set_ylabel('Y pos (m)')
         for i,j in zip(arrow_points,next_points):
@@ -1383,7 +1386,7 @@ class PlotBackend():
         self.curr_graph = 'Group_Reward'
         return return_finger_rewards
             
-    def draw_scatter_end_dist(self, folder_path):
+    def draw_scatter_end_dist(self, folder_path, cmap='plasma'):
         
         episode_files = [os.path.join(folder_path, f) for f in os.listdir(folder_path) if f.lower().endswith('.pkl')]
         filenames_only = [f for f in os.listdir(folder_path) if f.lower().endswith('.pkl')]
@@ -1413,24 +1416,35 @@ class PlotBackend():
         # linec = np.array([[0.0424,0.0424],[-0.0424,-0.0424]])*100
         # lined = np.array([[0.06,0.0],[-0.06,0.0]])*100
         goals = np.array(goals)
+        # print(goals)
         end_dists = np.array(end_dists)
+        end_dists = np.clip(end_dists, 0, 0.025)
 
-        a = self.ax.scatter(goals[:,0]*100, goals[:,1]*100, c = end_dists*100, cmap='jet')
+        num_success = end_dists < 0.005
+        try:
+            a = self.ax.scatter(goals[:,0]*100, goals[:,1]*100, c = end_dists*100, cmap=cmap)
+        except:
+            a = self.ax.scatter(goals[:,0]*100, goals[:,1]*100, c = end_dists*100, cmap='plasma')
         # self.legend.extend(['Ending Goal Distance'])
         # self.ax.legend(self.legend)
         # self.ax.plot(linea[:,0],linea[:,1])
         # self.ax.plot(lineb[:,0],lineb[:,1])
         # self.ax.plot(linec[:,0],linec[:,1])
         # self.ax.plot(lined[:,0],lined[:,1])
+        mean, std = np.average(end_dists), np.std(end_dists)
+
         self.ax.set_ylabel('Y position (cm)')
         self.ax.set_xlabel('X position (cm)')
-        self.ax.set_xlim([-7,7])
-        self.ax.set_ylim([-7,7])
+        self.ax.set_xlim([-8,8])
+        self.ax.set_ylim([-8,8])
         self.ax.set_title('Distance to Goals')
         self.ax.grid(False)
-        self.colorbar = self.fig.colorbar(a, ax=self.ax)
+        self.colorbar = self.fig.colorbar(a, ax=self.ax, extend='max')
          
         self.curr_graph = 'scatter'
+        print(f'average end distance {mean} +/- {std}')
+        print(f'success percent = {np.sum(num_success)/len(num_success)*100}')
+        return [mean, std]
         
     def draw_scatter_contact_dist(self,folder_path):
         
@@ -1811,3 +1825,96 @@ class PlotBackend():
         self.ax.legend(self.legend)
         self.ax.set_title('Average goals in 100 episodes')
         self.curr_graph = 'path'
+    
+
+    def draw_radar(self,folder_or_data_dict,legend_thing, linestyle=None):
+        episode_files = [os.path.join(folder_or_data_dict, f) for f in os.listdir(folder_or_data_dict) if f.lower().endswith('.pkl')]
+        filenames_only = [f for f in os.listdir(folder_or_data_dict) if f.lower().endswith('.pkl')]
+        
+        filenums = [re.findall('\d+',f) for f in filenames_only]
+        final_filenums = []
+        for i in filenums:
+            if len(i) > 0 :
+                final_filenums.append(int(i[0]))
+        
+        sorted_inds = np.argsort(final_filenums)
+        final_filenums = np.array(final_filenums)
+        temp = final_filenums[sorted_inds]
+        episode_files = np.array(episode_files)
+        filenames_only = np.array(filenames_only)
+        count = 0
+        episode_files = episode_files[sorted_inds].tolist()
+        end_poses = []
+        goal_poses = []
+        name_key_og = [[-0.06,0],[-0.0424,0.0424],[0.0,0.06],[0.0424,0.0424],[0.06,0.0],[0.0424,-0.0424],[0.0,-0.06],[-0.0424,-0.0424]]
+        name_key = [[0,0.07],[0.0495,0.0495],[0.07,0.0],[0.0495,-0.0495],[0.0,-0.07],[-0.0495,-0.0495],[-0.07,0.0],[-0.0495,0.0495]]
+        name_key2 = ["N","NE","E","SE","S","SW", "W","NW"]
+        name_key_og2 = ["E","NE","N","NW","W","SW","S","SE"]
+        dist_traveled_list = []
+        for episode_file in episode_files:
+            with open(episode_file, 'rb') as ef:
+                tempdata = pkl.load(ef)
+
+            data = tempdata['timestep_list']
+            poses = np.array([i['state']['obj_2']['pose'][0][0:2] for i in data])
+            dist_traveled = [poses[i+1]-poses[i] for i in range(len(poses)-1)]
+            temp = [np.linalg.norm(d) for d in dist_traveled]
+            mag_dist = np.sum(temp)
+            dist_traveled_list.append(mag_dist)
+            end_poses.append(data[-1]['state']['obj_2']['pose'][0][0:2])
+            goal_poses.append(data[-1]['state']['goal_pose']['goal_pose'])
+            # if count% 100 ==0:
+            #     print('count = ', count)
+            count +=1
+        end_poses = np.array(end_poses)
+        end_poses = end_poses - np.array([0,0.1])
+        dist_along_thing = {'E':[],'NE':[],'N':[],'NW':[],'W':[],'SW':[],'S':[],'SE':[]}
+        efficiency = {'E':[],'NE':[],'N':[],'NW':[],'W':[],'SW':[],'S':[],'SE':[]}
+        for e, g, dt in zip(end_poses, goal_poses, dist_traveled_list):
+            for i,name in enumerate(name_key):
+                if name == g:
+                    dtemp = g/np.linalg.norm(g)*np.dot(e,g/np.linalg.norm(g))
+                    dist_along_thing[name_key2[i]].append(dtemp)
+                    efficiency[name_key2[i]].append(np.linalg.norm(dtemp)/dt)
+            for i,name in enumerate(name_key_og):
+                if name == g:
+                    dtemp = g/np.linalg.norm(g)*np.dot(e,g/np.linalg.norm(g))
+                    dist_along_thing[name_key_og2[i]].append(dtemp)
+                    efficiency[name_key_og2[i]].append(np.linalg.norm(dtemp)/dt)
+        # print(dist_along_thing)
+        # print('efficiency', efficiency, dist_traveled_list)
+        # print(np.unique(goal_poses,axis=0))
+        finals = []
+        alls = []
+        net_efficiency = []
+        for k in name_key2:
+            # print(k, dist_along_thing[k])
+            finals.append(np.average(dist_along_thing[k],axis=0))
+            alls.append(np.linalg.norm(dist_along_thing[k][0]))
+            net_efficiency.append(efficiency[k][0])
+            try:
+                alls.append(np.linalg.norm(dist_along_thing[k][1]))
+                net_efficiency.append(efficiency[k][1])
+                alls.append(np.linalg.norm(dist_along_thing[k][2]))
+                net_efficiency.append(efficiency[k][2])
+            except:
+                pass
+        finals.append(finals[0])
+        finals = np.array(finals)
+        print(legend_thing)
+        print(f'net efficiency: {np.average(net_efficiency)}, {np.std(net_efficiency)}')
+        # print('total distance from the avg',np.sum(np.linalg.norm(finals[0:8],axis=1)))
+        print(f'what we need. mean: {np.sum(alls)}, {np.std(alls)}')
+        print()
+        if linestyle is None:
+            self.ax.plot(finals[:,0],finals[:,1]+0.1)
+        else:
+            self.ax.plot(finals[:,0],finals[:,1]+0.1, linestyle=linestyle)
+        # self.ax.fill(finals[:,0],finals[:,1]+0.1, alpha=0.3)
+        self.ax.set_xlim([-0.08,0.08])
+        self.ax.set_ylim([0.02,0.18])
+        self.ax.set_xlabel('X pos (m)')
+        self.ax.set_ylabel('Y pos (m)')
+        self.legend.append(legend_thing)
+        self.ax.legend(self.legend)
+        # self.ax.scatter(end_poses[:,0],end_poses[:,1])

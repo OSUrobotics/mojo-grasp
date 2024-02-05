@@ -62,7 +62,7 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None, acti
         args = json.load(argfile)
     if hand is not None:
         args['hand'] = hand
-        args['rstart'] = 'none'
+        # args['rstart'] = 'none'
         if hand=='2v2-B':
             args['hand_path']="/home/mothra/mojo-grasp/demos/rl_demo/resources/2v2_Hand_B/hand/2v2_65.35_65.35_1.1_53.urdf"
         elif hand=='2v2':
@@ -238,12 +238,14 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None, acti
         yeval = [-0.045, -0.06, -0.045, 0, 0.045, 0.06, 0.045, 0]
         eval_names = ['SE','S','SW','W','NW','N','NE','E'] 
         if action_list == None:
-            with open(overall_path + '/demos/rl_demo/data/eval_best_on_multi/Test/episode_3217.pkl','rb') as fol:
+            with open(overall_path + '/demos/rl_demo/data/JA_state_3_old/Eval_A/Evaluate_89.pkl','rb') as fol:
                 data = pkl.load(fol)
             action_list = data#np.array(data)
     names = ['AsteriskSE.pkl','AsteriskS.pkl','AsteriskSW.pkl','AsteriskW.pkl','AsteriskNW.pkl','AsteriskN.pkl','AsteriskNE.pkl','AsteriskE.pkl']
     pose_list = [[i,j] for i,j in zip(x,y)]
-    eval_pose_list = [[i,j] for i,j in zip(xeval,yeval)]
+
+    eval_pose_list = [[0,0.07],[0.0495,0.0495],[0.07,0.0],[0.0495,-0.0495],[0.0,-0.07],[-0.0495,-0.0495],[-0.07,0.0],[-0.0495,0.0495]]
+    # eval_pose_list = [[i,j] for i,j in zip(xeval,yeval)]
     if args['task'] =='Rotation':
         pose_list = [[i,j,k] for i,j,k in zip(x,y,theta)]
         eval_pose_list = [[i,j,k] for i,j,k in zip(x,y,eval_theta)]
@@ -252,7 +254,7 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None, acti
     print(args)
     try:
         if (args['viz']) | (runtype=='replay') | (runtype=='eval'):
-            physics_client = p.connect(p.GUI)
+            physics_client = p.connect(p.DIRECT)
         else:
             physics_client = p.connect(p.DIRECT)
     except KeyError:
@@ -378,7 +380,7 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None, acti
             step = 0
             while not done:
                 # print('step: ',step)
-                action, _ = model.predict(obs, deterministic=True)
+                action, _ = model.predict(obs, deterministic=False)
                 mirrored_action = np.array([-action[2], action[3],-action[0],action[1]])
                 obs, reward, done, info = gym_env.step(action, viz=False)
                 step +=1
@@ -422,9 +424,9 @@ def run_pybullet(filepath, window=None, runtype='run', episode_number=None, acti
                 # temp = np.array([0,0,0,0])
                 # print("Action: ", action, type(action))
                 # mirrored_action = np.array([-action[2], action[3],-action[0],action[1]])
-                obs, reward, done, info = gym_env.step(np.array(action),viz=False)
+                obs, reward, done, info = gym_env.step(np.array(action),viz=True)
                 # print('obs=', obs, 'reward=', reward, 'done=', done)
-                time.sleep(0.5)
+                # time.sleep(0.5)
                 # env.render(mode='console')
     p.disconnect()
 
@@ -462,9 +464,15 @@ def main():
         # run_pybullet(overall_path + '/demos/rl_demo/data/hand_transfer_FTP/experiment_config.json', runtype='replay',episode_number=i)
     # run_pybullet(overall_path + '/demos/rl_demo/data/hand_transfer_FTP/experiment_config.json', runtype='eval')
     # run_pybullet(overall_path + '/demos/rl_demo/data/hand_transfer_JA/experiment_config.json', runtype='eval')
-    run_pybullet(overall_path + '/demos/rl_demo/data/FTP_fullstate_A_rand/experiment_config.json', runtype='eval', hand=hand_b_key)
+    run_pybullet(overall_path + '/demos/rl_demo/data/JA_state_3_B_old/experiment_config.json', runtype='eval', hand=hand_b_key)
+    # run_pybullet(overall_path + '/demos/rl_demo/data/FTP_fullstate_A_rand/experiment_config.json', runtype='eval', hand=hand_b_key)
+    # run_pybullet(overall_path + '/demos/rl_demo/data/FTP_state_3_old/experiment_config.json', runtype='eval', hand=hand_b_key)
+    # run_pybullet(overall_path + '/demos/rl_demo/data/JA_state_3_old/experiment_config.json', runtype='eval', hand=hand_b_key)
+    # run_pybullet(overall_path + '/demos/rl_demo/data/JA_fullstate_A_rand/experiment_config.json', runtype='eval', hand=hand_b_key)
+    # run_pybullet(overall_path + '/demos/rl_demo/data/JA_halfstate_A_rand/experiment_config.json', runtype='eval', hand=hand_b_key)
 
-    # run_pybullet(overall_path+'/demos/rl_demo/data/full_full_ppo/experiment_config.json',runtype='replay', episode_number=1)
+
+    # run_pybullet(overall_path+'/demos/rl_demo/data/JA_state_3_old/experiment_config.json',runtype='replay', episode_number=1)
 
     # run_pybullet(overall_path+'/demos/rl_demo/data/wedge/wedge_forward_right/experiment_config.json',runtype='run')
     # run_pybullet(overall_path+'/demos/rl_demo/data/wedge/wedge_forward_left/experiment_config.json',runtype='run')

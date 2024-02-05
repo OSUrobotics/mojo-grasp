@@ -238,14 +238,15 @@ class SingleShapeEnv(Environment):
                 self.step()
         if self.rand_finger_pos:
             print('if you see me you fucked up')
-            y_change = np.random.uniform(-0.01,0.01,2)
+            # y_change = np.random.uniform(-0.01,0.01,2)
+            y_change = [0,0]
             # hand a
             f1_pos = [0.026749999999999996, 0.10778391676312778 + y_change[0], 0.05]
             f2_pos = [-0.026749999999999996, 0.10778391676312778 + y_change[1], 0.05]
             
             #hand b
-            f1_pos = [0.024838369758908428, 0.10938401473292121 + y_change[0], 0.05]
-            f2_pos = [-0.024838369758908428, 0.10938401473292121 + y_change[1], 0.05]
+            # f1_pos = [0.024838369758908428, 0.10938401473292121 + y_change[0], 0.05]
+            # f2_pos = [-0.024838369758908428, 0.10938401473292121 + y_change[1], 0.05]
             f1_angs = p.calculateInverseKinematics(self.hand_id, 2, f1_pos, maxNumIterations=3000)
             f2_angs = p.calculateInverseKinematics(self.hand_id, 5, f2_pos, maxNumIterations=3000)
             p.resetJointState(self.hand_id, 0, -np.pi/2)

@@ -69,7 +69,8 @@ def main():
     menu = [['File', ['Open Folder', 'Exit']], ['Help', ['About', ]]]
 
 
-    scatter_plot_tab = [[sg.Button('End Dist', size=(8, 2)), sg.Button('End Poses', size=(8, 2)), sg.Button('Contact Dist', size=(8, 2)), sg.Button('Average Goals', key='Average Goals',size=(8, 2)), sg.Button('', key='',size=(8, 2))]]
+    scatter_plot_tab = [[sg.Button('End Dist', size=(8, 2)), sg.Button('End Poses', size=(8, 2)), sg.Button('Contact Dist', size=(8, 2)), sg.Button('Average Goals', key='Average Goals',size=(8, 2)), sg.Button('', key='',size=(8, 2))],
+                        [sg.Text('Colormap'),sg.Input('plasma_r',key='-cmap',size=(8, 1))]]
 
     plot_buttons = [[sg.Button('Object Path', size=(8, 2)), sg.Button('Finger Angles', size=(8, 2)),sg.Button('Rewards', size=(8, 2), key='FullRewards'), sg.Button('Contact Rewards', key='ContactRewards',size=(8, 2)), sg.Button('Distance/Slope Rewards', key='SimpleRewards',size=(8, 2))],
                     [sg.Button('Explored Region', size=(8,2)), sg.Button('Actor Output', size=(8, 2)), sg.Button('Aout Comparison', size=(8, 2)), sg.Button('RewardSplit',size=(8, 2)), sg.Button('Max Percent', size=(8,2))],
@@ -271,7 +272,7 @@ def main():
                 backend.draw_net_finger_reward(folder)
             figure_canvas_agg.draw()
         elif event == 'End Dist':
-            backend.draw_scatter_end_dist(folder)
+            backend.draw_scatter_end_dist(folder, values['-cmap'])
             figure_canvas_agg.draw()
         elif event =='Contact Dist':
             backend.draw_scatter_contact_dist(folder)
