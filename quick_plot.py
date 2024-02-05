@@ -13,6 +13,16 @@ from mojograsp.simcore.data_gui_backend import PlotBackend
 
 path = '/home/mothra/mojo-grasp/demos/rl_demo/data/'
 
+folders = ['FTP_halfstate_A_rand','FTP_fullstate_A_rand','FTP_state_3_old',
+           'JA_halfstate_A_rand','JA_fullstate_A_rand','JA_state_3_old']
+
+plot_args = [['blue','solid'],
+             ['orange','solid'],
+             ['green','solid'],
+             ['blue','dashed'],
+             ['orange','dashed'],
+             ['green','dashed']]
+
 def draw_path(episode):
     data = episode['timestep_list']
     trajectory_points = [f['state']['current_state']['obj_2']['pose'][0] for f in data]
@@ -28,14 +38,13 @@ def draw_path(episode):
     legend = ['RL Trajectory','Ideal Path to Goal']
     # plt.legend(legend)
     plt.title('Object Path')
-
-
-folders = ['JA_newstate_A_rand','JA_fullstate_A_rand','JA_halfstate_A_rand',  'FTP_newstate_A_rand', 'FTP_fullstate_A_rand', 'FTP_halfstate_A_rand']
-PB = PlotBackend(path+ folders[0])
-PB.clear_plots = False
-PB.moving_avg = 1000
-figures, _ = PB.get_figure()
-for folder in folders:
-    PB.draw_net_reward(path+folder+'/Test')
-
+# for i,args in enumerate(plot_args):
+#     plt.plot(range(10), range(i*10,i*10+10), color = args[0], linestyle=args[1])
+# plt.show()
+    
+backend =PlotBackend(path+folders[0])
+fig,ax = backend.get_figure()
+backend.moving_avg = 1000
+for folder,plot_stuff in zip(folders,plot_args):
+    backend.draw_net_reward(path+folder+'/Test/',plot_args=plot_stuff)
 plt.show()
