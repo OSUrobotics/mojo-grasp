@@ -296,10 +296,12 @@ class MultiprocessSingleShapeEnv(Environment):
             # print('positions', f1_angs,f2_angs)
             # print('fuck')
             # print('finger tip poses', f1_pos, f2_pos)
-            f1_dist = self.p.getClosestPoints(self.obj.id, self.hand.id, 10, -1, 1, -1)
-            f2_dist = self.p.getClosestPoints(self.obj.id, self.hand.id, 10, -1, 4, -1)
-            # print('f1 dist', f1_dist)
-            # print('f2_dist', f2_dist)
+            # f1_dist = self.p.getClosestPoints(self.obj.id, self.hand.id, 10, -1, 1, -1)
+            # f2_dist = self.p.getClosestPoints(self.obj.id, self.hand.id, 10, -1, 4, -1)
+            # obj_velocity = self.p.getBaseVelocity(self.obj.id)
+            # print('f1 dist', f1_dist[0][8])
+            # print('f2_dist', f2_dist[0][8])
+            # print(obj_velocity)
         # input('fak')
 
     def reset_to_pos(self, object_pos, finger_angles):

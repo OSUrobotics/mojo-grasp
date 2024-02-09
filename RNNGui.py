@@ -70,7 +70,7 @@ class RNNGui():
                          [sg.Checkbox('2v2_35.65_65.35_43',key='2v2_35.65_65.35_1.1_43', default=False),sg.Checkbox('2v2_35.65_65.35_53',key='2v2_35.65_65.35_1.1_53', default=False),sg.Checkbox('2v2_35.65_65.35_63',key='2v2_35.65_65.35_1.1_63', default=False),sg.Checkbox('2v2_35.65_65.35_73',key='2v2_35.65_65.35_1.1_73', default=False)],
                          [sg.Checkbox('2v2_70.30_70.30_43',key='2v2_70.30_70.30_1.1_43', default=False),sg.Checkbox('2v2_70.30_70.30_53',key='2v2_70.30_70.30_1.1_53', default=False),sg.Checkbox('2v2_70.30_70.30_63',key='2v2_70.30_70.30_1.1_63', default=False),sg.Checkbox('2v2_70.30_70.30_73',key='2v2_70.30_70.30_1.1_73', default=False)],
                          [sg.Checkbox('2v2_70.30_50.50_43',key='2v2_70.30_50.50_1.1_43', default=False),sg.Checkbox('2v2_70.30_50.50_53',key='2v2_70.30_50.50_1.1_53', default=False),sg.Checkbox('2v2_70.30_50.50_63',key='2v2_70.30_50.50_1.1_63', default=False),sg.Checkbox('2v2_70.30_50.50_73',key='2v2_70.30_50.50_1.1_73', default=False)],
-                         [sg.Text("Task"), sg.OptionMenu(values=('asterisk','random','full_random','unplanned_random','single', 'wedge', 'double_wedge', 'clump_wedge', "big_random", "Rotation", 'triple', 'multi'), k='-task', default_value='unplanned_random')],
+                         [sg.Text("Task"), sg.OptionMenu(values=('asterisk','single',"big_random", "Rotation", 'triple', 'multi'), k='-task', default_value='unplanned_random')],
                          [sg.Checkbox("Randomized Start Position", key='-rstart',default=False), sg.Checkbox("Randomized Finger Position", key='-rfinger',default=False)],
                          [sg.Text('Replay Buffer Sampling'), sg.OptionMenu(values=('priority','random','random+expert'), k='-sampling', default_value='priority')]]
         
@@ -96,6 +96,7 @@ class RNNGui():
                        [sg.Checkbox('Finger Object Distance', default=False, k='-fod')],
                        [sg.Checkbox('Finger Tip Angle',default=True, k='-fta')],
                        [sg.Checkbox('Goal Position',default=True, k='-gp')],
+                       [sg.Checkbox('Goal Orientation', default=True, k = '-go')],
                        [sg.Checkbox('Eigenvalues',default=False,key='-eva')],
                        [sg.Checkbox('Eigenvectors',default=False,key='-evc')],
                        [sg.Checkbox('HandParameters',default=False,key='-params')],
@@ -255,6 +256,11 @@ class RNNGui():
                 state_maxes.extend([0.105, 0.105])
             state_len += 2
             state_list.append('gp')
+        if values['-go']:
+            state_mins.append(-np.pi)
+            state_maxes.append(np.pi)
+            state_len +=1
+            state_list.append('go')
         if self.args['pv'] > 0:
             state_len += state_len * self.args['pv']
             temp_mins = state_mins.copy()

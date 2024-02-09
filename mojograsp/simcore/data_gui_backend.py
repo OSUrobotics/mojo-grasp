@@ -1415,6 +1415,8 @@ class PlotBackend():
 
             data = tempdata['timestep_list']
             goals.append(data[0]['state']['goal_pose']['goal_pose'][0:2])
+            if all(np.isclose(data[0]['state']['goal_pose']['goal_pose'][0:2],[0.0009830552164485, -0.0687461950930642])):
+                print(episode_file, data[0]['state']['goal_pose']['goal_pose'][0:2])
             end_dists.append(data[-1]['reward']['distance_to_goal'])
         self.clear_axes()
         # linea = np.array([[0.0,0.06],[0.0,-0.06]])*100
