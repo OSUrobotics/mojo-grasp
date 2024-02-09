@@ -11,54 +11,7 @@ import numpy as np
 import pybullet as p
 from copy import deepcopy
 from mojograsp.simobjects.two_finger_gripper import TwoFingerGripper
-
-class GoalHolder():
-    def __init__(self, goal_pose, goal_names = None):
-        self.pose = goal_pose
-        self.name = 'goal_pose'
-        self.len = len(self.pose)
-        self.goal_names = goal_names
-        if len(np.shape(self.pose)) == 1:
-            self.pose = [self.pose]
-        self.run_num = 0
-    
-    def get_data(self):
-        return {'goal_pose':self.pose[self.run_num%self.len]}
-    
-    def get_name(self):
-        try:
-            return self.goal_names[self.run_num%self.len]
-        except TypeError:
-            return 'Evaluate'
-    
-    def next_run(self):
-        self.run_num +=1
-        # print('Run number',self.run_num)
-        
-    def reset(self):
-        self.run_num = 0
-        np.random.shuffle(self.pose)
-        print('shuffling the pose order')
-    
-    def __len__(self):
-        return len(self.pose)
-    
-class RandomGoalHolder(GoalHolder):
-    def __init__(self, radius_range: list):
-        self.name = 'goal_pose'
-        self.rrange = radius_range
-        self.pose = []
-        self.next_run()
-        
-    
-    def next_run(self):
-        l = np.sqrt(np.random.uniform(self.rrange[0]**2,self.rrange[1]**2))
-        ang = np.pi * np.random.uniform(0,2)
-        self.pose = [l * np.cos(ang),l * np.sin(ang)]
-    
-    def get_data(self):
-        return {'goal_pose':self.pose}
-        
+from mojograsp.simcore.goal_holder import *
         
 class StateRL(StateDefault):
     """
@@ -80,6 +33,7 @@ class StateRL(StateDefault):
         for object in self.objects:
             if type(object) == TwoFingerGripper:
                 temp = object.link_lengths
+                print(temp)
                 self.hand_params = [temp[0][0][1],temp[0][1][1],temp[1][0][1],temp[1][1][1], object.palm_width]
         if prev_len > 0:            
             self.previous_states = [{}]*prev_len

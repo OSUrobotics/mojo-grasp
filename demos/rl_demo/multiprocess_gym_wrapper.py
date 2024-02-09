@@ -17,6 +17,7 @@ from mojograsp.simcore.reward import Reward
 from PIL import Image
 from stable_baselines3.common.callbacks import EvalCallback
 from demos.rl_demo.rl_gym_wrapper import NoiseAdder
+import mojograsp.simcore.reward_functions as rf
 
 class MultiEvaluateCallback(EvalCallback):
 
@@ -73,7 +74,54 @@ class MultiprocessGymWrapper(gym.Env):
         self.camera_view_matrix = self.p.computeViewMatrix((0.0,0.1,0.5),(0.0,0.1,0.005), (0.0,1,0.0))
         # self.camera_projection_matrix = self.p = self.env.pp.computeProjectionMatrix(-0.1,0.1,-0.1,0.1,-0.1,0.1)
         self.camera_projection_matrix = self.p.computeProjectionMatrixFOV(60,4/3,0.1,0.9)
-        
+
+        self.build_reward = []
+        self.prep_reward()
+        self.tholds = {'SUCCESS_THRESHOLD':self.SUCCESS_THRESHOLD,
+                       'DISTANCE_SCALING':self.DISTANCE_SCALING,
+                       'CONTACT_SCALING':self.CONTACT_SCALING,
+                       'SUCCESS_REWARD':self.SUCCESS_REWARD}
+    def prep_reward(self):
+        """
+        Method takes in a Reward object
+        Extracts reward information from state_container and returns it as a float
+        based on the reward structure contained in self.REWARD_TYPE
+
+        :param state: :func:`~mojograsp.simcore.reward.Reward` object.
+        :type state: :func:`~mojograsp.simcore.reward.Reward`
+        """        
+        if self.REWARD_TYPE == 'Sparse':
+            self.build_reward = rf.sparse
+        elif self.REWARD_TYPE == 'Distance':
+            self.build_reward = rf.distance
+        elif self.REWARD_TYPE == 'Distance + Finger':
+            self.build_reward = rf.distance_finger
+        elif self.REWARD_TYPE == 'Hinge Distance + Finger':
+            self.build_reward = rf.hinge_distance
+        elif self.REWARD_TYPE == 'Slope':
+            self.build_reward = rf.slope
+        elif self.REWARD_TYPE == 'Slope + Finger':
+            self.build_reward = rf.slope_finger
+        elif self.REWARD_TYPE == 'SmartDistance + Finger':
+            self.build_reward = rf.smart
+        elif self.REWARD_TYPE == 'ScaledDistance + Finger':
+            self.build_reward = rf.scaled
+        elif (self.REWARD_TYPE == 'ScaledDistance+ScaledFinger') and (self.TASK != 'multi'):
+            self.build_reward = rf.double_scaled
+        elif self.REWARD_TYPE == 'SFS':
+            self.build_reward = rf.sfs
+        elif self.REWARD_TYPE == 'DFS':
+            self.build_reward = rf.dfs
+        elif self.REWARD_TYPE == 'SmartDistance + SmartFinger':
+            self.build_reward = rf.double_smart
+        elif (self.TASK == 'multi') and (self.REWARD_TYPE =='ScaledDistance+ScaledFinger'):
+            self.build_reward = rf.multi_scaled
+        elif self.REWARD_TYPE == 'Rotation':
+            self.build_reward = rf.rotation
+        else:
+            raise Exception('reward type does not match list of known reward types')
+
+
     def reset(self,special=None):
         if not self.first:
             
@@ -138,7 +186,7 @@ class MultiprocessGymWrapper(gym.Env):
             state = self.build_state(state)
         if self.STATE_NOISE > 0:
             state = self.noisey_boi.add_noise(state, self.STATE_NOISE)
-        reward, done2 = self.build_reward(reward_container)
+        reward, done2 = self.build_reward(reward_container, self.tholds)
 
 
         if self.TASK == 'multi':
@@ -180,7 +228,6 @@ class MultiprocessGymWrapper(gym.Env):
                     if key == 'op':
                         state.extend(state_container['previous_state'][i]['obj_2']['pose'][0][0:2])
                     elif key == 'oo':
-                        # print(state_container['previous_state'][i]['obj_2']['pose'][1])
                         state.extend(state_container['previous_state'][i]['obj_2']['pose'][1])
                     elif key == 'ftp':
                         state.extend(state_container['previous_state'][i]['f1_pos'][0:2])
@@ -209,6 +256,8 @@ class MultiprocessGymWrapper(gym.Env):
                         state.extend(state_container['hand_params'])
                     elif key == 'gp':
                         state.extend(state_container['previous_state'][i]['goal_pose']['goal_pose'])
+                    elif key == 'go':
+                        state.append(state_container['previous_state'][i]['goal_pose']['goal_orientation'])
                     else:
                         raise Exception('key does not match list of known keys')
 
@@ -244,6 +293,8 @@ class MultiprocessGymWrapper(gym.Env):
                 state.extend(state_container['hand_params'])
             elif key == 'gp':
                 state.extend(state_container['goal_pose']['goal_pose'])
+            elif key == 'go':
+                state.append(state_container['goal_pose']['goal_orientation'])
             else:
                 raise Exception('key does not match list of known keys')
         return state
@@ -319,82 +370,6 @@ class MultiprocessGymWrapper(gym.Env):
             else:
                 raise Exception('key does not match list of known keys')
         return state
-    
-    def build_reward(self, reward_container: Reward):
-        """
-        Method takes in a Reward object
-        Extracts reward information from state_container and returns it as a float
-        based on the reward structure contained in self.REWARD_TYPE
-
-        :param state: :func:`~mojograsp.simcore.reward.Reward` object.
-        :type state: :func:`~mojograsp.simcore.reward.Reward`
-        """        
-        done2 = False
-
-
-        if self.REWARD_TYPE == 'Sparse':
-            tstep_reward = -1 + 2*(reward_container['distance_to_goal'] < self.SUCCESS_THRESHOLD)
-        elif self.REWARD_TYPE == 'Distance':
-            tstep_reward = max(-reward_container['distance_to_goal'],-1)
-        elif self.REWARD_TYPE == 'Distance + Finger':
-            tstep_reward = max(-reward_container['distance_to_goal']*self.DISTANCE_SCALING - max(reward_container['f1_dist'],reward_container['f2_dist'])*self.CONTACT_SCALING,-1)
-        elif self.REWARD_TYPE == 'Hinge Distance + Finger':
-            tstep_reward = reward_container['distance_to_goal'] < self.SUCCESS_THRESHOLD + max(-reward_container['distance_to_goal'] - max(reward_container['f1_dist'],reward_container['f2_dist'])*self.CONTACT_SCALING,-1)
-        elif self.REWARD_TYPE == 'Slope':
-            tstep_reward = reward_container['slope_to_goal'] * self.DISTANCE_SCALING
-        elif self.REWARD_TYPE == 'Slope + Finger':
-            tstep_reward = max(reward_container['slope_to_goal'] * self.DISTANCE_SCALING  - max(reward_container['f1_dist'],reward_container['f2_dist'])*self.CONTACT_SCALING,-1)
-        elif self.REWARD_TYPE == 'SmartDistance + Finger':
-            ftemp = max(reward_container['f1_dist'],reward_container['f2_dist'])
-            temp = -reward_container['distance_to_goal'] * (1 + 4*reward_container['plane_side'])
-            # print(reward_container['plane_side'])
-            tstep_reward = max(temp*self.DISTANCE_SCALING - ftemp*self.CONTACT_SCALING,-1)
-        elif self.REWARD_TYPE == 'ScaledDistance + Finger':
-            ftemp = max(reward_container['f1_dist'], reward_container['f2_dist']) * 100 # 100 here to make ftemp = -1 when at 1 cm
-            temp = -reward_container['distance_to_goal']/reward_container['start_dist'] * (1 + 4*reward_container['plane_side'])
-            # print(reward_container['plane_side'])
-            tstep_reward = temp*self.DISTANCE_SCALING - ftemp*self.CONTACT_SCALING
-        elif (self.REWARD_TYPE == 'ScaledDistance+ScaledFinger') and (self.TASK != 'multi'):
-            ftemp = -max(reward_container['f1_dist'], reward_container['f2_dist']) * 100 # 100 here to make ftemp = -1 when at 1 cm
-            temp = -reward_container['distance_to_goal']/reward_container['start_dist'] # should scale this so that it is -1 at start 
-            ftemp,temp = max(ftemp,-2), max(temp, -2)
-            # print(ftemp,temp)
-            tstep_reward = temp*self.DISTANCE_SCALING + ftemp*self.CONTACT_SCALING
-        elif self.REWARD_TYPE == 'SFS':
-            tstep_reward = reward_container['slope_to_goal'] * self.DISTANCE_SCALING - max(reward_container['f1_dist'],reward_container['f2_dist'])*self.CONTACT_SCALING
-            if (reward_container['distance_to_goal'] < self.SUCCESS_THRESHOLD) & (np.linalg.norm(reward_container['object_velocity']) <= 0.05):
-                tstep_reward += self.SUCCESS_REWARD
-                done2 = True
-                print('SUCCESS BABY!!!!!!!')
-        elif self.REWARD_TYPE == 'DFS':
-            ftemp = max(reward_container['f1_dist'],reward_container['f2_dist'])
-            # assert ftemp >= 0
-            tstep_reward = -reward_container['distance_to_goal'] * self.DISTANCE_SCALING  - ftemp*self.CONTACT_SCALING
-            if (reward_container['distance_to_goal'] < self.SUCCESS_THRESHOLD) & (np.linalg.norm(reward_container['object_velocity']) <= 0.05):
-                tstep_reward += self.SUCCESS_REWARD
-                done2 = True
-
-                print('SUCCESS BABY!!!!!!!')
-        elif self.REWARD_TYPE == 'SmartDistance + SmartFinger':
-            ftemp = max(reward_container['f1_dist'],reward_container['f2_dist'])
-            if ftemp > 0.001:
-                ftemp = ftemp*ftemp*1000
-            temp = -reward_container['distance_to_goal'] * (1 + 4*reward_container['plane_side'])
-            tstep_reward = max(temp*self.DISTANCE_SCALING - ftemp*self.CONTACT_SCALING,-1)
-        elif (self.TASK == 'multi') and (self.REWARD_TYPE =='ScaledDistance+ScaledFinger'):
-            ftemp = -max(reward_container['f1_dist'], reward_container['f2_dist']) * 100 # 100 here to make ftemp = -1 when at 1 cm
-            temp = -reward_container['distance_to_goal']/reward_container['start_dist'] # should scale this so that it is -1 at start 
-            ftemp,temp = max(ftemp,-2), max(temp, -2)
-            success = reward_container['distance_to_goal'] < self.SUCCESS_THRESHOLD
-            # print(reward_container['distance_to_goal'], self.SUCCESS_THRESHOLD)
-            done2 = success
-            if done2:
-                print(f'dist:{temp*self.DISTANCE_SCALING}, contact:{ftemp*self.CONTACT_SCALING}, success:{success * self.SUCCESS_REWARD}, start {reward_container["start_dist"]}')
-            tstep_reward = temp*self.DISTANCE_SCALING + ftemp*self.CONTACT_SCALING + success * self.SUCCESS_REWARD
-            
-        else:
-            raise Exception('reward type does not match list of known reward types')
-        return float(tstep_reward), done2
     
     def render(self):
         pass

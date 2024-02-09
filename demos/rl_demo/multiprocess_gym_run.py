@@ -11,7 +11,8 @@ import pybullet_data
 from demos.rl_demo import multiprocess_env
 from demos.rl_demo import multiprocess_manipulation_phase
 # import rl_env
-from demos.rl_demo.multiprocess_state import MultiprocessState, GoalHolder, RandomGoalHolder
+from demos.rl_demo.multiprocess_state import MultiprocessState
+from mojograsp.simcore.goal_holder import  GoalHolder, RandomGoalHolder
 from demos.rl_demo import rl_action
 from demos.rl_demo import multiprocess_reward
 from demos.rl_demo import multiprocess_gym_wrapper
@@ -136,6 +137,17 @@ def make_pybullet(arg_dict, pybullet_instance, rank, hand_info):
         xeval = x
         yeval = y
         eval_names = ['SE'] 
+    elif args['task'] == 'Rotation':
+        # this will be changed
+        # I want to be sure we can rotate the thing in the middle first
+        x = [0.0]*100
+        y = [0.0]*100
+        orientations = np.random.uniform(-np.pi+0.1, np.pi-0.1,100)
+        orientations = orientations + np.sign(orientations)*0.1
+        xeval = x
+        yeval = y
+        eval_orientations = np.random.uniform(-np.pi+0.1, np.pi-0.1,100)
+        eval_orientations = eval_orientations + np.sign(eval_orientations)*0.1
     else:
         df = pd.read_csv(args['points_path'], index_col=False)
         print('EVALUATING BOOOIIII')
@@ -149,7 +161,7 @@ def make_pybullet(arg_dict, pybullet_instance, rank, hand_info):
     
     asterisk_test_points = [[0,0.07],[0.0495,0.0495],[0.07,0.0],[0.0495,-0.0495],[0.0,-0.07],[-0.0495,-0.0495],[-0.07,0.0],[-0.0495,0.0495]]
     names = ['AsteriskSE.pkl','AsteriskS.pkl','AsteriskSW.pkl','AsteriskW.pkl','AsteriskNW.pkl','AsteriskN.pkl','AsteriskNE.pkl','AsteriskE.pkl']
-    pose_list = [[i,j] for i,j in zip(x,y)]
+    pose_list = np.array([[i,j] for i,j in zip(x,y)])
     eval_pose_list = [[i,j] for i,j in zip(xeval,yeval)]
 
     #uncomment for asterisk test
@@ -157,7 +169,7 @@ def make_pybullet(arg_dict, pybullet_instance, rank, hand_info):
     # eval_pose_list = asterisk_test_points
 
     num_eval = len(eval_pose_list)
-    eval_pose_list = eval_pose_list[int(num_eval*rank[0]/rank[1]):int(num_eval*(rank[0]+1)/rank[1])]
+    eval_pose_list = np.array(eval_pose_list[int(num_eval*rank[0]/rank[1]):int(num_eval*(rank[0]+1)/rank[1])])
     # print(args)
     
     physics_client = pybullet_instance.connect(pybullet_instance.DIRECT)
@@ -202,10 +214,12 @@ def make_pybullet(arg_dict, pybullet_instance, rank, hand_info):
     # For standard loaded goal poses
     if args['task'] == 'unplanned_random':
         goal_poses = RandomGoalHolder([0.02,0.065])
+    elif args['task'] == 'Rotation':
+        goal_poses = GoalHolder(pose_list,orientations)
     else:    
         goal_poses = GoalHolder(pose_list)
     try:
-        eval_goal_poses = GoalHolder(eval_pose_list,eval_names)
+        eval_goal_poses = GoalHolder(eval_pose_list,goal_names=eval_names)
     except NameError:
         # print('No names')
         eval_goal_poses = GoalHolder(eval_pose_list)
@@ -433,5 +447,5 @@ if __name__ == '__main__':
     # evaluate("./data/JA_newstate_A_rand/experiment_config.json")
     # evaluate("./data/JA_newstate_A_rand/experiment_config.json","B")
 
-    evaluate("./data/FTP_halfstate_A_rand_old_finger_poses/experiment_config.json")
+    main("./data/fixed_verify/experiment_config.json")
     # evaluate("./data/FTP_halfstate_A_rand_old_finger_poses/experiment_config.json","B")

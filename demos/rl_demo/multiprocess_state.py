@@ -10,49 +10,7 @@ from mojograsp.simcore.state import StateDefault
 import numpy as np
 from copy import deepcopy
 from mojograsp.simobjects.two_finger_gripper import TwoFingerGripper
-class GoalHolder():
-    def __init__(self, goal_pose, goal_names = None):
-        self.pose = goal_pose
-        self.name = 'goal_pose'
-        self.len = len(self.pose)
-        self.goal_names = goal_names
-        if len(np.shape(self.pose)) == 1:
-            self.pose = [self.pose]
-        self.run_num = 0
-    
-    def get_data(self):
-        return {'goal_pose':self.pose[self.run_num%self.len]}
-    
-    def get_name(self):
-        return self.goal_names[self.run_num%self.len]
-    
-    def next_run(self):
-        self.run_num +=1
-        # print('Run number',self.run_num)
-        
-    def reset(self):
-        self.run_num = 0
-        np.random.shuffle(self.pose)
-        print('shuffling the pose order')
-    
-    def __len__(self):
-        return len(self.pose)
-    
-class RandomGoalHolder(GoalHolder):
-    def __init__(self, radius_range: list):
-        self.name = 'goal_pose'
-        self.rrange = radius_range
-        self.pose = []
-        self.next_run()
-        
-    
-    def next_run(self):
-        l = np.sqrt(np.random.uniform(self.rrange[0]**2,self.rrange[1]**2))
-        ang = np.pi * np.random.uniform(0,2)
-        self.pose = [l * np.cos(ang),l * np.sin(ang)]
-    
-    def get_data(self):
-        return {'goal_pose':self.pose}
+from mojograsp.simcore.goal_holder import *
         
         
 class MultiprocessState(StateDefault):

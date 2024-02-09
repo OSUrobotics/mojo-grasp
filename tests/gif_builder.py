@@ -8,7 +8,7 @@ import cv2
 # import imageio
 import os
 import numpy as np
-from plot_scripts import running_plot_and_video
+# from plot_scripts import running_plot_and_video
 import re
 import pickle as pkl
 # import glob
@@ -57,6 +57,7 @@ def make_video(filepath):
     frames = []
     for i in range(15):
         for j in range(8):
+            print(video_path)
             frame_path = video_path+file_thing+'_frame_'+str(i)+'_'+str(j*10)+'.png'
             frame_list.append(frame_path)
     frames = [Image.open(image) for image in frame_list]

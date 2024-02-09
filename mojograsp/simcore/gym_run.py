@@ -11,7 +11,8 @@ import pybullet_data
 from demos.rl_demo import rl_env
 from demos.rl_demo import manipulation_phase_rl
 # import rl_env
-from demos.rl_demo.rl_state import StateRL, GoalHolder, RandomGoalHolder
+from demos.rl_demo.rl_state import StateRL
+from mojograsp.simcore.goal_holder import  GoalHolder, RandomGoalHolder
 from demos.rl_demo import rl_action
 from demos.rl_demo import rl_reward
 from demos.rl_demo import rl_gym_wrapper
@@ -67,9 +68,10 @@ def run_pybullet(filepath, runtype='run', episode_number=None, action_list = Non
         args['hand'] = hand
         # args['rstart'] = 'none'
         if hand=='2v2-B':
-            args['hand_path']="/home/orochi/mojo/mojo-grasp/demos/rl_demo/resources/2v2_Hand_B/hand/2v2_65.35_65.35_1.1_53.urdf"
+            args['hand_path']="/home/mothra/mojo-grasp/demos/rl_demo/resources/2v2_Hand_B/hand/2v2_65.35_65.35_1.1_53.urdf"
+            print('shit')
         elif hand=='2v2':
-            args['hand_path']="/home/orochi/mojo/mojo-grasp/demos/rl_demo/resources/2v2_Hand_A/hand/2v2_50.50_50.50_1.1_53.urdf"
+            args['hand_path']="/home/mothra/mojo-grasp/demos/rl_demo/resources/2v2_Hand_A/hand/2v2_50.50_50.50_1.1_53.urdf"
 
     if (runtype =='run') | (runtype =='transfer'):
         if args['task'] == 'asterisk':
@@ -242,14 +244,14 @@ def run_pybullet(filepath, runtype='run', episode_number=None, action_list = Non
         yeval = [-0.045, -0.06, -0.045, 0, 0.045, 0.06, 0.045, 0]
         eval_names = ['SE','S','SW','W','NW','N','NE','E'] 
         if action_list == None:
-            with open(overall_path + '/demos/rl_demo/data/JA_state_3_old/Eval_A/Evaluate_89.pkl','rb') as fol:
+            with open(overall_path + '/demos/rl_demo/data/FTP_halfstate_A_rand/Eval_A/Evaluate_215.pkl','rb') as fol:
                 data = pkl.load(fol)
             action_list = data#np.array(data)
     names = ['AsteriskSE.pkl','AsteriskS.pkl','AsteriskSW.pkl','AsteriskW.pkl','AsteriskNW.pkl','AsteriskN.pkl','AsteriskNE.pkl','AsteriskE.pkl']
     pose_list = [[i,j] for i,j in zip(x,y)]
 
-    eval_pose_list = [[0,0.07],[0.0495,0.0495],[0.07,0.0],[0.0495,-0.0495],[0.0,-0.07],[-0.0495,-0.0495],[-0.07,0.0],[-0.0495,0.0495]]
-    # eval_pose_list = [[i,j] for i,j in zip(xeval,yeval)]
+    eval_pose_list = [[0,0.07],[0.0495,0.0495],[0.07,0.0],[0.0495,-0.0495],[-0.0495,-0.0495],[-0.07,0.0],[-0.0495,0.0495]]
+    eval_pose_list = [[i,j] for i,j in zip(xeval,yeval)]
     if args['task'] =='Rotation':
         pose_list = [[i,j,k] for i,j,k in zip(x,y,theta)]
         eval_pose_list = [[i,j,k] for i,j,k in zip(x,y,eval_theta)]
@@ -258,7 +260,7 @@ def run_pybullet(filepath, runtype='run', episode_number=None, action_list = Non
     print(args)
     try:
         if (args['viz']) | (runtype=='replay') | (runtype=='eval'):
-            physics_client = p.connect(p.DIRECT)
+            physics_client = p.connect(p.GUI)
         else:
             physics_client = p.connect(p.DIRECT)
     except KeyError:
@@ -274,8 +276,8 @@ def run_pybullet(filepath, runtype='run', episode_number=None, action_list = Non
         print('multiple hands not supported for gym_run.py, try with multiprocess_gym_run.py instead')
         return
     # print(args['hand_path']+'/'+args['hand_file_list'][0])
-    print("loading hand",args['hand_path'] +'/'+ args['hand_file_list'][0])
-    hand_id = p.loadURDF(args['hand_path'] +'/'+ args['hand_file_list'][0], useFixedBase=True,
+    # print("loading hand",args['hand_path'] +'/'+ args['hand_file_list'][0])
+    hand_id = p.loadURDF(args['hand_path'], useFixedBase=True,
                          basePosition=[0.0, 0.0, 0.05], flags=p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
     # hand_id = p.loadURDF(args['hand_path']+'/'+args['hand_file_list'][0], useFixedBase=True,
     #                      basePosition=[0.0, 0.0, 0.05], flags=p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
@@ -283,21 +285,28 @@ def run_pybullet(filepath, runtype='run', episode_number=None, action_list = Non
 
     # Create TwoFingerGripper Object and set the initial joint positions
     # hand = TwoFingerGripper(hand_id, path=args['hand_path'])
-    key_file = '/home/mothra/mojo-grasp/demos/rl_demo'
-    key_file = os.path.join(key_file,'resources','hand_bank','hand_params.json')
-    with open(key_file,'r') as hand_file:
-        hand_info = json.load(hand_file)
-    this_hand = args['hand_file_list'][0]
-    hand_type = this_hand.split('/')[0]
-    print(hand_type)
-    hand_keys = hand_type.split('_')
-    info_1 = hand_info[hand_keys[-1]][hand_keys[1]]
-    info_2 = hand_info[hand_keys[-1]][hand_keys[2]]
-    hand_param_dict = {"link_lengths":[info_1['link_lengths'],info_2['link_lengths']],
-                       "starting_angles":[info_1['start_angles'][0],info_1['start_angles'][1],-info_2['start_angles'][0],-info_2['start_angles'][1]],
-                       "palm_width":info_1['palm_width'],
-                       "hand_name":hand_type}
-    hand = TwoFingerGripper(hand_id, path=args['hand_path'] + '/' + this_hand,hand_params=hand_param_dict)
+
+
+    # key_file = '/home/mothra/mojo-grasp/demos/rl_demo'
+    # key_file = os.path.join(key_file,'resources','hand_bank','hand_params.json')
+    # with open(key_file,'r') as hand_file:
+    #     hand_info = json.load(hand_file)
+    # this_hand = args['hand_file_list'][0]
+    # hand_type = this_hand.split('/')[0]
+    # print(hand_type)
+    # hand_keys = hand_type.split('_')
+    # info_1 = hand_info[hand_keys[-1]][hand_keys[1]]
+    # info_2 = hand_info[hand_keys[-1]][hand_keys[2]]
+    # hand_param_dict = {"link_lengths":[info_1['link_lengths'],info_2['link_lengths']],
+    #                    "starting_angles":[info_1['start_angles'][0],info_1['start_angles'][1],-info_2['start_angles'][0],-info_2['start_angles'][1]],
+    #                    "palm_width":info_1['palm_width'],
+    #                    "hand_name":hand_type}
+    sa = [-0.725,1.45]
+    hand_param_dict = {"link_lengths":[[[0, 0.0936, 0], [0, 0.0504, 0]],[[0, 0.0936, 0], [0, 0.0504, 0]]],
+                       "starting_angles":[sa[0],sa[1],-sa[0],-sa[1]],
+                       "palm_width":0.053,
+                       "hand_name":'B'}
+    hand = TwoFingerGripper(hand_id, path=args['hand_path'],hand_params=hand_param_dict)
 
     # hand = IKGripper(hand_id, path=args['hand_path']+'/'+args['hand_file_list'][0])
     # change visual of gripper
@@ -405,7 +414,8 @@ def run_pybullet(filepath, runtype='run', episode_number=None, action_list = Non
             while not done:
                 # print('step: ',step)
                 action, _ = model.predict(obs, deterministic=False)
-                mirrored_action = np.array([-action[2], action[3],-action[0],action[1]])
+                print(action)
+                # mirrored_action = np.array([-action[2], action[3],-action[0],action[1]])
                 obs, reward, done, info = gym_env.step(action, viz=False)
                 step +=1
 
@@ -429,6 +439,7 @@ def run_pybullet(filepath, runtype='run', episode_number=None, action_list = Non
             done = False
             while not done:
                 action, _ = model.predict(obs, deterministic=True)
+                
                 obs, reward, done, info = gym_env.step(action)
     
     elif runtype == 'replay':
@@ -449,7 +460,7 @@ def run_pybullet(filepath, runtype='run', episode_number=None, action_list = Non
                 # print("Action: ", action, type(action))
                 # mirrored_action = np.array([-action[2], action[3],-action[0],action[1]])
                 obs, reward, done, info = gym_env.step(np.array(action),viz=True)
-                obs, reward, done, info = gym_env.step(np.array(action),viz=True)
+                # obs, reward, done, info = gym_env.step(np.array(action),viz=True)
                 # print('obs=', obs, 'reward=', reward, 'done=', done)
                 # time.sleep(0.5)
                 # env.render(mode='console')
@@ -486,10 +497,10 @@ def main():
     # for name in double_list:
     #     run_pybullet(overall_path + '/demos/rl_demo/data/wedge_double/wedge_' + name + '/experiment_config.json', runtype='run')
     # for i in range(1000):
-    run_pybullet(overall_path + '/demos/rl_demo/data/Transfer_to_everything/experiment_config.json', runtype='replay',episode_number=0)
+    # run_pybullet(overall_path + '/demos/rl_demo/data/Transfer_to_everything/experiment_config.json', runtype='replay',episode_number=0)
     # run_pybullet(overall_path + '/demos/rl_demo/data/hand_transfer_FTP/experiment_config.json', runtype='eval')
     # run_pybullet(overall_path + '/demos/rl_demo/data/hand_transfer_JA/experiment_config.json', runtype='eval')
-    run_pybullet(overall_path + '/demos/rl_demo/data/JA_state_3_B_old/experiment_config.json', runtype='eval', hand=hand_b_key)
+    run_pybullet(overall_path + '/demos/rl_demo/data/FTP_halfstate_A_rand/experiment_config.json', runtype='eval', hand=hand_a_key)
     # run_pybullet(overall_path + '/demos/rl_demo/data/FTP_fullstate_A_rand/experiment_config.json', runtype='eval', hand=hand_b_key)
     # run_pybullet(overall_path + '/demos/rl_demo/data/FTP_state_3_old/experiment_config.json', runtype='eval', hand=hand_b_key)
     # run_pybullet(overall_path + '/demos/rl_demo/data/JA_state_3_old/experiment_config.json', runtype='eval', hand=hand_b_key)
