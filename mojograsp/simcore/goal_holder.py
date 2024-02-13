@@ -4,12 +4,15 @@ class GoalHolder():
     def __init__(self, goal_pose, goal_orientation = None,goal_names = None):
         self.pose = goal_pose
         self.name = 'goal_pose'
+        print(goal_orientation)
         if goal_orientation is not None:
             self.orientation = goal_orientation
         else:
-            self.orientation = [None] * len(self.pose)
+            self.orientation = np.array([None] * len(self.pose))
+            print('orientation not given')
         self.len = len(self.pose)
         self.goal_names = goal_names
+        print(f'orientation type: {type(self.orientation)}')
         if len(np.shape(self.pose)) == 1:
             self.pose = [self.pose]
         self.run_num = 0
@@ -25,7 +28,7 @@ class GoalHolder():
     
     def next_run(self):
         self.run_num +=1
-        # print('Run number',self.run_num)
+        # print({'goal_pose':self.pose[self.run_num%self.len],'goal_orientation':self.orientation[self.run_num%self.len]})
         
     def reset(self):
         self.run_num = 0

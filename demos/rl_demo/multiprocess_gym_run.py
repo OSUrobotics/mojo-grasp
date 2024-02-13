@@ -48,7 +48,7 @@ def make_pybullet(arg_dict, pybullet_instance, rank, hand_info):
     this_path = os.path.abspath(__file__)
     overall_path = os.path.dirname(os.path.dirname(os.path.dirname(this_path)))
     args=arg_dict
-    # print(args['task'])
+    print(args['task'])
     if args['task'] == 'asterisk':
         x = [0.03, 0, -0.03, -0.04, -0.03, 0, 0.03, 0.04]
         y = [-0.03, -0.04, -0.03, 0, 0.03, 0.04, 0.03, 0]
@@ -214,15 +214,22 @@ def make_pybullet(arg_dict, pybullet_instance, rank, hand_info):
     # For standard loaded goal poses
     if args['task'] == 'unplanned_random':
         goal_poses = RandomGoalHolder([0.02,0.065])
+        try:
+            eval_goal_poses = GoalHolder(eval_pose_list,goal_names=eval_names)
+        except NameError:
+            # print('No names')
+            eval_goal_poses = GoalHolder(eval_pose_list)
     elif args['task'] == 'Rotation':
         goal_poses = GoalHolder(pose_list,orientations)
+        eval_goal_poses = GoalHolder(eval_pose_list, eval_orientations)
+        # print('doing the rotation as planned')
     else:    
         goal_poses = GoalHolder(pose_list)
-    try:
-        eval_goal_poses = GoalHolder(eval_pose_list,goal_names=eval_names)
-    except NameError:
-        # print('No names')
-        eval_goal_poses = GoalHolder(eval_pose_list)
+        try:
+            eval_goal_poses = GoalHolder(eval_pose_list,goal_names=eval_names)
+        except NameError:
+            # print('No names')
+            eval_goal_poses = GoalHolder(eval_pose_list)
     
     # time.sleep(10)
     # state, action and reward
@@ -447,5 +454,5 @@ if __name__ == '__main__':
     # evaluate("./data/JA_newstate_A_rand/experiment_config.json")
     # evaluate("./data/JA_newstate_A_rand/experiment_config.json","B")
 
-    main("./data/fixed_verify/experiment_config.json")
+    main("./data/RotationTest/experiment_config.json")
     # evaluate("./data/FTP_halfstate_A_rand_old_finger_poses/experiment_config.json","B")
