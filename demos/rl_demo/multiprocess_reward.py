@@ -13,9 +13,13 @@ class MultiprocessReward(RewardDefault):
         self.start_dist = None
         self.p = pybulletInstance
 
-    def set_reward(self, goal_position: list, cube: ObjectBase, hand: TwoFingerGripper, end_reward):
+    def set_reward(self, goal_info: dict, cube: ObjectBase, hand: TwoFingerGripper, end_reward):
         current_cube_pose = cube.get_curr_pose()
         # Finds distance between current cube position and goal position
+        
+        goal_position = [goal_info['goal_position'][0],goal_info['goal_position'][1]+0.1]
+        # print('goal in reward.set_reward', goal_position, current_cube_pose)
+        self.current_reward['goal_orientation']= goal_info['goal_orientation']
         distance = np.sqrt((goal_position[0] - current_cube_pose[0][0])**2 +
                            (goal_position[1] - current_cube_pose[0][1])**2)
         
@@ -37,8 +41,6 @@ class MultiprocessReward(RewardDefault):
         self.current_reward['start_dist'] = self.start_dist
         self.current_reward['plane_side'] = np.dot(start_pos_vec,current_pos_vec) <= 0
         # print('setting the reward')
-        if len(goal_position) == 3:
-            self.current_reward['goal_orientation']=goal_position[2]
         try:
             self.current_reward['object_pose'] = deepcopy(current_cube_pose)
             self.current_reward["distance_to_goal"] = distance
@@ -71,9 +73,11 @@ class MultiprocessReward(RewardDefault):
         self.start_dist = None
         # print(self.start_pos)
 
-    def update_start(self, goal_position, cube):
+    def update_start(self, goal_info: dict, cube):
         current_cube_pose = cube.get_curr_pose()
+        # print('goal in reward.update_start', goal_info)
         # Finds distance between current cube position and goal position
+        goal_position = goal_info['goal_position']
         distance = np.sqrt((goal_position[0] - current_cube_pose[0][0])**2 +
                            (goal_position[1] - current_cube_pose[0][1])**2)
         self.start_dist = distance
