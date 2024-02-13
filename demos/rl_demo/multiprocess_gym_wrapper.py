@@ -188,7 +188,6 @@ class MultiprocessGymWrapper(gym.Env):
             state = self.noisey_boi.add_noise(state, self.STATE_NOISE)
         reward, done2 = self.build_reward(reward_container, self.tholds)
 
-
         if self.TASK == 'multi':
             if done2 and not done:
                 # print('doing next goal')
@@ -295,6 +294,7 @@ class MultiprocessGymWrapper(gym.Env):
                 state.extend(state_container['goal_pose']['goal_pose'])
             elif key == 'go':
                 state.append(state_container['goal_pose']['goal_orientation'])
+                
             else:
                 raise Exception('key does not match list of known keys')
         return state
