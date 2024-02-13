@@ -157,59 +157,7 @@ class MultiprocessController():
     def get_current_cube_position(self):
         self.current_cube_pose = self.cube.get_curr_pose()
 
-    def set_goal_position(self, position: List[float]):
-        # world coordinates
-        self.goal_position = position
-        self.ik_f1.finger_fk.update_angles_from_sim()
-        self.ik_f2.finger_fk.update_angles_from_sim()
-
-    def check_goal(self):
-        # Finds distance between current cube position and goal position
-        distance = np.sqrt((self.goal_position[0] - self.current_cube_pose[0][0])**2 +
-                           (self.goal_position[1] - self.current_cube_pose[0][1])**2)
-        return distance
-
-    def exit_condition(self):
-        # checks if we are getting further from goal or closer
-        if self.prev_distance < self.check_goal():
-            self.distance_count += 1
-        else:
-            self.distance_count = 0
-
-        # Exits if we lost contact for 5 steps, we are within .002 of our goal, or if our distance has been getting worse for 20 steps
-        if self.num_contact_loss > 5 or self.check_goal() < .002 or self.distance_count > 20:
-            self.distance_count = 0
-            self.num_contact_loss = 0
-            return True
-        # sets next previous distance to current distance
-        self.prev_distance = self.check_goal().copy()
-        return False
-
-    def exit_condition(self, remaining_tstep=0):
-        # checks if we are getting further from goal or closer
-        goal_dist = self.check_goal()
-        if self.prev_distance <= goal_dist:
-            self.distance_count += 1
-        else:
-            self.distance_count = 0
-            
-        if goal_dist < .002:
-            self.distance_count = 0
-            self.final_reward = 1
-            print('exiting in rl controller because we reached the goal')
-            return True
-        
-        if goal_dist > 0.2:
-            self.distance_count = 0
-            print('exiting in rl controller because we were 0.2 m away')
-            return True
-        
-        self.prev_distance = self.check_goal().copy()
-        self.final_reward = 0
-        return False
-
-    def set_goal_position(self, position: List[float]):
-        self.goal_position = position
+    def pre_step(self):
         self.ik_f1.finger_fk.update_angles_from_sim()
         self.ik_f2.finger_fk.update_angles_from_sim()
     
@@ -222,4 +170,4 @@ class MultiprocessController():
     def train(self):
         if self.train_flag:
             self.train_flag=False
-            self.epsilon = self.old_epsilon
+            self.epsilon = self.old_epsilon_

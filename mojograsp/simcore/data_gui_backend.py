@@ -44,7 +44,7 @@ class PlotBackend():
         episode_number=data_dict['number']
         trajectory_points = [f['state']['obj_2']['pose'][0] for f in data]
         print('goal position in state', data[0]['state']['goal_pose'])
-        goal_poses = np.array([i['state']['goal_pose']['goal_pose'] for i in data])
+        goal_poses = np.array([i['state']['goal_pose']['goal_position'] for i in data])
         # print(trajectory_points)
         trajectory_points = np.array(trajectory_points)
         ideal = np.zeros([len(goal_poses)+1,2])
@@ -1414,10 +1414,16 @@ class PlotBackend():
                 tempdata = pkl.load(ef)
 
             data = tempdata['timestep_list']
-            goals.append(data[0]['state']['goal_pose']['goal_pose'][0:2])
-            if all(np.isclose(data[0]['state']['goal_pose']['goal_pose'][0:2],[0.0009830552164485, -0.0687461950930642])):
-                print(episode_file, data[0]['state']['goal_pose']['goal_pose'][0:2])
+            try:
+                goals.append(data[0]['state']['goal_pose']['goal_position'][0:2])
+                if all(np.isclose(data[0]['state']['goal_pose']['goal_position'][0:2],[0.0009830552164485, -0.0687461950930642])):
+                    print(episode_file, data[0]['state']['goal_pose']['goal_position'][0:2])
+            except KeyError:
+                goals.append(data[0]['state']['goal_pose']['goal_pose'][0:2])
+                if all(np.isclose(data[0]['state']['goal_pose']['goal_pose'][0:2],[0.0009830552164485, -0.0687461950930642])):
+                    print(episode_file, data[0]['state']['goal_pose']['goal_pose'][0:2])
             end_dists.append(data[-1]['reward']['distance_to_goal'])
+        print(end_dists)
         self.clear_axes()
         # linea = np.array([[0.0,0.06],[0.0,-0.06]])*100
         # lineb = np.array([[0.0424,-0.0424],[-0.0424,0.0424]])*100
@@ -1480,7 +1486,7 @@ class PlotBackend():
             data = tempdata['timestep_list']
             f1_dists = [f['reward']['f1_dist'] for f in data]
             f2_dists = [f['reward']['f2_dist'] for f in data]
-            goal_position = data[0]['state']['goal_pose']['goal_pose'][0:2]
+            goal_position = data[0]['state']['goal_pose']['goal_position'][0:2]
             lost_contact = 151
             max_dists = max(max(f1_dists), max(f2_dists))
             for f1,f2,i in zip(f1_dists,f2_dists,range(151)):
@@ -1686,7 +1692,7 @@ class PlotBackend():
 
             data = tempdata['timestep_list']
             # end_position = data[-1]['state']['obj_2']['pose'][0]
-            goals.append(data[0]['state']['goal_pose']['goal_pose'][0:2])
+            goals.append(data[0]['state']['goal_pose']['goal_position'][0:2])
             end_dists.append(data[-1]['reward']['distance_to_goal'])
             end_poses.append(data[-1]['state']['obj_2']['pose'][0])
 
@@ -1833,7 +1839,7 @@ class PlotBackend():
             with open(episode_file, 'rb') as ef:
                 tempdata = pkl.load(ef)
             data = tempdata['timestep_list']
-            goal_poses = len(np.unique([i['state']['goal_pose']['goal_pose'] for i in data], axis=0))
+            goal_poses = len(np.unique([i['state']['goal_pose']['goal_position'] for i in data], axis=0))
             num_goals.append(goal_poses)
             if i % 100 ==0:
                 print('count = ',i)
@@ -1875,7 +1881,7 @@ class PlotBackend():
             ending_dists.append(data[-1]['reward']['distance_to_goal'])
             poses = np.array([i['state']['obj_2']['pose'][0][0:2] for i in data])
             end_pos = poses[-1].copy()
-            goal_pose = data[-1]['state']['goal_pose']['goal_pose'][0:2]
+            goal_pose = data[-1]['state']['goal_pose']['goal_position'][0:2]
             end_pos[1] -= 0.1
             dist_along_vec = np.dot(end_pos,np.array(goal_pose)/np.linalg.norm(goal_pose))
             dtemp = dist_along_vec
@@ -1928,7 +1934,7 @@ class PlotBackend():
             data = tempdata['timestep_list']
             
             end_poses.append(data[-1]['state']['obj_2']['pose'][0][0:2])
-            goal_poses.append(data[-1]['state']['goal_pose']['goal_pose'])
+            goal_poses.append(data[-1]['state']['goal_pose']['goal_position'])
             if count% 100 ==0:
                 print('count = ', count)
             count +=1
@@ -1980,7 +1986,7 @@ class PlotBackend():
             mag_dist = np.sum(temp)
             dist_traveled_list.append(mag_dist)
             end_poses.append(data[-1]['state']['obj_2']['pose'][0][0:2])
-            goal_poses.append(data[-1]['state']['goal_pose']['goal_pose'])
+            goal_poses.append(data[-1]['state']['goal_pose']['goal_position'])
             # if count% 100 ==0:
             #     print('count = ', count)
             count +=1
@@ -2033,3 +2039,22 @@ class PlotBackend():
         self.legend.append(legend_thing)
         self.ax.legend(self.legend)
         # self.ax.scatter(end_poses[:,0],end_poses[:,1])
+
+    def draw_orientation(self,data_dict):
+        self.clear_axes()
+        data = data_dict['timestep_list']
+        rotations = []
+        goals = []
+        for tstep in data:
+            obj_rotation = tstep['reward']['object_orientation'][2]
+            obj_rotation = (obj_rotation + np.pi)%(np.pi*2)
+            obj_rotation = obj_rotation - np.pi
+            rotations.append(obj_rotation)
+            goals.append(tstep['reward']['goal_orientation'])
+        print(data[0]['reward'])
+        print(data[0]['state'])
+        self.ax.plot(range(len(rotations)), rotations)
+        self.ax.plot(range(len(goals)), goals)
+        self.ax.set_xlabel('timestep')
+        self.ax.set_ylabel('angle (rad)')
+        self.ax.legend(['Object Angle','Goal Angle'])
