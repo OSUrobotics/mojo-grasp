@@ -16,6 +16,8 @@ import re
 import time
 from matplotlib.patches import Rectangle
 from scipy.spatial.transform import Rotation as R
+import mojograsp.simcore.reward_functions as rf
+
 
 def moving_average(a, n) :
     ret = np.cumsum(a, dtype=float)
@@ -33,11 +35,58 @@ class PlotBackend():
         self.reduced_format = False
         self.config = {}
         self.legend = []
+        self.tholds = []
         self.load_config(config_folder)
         
     def load_config(self, config_folder):
         with open(config_folder+'/experiment_config.json') as file:
             self.config = json.load(file)
+
+    def set_reward_func(self,key):
+        if key == 'Sparse':
+            self.build_reward = rf.sparse
+        elif key == 'Distance':
+            self.build_reward = rf.distance
+        elif key == 'Distance + Finger':
+            self.build_reward = rf.distance_finger
+        elif key == 'Hinge Distance + Finger':
+            self.build_reward = rf.hinge_distance
+        elif key == 'Slope':
+            self.build_reward = rf.slope
+        elif key == 'Slope + Finger':
+            self.build_reward = rf.slope_finger
+        elif key == 'SmartDistance + Finger':
+            self.build_reward = rf.smart
+        elif key == 'ScaledDistance + Finger':
+            self.build_reward = rf.scaled
+        elif key == "Rotation":
+            self.build_reward = rf.rotation
+        elif key == "solo_rotation":
+            self.build_reward = rf.solo_rotation
+        elif key == 'slide_and_rotate':
+            self.build_reward = rf.slide_and_rotate
+        elif key == 'single_scaled':
+            self.build_reward = rf.double_scaled
+        elif key == 'SFS':
+            self.build_reward = rf.sfs
+        elif key == 'DFS':
+            self.build_reward = rf.dfs
+        elif key == 'SmartDistance + SmartFinger':
+            self.build_reward = rf.double_smart
+        elif key == 'multi_scaled':
+            self.build_reward = rf.multi_scaled
+        else:
+            raise Exception('reward type does not match list of known reward types')
+    
+    def set_tholds(self, tholds):
+        '''expected thold format
+        {'SUCCESS_THRESHOLD':float,
+                       'DISTANCE_SCALING':float,
+                       'CONTACT_SCALING':float,
+                       'SUCCESS_REWARD':float}
+        '''
+        self.tholds = tholds
+
 
     def draw_path(self,data_dict):
         data = data_dict['timestep_list']
@@ -271,6 +320,7 @@ class PlotBackend():
         self.curr_graph = 'rewards'
         
     def draw_combined_rewards(self, data_dict):
+        print('doin it live')
         episode_number = data_dict['number']
 
         data = data_dict['timestep_list']
@@ -278,7 +328,7 @@ class PlotBackend():
         general_reward = [f['reward'] for f in data]
 
         for reward_container in general_reward:
-            temp = self.build_reward(reward_container)
+            temp = self.build_reward(reward_container, self.tholds)
             full_reward.append(temp[0])
         net_reward = sum(full_reward)
             
@@ -290,6 +340,7 @@ class PlotBackend():
         self.legend.extend(['Reward - episode ' + str( episode_number)])
         self.ax.legend(self.legend)
         self.ax.set_ylabel('Reward')
+        self.ax.set_ybound([-6,0.1])
         self.ax.set_xlabel('Timestep (1/30 s)')
         self.ax.set_title(title)
         self.ax.grid(True)
@@ -465,7 +516,7 @@ class PlotBackend():
                 data = tempdata['timestep_list']
                 individual_rewards = []
                 for tstep in data:
-                    individual_rewards.append(self.build_reward(tstep['reward'])[0])
+                    individual_rewards.append(self.build_reward(tstep['reward'], self.tholds)[0])
                 rewards.append(sum(individual_rewards))
                 if count% 100 ==0:
                     print('count = ', count)
@@ -479,7 +530,7 @@ class PlotBackend():
                     data = episode['timestep_list']
                     individual_rewards = []
                     for timestep in data:
-                        individual_rewards.append(self.build_reward(timestep['reward'])[0])
+                        individual_rewards.append(self.build_reward(timestep['reward'], self.tholds)[0])
                     rewards.append(sum(individual_rewards))
         elif type(folder_or_data_dict) is list:
             rewards = folder_or_data_dict
@@ -1512,68 +1563,6 @@ class PlotBackend():
          
         self.curr_graph = 'scatter'
     
-    def build_reward(self, reward_container):
-        """
-        Method takes in a Reward object
-        Extracts reward information from state_container and returns it as a float
-        based on the reward structure contained in self.config['reward']
-
-        :param state: :func:`~mojograsp.simcore.reward.Reward` object.
-        :type state: :func:`~mojograsp.simcore.reward.Reward`
-        """        
-        done2 = False
-
-
-        if self.config['reward'] == 'Sparse':
-            tstep_reward = -1 + 2*(reward_container['distance_to_goal'] < float(self.config['sr'])/1000)
-        elif self.config['reward'] == 'Distance':
-            tstep_reward = max(-reward_container['distance_to_goal'],-1)
-        elif self.config['reward'] == 'Distance + Finger':
-            tstep_reward = max(-reward_container['distance_to_goal']*float(self.config['distance_scaling']) - max(reward_container['f1_dist'],reward_container['f2_dist'])*float(self.config['contact_scaling']),-1)
-        elif self.config['reward'] == 'Hinge Distance + Finger':
-            tstep_reward = reward_container['distance_to_goal'] < float(self.config['sr'])/1000 + max(-reward_container['distance_to_goal'] - max(reward_container['f1_dist'],reward_container['f2_dist'])*float(self.config['contact_scaling']),-1)
-        elif self.config['reward'] == 'Slope':
-            tstep_reward = reward_container['slope_to_goal'] * float(self.config['distance_scaling'])
-        elif self.config['reward'] == 'Slope + Finger':
-            tstep_reward = max(reward_container['slope_to_goal'] * float(self.config['distance_scaling'])  - max(reward_container['f1_dist'],reward_container['f2_dist'])*float(self.config['contact_scaling']),-1)
-        elif self.config['reward'] == 'SmartDistance + Finger':
-            ftemp = max(reward_container['f1_dist'],reward_container['f2_dist'])
-            temp = -reward_container['distance_to_goal'] * (1 + 4*reward_container['plane_side'])
-            # print(reward_container['plane_side'])
-            tstep_reward = max(temp*float(self.config['distance_scaling']) - ftemp*float(self.config['contact_scaling']),-1)
-        elif self.config['reward'] == 'ScaledDistance + Finger':
-            ftemp = max(reward_container['f1_dist'], reward_container['f2_dist']) * 100 # 100 here to make ftemp = -1 when at 1 cm
-            temp = -reward_container['distance_to_goal']/reward_container['start_dist'] * (1 + 4*reward_container['plane_side'])
-            # print(reward_container['plane_side'])
-            tstep_reward = temp*float(self.config['distance_scaling']) - ftemp*float(self.config['contact_scaling'])
-        elif self.config['reward'] == 'ScaledDistance+ScaledFinger':
-            ftemp = -max(reward_container['f1_dist'], reward_container['f2_dist']) * 100 # 100 here to make ftemp = -1 when at 1 cm
-            temp = -reward_container['distance_to_goal']/reward_container['start_dist'] # should scale this so that it is -1 at start 
-            ftemp,temp = max(ftemp,-2), max(temp, -2)
-            # print(reward_container['plane_side'])
-            tstep_reward = temp*float(self.config['distance_scaling']) + ftemp*float(self.config['contact_scaling'])
-        elif self.config['reward'] == 'SFS':
-            tstep_reward = reward_container['slope_to_goal'] * float(self.config['distance_scaling']) - max(reward_container['f1_dist'],reward_container['f2_dist'])*float(self.config['contact_scaling'])
-            if (reward_container['distance_to_goal'] < float(self.config['sr'])/1000) & (np.linalg.norm(reward_container['object_velocity']) <= 0.05):
-                tstep_reward += float(self.config['success_reward'])
-                done2 = True
-        elif self.config['reward'] == 'DFS':
-            ftemp = max(reward_container['f1_dist'],reward_container['f2_dist'])
-            assert ftemp >= 0
-            tstep_reward = -reward_container['distance_to_goal'] * float(self.config['distance_scaling'])  - ftemp*float(self.config['contact_scaling'])
-            if (reward_container['distance_to_goal'] < float(self.config['sr'])/1000) & (np.linalg.norm(reward_container['object_velocity']) <= 0.05):
-                tstep_reward += float(self.config['success_reward'])
-                done2 = True
-        elif self.config['reward'] == 'SmartDistance + SmartFinger':
-            ftemp = max(reward_container['f1_dist'],reward_container['f2_dist'])
-            if ftemp > 0.001:
-                ftemp = ftemp*ftemp*1000
-            temp = -reward_container['distance_to_goal'] * (1 + 4*reward_container['plane_side'])
-            tstep_reward = max(temp*float(self.config['distance_scaling']) - ftemp*float(self.config['contact_scaling']),-1)
-        else:
-            raise Exception('reward type does not match list of known reward types')
-        return float(tstep_reward), done2
-    
     def draw_multifigure_rewards(self,data_dict):
 
         episode_number = data_dict['number']
@@ -1586,7 +1575,7 @@ class PlotBackend():
         f2_reward = []
         dist_reward = []
         for reward in reward_containers:
-            overall_reward.append(self.build_reward(reward)[0])
+            overall_reward.append(self.build_reward(reward, self.tholds)[0])
             f1_reward.append(reward['f1_dist'])
             f2_reward.append(reward['f2_dist'])
             dist_reward.append(reward['distance_to_goal'])

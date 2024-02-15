@@ -137,7 +137,7 @@ def make_pybullet(arg_dict, pybullet_instance, rank, hand_info):
         xeval = x
         yeval = y
         eval_names = ['SE'] 
-    elif args['task'] == 'Rotation_single':
+    elif (args['task'] == 'Rotation_single') | (args['task'] == 'Rotation+Finger'):
         # this will be changed
         # I want to be sure we can rotate the thing in the middle first
         x = [0.0]*100
@@ -482,4 +482,4 @@ if __name__ == '__main__':
 
     # main("./data/FTP_single_rotate/experiment_config.json")
     # main("./data/FTP_region_rotate/experiment_config.json")
-    main("./data/FTP_slide_and_rotate/experiment_config.json")
+    main("./data/FTP_single_rotation_low_distance_scaling/experiment_config.json")
