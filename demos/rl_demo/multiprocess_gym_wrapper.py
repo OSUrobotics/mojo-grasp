@@ -107,7 +107,9 @@ class MultiprocessGymWrapper(gym.Env):
             self.build_reward = rf.smart
         elif self.REWARD_TYPE == 'ScaledDistance + Finger':
             self.build_reward = rf.scaled
-        elif "Rotation" in self.TASK:
+        elif self.TASK == 'Rotation+Finger':
+            self.build_reward = rf.rotation_with_finger
+        elif (self.TASK == 'Rotation_single')|(self.TASK =='Rotation_region'):
             self.build_reward = rf.rotation
         elif self.TASK == 'slide_and_rotate':
             self.build_reward = rf.slide_and_rotate
