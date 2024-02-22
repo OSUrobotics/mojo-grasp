@@ -193,12 +193,20 @@ class MultiprocessSingleShapeEnv(Environment):
         if rand_start =='obj':
             self.rand_start = True
             self.rand_finger_pos = False
+            self.end_start = False
         elif rand_start =='finger':
             self.rand_finger_pos = True
             self.rand_start = False
+            self.end_start = False
+        elif rand_start =='end':
+            self.end_start = True
+            self.rand_start = False
+            self.rand_finger_pos = False
         else:
             self.rand_finger_pos = False
             self.rand_start = False
+            self.end_start = False
+
         
         self.p.resetSimulation()
         self.plane_id = self.p.loadURDF("plane.urdf", flags=self.p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
@@ -229,9 +237,11 @@ class MultiprocessSingleShapeEnv(Environment):
         self.p.setGravity(0, 0, -10)
         self.p.setPhysicsEngineParameter(contactBreakingThreshold=.001)
 
-    def reset(self):
+    def reset(self, start_pos=None):
         # reset the simulator
-        if self.rand_start:
+        if start_pos is not None:
+            obj_change = start_pos
+        elif self.rand_start:
             obj_change = np.random.normal(0,0.01,2)
         else:
             #no noise
@@ -255,6 +265,25 @@ class MultiprocessSingleShapeEnv(Environment):
             # print('are we here?')
             f1_pos = [0.03+obj_change[0], 0.10+obj_change[1], 0.05]
             f2_pos = [-0.03+obj_change[0], 0.10+obj_change[1], 0.05]
+            
+            f1_angs = self.p.calculateInverseKinematics(self.hand_id, 2, f1_pos, maxNumIterations=3000)
+            f2_angs = self.p.calculateInverseKinematics(self.hand_id, 5, f2_pos, maxNumIterations=3000)
+            self.p.resetJointState(self.hand_id, 0, -np.pi/2)
+            self.p.resetJointState(self.hand_id, 1, np.pi/4)
+            self.p.resetJointState(self.hand_id, 3, np.pi/2)
+            self.p.resetJointState(self.hand_id, 4, -np.pi/4)
+            
+            positions = np.linspace([-np.pi/2,np.pi/4,np.pi/2,-np.pi/4],[f1_angs[0],f1_angs[1],f2_angs[2],f2_angs[3]],20)
+            for action_to_execute in positions:
+                self.p.setJointMotorControlArray(self.hand_id, jointIndices=self.hand.get_joint_numbers(),
+                                            controlMode=self.p.POSITION_CONTROL, targetPositions=action_to_execute,
+                                            positionGains=[0.8,0.8,0.8,0.8], forces=[0.4,0.4,0.4,0.4])
+                self.step()
+        if self.end_start:
+            link1_pose = self.p.getLinkState(self.hand_id, 2)[0]
+            link2_pose = self.p.getLinkState(self.hand_id, 5)[0]
+            f1_pos = [link1_pose[0]+obj_change[0], link1_pose[1] + obj_change[1], 0.05]
+            f2_pos = [link2_pose[0]+obj_change[0], link2_pose[1] + obj_change[1], 0.05]
             
             f1_angs = self.p.calculateInverseKinematics(self.hand_id, 2, f1_pos, maxNumIterations=3000)
             f2_angs = self.p.calculateInverseKinematics(self.hand_id, 5, f2_pos, maxNumIterations=3000)

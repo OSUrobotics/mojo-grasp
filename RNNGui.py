@@ -70,7 +70,7 @@ class RNNGui():
                          [sg.Checkbox('2v2_35.65_65.35_43',key='2v2_35.65_65.35_1.1_43', default=False),sg.Checkbox('2v2_35.65_65.35_53',key='2v2_35.65_65.35_1.1_53', default=False),sg.Checkbox('2v2_35.65_65.35_63',key='2v2_35.65_65.35_1.1_63', default=False),sg.Checkbox('2v2_35.65_65.35_73',key='2v2_35.65_65.35_1.1_73', default=False)],
                          [sg.Checkbox('2v2_70.30_70.30_43',key='2v2_70.30_70.30_1.1_43', default=False),sg.Checkbox('2v2_70.30_70.30_53',key='2v2_70.30_70.30_1.1_53', default=False),sg.Checkbox('2v2_70.30_70.30_63',key='2v2_70.30_70.30_1.1_63', default=False),sg.Checkbox('2v2_70.30_70.30_73',key='2v2_70.30_70.30_1.1_73', default=False)],
                          [sg.Checkbox('2v2_70.30_50.50_43',key='2v2_70.30_50.50_1.1_43', default=False),sg.Checkbox('2v2_70.30_50.50_53',key='2v2_70.30_50.50_1.1_53', default=False),sg.Checkbox('2v2_70.30_50.50_63',key='2v2_70.30_50.50_1.1_63', default=False),sg.Checkbox('2v2_70.30_50.50_73',key='2v2_70.30_50.50_1.1_73', default=False)],
-                         [sg.Text("Task"), sg.OptionMenu(values=('asterisk','single',"big_random", "Rotation", 'triple', 'multi'), k='-task', default_value='unplanned_random')],
+                         [sg.Text("Task"), sg.OptionMenu(values=('asterisk','single',"big_random", "Rotation_single", "Rotation_region", "slide_and_rotate",'triple', 'multi'), k='-task', default_value='unplanned_random')],
                          [sg.Checkbox("Randomized Start Position", key='-rstart',default=False), sg.Checkbox("Randomized Finger Position", key='-rfinger',default=False)],
                          [sg.Text('Replay Buffer Sampling'), sg.OptionMenu(values=('priority','random','random+expert'), k='-sampling', default_value='priority')]]
         
@@ -154,7 +154,9 @@ class RNNGui():
         state_mins = []
         state_maxes = []
         state_list = []
-        if bool(values['-rstart']) and bool(values['-rfinger']):
+        if values['-task'] == 'Rotation_region':
+            self.args['rstart'] ='end'
+        elif bool(values['-rstart']) and bool(values['-rfinger']):
             self.args['rstart']= 'both'
         elif not bool(values['-rstart']) and bool(values['-rfinger']):
             self.args['rstart']= 'finger'
@@ -162,6 +164,7 @@ class RNNGui():
             self.args['rstart']= 'no'
         elif bool(values['-rstart']) and not bool(values['-rfinger']):
             self.args['rstart']= 'obj'
+        
 
         if values['-ftp']:
             if not RW:
@@ -317,7 +320,7 @@ class RNNGui():
             self.args['max_action'] = 0.01
         if (values['-task'] == 'full_random') | (values['-task'] == 'unplanned_random'):
             self.args['points_path'] = str(resource_path.joinpath('points.csv'))
-        elif (values['-task'] == 'big_random') | (values['-task'] =='multi'):
+        elif (values['-task'] == 'big_random') | (values['-task'] =='multi')|(values['-task'] =='slide_and_rotate')|(values['-task'] =='Rotation_region'):
             self.args['points_path'] = str(resource_path.joinpath('train_points_big.csv'))
         else:
             self.args['points_path'] = str(resource_path.joinpath('train_points.csv'))
