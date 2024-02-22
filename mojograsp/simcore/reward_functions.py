@@ -88,8 +88,21 @@ def multi_scaled(reward_container, tholds):
 def rotation(reward_container, tholds):
     # goal angle should be +/- pi
     # make the current angle set between +/- pi then subtract the two
+    # print('object orientation, ',reward_container['object_orientation'])
+    # print('goal orientation, ',reward_container['goal_orientation'])
     obj_rotation = reward_container['object_orientation'][2]
     obj_rotation = (obj_rotation + np.pi)%(np.pi*2)
     obj_rotation = obj_rotation - np.pi
-    reward = -abs(reward_container['goal_position'][2] - obj_rotation)
+    reward = -abs(reward_container['goal_orientation'] - obj_rotation)
     return float(reward), False
+
+def slide_and_rotate(reward_container, tholds):
+    obj_rotation = reward_container['object_orientation'][2]
+    obj_rotation = (obj_rotation + np.pi)%(np.pi*2)
+    obj_rotation = obj_rotation - np.pi
+    rotation_temp = -abs(reward_container['goal_orientation'] - obj_rotation)/np.pi # divide by pi to make rotation reward -1 when we are at opposite side
+    ftemp = -max(reward_container['f1_dist'], reward_container['f2_dist']) * 100 # 100 here to make ftemp = -1 when at 1 cm
+    temp = -reward_container['distance_to_goal']/reward_container['start_dist'] # should scale this so that it is -1 at start 
+    ftemp,temp = max(ftemp,-2), max(temp, -2)
+    tstep_reward = temp*tholds['DISTANCE_SCALING'] + ftemp*tholds['CONTACT_SCALING'] + rotation_temp
+    return float(tstep_reward), False

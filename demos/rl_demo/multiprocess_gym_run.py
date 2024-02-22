@@ -137,7 +137,7 @@ def make_pybullet(arg_dict, pybullet_instance, rank, hand_info):
         xeval = x
         yeval = y
         eval_names = ['SE'] 
-    elif args['task'] == 'Rotation':
+    elif args['task'] == 'Rotation_single':
         # this will be changed
         # I want to be sure we can rotate the thing in the middle first
         x = [0.0]*100
@@ -147,6 +147,28 @@ def make_pybullet(arg_dict, pybullet_instance, rank, hand_info):
         xeval = x
         yeval = y
         eval_orientations = np.random.uniform(-np.pi+0.1, np.pi-0.1,100)
+        eval_orientations = eval_orientations + np.sign(eval_orientations)*0.1
+    elif args['task'] == 'Rotation_region':
+        df = pd.read_csv(args['points_path'], index_col=False)
+        x = df["x"]/2
+        y = df["y"]/2
+        df2 = pd.read_csv(overall_path + '/demos/rl_demo/resources/test_points_big.csv', index_col=False)
+        xeval = df2['x']/2
+        yeval = df2['y']/2
+        orientations = np.random.uniform(-np.pi+0.1, np.pi-0.1,1200)
+        orientations = orientations + np.sign(orientations)*0.1
+        eval_orientations = np.random.uniform(-np.pi+0.1, np.pi-0.1,1200)
+        eval_orientations = eval_orientations + np.sign(eval_orientations)*0.1
+    elif args['task'] == 'slide_and_rotate':
+        df = pd.read_csv(args['points_path'], index_col=False)
+        x = df["x"]
+        y = df["y"]
+        df2 = pd.read_csv(overall_path + '/demos/rl_demo/resources/test_points_big.csv', index_col=False)
+        xeval = df2['x']
+        yeval = df2['y']
+        orientations = np.random.uniform(-np.pi+0.1, np.pi-0.1,1200)
+        orientations = orientations + np.sign(orientations)*0.1
+        eval_orientations = np.random.uniform(-np.pi+0.1, np.pi-0.1,1200)
         eval_orientations = eval_orientations + np.sign(eval_orientations)*0.1
     else:
         df = pd.read_csv(args['points_path'], index_col=False)
@@ -212,24 +234,25 @@ def make_pybullet(arg_dict, pybullet_instance, rank, hand_info):
     obj = ObjectWithVelocity(obj_id, path=args['object_path'],name='obj_2')
     
     # For standard loaded goal poses
-    if args['task'] == 'unplanned_random':
-        goal_poses = RandomGoalHolder([0.02,0.065])
-        try:
-            eval_goal_poses = GoalHolder(eval_pose_list,goal_names=eval_names)
-        except NameError:
-            # print('No names')
-            eval_goal_poses = GoalHolder(eval_pose_list)
-    elif args['task'] == 'Rotation':
+
+    try:
         goal_poses = GoalHolder(pose_list,orientations)
         eval_goal_poses = GoalHolder(eval_pose_list, eval_orientations)
-        # print('doing the rotation as planned')
-    else:    
-        goal_poses = GoalHolder(pose_list)
-        try:
-            eval_goal_poses = GoalHolder(eval_pose_list,goal_names=eval_names)
-        except NameError:
-            # print('No names')
-            eval_goal_poses = GoalHolder(eval_pose_list)
+    except:
+        if args['task'] == 'unplanned_random':
+            goal_poses = RandomGoalHolder([0.02,0.065])
+            try:
+                eval_goal_poses = GoalHolder(eval_pose_list,goal_names=eval_names)
+            except NameError:
+                # print('No names')
+                eval_goal_poses = GoalHolder(eval_pose_list)
+        else:    
+            goal_poses = GoalHolder(pose_list)
+            try:
+                eval_goal_poses = GoalHolder(eval_pose_list,goal_names=eval_names)
+            except NameError:
+                # print('No names')
+                eval_goal_poses = GoalHolder(eval_pose_list)
     
     # time.sleep(10)
     # state, action and reward
@@ -334,7 +357,7 @@ def evaluate(filepath=None,aorb = 'A'):
             # return
 
 def main(filepath = None,learn_type='run'):
-    num_cpu = multiprocessing.cpu_count() # Number of processes to use
+    num_cpu =  multiprocessing.cpu_count() # Number of processes to use
     # Create the vectorized environment
 
     if filepath is None:
@@ -383,6 +406,9 @@ def main(filepath = None,learn_type='run'):
     model.learn(total_timesteps=args['epochs']*(args['tsteps']+1), callback=callback)
     filename = os.path.dirname(filepath)
     model.save(filename+'/last_model')
+
+    evaluate(filepath, "A")
+    evaluate(filepath, "B")
     # vec_env.env_method('evaluate')
     # for _ in range(1200):
     #     obs =  vec_env.env_method('reset')
@@ -454,5 +480,6 @@ if __name__ == '__main__':
     # evaluate("./data/JA_newstate_A_rand/experiment_config.json")
     # evaluate("./data/JA_newstate_A_rand/experiment_config.json","B")
 
-    main("./data/RotationTest/experiment_config.json")
-    # evaluate("./data/FTP_halfstate_A_rand_old_finger_poses/experiment_config.json","B")
+    # main("./data/JA_single_rotation/experiment_config.json")
+    # main("./data/JA_region_rotation/experiment_config.json")
+    main("./data/JA_slide_and_rotate/experiment_config.json")

@@ -36,7 +36,6 @@ class MultiprocessManipulation(Phase):
         print('ARE WE USING IK', self.use_ik)
         self.image_path = args['save_path'] + 'Videos/'
         self.target = None
-        self.goal_position = None
         # create controller
         self.interp_ratio = int(240/args['freq'])
         self.controller = multiprocess_control.MultiprocessController(self.p, hand, cube, args=args,hand_type=hand_type)
@@ -59,11 +58,10 @@ class MultiprocessManipulation(Phase):
         #     self.y[self.episode] + .10), 0]
         
         temp_position = self.state.objects[-1].get_data()
-        self.goal_position = [temp_position['goal_pose'][0], temp_position['goal_pose'][1]+0.1, 0]
         # self.goal_position[1] += 0.1
         # print(self.goal_position)
         # set the new goal position for the controller
-        self.controller.set_goal_position(self.goal_position)
+        self.controller.pre_step()
         self.state.init_state()
         start_state = self.state.get_state()
         self.reward.setup_reward(start_state['obj_2']['pose'])
@@ -146,14 +144,12 @@ class MultiprocessManipulation(Phase):
 
     def post_step(self):
         # Set the reward from the given action after the step
-        self.reward.set_reward(self.goal_position, self.cube, self.hand, self.controller.final_reward)
+        self.reward.set_reward(self.state.get_goal(), self.cube, self.hand, self.controller.final_reward)
 
     def next_goal(self):
         new_goal = self.state.next_run()
-        # print('old goal position', self.goal_position)
-        self.goal_position = [new_goal['goal_pose'][0], new_goal['goal_pose'][1]+0.1, 0]
-        # print('new goal position', self.goal_position)
-        self.reward.update_start(self.goal_position, self.cube)
+        print('new goal from manip_phase.new_goal', new_goal)
+        self.reward.update_start(new_goal, self.cube)
 
     def get_episode_info(self):
         # DO NOT USE UNLESS THIS IS GYM WRAPPER
@@ -180,6 +176,13 @@ class MultiprocessManipulation(Phase):
             self.episode += 1
         self.state.next_run()
         return None
+
+    def next_ep(self) -> str:
+        # increment episode count and return next goal
+        if not self.eval:
+            self.episode += 1
+        self.state.next_run()
+        return self.state.objects[-1].get_data()
 
     def reset(self):
         # temp = list(range(len(self.x)))

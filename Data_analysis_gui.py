@@ -70,6 +70,7 @@ def main():
 
 
     scatter_plot_tab = [[sg.Button('End Dist', size=(8, 2)), sg.Button('End Poses', size=(8, 2)), sg.Button('Contact Dist', size=(8, 2)), sg.Button('Average Goals', key='Average Goals',size=(8, 2)), sg.Button('', key='',size=(8, 2))],
+                        [sg.Button('Orientation', size=(8,2))],
                         [sg.Text('Colormap'),sg.Input('plasma_r',key='-cmap',size=(8, 1))]]
 
     plot_buttons = [[sg.Button('Object Path', size=(8, 2)), sg.Button('Finger Angles', size=(8, 2)),sg.Button('Rewards', size=(8, 2), key='FullRewards'), sg.Button('Contact Rewards', key='ContactRewards',size=(8, 2)), sg.Button('Distance/Slope Rewards', key='SimpleRewards',size=(8, 2))],
@@ -316,6 +317,9 @@ def main():
             figure_canvas_agg.draw()
         elif event =='Radar Plot':
             backend.draw_radar(folder)
+            figure_canvas_agg.draw()
+        elif event =='Orientation':
+            backend.draw_orientation(episode_data)
             figure_canvas_agg.draw()
         elif event == '-SAVE-':
             if '.png' in values['save_name']:

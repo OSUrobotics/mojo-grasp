@@ -90,6 +90,7 @@ class MultiprocessGymWrapper(gym.Env):
         :param state: :func:`~mojograsp.simcore.reward.Reward` object.
         :type state: :func:`~mojograsp.simcore.reward.Reward`
         """        
+        print(self.REWARD_TYPE)
         if self.REWARD_TYPE == 'Sparse':
             self.build_reward = rf.sparse
         elif self.REWARD_TYPE == 'Distance':
@@ -106,6 +107,10 @@ class MultiprocessGymWrapper(gym.Env):
             self.build_reward = rf.smart
         elif self.REWARD_TYPE == 'ScaledDistance + Finger':
             self.build_reward = rf.scaled
+        elif "Rotation" in self.TASK:
+            self.build_reward = rf.rotation
+        elif self.TASK == 'slide_and_rotate':
+            self.build_reward = rf.slide_and_rotate
         elif (self.REWARD_TYPE == 'ScaledDistance+ScaledFinger') and (self.TASK != 'multi'):
             self.build_reward = rf.double_scaled
         elif self.REWARD_TYPE == 'SFS':
@@ -116,8 +121,6 @@ class MultiprocessGymWrapper(gym.Env):
             self.build_reward = rf.double_smart
         elif (self.TASK == 'multi') and (self.REWARD_TYPE =='ScaledDistance+ScaledFinger'):
             self.build_reward = rf.multi_scaled
-        elif self.REWARD_TYPE == 'Rotation':
-            self.build_reward = rf.rotation
         else:
             raise Exception('reward type does not match list of known reward types')
 
@@ -127,16 +130,22 @@ class MultiprocessGymWrapper(gym.Env):
             
             if self.manipulation_phase.episode >= self.manipulation_phase.state.objects[-1].len:
                 self.manipulation_phase.reset()
-            self.manipulation_phase.next_phase()
+            new_goal = self.manipulation_phase.next_ep()
+            # print('new goal from reset', new_goal)
+        else:
+            new_goal = {'goal_position':[0,0]}
 
         self.timestep=0
         self.first = False
         if self.eval:
-            print('evaluating at eval run', self.eval_run)
+            # print('evaluating at eval run', self.eval_run)
             # print('fack',self.manipulation_phase.state.objects[-1].run_num)
             self.eval_run +=1
         if special is not None:
             self.env.reset_to_pos(special[0],special[1])
+        elif self.TASK == 'Rotation_region':
+            self.env.reset(new_goal['goal_position'])
+            # print(new_goal)
         else:
             self.env.reset()
         self.manipulation_phase.setup()
@@ -254,7 +263,7 @@ class MultiprocessGymWrapper(gym.Env):
                     elif key == 'params':
                         state.extend(state_container['hand_params'])
                     elif key == 'gp':
-                        state.extend(state_container['previous_state'][i]['goal_pose']['goal_pose'])
+                        state.extend(state_container['previous_state'][i]['goal_pose']['goal_position'])
                     elif key == 'go':
                         state.append(state_container['previous_state'][i]['goal_pose']['goal_orientation'])
                     else:
@@ -291,7 +300,7 @@ class MultiprocessGymWrapper(gym.Env):
             elif key == 'params':
                 state.extend(state_container['hand_params'])
             elif key == 'gp':
-                state.extend(state_container['goal_pose']['goal_pose'])
+                state.extend(state_container['goal_pose']['goal_position'])
             elif key == 'go':
                 state.append(state_container['goal_pose']['goal_orientation'])
                 
@@ -336,7 +345,7 @@ class MultiprocessGymWrapper(gym.Env):
                     elif key == 'fta':
                         state.extend([-state_container['previous_state'][i]['f2_ang'],-state_container['previous_state'][i]['f1_ang']])
                     elif key == 'gp':
-                        temp = state_container['previous_state'][i]['goal_pose']['goal_pose']
+                        temp = state_container['previous_state'][i]['goal_pose']['goal_position']
                         state.extend([-temp[0],temp[1]])
                     else:
                         raise Exception('key does not match list of known keys')
@@ -365,7 +374,7 @@ class MultiprocessGymWrapper(gym.Env):
             elif key == 'fta':
                 state.extend([state_container['f2_ang'],state_container['f1_ang']])
             elif key == 'gp':
-                temp = state_container['goal_pose']['goal_pose']
+                temp = state_container['goal_pose']['goal_position']
                 state.extend([-temp[0],temp[1]])
             else:
                 raise Exception('key does not match list of known keys')

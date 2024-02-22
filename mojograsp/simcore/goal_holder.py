@@ -9,7 +9,7 @@ class GoalHolder():
             self.orientation = goal_orientation
         else:
             self.orientation = np.array([None] * len(self.pose))
-            print('orientation not given')
+            
         self.len = len(self.pose)
         self.goal_names = goal_names
         print(f'orientation type: {type(self.orientation)}')
@@ -18,7 +18,7 @@ class GoalHolder():
         self.run_num = 0
     
     def get_data(self):
-        return {'goal_pose':self.pose[self.run_num%self.len],'goal_orientation':self.orientation[self.run_num%self.len]}
+        return {'goal_position':self.pose[self.run_num%self.len],'goal_orientation':self.orientation[self.run_num%self.len]}
     
     def get_name(self):
         try:
@@ -55,4 +55,4 @@ class RandomGoalHolder(GoalHolder):
         self.pose = [l * np.cos(ang),l * np.sin(ang)]
     
     def get_data(self):
-        return {'goal_pose':self.pose}
+        return {'goal_position':self.pose}
