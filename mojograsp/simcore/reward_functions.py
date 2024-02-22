@@ -85,15 +85,37 @@ def multi_scaled(reward_container, tholds):
     return float(tstep_reward), False
 
 
-def rotation(reward_container, tholds):
+def solo_rotation(reward_container, tholds):
     # goal angle should be +/- pi
     # make the current angle set between +/- pi then subtract the two
-    # print('object orientation, ',reward_container['object_orientation'])
-    # print('goal orientation, ',reward_container['goal_orientation'])
+
     obj_rotation = reward_container['object_orientation'][2]
     obj_rotation = (obj_rotation + np.pi)%(np.pi*2)
     obj_rotation = obj_rotation - np.pi
     reward = -abs(reward_container['goal_orientation'] - obj_rotation)
+    return float(reward), False
+
+
+def rotation(reward_container, tholds):
+    # goal angle should be +/- pi
+    # make the current angle set between +/- pi then subtract the two
+    goal_dist = reward_container['distance_to_goal']/0.01 # divide to turn into cm
+    obj_rotation = reward_container['object_orientation'][2]
+    obj_rotation = (obj_rotation + np.pi)%(np.pi*2)
+    obj_rotation = obj_rotation - np.pi
+    reward = -abs(reward_container['goal_orientation'] - obj_rotation) - goal_dist*tholds['DISTANCE_SCALING']
+    return float(reward), False
+
+
+def rotation_with_finger(reward_container, tholds):
+    # goal angle should be +/- pi
+    # make the current angle set between +/- pi then subtract the two
+    goal_dist = reward_container['distance_to_goal']/0.01 # divide to turn into cm
+    obj_rotation = reward_container['object_orientation'][2]
+    obj_rotation = (obj_rotation + np.pi)%(np.pi*2)
+    obj_rotation = obj_rotation - np.pi
+    ftemp = -max(reward_container['f1_dist'], reward_container['f2_dist']) * 100 
+    reward = -abs(reward_container['goal_orientation'] - obj_rotation) - goal_dist*tholds['DISTANCE_SCALING']  + ftemp*tholds['CONTACT_SCALING']
     return float(reward), False
 
 def slide_and_rotate(reward_container, tholds):
