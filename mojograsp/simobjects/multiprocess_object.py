@@ -1,6 +1,7 @@
 from numpy import angle
 import logging
 from pybullet_utils.bullet_client import BulletClient
+from scipy.spatial.transform import Rotation as R
 
 class MultiprocessObjectBase:
     """ObjectBase Base Class"""
@@ -87,6 +88,7 @@ class MultiprocessObjectBase:
         """
         data = {}
         data["pose"] = self.get_curr_pose()
+        data['z_angle'] = R.from_quat(data['pose'][1]).as_euler('xyz')[-1]
         return data
 
 # TODO: Create functions for keeping track of links similar to joints
