@@ -236,6 +236,10 @@ class MultiprocessSingleShapeEnv(Environment):
         
         self.p.setGravity(0, 0, -10)
         self.p.setPhysicsEngineParameter(contactBreakingThreshold=.001)
+        fixed=False
+        if fixed:
+            self.p.createConstraint(self.obj_id, -1, -1, -1, self.p.JOINT_POINT2POINT, [0, 0, 1],
+                       [0, 0, 0], [0, 0.1, 0])
 
     def reset(self, start_pos=None):
         # reset the simulator
@@ -332,6 +336,8 @@ class MultiprocessSingleShapeEnv(Environment):
             # print('f2_dist', f2_dist[0][8])
             # print(obj_velocity)
         # input('fak')
+        # self.p.createConstraint(self.obj_id, -1, -1, -1, self.p.JOINT_POINT2POINT, [0, 0, 1],
+        #                [0, 0, 0], [0, 0.1, 0])
 
     def reset_to_pos(self, object_pos, finger_angles):
         # reset the simulator
