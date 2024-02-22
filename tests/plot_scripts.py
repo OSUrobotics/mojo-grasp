@@ -7,6 +7,8 @@ import time
 from matplotlib import pyplot as plt
 from matplotlib.offsetbox import OffsetImage, AnnotationBbox
 import numpy as np
+import re
+import pickle as pkl
 
 def running_plot_and_video(filename_list, x_data, y_data, xlabel='Elapsed Timesteps', ylabel='Actor Output', title='Actor Output'):
     """
@@ -78,6 +80,99 @@ def running_plot_and_video(filename_list, x_data, y_data, xlabel='Elapsed Timest
 
     # out.release()
 
+
+       
+# fig, (ax1,ax2) = plt.subplots(2,1,height_ratios=[2,1])
+transfer_paths = ['/home/mothra/mojo-grasp/demos/rl_demo/data/JA_fullstate_A_rand/eval_b_moving/',
+                '/home/mothra/mojo-grasp/demos/rl_demo/data/FTP_fullstate_A_rand/eval_b_moving/',
+                '/home/mothra/mojo-grasp/demos/rl_demo/data/JA_halfstate_A_rand/eval_b_moving/',
+                '/home/mothra/mojo-grasp/demos/rl_demo/data/FTP_halfstate_A_rand/eval_b_moving/']
+
+folder_paths = ['/home/mothra/mojo-grasp/demos/rl_demo/data/JA_fullstate_A_rand/Eval/',
+                '/home/mothra/mojo-grasp/demos/rl_demo/data/FTP_fullstate_A_rand/Eval/',
+                '/home/mothra/mojo-grasp/demos/rl_demo/data/JA_halfstate_A_rand/Eval/',
+                '/home/mothra/mojo-grasp/demos/rl_demo/data/FTP_halfstate_A_rand/Eval/']
+fig, axes = plt.subplots(4,1,sharex=True)
+
+for folder_path, second_path, ax in zip(folder_paths, transfer_paths, axes):
+    # print('need to load in episode all first')
+    episode_files = [os.path.join(folder_path, f) for f in os.listdir(folder_path) if f.lower().endswith('.pkl')]
+    filenames_only = [f for f in os.listdir(folder_path) if f.lower().endswith('.pkl')]
+
+    filenums = [re.findall('\d+',f) for f in filenames_only]
+    final_filenums = []
+    for i in filenums:
+        if len(i) > 0 :
+            final_filenums.append(int(i[0]))
+
+    sorted_inds = np.argsort(final_filenums)
+    final_filenums = np.array(final_filenums)
+    episode_files = np.array(episode_files)
+    filenames_only = np.array(filenames_only)
+    episode_files = episode_files[sorted_inds].tolist()
+    goals, end_dists, end_poses = [],[], []
+    for episode_file in episode_files:
+        with open(episode_file, 'rb') as ef:
+            tempdata = pkl.load(ef)
+
+        data = tempdata['timestep_list']
+        # end_position = data[-1]['state']['obj_2']['pose'][0]
+        goals.append(data[0]['state']['goal_pose']['goal_pose'][0:2])
+        end_dists.append(data[-1]['reward']['distance_to_goal'])
+        end_poses.append(data[-1]['state']['obj_2']['pose'][0])
+    
+    episode_files2 = [os.path.join(second_path, f) for f in os.listdir(second_path) if f.lower().endswith('.pkl')]
+    filenames_only2 = [f for f in os.listdir(second_path) if f.lower().endswith('.pkl')]
+
+    filenums2 = [re.findall('\d+',f) for f in filenames_only2]
+    final_filenums2 = []
+    for i in filenums2:
+        if len(i) > 0 :
+            final_filenums2.append(int(i[0]))
+
+    sorted_inds2 = np.argsort(final_filenums2)
+    final_filenums2 = np.array(final_filenums2)
+    episode_files2 = np.array(episode_files2)
+    filenames_only2 = np.array(filenames_only2)
+    episode_files2 = episode_files2[sorted_inds2].tolist()
+    goals2, end_dists2, end_poses2 = [],[], []
+    for episode_file in episode_files2:
+        with open(episode_file, 'rb') as ef:
+            tempdata = pkl.load(ef)
+
+        data = tempdata['timestep_list']
+        # end_position = data[-1]['state']['obj_2']['pose'][0]
+        goals2.append(data[0]['state']['goal_pose']['goal_pose'][0:2])
+        end_dists2.append(data[-1]['reward']['distance_to_goal'])
+        end_poses2.append(data[-1]['state']['obj_2']['pose'][0])
+
+    range_width = 0.03
+    num_bins = 50
+    bins = np.linspace(0,range_width,num_bins) + range_width/num_bins
+    num_things = np.zeros(num_bins)
+    num_things2 = np.zeros(num_bins)
+    small_thold = max(0.005,min(end_dists))
+    med_thold = small_thold+0.005
+    big_thold = med_thold + 0.01
+    goals = np.array(goals)
+    end_poses = np.array(end_poses) - np.array([0,0.1,0])
+    for pose,dist,d2 in zip(end_poses,end_dists, end_dists2):
+        a= np.where(dist<bins)
+        b = np.where(d2<bins)
+        try:
+            num_things[a[0][0]] +=1
+        except IndexError:
+            # print('super far away point')
+            num_things[-1] +=1
+        try:
+            num_things2[b[0][0]] +=1
+        except IndexError:
+            num_things2[-1] +=1
+    ax.bar(bins, num_things, width=range_width/num_bins)
+    ax.bar(bins, num_things2, width=range_width/num_bins)
+    # ax.legend(['Hand A Results','Hand B Results'])
+    ax.set_ylim([0,300])
+plt.show()
 
 def main():
     print('nope')

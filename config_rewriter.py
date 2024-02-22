@@ -9,7 +9,7 @@ import json
 import os
 import pathlib
 
-folder_path = './demos/rl_demo/data/FTP_halfstate_A_rand'
+folder_path = './demos/rl_demo/data/JA_newstate_A_rand'
 
 overall_path = pathlib.Path(__file__).parent.resolve()
 resource_path = overall_path.joinpath('demos/rl_demo/resources')

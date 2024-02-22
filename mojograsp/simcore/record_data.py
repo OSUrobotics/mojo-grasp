@@ -221,7 +221,7 @@ class RecordDataPKL(RecordData):
         Method called by :func:`~mojograsp.simcore.sim_manager.SimManager` after every episode. Compiles all of the 
         timestep dictionaries into a list and adds it to the episode dicionary. 
         """
-        episode = {"number": self.episode_num+1}
+        episode = {"number": self.episode_num+1, "hand name":self.state.get_hand_name()}
         episode["timestep_list"] = self.timesteps
         
         self.current_episode = episode
