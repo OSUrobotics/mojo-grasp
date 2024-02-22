@@ -143,12 +143,12 @@ class GymWrapper(gym.Env):
         '''
         if self.discrete:
             action = action-1
-            # print(action)
+            print('hey asshole')
         self.manipulation_phase.gym_pre_step(action)
         self.manipulation_phase.execute_action(viz=viz)
         done = self.manipulation_phase.exit_condition()
         self.manipulation_phase.post_step()
-        
+        print(f'action in step {action}')
         if self.eval or self.small_enough:
             self.record.record_timestep()
         # print('recorded timesteps')
@@ -257,6 +257,7 @@ class GymWrapper(gym.Env):
                           evals[2]*evecs[4],evals[2]*evecs[6],evals[3]*evecs[5],evals[3]*evecs[7]]
                 state.extend(scaled)
             elif key == 'gp':
+                print(f"goal pose {state_container['goal_pose']['goal_pose']}")
                 state.extend(state_container['goal_pose']['goal_pose'])
             else:
                 raise Exception('key does not match list of known keys')

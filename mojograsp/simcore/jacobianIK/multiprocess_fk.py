@@ -6,6 +6,8 @@ import time
 class ForwardKinematicsSIM():
     def __init__(self, hand_id, finger_info: dict, p) -> None:
         # finger information and pybullet body id
+        print(finger_info)
+        self.p = p
         self.hand_id = hand_id
         self.finger_name = finger_info["name"]
         self.num_links = finger_info["num_links"]
@@ -26,7 +28,7 @@ class ForwardKinematicsSIM():
         # Holds the link names for each finger for debugging purposes
         self.debug_id_new = None
 
-        self.p = p
+        
 
     def get_link_ids(self):
         # Gets all link ids for the given finger_name, finger name must be in the link name

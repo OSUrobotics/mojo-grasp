@@ -16,6 +16,8 @@ import re
 import time
 from matplotlib.patches import Rectangle
 from scipy.spatial.transform import Rotation as R
+import mojograsp.simcore.reward_functions as rf
+
 
 def moving_average(a, n) :
     ret = np.cumsum(a, dtype=float)
@@ -33,18 +35,67 @@ class PlotBackend():
         self.reduced_format = False
         self.config = {}
         self.legend = []
+        self.tholds = []
         self.load_config(config_folder)
         
     def load_config(self, config_folder):
         with open(config_folder+'/experiment_config.json') as file:
             self.config = json.load(file)
 
+    def set_reward_func(self,key):
+        if key == 'Sparse':
+            self.build_reward = rf.sparse
+        elif key == 'Distance':
+            self.build_reward = rf.distance
+        elif key == 'Distance + Finger':
+            self.build_reward = rf.distance_finger
+        elif key == 'Hinge Distance + Finger':
+            self.build_reward = rf.hinge_distance
+        elif key == 'Slope':
+            self.build_reward = rf.slope
+        elif key == 'Slope + Finger':
+            self.build_reward = rf.slope_finger
+        elif key == 'SmartDistance + Finger':
+            self.build_reward = rf.smart
+        elif key == 'ScaledDistance + Finger':
+            self.build_reward = rf.scaled
+        elif key == "Rotation":
+            self.build_reward = rf.rotation
+        elif key == "solo_rotation":
+            self.build_reward = rf.solo_rotation
+        elif key == 'slide_and_rotate':
+            self.build_reward = rf.slide_and_rotate
+        elif key == 'rotation_with_finger':
+            self.build_reward = rf.rotation_with_finger
+        elif key == 'single_scaled':
+            self.build_reward = rf.double_scaled
+        elif key == 'SFS':
+            self.build_reward = rf.sfs
+        elif key == 'DFS':
+            self.build_reward = rf.dfs
+        elif key == 'SmartDistance + SmartFinger':
+            self.build_reward = rf.double_smart
+        elif key == 'multi_scaled':
+            self.build_reward = rf.multi_scaled
+        else:
+            raise Exception('reward type does not match list of known reward types')
+    
+    def set_tholds(self, tholds):
+        '''expected thold format
+        {'SUCCESS_THRESHOLD':float,
+                       'DISTANCE_SCALING':float,
+                       'CONTACT_SCALING':float,
+                       'SUCCESS_REWARD':float}
+        '''
+        self.tholds = tholds
+
+
     def draw_path(self,data_dict):
         data = data_dict['timestep_list']
         episode_number=data_dict['number']
         trajectory_points = [f['state']['obj_2']['pose'][0] for f in data]
         print('goal position in state', data[0]['state']['goal_pose'])
-        goal_poses = np.array([i['state']['goal_pose']['goal_pose'] for i in data])
+        goal_poses = np.array([i['state']['goal_pose']['goal_position'] for i in data])
         # print(trajectory_points)
         trajectory_points = np.array(trajectory_points)
         ideal = np.zeros([len(goal_poses)+1,2])
@@ -54,8 +105,8 @@ class PlotBackend():
             self.clear_axes()
         self.ax.plot(trajectory_points[:,0], trajectory_points[:,1])
         self.ax.plot(ideal[:,0],ideal[:,1])
-        self.ax.set_xlim([-0.07,0.07])
-        self.ax.set_ylim([0.04,0.16])
+        self.ax.set_xlim([-0.08,0.08])
+        self.ax.set_ylim([0.02,0.18])
         self.ax.set_xlabel('X pos (m)')
         self.ax.set_ylabel('Y pos (m)')                                                                                                                                                                                                                                   
         self.legend.extend(['RL Object Trajectory - episode '+str(episode_number), 'Ideal Path to Goal - episode '+str(episode_number)])
@@ -271,6 +322,7 @@ class PlotBackend():
         self.curr_graph = 'rewards'
         
     def draw_combined_rewards(self, data_dict):
+        print('doin it live')
         episode_number = data_dict['number']
 
         data = data_dict['timestep_list']
@@ -278,7 +330,7 @@ class PlotBackend():
         general_reward = [f['reward'] for f in data]
 
         for reward_container in general_reward:
-            temp = self.build_reward(reward_container)
+            temp = self.build_reward(reward_container, self.tholds)
             full_reward.append(temp[0])
         net_reward = sum(full_reward)
             
@@ -290,6 +342,7 @@ class PlotBackend():
         self.legend.extend(['Reward - episode ' + str( episode_number)])
         self.ax.legend(self.legend)
         self.ax.set_ylabel('Reward')
+        self.ax.set_ybound([-6,0.1])
         self.ax.set_xlabel('Timestep (1/30 s)')
         self.ax.set_title(title)
         self.ax.grid(True)
@@ -437,7 +490,7 @@ class PlotBackend():
          
         self.curr_graph = 'explored'
     
-    def draw_net_reward(self, folder_or_data_dict):
+    def draw_net_reward(self, folder_or_data_dict,plot_args=None):
         if type(folder_or_data_dict) is str:
             print('this will be slow, and we both know it')
             
@@ -465,7 +518,7 @@ class PlotBackend():
                 data = tempdata['timestep_list']
                 individual_rewards = []
                 for tstep in data:
-                    individual_rewards.append(self.build_reward(tstep['reward'])[0])
+                    individual_rewards.append(self.build_reward(tstep['reward'], self.tholds)[0])
                 rewards.append(sum(individual_rewards))
                 if count% 100 ==0:
                     print('count = ', count)
@@ -479,7 +532,7 @@ class PlotBackend():
                     data = episode['timestep_list']
                     individual_rewards = []
                     for timestep in data:
-                        individual_rewards.append(self.build_reward(timestep['reward'])[0])
+                        individual_rewards.append(self.build_reward(timestep['reward'], self.tholds)[0])
                     rewards.append(sum(individual_rewards))
         elif type(folder_or_data_dict) is list:
             rewards = folder_or_data_dict
@@ -493,9 +546,12 @@ class PlotBackend():
             self.clear_axes()
              
         self.legend.append('Average Agent Reward')
-        self.ax.plot(range(len(rewards)), rewards)
+        if plot_args is None:
+            self.ax.plot(range(len(rewards)), rewards)
+        else:
+            self.ax.plot(range(len(rewards)), rewards, color=plot_args[0], linestyle=plot_args[1])
         self.ax.set_xlabel('Episode Number')
-        self.ax.set_ylabel('Total Reward Over the Entire Episode')
+        self.ax.set_ylabel('Average Total Reward Over the Entire Episode')
         self.ax.set_title("Agent Reward over Episode")
         # self.ax.set_ylim([-12, 0])
         self.ax.legend(self.legend)
@@ -999,15 +1055,18 @@ class PlotBackend():
             count = 0
             episode_files = episode_files[sorted_inds].tolist()
             ending_dists = []
+            names=[]
             for episode_file in episode_files:
                 with open(episode_file, 'rb') as ef:
                     tempdata = pkl.load(ef)
 
                 data = tempdata['timestep_list']
+                names.append(tempdata['hand name'])
                 ending_dists.append(data[-1]['reward']['distance_to_goal'])
                 if count% 100 ==0:
                     print('count = ', count)
                 count +=1
+            print('unique names', np.unique(names))
         elif type(folder_or_data_dict) is dict:
             try:
                 ending_dists = [i['ending_dist'] for i in folder_or_data_dict['episode_list']]
@@ -1020,6 +1079,9 @@ class PlotBackend():
             ending_dists = folder_or_data_dict
         else:
             raise TypeError('argument should be string pointing to folder containing episode pickles, dictionary containing all episode data, or list of ending dists')
+
+        mean, std = np.average(ending_dists), np.std(ending_dists)
+
 
         if self.moving_avg != 1:
             ending_dists = moving_average(ending_dists,self.moving_avg)
@@ -1037,6 +1099,7 @@ class PlotBackend():
         self.ax.grid(True)
          
         self.curr_graph = 'goal_dist'
+        return [mean, std]
         
     def draw_goal_rewards(self, all_data_dict): # Depreciated
         
@@ -1056,7 +1119,6 @@ class PlotBackend():
                 if np.isclose(goal_pose, v[0]).all():
                     v[1].append(temp)
                     
-        
         # s = np.unique(sucessful_dirs)
         # print('succesful directions', s)
         maxes = []
@@ -1206,8 +1268,8 @@ class PlotBackend():
         #              markerfacecolor='darkorange',markeredgecolor='darkorange')
         # self.ax.plot(finger_contact2[0], finger_contact2[1], marker='s', markersize=5,
         #              markerfacecolor='darkgreen',markeredgecolor='darkgreen')
-        self.ax.set_xlim([-0.07,0.07])
-        self.ax.set_ylim([0.04,0.16])
+        self.ax.set_xlim([-0.08,0.08])
+        self.ax.set_ylim([0.02,0.18])
         self.ax.set_xlabel('X pos (m)')
         self.ax.set_ylabel('Y pos (m)')
         for i,j in zip(arrow_points,next_points):
@@ -1383,7 +1445,7 @@ class PlotBackend():
         self.curr_graph = 'Group_Reward'
         return return_finger_rewards
             
-    def draw_scatter_end_dist(self, folder_path):
+    def draw_scatter_end_dist(self, folder_path, cmap='plasma'):
         
         episode_files = [os.path.join(folder_path, f) for f in os.listdir(folder_path) if f.lower().endswith('.pkl')]
         filenames_only = [f for f in os.listdir(folder_path) if f.lower().endswith('.pkl')]
@@ -1405,32 +1467,51 @@ class PlotBackend():
                 tempdata = pkl.load(ef)
 
             data = tempdata['timestep_list']
-            goals.append(data[0]['state']['goal_pose']['goal_pose'][0:2])
+            try:
+                goals.append(data[0]['state']['goal_pose']['goal_position'][0:2])
+                if all(np.isclose(data[0]['state']['goal_pose']['goal_position'][0:2],[0.0009830552164485, -0.0687461950930642])):
+                    print(episode_file, data[0]['state']['goal_pose']['goal_position'][0:2])
+            except KeyError:
+                goals.append(data[0]['state']['goal_pose']['goal_pose'][0:2])
+                if all(np.isclose(data[0]['state']['goal_pose']['goal_pose'][0:2],[0.0009830552164485, -0.0687461950930642])):
+                    print(episode_file, data[0]['state']['goal_pose']['goal_pose'][0:2])
             end_dists.append(data[-1]['reward']['distance_to_goal'])
+        print(end_dists)
         self.clear_axes()
-        linea = np.array([[0.0,0.06],[0.0,-0.06]])*100
-        lineb = np.array([[0.0424,-0.0424],[-0.0424,0.0424]])*100
-        linec = np.array([[0.0424,0.0424],[-0.0424,-0.0424]])*100
-        lined = np.array([[0.06,0.0],[-0.06,0.0]])*100
+        # linea = np.array([[0.0,0.06],[0.0,-0.06]])*100
+        # lineb = np.array([[0.0424,-0.0424],[-0.0424,0.0424]])*100
+        # linec = np.array([[0.0424,0.0424],[-0.0424,-0.0424]])*100
+        # lined = np.array([[0.06,0.0],[-0.06,0.0]])*100
         goals = np.array(goals)
+        # print(goals)
         end_dists = np.array(end_dists)
+        end_dists = np.clip(end_dists, 0, 0.025)
 
-        a = self.ax.scatter(goals[:,0]*100, goals[:,1]*100, c = end_dists*100, cmap='jet')
+        num_success = end_dists < 0.005
+        try:
+            a = self.ax.scatter(goals[:,0]*100, goals[:,1]*100, c = end_dists*100, cmap=cmap)
+        except:
+            a = self.ax.scatter(goals[:,0]*100, goals[:,1]*100, c = end_dists*100, cmap='plasma')
         # self.legend.extend(['Ending Goal Distance'])
         # self.ax.legend(self.legend)
-        self.ax.plot(linea[:,0],linea[:,1])
-        self.ax.plot(lineb[:,0],lineb[:,1])
-        self.ax.plot(linec[:,0],linec[:,1])
-        self.ax.plot(lined[:,0],lined[:,1])
+        # self.ax.plot(linea[:,0],linea[:,1])
+        # self.ax.plot(lineb[:,0],lineb[:,1])
+        # self.ax.plot(linec[:,0],linec[:,1])
+        # self.ax.plot(lined[:,0],lined[:,1])
+        mean, std = np.average(end_dists), np.std(end_dists)
+
         self.ax.set_ylabel('Y position (cm)')
         self.ax.set_xlabel('X position (cm)')
-        self.ax.set_xlim([-7,7])
-        self.ax.set_ylim([-7,7])
+        self.ax.set_xlim([-8,8])
+        self.ax.set_ylim([-8,8])
         self.ax.set_title('Distance to Goals')
         self.ax.grid(False)
-        self.colorbar = self.fig.colorbar(a, ax=self.ax)
+        self.colorbar = self.fig.colorbar(a, ax=self.ax, extend='max')
          
         self.curr_graph = 'scatter'
+        print(f'average end distance {mean} +/- {std}')
+        print(f'success percent = {np.sum(num_success)/len(num_success)*100}')
+        return [mean, std]
         
     def draw_scatter_contact_dist(self,folder_path):
         
@@ -1458,7 +1539,7 @@ class PlotBackend():
             data = tempdata['timestep_list']
             f1_dists = [f['reward']['f1_dist'] for f in data]
             f2_dists = [f['reward']['f2_dist'] for f in data]
-            goal_position = data[0]['state']['goal_pose']['goal_pose'][0:2]
+            goal_position = data[0]['state']['goal_pose']['goal_position'][0:2]
             lost_contact = 151
             max_dists = max(max(f1_dists), max(f2_dists))
             for f1,f2,i in zip(f1_dists,f2_dists,range(151)):
@@ -1484,68 +1565,6 @@ class PlotBackend():
          
         self.curr_graph = 'scatter'
     
-    def build_reward(self, reward_container):
-        """
-        Method takes in a Reward object
-        Extracts reward information from state_container and returns it as a float
-        based on the reward structure contained in self.config['reward']
-
-        :param state: :func:`~mojograsp.simcore.reward.Reward` object.
-        :type state: :func:`~mojograsp.simcore.reward.Reward`
-        """        
-        done2 = False
-
-
-        if self.config['reward'] == 'Sparse':
-            tstep_reward = -1 + 2*(reward_container['distance_to_goal'] < float(self.config['sr'])/1000)
-        elif self.config['reward'] == 'Distance':
-            tstep_reward = max(-reward_container['distance_to_goal'],-1)
-        elif self.config['reward'] == 'Distance + Finger':
-            tstep_reward = max(-reward_container['distance_to_goal']*float(self.config['distance_scaling']) - max(reward_container['f1_dist'],reward_container['f2_dist'])*float(self.config['contact_scaling']),-1)
-        elif self.config['reward'] == 'Hinge Distance + Finger':
-            tstep_reward = reward_container['distance_to_goal'] < float(self.config['sr'])/1000 + max(-reward_container['distance_to_goal'] - max(reward_container['f1_dist'],reward_container['f2_dist'])*float(self.config['contact_scaling']),-1)
-        elif self.config['reward'] == 'Slope':
-            tstep_reward = reward_container['slope_to_goal'] * float(self.config['distance_scaling'])
-        elif self.config['reward'] == 'Slope + Finger':
-            tstep_reward = max(reward_container['slope_to_goal'] * float(self.config['distance_scaling'])  - max(reward_container['f1_dist'],reward_container['f2_dist'])*float(self.config['contact_scaling']),-1)
-        elif self.config['reward'] == 'SmartDistance + Finger':
-            ftemp = max(reward_container['f1_dist'],reward_container['f2_dist'])
-            temp = -reward_container['distance_to_goal'] * (1 + 4*reward_container['plane_side'])
-            # print(reward_container['plane_side'])
-            tstep_reward = max(temp*float(self.config['distance_scaling']) - ftemp*float(self.config['contact_scaling']),-1)
-        elif self.config['reward'] == 'ScaledDistance + Finger':
-            ftemp = max(reward_container['f1_dist'], reward_container['f2_dist']) * 100 # 100 here to make ftemp = -1 when at 1 cm
-            temp = -reward_container['distance_to_goal']/reward_container['start_dist'] * (1 + 4*reward_container['plane_side'])
-            # print(reward_container['plane_side'])
-            tstep_reward = temp*float(self.config['distance_scaling']) - ftemp*float(self.config['contact_scaling'])
-        elif self.config['reward'] == 'ScaledDistance+ScaledFinger':
-            ftemp = -max(reward_container['f1_dist'], reward_container['f2_dist']) * 100 # 100 here to make ftemp = -1 when at 1 cm
-            temp = -reward_container['distance_to_goal']/reward_container['start_dist'] # should scale this so that it is -1 at start 
-            ftemp,temp = max(ftemp,-2), max(temp, -2)
-            # print(reward_container['plane_side'])
-            tstep_reward = temp*float(self.config['distance_scaling']) + ftemp*float(self.config['contact_scaling'])
-        elif self.config['reward'] == 'SFS':
-            tstep_reward = reward_container['slope_to_goal'] * float(self.config['distance_scaling']) - max(reward_container['f1_dist'],reward_container['f2_dist'])*float(self.config['contact_scaling'])
-            if (reward_container['distance_to_goal'] < float(self.config['sr'])/1000) & (np.linalg.norm(reward_container['object_velocity']) <= 0.05):
-                tstep_reward += float(self.config['success_reward'])
-                done2 = True
-        elif self.config['reward'] == 'DFS':
-            ftemp = max(reward_container['f1_dist'],reward_container['f2_dist'])
-            assert ftemp >= 0
-            tstep_reward = -reward_container['distance_to_goal'] * float(self.config['distance_scaling'])  - ftemp*float(self.config['contact_scaling'])
-            if (reward_container['distance_to_goal'] < float(self.config['sr'])/1000) & (np.linalg.norm(reward_container['object_velocity']) <= 0.05):
-                tstep_reward += float(self.config['success_reward'])
-                done2 = True
-        elif self.config['reward'] == 'SmartDistance + SmartFinger':
-            ftemp = max(reward_container['f1_dist'],reward_container['f2_dist'])
-            if ftemp > 0.001:
-                ftemp = ftemp*ftemp*1000
-            temp = -reward_container['distance_to_goal'] * (1 + 4*reward_container['plane_side'])
-            tstep_reward = max(temp*float(self.config['distance_scaling']) - ftemp*float(self.config['contact_scaling']),-1)
-        else:
-            raise Exception('reward type does not match list of known reward types')
-        return float(tstep_reward), done2
-    
     def draw_multifigure_rewards(self,data_dict):
 
         episode_number = data_dict['number']
@@ -1558,7 +1577,7 @@ class PlotBackend():
         f2_reward = []
         dist_reward = []
         for reward in reward_containers:
-            overall_reward.append(self.build_reward(reward)[0])
+            overall_reward.append(self.build_reward(reward, self.tholds)[0])
             f1_reward.append(reward['f1_dist'])
             f2_reward.append(reward['f2_dist'])
             dist_reward.append(reward['distance_to_goal'])
@@ -1635,8 +1654,14 @@ class PlotBackend():
     def draw_end_poses(self, folder_path):
         print('buckle up') 
         
-        fig, (ax1,ax2) = plt.subplots(2,1)
-        
+        # fig, (ax1,ax2) = plt.subplots(2,1,height_ratios=[2,1])
+
+        fig = plt.figure(constrained_layout=True, figsize=(8,6))
+        ax = fig.add_gridspec(4, 3)
+        ax1 = fig.add_subplot(ax[0:3, :])
+        ax1.set_aspect('equal',adjustable='box')
+        ax2 = fig.add_subplot(ax[-1, :])
+
         # print('need to load in episode all first')
         episode_files = [os.path.join(folder_path, f) for f in os.listdir(folder_path) if f.lower().endswith('.pkl')]
         filenames_only = [f for f in os.listdir(folder_path) if f.lower().endswith('.pkl')]
@@ -1659,10 +1684,12 @@ class PlotBackend():
 
             data = tempdata['timestep_list']
             # end_position = data[-1]['state']['obj_2']['pose'][0]
-            goals.append(data[0]['state']['goal_pose']['goal_pose'][0:2])
+            goals.append(data[0]['state']['goal_pose']['goal_position'][0:2])
             end_dists.append(data[-1]['reward']['distance_to_goal'])
             end_poses.append(data[-1]['state']['obj_2']['pose'][0])
 
+        bins = np.linspace(0,0.05,100) + 0.05/100
+        num_things = np.zeros(100)
         small_thold = max(0.005,min(end_dists))
         med_thold = small_thold+0.005
         big_thold = med_thold + 0.01
@@ -1678,6 +1705,12 @@ class PlotBackend():
                 large_pose.append(pose)
             else:
                 fucked.append(pose)
+            a= np.where(dist<bins)
+            try:
+                num_things[a[0][0]] +=1
+            except IndexError:
+                print('super far away point')
+                num_things[-1] +=1
 
         ax1.scatter(goals[:,0]*100, goals[:,1]*100)
         self.legend.append('goal poses')
@@ -1698,7 +1731,8 @@ class PlotBackend():
             small_pose = np.array(small_pose)
             ax1.scatter(small_pose[:,0]*100, small_pose[:,1]*100)
             self.legend.extend(['<= '+str(small_thold*100)+' cm'])
-        ax2.bar(['<0.5 cm','<1 cm','<2 cm','>2 cm'], [len(small_pose),len(med_pose),len(large_pose), len(fucked)])
+        # ax2.bar(['<0.5 cm','<1 cm','<2 cm','>2 cm'], [len(small_pose),len(med_pose),len(large_pose), len(fucked)])
+        ax2.bar(bins*100, num_things, width=5/100)
         plt.tight_layout()
         # self.legend.extend(['Ending Goal Distance'])
         # self.ax.legend(self.legend)
@@ -1708,14 +1742,14 @@ class PlotBackend():
         ax1.set_ylim([-7,7])
         ax1.set_title('Distance to Goals')
         ax1.grid(False)
-        linea = np.array([[0.0,0.06],[0.0,-0.06]])*100
-        lineb = np.array([[0.0424,-0.0424],[-0.0424,0.0424]])*100
-        linec = np.array([[0.0424,0.0424],[-0.0424,-0.0424]])*100
-        lined = np.array([[0.06,0.0],[-0.06,0.0]])*100
-        ax1.plot(linea[:,0],linea[:,1])
-        ax1.plot(lineb[:,0],lineb[:,1])
-        ax1.plot(linec[:,0],linec[:,1])
-        ax1.plot(lined[:,0],lined[:,1])
+        # linea = np.array([[0.0,0.06],[0.0,-0.06]])*100
+        # lineb = np.array([[0.0424,-0.0424],[-0.0424,0.0424]])*100
+        # linec = np.array([[0.0424,0.0424],[-0.0424,-0.0424]])*100
+        # lined = np.array([[0.06,0.0],[-0.06,0.0]])*100
+        # ax1.plot(linea[:,0],linea[:,1])
+        # ax1.plot(lineb[:,0],lineb[:,1])
+        # ax1.plot(linec[:,0],linec[:,1])
+        # ax1.plot(lined[:,0],lined[:,1])
         ax1.legend(self.legend)
          
         self.curr_graph = 'scatter'
@@ -1797,7 +1831,7 @@ class PlotBackend():
             with open(episode_file, 'rb') as ef:
                 tempdata = pkl.load(ef)
             data = tempdata['timestep_list']
-            goal_poses = len(np.unique([i['state']['goal_pose']['goal_pose'] for i in data], axis=0))
+            goal_poses = len(np.unique([i['state']['goal_pose']['goal_position'] for i in data], axis=0))
             num_goals.append(goal_poses)
             if i % 100 ==0:
                 print('count = ',i)
@@ -1811,3 +1845,261 @@ class PlotBackend():
         self.ax.legend(self.legend)
         self.ax.set_title('Average goals in 100 episodes')
         self.curr_graph = 'path'
+    
+    def draw_average_efficiency(self, folder_or_data_dict):
+        episode_files = [os.path.join(folder_or_data_dict, f) for f in os.listdir(folder_or_data_dict) if f.lower().endswith('.pkl')]
+        filenames_only = [f for f in os.listdir(folder_or_data_dict) if f.lower().endswith('.pkl')]
+        
+        filenums = [re.findall('\d+',f) for f in filenames_only]
+        final_filenums = []
+        for i in filenums:
+            if len(i) > 0 :
+                final_filenums.append(int(i[0]))
+        
+        sorted_inds = np.argsort(final_filenums)
+        final_filenums = np.array(final_filenums)
+        temp = final_filenums[sorted_inds]
+        episode_files = np.array(episode_files)
+        filenames_only = np.array(filenames_only)
+        count = 0
+        episode_files = episode_files[sorted_inds].tolist()
+        ending_dists = []
+        efficiency=[]
+        for episode_file in episode_files:
+            with open(episode_file, 'rb') as ef:
+                tempdata = pkl.load(ef)
+
+            data = tempdata['timestep_list']
+            ending_dists.append(data[-1]['reward']['distance_to_goal'])
+            poses = np.array([i['state']['obj_2']['pose'][0][0:2] for i in data])
+            end_pos = poses[-1].copy()
+            goal_pose = data[-1]['state']['goal_pose']['goal_position'][0:2]
+            end_pos[1] -= 0.1
+            dist_along_vec = np.dot(end_pos,np.array(goal_pose)/np.linalg.norm(goal_pose))
+            dtemp = dist_along_vec
+            dist_along_vec = dist_along_vec - abs(np.linalg.norm(goal_pose)-dist_along_vec)
+            dist_traveled = [poses[i+1]-poses[i] for i in range(len(poses)-1)]
+            temp = [np.linalg.norm(d) for d in dist_traveled]
+            mag_dist = np.sum(temp)
+            efficiency.append(dist_along_vec/mag_dist)
+            if count% 100 ==0:
+                print('count = ', count)
+            count +=1
+
+        moveing_avg = 100
+        mean, std = np.average(efficiency), np.std(efficiency)
+        print(f'average efficiency {mean} +/- {std}')
+        efficiency = moving_average(efficiency,moveing_avg)
+        self.ax.plot(range(len(efficiency)),efficiency)
+        self.ax.set_xlabel('Episode_num')
+        self.ax.set_ylabel('Avg Movement Efficiency')       
+        self.ax.set_ylim(-0.01,1.01)                                                                                                                                                                                                                            
+        # self.legend.extend(['Goals'])
+        # self.ax.legend(self.legend)
+        self.ax.set_title('Average Movement Efficiency')
+        self.curr_graph = 'path'
+        return [mean, std]
+
+    def draw_end_pos_no_color(self,folder_or_data_dict):
+        episode_files = [os.path.join(folder_or_data_dict, f) for f in os.listdir(folder_or_data_dict) if f.lower().endswith('.pkl')]
+        filenames_only = [f for f in os.listdir(folder_or_data_dict) if f.lower().endswith('.pkl')]
+        
+        filenums = [re.findall('\d+',f) for f in filenames_only]
+        final_filenums = []
+        for i in filenums:
+            if len(i) > 0 :
+                final_filenums.append(int(i[0]))
+        
+        sorted_inds = np.argsort(final_filenums)
+        final_filenums = np.array(final_filenums)
+        temp = final_filenums[sorted_inds]
+        episode_files = np.array(episode_files)
+        filenames_only = np.array(filenames_only)
+        count = 0
+        episode_files = episode_files[sorted_inds].tolist()
+        end_poses = []
+        goal_poses=[]
+        for episode_file in episode_files:
+            with open(episode_file, 'rb') as ef:
+                tempdata = pkl.load(ef)
+
+            data = tempdata['timestep_list']
+            
+            end_poses.append(data[-1]['state']['obj_2']['pose'][0][0:2])
+            goal_poses.append(data[-1]['state']['goal_pose']['goal_position'])
+            if count% 100 ==0:
+                print('count = ', count)
+            count +=1
+        end_poses = np.array(end_poses)
+        goal_poses = np.array(goal_poses)
+        self.ax.scatter(goal_poses[:,0], goal_poses[:,1]+0.1)
+        self.ax.scatter(end_poses[:,0],end_poses[:,1])
+
+        self.ax.set_xlabel('X position (m)')
+        self.ax.set_ylabel('y position (m)')
+
+        self.ax.set_title('Just the things')
+        self.ax.legend(['Goal Poses', 'End Poses'])
+        self.ax.set_xlim([-0.1,0.1])
+        self.ax.set_ylim([0.0,0.2])
+
+    def draw_radar(self,folder_or_data_dict,legend_thing):
+        episode_files = [os.path.join(folder_or_data_dict, f) for f in os.listdir(folder_or_data_dict) if f.lower().endswith('.pkl')]
+        filenames_only = [f for f in os.listdir(folder_or_data_dict) if f.lower().endswith('.pkl')]
+        
+        filenums = [re.findall('\d+',f) for f in filenames_only]
+        final_filenums = []
+        for i in filenums:
+            if len(i) > 0 :
+                final_filenums.append(int(i[0]))
+        
+        sorted_inds = np.argsort(final_filenums)
+        final_filenums = np.array(final_filenums)
+        temp = final_filenums[sorted_inds]
+        episode_files = np.array(episode_files)
+        filenames_only = np.array(filenames_only)
+        count = 0
+        episode_files = episode_files[sorted_inds].tolist()
+        end_poses = []
+        goal_poses = []
+        name_key_og = [[-0.06,0],[-0.0424,0.0424],[0.0,0.06],[0.0424,0.0424],[0.06,0.0],[0.0424,-0.0424],[0.0,-0.06],[-0.0424,-0.0424]]
+        name_key = [[0,0.07],[0.0495,0.0495],[0.07,0.0],[0.0495,-0.0495],[0.0,-0.07],[-0.0495,-0.0495],[-0.07,0.0],[-0.0495,0.0495]]
+        name_key2 = ["N","NE","E","SE","S","SW", "W","NW"]
+        name_key_og2 = ["E","NE","N","NW","W","SW","S","SE"]
+        dist_traveled_list = []
+        for episode_file in episode_files:
+            with open(episode_file, 'rb') as ef:
+                tempdata = pkl.load(ef)
+
+            data = tempdata['timestep_list']
+            poses = np.array([i['state']['obj_2']['pose'][0][0:2] for i in data])
+            dist_traveled = [poses[i+1]-poses[i] for i in range(len(poses)-1)]
+            temp = [np.linalg.norm(d) for d in dist_traveled]
+            mag_dist = np.sum(temp)
+            dist_traveled_list.append(mag_dist)
+            end_poses.append(data[-1]['state']['obj_2']['pose'][0][0:2])
+            goal_poses.append(data[-1]['state']['goal_pose']['goal_position'])
+            # if count% 100 ==0:
+            #     print('count = ', count)
+            count +=1
+        end_poses = np.array(end_poses)
+        end_poses = end_poses - np.array([0,0.1])
+        dist_along_thing = {'E':[],'NE':[],'N':[],'NW':[],'W':[],'SW':[],'S':[],'SE':[]}
+        efficiency = {'E':[],'NE':[],'N':[],'NW':[],'W':[],'SW':[],'S':[],'SE':[]}
+        for e, g, dt in zip(end_poses, goal_poses, dist_traveled_list):
+            for i,name in enumerate(name_key):
+                if name == g:
+                    dtemp = g/np.linalg.norm(g)*np.dot(e,g/np.linalg.norm(g))
+                    dist_along_thing[name_key2[i]].append(dtemp)
+                    efficiency[name_key2[i]].append(np.linalg.norm(dtemp)/dt)
+            for i,name in enumerate(name_key_og):
+                if name == g:
+                    dtemp = g/np.linalg.norm(g)*np.dot(e,g/np.linalg.norm(g))
+                    dist_along_thing[name_key_og2[i]].append(dtemp)
+                    efficiency[name_key_og2[i]].append(np.linalg.norm(dtemp)/dt)
+        # print(dist_along_thing)
+        # print('efficiency', efficiency, dist_traveled_list)
+        # print(np.unique(goal_poses,axis=0))
+        finals = []
+        alls = []
+        net_efficiency = []
+        for k in name_key2:
+            # print(k, dist_along_thing[k])
+            finals.append(np.average(dist_along_thing[k],axis=0))
+            alls.append(np.linalg.norm(dist_along_thing[k][0]))
+            net_efficiency.append(efficiency[k][0])
+            try:
+                alls.append(np.linalg.norm(dist_along_thing[k][1]))
+                net_efficiency.append(efficiency[k][1])
+                alls.append(np.linalg.norm(dist_along_thing[k][2]))
+                net_efficiency.append(efficiency[k][2])
+            except:
+                pass
+        finals.append(finals[0])
+        finals = np.array(finals)
+        print(legend_thing)
+        print(f'net efficiency: {np.average(net_efficiency)}, {np.std(net_efficiency)}')
+        # print('total distance from the avg',np.sum(np.linalg.norm(finals[0:8],axis=1)))
+        print(f'what we need. mean: {np.sum(alls)/3}, {np.std(alls)}')
+        print()
+        self.ax.plot(finals[:,0],finals[:,1]+0.1)
+        # self.ax.fill(finals[:,0],finals[:,1]+0.1, alpha=0.3)
+        self.ax.set_xlim([-0.07,0.07])
+        self.ax.set_ylim([0.04,0.16])
+        self.ax.set_xlabel('X pos (m)')
+        self.ax.set_ylabel('Y pos (m)')
+        self.legend.append(legend_thing)
+        self.ax.legend(self.legend)
+        # self.ax.scatter(end_poses[:,0],end_poses[:,1])
+
+    def draw_orientation_success_rate(self,folder,success_range):
+        self.clear_axes()
+        rotations = []
+        goals = []
+        episode_files = [os.path.join(folder, f) for f in os.listdir(folder) if f.lower().endswith('.pkl')]
+        filenames_only = [f for f in os.listdir(folder) if f.lower().endswith('.pkl')]
+        
+        filenums = [re.findall('\d+',f) for f in filenames_only]
+        final_filenums = []
+        for i in filenums:
+            if len(i) > 0 :
+                final_filenums.append(int(i[0]))
+        
+        sorted_inds = np.argsort(final_filenums)
+        final_filenums = np.array(final_filenums)
+        episode_files = np.array(episode_files)
+        filenames_only = np.array(filenames_only)
+
+        episode_files = episode_files[sorted_inds].tolist()
+        rewards = []
+        rotation = []   
+        count = 0
+        for episode_file in episode_files:
+            with open(episode_file, 'rb') as ef:
+                tempdata = pkl.load(ef)
+            data = tempdata['timestep_list']
+
+            if data[-1]['reward']['distance_to_goal'] < success_range:
+                print(episode_file)
+                obj_rotation = data[-1]['reward']['object_orientation'][2]
+                obj_rotation = (obj_rotation + np.pi)%(np.pi*2)
+                obj_rotation = obj_rotation - np.pi
+                goal_rotation = data[-1]['state']['goal_pose']['goal_orientation']
+
+                rewards.append(abs(obj_rotation-goal_rotation))
+                rotation.append(goal_rotation)
+                # for tstep in data:
+                #     obj_rotation = tstep['reward']['object_orientation'][2]
+                #     obj_rotation = (obj_rotation + np.pi)%(np.pi*2)
+                #     obj_rotation = obj_rotation - np.pi
+                #     rotations.append(obj_rotation)
+                #     goals.append(tstep['reward']['goal_orientation'])
+                # rewards.append(sum(individual_rewards))
+                # if count% 100 ==0:
+                #     print('count = ', count)
+                count +=1
+        print(rewards,rotation)
+        self.ax.scatter(rotation,rewards)
+        # self.ax.plot(range(len(goals)), goals)
+        self.ax.set_xlabel('Starting distance')
+        self.ax.set_ylabel('Ending Distance')
+        # self.ax.legend(['Object Angle','Goal Angle'])
+
+    def draw_orientation(self,data_dict):
+        self.clear_axes()
+        data = data_dict['timestep_list']
+        rotations = []
+        goals = []
+        for tstep in data:
+            obj_rotation = tstep['reward']['object_orientation'][2]
+            obj_rotation = (obj_rotation + np.pi)%(np.pi*2)
+            obj_rotation = obj_rotation - np.pi
+            rotations.append(obj_rotation)
+            goals.append(tstep['reward']['goal_orientation'])
+        print(data[0]['reward'])
+        print(data[0]['state'])
+        self.ax.plot(range(len(rotations)), rotations)
+        self.ax.plot(range(len(goals)), goals)
+        self.ax.set_xlabel('timestep')
+        self.ax.set_ylabel('angle (rad)')
+        self.ax.legend(['Object Angle','Goal Angle'])

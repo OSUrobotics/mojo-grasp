@@ -8,7 +8,7 @@ import cv2
 # import imageio
 import os
 import numpy as np
-from plot_scripts import running_plot_and_video
+# from plot_scripts import running_plot_and_video
 import re
 import pickle as pkl
 # import glob
@@ -57,6 +57,7 @@ def make_video(filepath):
     frames = []
     for i in range(15):
         for j in range(8):
+            print(video_path)
             frame_path = video_path+file_thing+'_frame_'+str(i)+'_'+str(j*10)+'.png'
             frame_list.append(frame_path)
     frames = [Image.open(image) for image in frame_list]
@@ -64,4 +65,4 @@ def make_video(filepath):
     frame_one.save(filepath+"Episode.gif", format="GIF", append_images=frames,
                save_all=True, duration=15*8, loop=0)
 
-make_video('/home/mothra/mojo-grasp/demos/rl_demo/data/full_full_ppo/')
+make_video('/home/mothra/mojo-grasp/demos/rl_demo/data/FTP_halfstate_A_rand/')

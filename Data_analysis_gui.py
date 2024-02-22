@@ -64,12 +64,14 @@ def main():
     folder_location = os.path.abspath(episode_files[0])
     overall_path = pathlib.Path(folder_location).parent.resolve()
     finger_radios = [sg.Radio('Finger','fr',key='f1'),sg.Radio('Smart Finger','fr',key='f2')]
-    distance_radios = [sg.Radio('Distance','dr',key='d1'),sg.Radio('Scaled Distance','dr',key='d2'),sg.Radio('Smart Distance','dr',key='d3'),sg.Radio('Slope','dr',key='d4')]
+    distance_radios = [sg.Radio('Scaled Distance','dr',key='d1'),sg.Radio('Rotation Only','dr',key='d2'),sg.Radio('Rotation Stationary','dr',key='d3'),sg.Radio('Rotation and Sliding','dr',key='d4')]
     # define menu layout
     menu = [['File', ['Open Folder', 'Exit']], ['Help', ['About', ]]]
 
 
-    scatter_plot_tab = [[sg.Button('End Dist', size=(8, 2)), sg.Button('End Poses', size=(8, 2)), sg.Button('Contact Dist', size=(8, 2)), sg.Button('Average Goals', key='Average Goals',size=(8, 2)), sg.Button('', key='',size=(8, 2))]]
+    scatter_plot_tab = [[sg.Button('End Dist', size=(8, 2)), sg.Button('End Poses', size=(8, 2)), sg.Button('Contact Dist', size=(8, 2)), sg.Button('Average Goals', key='Average Goals',size=(8, 2)), sg.Button('Orientation Multi', key='Orientation Multi',size=(8, 2))],
+                        [sg.Button('Orientation', size=(8,2))],
+                        [sg.Text('Colormap'),sg.Input('plasma_r',key='-cmap',size=(8, 1))]]
 
     plot_buttons = [[sg.Button('Object Path', size=(8, 2)), sg.Button('Finger Angles', size=(8, 2)),sg.Button('Rewards', size=(8, 2), key='FullRewards'), sg.Button('Contact Rewards', key='ContactRewards',size=(8, 2)), sg.Button('Distance/Slope Rewards', key='SimpleRewards',size=(8, 2))],
                     [sg.Button('Explored Region', size=(8,2)), sg.Button('Actor Output', size=(8, 2)), sg.Button('Aout Comparison', size=(8, 2)), sg.Button('RewardSplit',size=(8, 2)), sg.Button('Max Percent', size=(8,2))],
@@ -119,7 +121,11 @@ def main():
     figure_canvas_agg = FigureCanvasTkAgg(fig, canvas)
     figure_canvas_agg.draw()
     figure_canvas_agg.get_tk_widget().pack(side='top', fill='both', expand=1)
-
+    tholds = {'SUCCESS_THRESHOLD':0,
+                       'DISTANCE_SCALING':0,
+                       'CONTACT_SCALING':0,
+                       'SUCCESS_REWARD':0}
+    rf_key = ''
     # input('initialized backend')
     # loop reading the user input and displaying image, filename
     filenum, filename = 0, episode_files[0]
@@ -130,6 +136,23 @@ def main():
     # TODO: add in functionality to check which type of file it is and send in either the epidoe data OR the string to the folder
     while True:
         event, values = window.read()
+        # print('values', values)
+        if not(values['d1']|values['d2']|values['d3']|values['d4']):
+            rf_key = 'rotation_with_finger'
+        elif values['d1']:
+            rf_key = 'single_scaled'
+        elif values['d2']:
+            rf_key = 'solo_rotation'
+        elif values['d3']:
+            rf_key = 'Rotation'
+        elif values['d4']:
+            rf_key = 'slide_and_rotate'
+        tholds = {'SUCCESS_THRESHOLD':float(values['success_range']),
+                        'DISTANCE_SCALING':float(values['-distance_scale']),
+                        'CONTACT_SCALING':float(values['-contact_scale']),
+                        'SUCCESS_REWARD':float(values['-success_reward'])}
+        backend.set_tholds(tholds)
+        backend.set_reward_func(rf_key)
         backend.moving_avg = int(values['moving_avg'])
         success_range = int(values['success_range']) * 0.001
         # print(type(episode_data))
@@ -249,6 +272,9 @@ def main():
             else:
                 backend.draw_end_region(folder)
             figure_canvas_agg.draw()
+        elif event == 'End Pose no color':
+            backend.draw_end_pos_no_color(folder)
+            figure_canvas_agg.draw()
         elif event == 'Fingertip Route':
             backend.draw_fingertip_path(episode_data)
             figure_canvas_agg.draw()
@@ -271,20 +297,20 @@ def main():
                 backend.draw_net_finger_reward(folder)
             figure_canvas_agg.draw()
         elif event == 'End Dist':
-            backend.draw_scatter_end_dist(folder)
+            backend.draw_scatter_end_dist(folder, values['-cmap'])
             figure_canvas_agg.draw()
         elif event =='Contact Dist':
             backend.draw_scatter_contact_dist(folder)
             figure_canvas_agg.draw()
         elif event == 'End Poses':
-            cancan = sg.Window('Popup figure', [[sg.Canvas(size=(1280*2, 960*2),key='-CANVAS-')],[sg.Button('ok cool')]], finalize=True)
+            cancan = sg.Window('Popup figure', [[sg.Canvas(size=(1280*2, 960*2),key='-CANVAS-')]], finalize=True)
             fig2, _ = backend.draw_end_poses(folder)
             figure_canvas_agg2 = FigureCanvasTkAgg(fig2, cancan['-CANVAS-'].TKCanvas)
             figure_canvas_agg2.draw()
             figure_canvas_agg2.get_tk_widget().pack(side='top', fill='both', expand=1)
             cancan.move(1000, 20)
         elif event == 'Multireward':
-            cancan = sg.Window('Popup figure', [[sg.Canvas(size=(1280*2, 960*2),key='-CANVAS-')],[sg.Button('ok cool')]], finalize=True)
+            cancan = sg.Window('Popup figure', [[sg.Canvas(size=(1280*2, 960*2),key='-CANVAS-')]], finalize=True)
             fig2, _  = backend.draw_multifigure_rewards(episode_data)
             figure_canvas_agg2 = FigureCanvasTkAgg(fig2, cancan['-CANVAS-'].TKCanvas)
             figure_canvas_agg2.draw()
@@ -306,6 +332,18 @@ def main():
             figure_canvas_agg.draw()
         elif event =='Average Goals':
             backend.draw_avg_num_goals(folder)
+            figure_canvas_agg.draw()
+        elif event == 'Average Efficiency':
+            backend.draw_average_efficiency(folder)
+            figure_canvas_agg.draw()
+        elif event =='Radar Plot':
+            backend.draw_radar(folder)
+            figure_canvas_agg.draw()
+        elif event =='Orientation':
+            backend.draw_orientation(episode_data)
+            figure_canvas_agg.draw()
+        elif event =='Orientation Multi':
+            backend.draw_orientation_success_rate(folder,success_range)
             figure_canvas_agg.draw()
         elif event == '-SAVE-':
             if '.png' in values['save_name']:

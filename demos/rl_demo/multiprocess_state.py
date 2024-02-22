@@ -9,50 +9,8 @@ Created on Thu Aug 25 10:33:32 2022
 from mojograsp.simcore.state import StateDefault
 import numpy as np
 from copy import deepcopy
-
-class GoalHolder():
-    def __init__(self, goal_pose, goal_names = None):
-        self.pose = goal_pose
-        self.name = 'goal_pose'
-        self.len = len(self.pose)
-        self.goal_names = goal_names
-        if len(np.shape(self.pose)) == 1:
-            self.pose = [self.pose]
-        self.run_num = 0
-    
-    def get_data(self):
-        return {'goal_pose':self.pose[self.run_num%self.len]}
-    
-    def get_name(self):
-        return self.goal_names[self.run_num%self.len]
-    
-    def next_run(self):
-        self.run_num +=1
-        # print('Run number',self.run_num)
-        
-    def reset(self):
-        self.run_num = 0
-        np.random.shuffle(self.pose)
-        print('shuffling the pose order')
-    
-    def __len__(self):
-        return len(self.pose)
-    
-class RandomGoalHolder(GoalHolder):
-    def __init__(self, radius_range: list):
-        self.name = 'goal_pose'
-        self.rrange = radius_range
-        self.pose = []
-        self.next_run()
-        
-    
-    def next_run(self):
-        l = np.sqrt(np.random.uniform(self.rrange[0]**2,self.rrange[1]**2))
-        ang = np.pi * np.random.uniform(0,2)
-        self.pose = [l * np.cos(ang),l * np.sin(ang)]
-    
-    def get_data(self):
-        return {'goal_pose':self.pose}
+from mojograsp.simobjects.two_finger_gripper import TwoFingerGripper
+from mojograsp.simcore.goal_holder import *
         
         
 class MultiprocessState(StateDefault):
@@ -73,6 +31,11 @@ class MultiprocessState(StateDefault):
         super().__init__()
         self.p = pybullet_instance
         self.objects = objects 
+        for object in self.objects:
+            if type(object) == TwoFingerGripper:
+                temp = object.link_lengths
+                self.hand_params = [temp[0][0][1],temp[0][1][1],temp[1][0][1],temp[1][1][1], object.palm_width]
+                self.hand_name = object.record_name
         if prev_len > 0:            
             self.previous_states = [{}]*prev_len
             self.pflag = True
@@ -89,13 +52,13 @@ class MultiprocessState(StateDefault):
         if (self.eval_goals is not None) and self.train_flag:
             self.train_flag = False
             self.objects[-1] = self.eval_goals
-            print('did an evaluate', self.eval_goals.pose[1],self.train_goals.pose[1])
+            # print('did an evaluate', self.eval_goals.pose[1],self.train_goals.pose[1])
             
     def train(self):
         if (self.eval_goals is not None) and not self.train_flag:
             self.train_flag = True
             self.objects[-1] = self.train_goals
-            print('did a train', self.train_goals.pose[1])
+            # print('did a train', self.train_goals.pose[1])
             
     def next_run(self):
         for thing in self.objects:
@@ -110,6 +73,10 @@ class MultiprocessState(StateDefault):
             if (type(thing) == GoalHolder) | (type(thing) == RandomGoalHolder):
                 thing.reset()
     
+    def get_hand_name(self):
+        # print('got hand name',self.hand_name)
+        return self.hand_name
+
     def set_state(self):
         """
         Default method that sets self.current_state to either get_data() for the object or an empty dictionary
@@ -137,13 +104,14 @@ class MultiprocessState(StateDefault):
         self.current_state['f2_ang'] = self.current_state['two_finger_gripper']['joint_angles']['finger1_segment0_joint'] + self.current_state['two_finger_gripper']['joint_angles']['finger1_segment1_joint']        
         self.current_state['f1_contact_pos'] = list(temp1[6])
         self.current_state['f2_contact_pos'] = list(temp2[6])
-
+        self.current_state['hand_params'] = self.hand_params.copy()
+        
     def init_state(self):
         """
         Default method that sets self.current_state to either get_data() for the object or an empty dictionary
         """
         super().set_state()
-
+        # print(self.current_state)
         temp1 = self.p.getClosestPoints(self.objects[1].id, self.objects[0].id, 10, -1, 1, -1)[0]
         temp2 = self.p.getClosestPoints(self.objects[1].id, self.objects[0].id, 10, -1, 4, -1)[0]
         link1_pose = self.p.getLinkState(self.objects[0].id, 2)
@@ -173,6 +141,7 @@ class MultiprocessState(StateDefault):
         :rtype: dict
         """
         # print('g state')
+        # print('goal from get state', self.current_state['goal_pose'])
         temp = self.current_state.copy()
         if self.pflag:
             temp['previous_state'] = self.previous_states.copy()
@@ -183,6 +152,11 @@ class MultiprocessState(StateDefault):
             if (type(thing) == GoalHolder) | (type(thing) == RandomGoalHolder):
                 return thing.get_name()
     
+    def get_goal(self):
+        # print(self.current_state)
+        # print('goal from state.get_goal',self.current_state['goal_pose'])
+        return self.current_state['goal_pose']
+
     def __eq__(self, o):
         # Doesnt check that the objects are the same or that the run number is the same,
         # only checks that the values saved in state are the same

@@ -12,8 +12,6 @@ import pickle as pkl
 import numpy as np
 import json
 from PIL import ImageGrab
-
-
 # from itertools import islice
 import threading
 from mojograsp.simcore.run_from_file import run_pybullet
@@ -63,8 +61,17 @@ class RNNGui():
                          [sg.Text('Path to Previous Policy if Transferring')],
                          [sg.Button("Browse",key='-browse-load',button_color='DarkBlue'),sg.Text("/", key='-load-path')],
                          [sg.Text('Object'), sg.OptionMenu(values=('Cube', 'Cylinder'), k='-object', default_value='Cube')],
-                         [sg.Text('Hand'), sg.OptionMenu(values=('2v2', '2v2-B'), k='-hand', default_value='2v2')],
-                         [sg.Text("Task"), sg.OptionMenu(values=('asterisk','random','full_random','unplanned_random','single', 'wedge', 'double_wedge', 'clump_wedge', "big_random", "Rotation", 'triple', 'multi'), k='-task', default_value='unplanned_random')],
+                         [sg.Text('Hands Used For Training and Testing')],
+                         [sg.Checkbox('2v2_50.50_50.50_43',key='2v2_50.50_50.50_1.1_43',default=False),sg.Checkbox('2v2_50.50_50.50_53',key='2v2_50.50_50.50_1.1_53', default=True),sg.Checkbox('2v2_50.50_50.50_63',key='2v2_50.50_50.50_1.1_63', default=False),sg.Checkbox('2v2_50.50_50.50_73',key='2v2_50.50_50.50_1.1_73', default=False)],
+                         [sg.Checkbox('2v2_65.35_50.50_43',key='2v2_65.35_50.50_1.1_43', default=False),sg.Checkbox('2v2_65.35_50.50_53',key='2v2_65.35_50.50_1.1_53', default=False),sg.Checkbox('2v2_65.35_50.50_63',key='2v2_65.35_50.50_1.1_63', default=False),sg.Checkbox('2v2_65.35_50.50_73',key='2v2_65.35_50.50_1.1_73', default=False)],
+                         [sg.Checkbox('2v2_35.65_50.50_43',key='2v2_35.65_50.50_1.1_43', default=False),sg.Checkbox('2v2_35.65_50.50_53',key='2v2_35.65_50.50_1.1_53', default=False),sg.Checkbox('2v2_35.65_50.50_63',key='2v2_35.65_50.50_1.1_63', default=False),sg.Checkbox('2v2_35.65_50.50_73',key='2v2_35.65_50.50_1.1_73', default=False)],
+                         [sg.Checkbox('2v2_65.35_65.35_43',key='2v2_65.35_65.35_1.1_43', default=False),sg.Checkbox('2v2_65.35_65.35_53',key='2v2_65.35_65.35_1.1_53', default=False),sg.Checkbox('2v2_65.35_65.35_63',key='2v2_65.35_65.35_1.1_63', default=False),sg.Checkbox('2v2_65.35_65.35_73',key='2v2_65.35_65.35_1.1_73', default=False)],
+                         [sg.Checkbox('2v2_35.65_35.65_43',key='2v2_35.65_35.65_1.1_43', default=False),sg.Checkbox('2v2_35.65_35.65_53',key='2v2_35.65_35.65_1.1_53', default=False),sg.Checkbox('2v2_35.65_35.65_63',key='2v2_35.65_35.65_1.1_63', default=False),sg.Checkbox('2v2_35.65_35.65_73',key='2v2_35.65_35.65_1.1_73', default=False)],
+                         [sg.Checkbox('2v2_35.65_65.35_43',key='2v2_35.65_65.35_1.1_43', default=False),sg.Checkbox('2v2_35.65_65.35_53',key='2v2_35.65_65.35_1.1_53', default=False),sg.Checkbox('2v2_35.65_65.35_63',key='2v2_35.65_65.35_1.1_63', default=False),sg.Checkbox('2v2_35.65_65.35_73',key='2v2_35.65_65.35_1.1_73', default=False)],
+                         [sg.Checkbox('2v2_70.30_70.30_43',key='2v2_70.30_70.30_1.1_43', default=False),sg.Checkbox('2v2_70.30_70.30_53',key='2v2_70.30_70.30_1.1_53', default=False),sg.Checkbox('2v2_70.30_70.30_63',key='2v2_70.30_70.30_1.1_63', default=False),sg.Checkbox('2v2_70.30_70.30_73',key='2v2_70.30_70.30_1.1_73', default=False)],
+                         [sg.Checkbox('2v2_70.30_50.50_43',key='2v2_70.30_50.50_1.1_43', default=False),sg.Checkbox('2v2_70.30_50.50_53',key='2v2_70.30_50.50_1.1_53', default=False),sg.Checkbox('2v2_70.30_50.50_63',key='2v2_70.30_50.50_1.1_63', default=False),sg.Checkbox('2v2_70.30_50.50_73',key='2v2_70.30_50.50_1.1_73', default=False)],
+                         [sg.Text("Task"), sg.OptionMenu(values=('asterisk','single',"big_random","Rotation+Finger",
+                          "Rotation_single", "Rotation_region", "slide_and_rotate",'triple', 'multi'), k='-task', default_value='unplanned_random')],
                          [sg.Checkbox("Randomized Start Position", key='-rstart',default=False), sg.Checkbox("Randomized Finger Position", key='-rfinger',default=False)],
                          [sg.Text('Replay Buffer Sampling'), sg.OptionMenu(values=('priority','random','random+expert'), k='-sampling', default_value='priority')]]
         
@@ -90,8 +97,10 @@ class RNNGui():
                        [sg.Checkbox('Finger Object Distance', default=False, k='-fod')],
                        [sg.Checkbox('Finger Tip Angle',default=True, k='-fta')],
                        [sg.Checkbox('Goal Position',default=True, k='-gp')],
+                       [sg.Checkbox('Goal Orientation', default=True, k = '-go')],
                        [sg.Checkbox('Eigenvalues',default=False,key='-eva')],
                        [sg.Checkbox('Eigenvectors',default=False,key='-evc')],
+                       [sg.Checkbox('HandParameters',default=False,key='-params')],
                        [sg.Checkbox('Eigenvectors Times Eigenvalues',default=False,key='-evv')],
                        [sg.Text('Num Previous States'),sg.Input(4, k='-pv',size=(8, 2))],
                        [sg.Text("Reward"), sg.OptionMenu(values=('Sparse','Distance','Distance + Finger', 'Hinge Distance + Finger', 'Slope', 'Slope + Finger','SmartDistance + Finger','SmartDistance + SmartFinger','ScaledDistance + Finger','ScaledDistance+ScaledFinger', 'SFS','DFS','Rotation'), k='-reward',default_value='ScaledDistance+ScaledFinger'), sg.Text('Success Radius (mm)'), sg.Input(2, key='-sr',size=(8, 2)),],
@@ -99,8 +108,7 @@ class RNNGui():
                        [sg.Text("Action"), sg.OptionMenu(values=('Joint Velocity','Finger Tip Position'), k='-action',default_value='Finger Tip Position')],
                        [sg.Checkbox('Vizualize Simulation',default=False, k='-viz'), sg.Checkbox('Real World?',default=False, k='-rw'), sg.Checkbox('IK every sim step?', default=False, key='-ik-freq')],
                        [sg.Button('Begin Training', key='-train', bind_return_key=True)],
-                       [sg.Button('Build Config File WITHOUT Training', key='-build')],
-                       [sg.Text('Work progress'), sg.ProgressBar(100, size=(20, 20), orientation='h', key='-PROG-')]]
+                       [sg.Button('Build Config File WITHOUT Training', key='-build')]]
 
         layout = [[sg.TabGroup([[sg.Tab('Task and General parameters', data_layout, key='-mykey-'),
                                 sg.Tab('Hyperparameters', model_layout),
@@ -122,7 +130,6 @@ class RNNGui():
                      'edecay': float(values['-edecay']),
                      'entropy': float(values['-entropy']),
                      'object': values['-object'],
-                     'hand': values['-hand'],
                      'task': values['-task'],
                      'evaluate': int(values['-eval']),
                      'sampling': values['-sampling'],
@@ -148,7 +155,9 @@ class RNNGui():
         state_mins = []
         state_maxes = []
         state_list = []
-        if bool(values['-rstart']) and bool(values['-rfinger']):
+        if values['-task'] == 'Rotation_region':
+            self.args['rstart'] ='end'
+        elif bool(values['-rstart']) and bool(values['-rfinger']):
             self.args['rstart']= 'both'
         elif not bool(values['-rstart']) and bool(values['-rfinger']):
             self.args['rstart']= 'finger'
@@ -156,6 +165,7 @@ class RNNGui():
             self.args['rstart']= 'no'
         elif bool(values['-rstart']) and not bool(values['-rfinger']):
             self.args['rstart']= 'obj'
+        
 
         if values['-ftp']:
             if not RW:
@@ -231,6 +241,11 @@ class RNNGui():
             state_maxes.extend([1, 1, 1, 1, 1, 1, 1, 1])
             state_len += 8
             state_list.append('evc')
+        if values['-params']:
+            state_mins.extend([0.0504,0.0432,0.0504,0.0432,0.053])
+            state_maxes.extend([0.1008,0.0936,0.1008,0.0936,0.073])
+            state_len += 5
+            state_list.append('params')
         if values['-evv']:
             state_mins.extend([-1, -1, -1, -1, -1, -1, -1, -1])
             state_maxes.extend([1, 1, 1, 1, 1, 1, 1, 1])
@@ -245,6 +260,11 @@ class RNNGui():
                 state_maxes.extend([0.105, 0.105])
             state_len += 2
             state_list.append('gp')
+        if values['-go']:
+            state_mins.append(-np.pi)
+            state_maxes.append(np.pi)
+            state_len +=1
+            state_list.append('go')
         if self.args['pv'] > 0:
             state_len += state_len * self.args['pv']
             temp_mins = state_mins.copy()
@@ -283,10 +303,14 @@ class RNNGui():
         overall_path = pathlib.Path(__file__).parent.resolve()
         resource_path = overall_path.joinpath('demos/rl_demo/resources')
         run_path = overall_path.joinpath('demos/rl_demo/runs')
-        if values['-hand'] == '2v2':
-            self.args['hand_path'] = str(resource_path.joinpath('2v2_Hand_A/hand/2v2_50.50_50.50_1.1_53.urdf'))
-        elif values['-hand'] == '2v2-B':
-            self.args['hand_path'] = str(resource_path.joinpath('2v2_Hand_B/hand/2v2_65.35_65.35_1.1_53.urdf'))
+        self.args['hand_path'] = str(resource_path.joinpath("hand_bank"))
+        self.args['hand_file_list'] = []
+        for k,v in values.items():
+            if type(k) == str:
+                if '2v2' in k:
+                    if v:
+                        print('adding thing', k+'/hand/'+k+'.urdf')
+                        self.args['hand_file_list'].append(k+'/hand/'+k+'.urdf')
         if values['-object'] == 'Cube':
             self.args['object_path'] = str(resource_path.joinpath('object_models/2v2_mod/2v2_mod_cuboid_small.urdf'))
         elif values['-object'] == 'Cylinder':
@@ -297,7 +321,7 @@ class RNNGui():
             self.args['max_action'] = 0.01
         if (values['-task'] == 'full_random') | (values['-task'] == 'unplanned_random'):
             self.args['points_path'] = str(resource_path.joinpath('points.csv'))
-        elif (values['-task'] == 'big_random') | (values['-task'] =='multi'):
+        elif (values['-task'] == 'big_random') | (values['-task'] =='multi')|(values['-task'] =='slide_and_rotate')|(values['-task'] =='Rotation_region'):
             self.args['points_path'] = str(resource_path.joinpath('train_points_big.csv'))
         else:
             self.args['points_path'] = str(resource_path.joinpath('train_points.csv'))
@@ -350,7 +374,7 @@ class RNNGui():
         return True
         
     def train(self):
-        run_pybullet(self.args['save_path'] + 'experiment_config.json', self.window)
+        run_pybullet(self.args['save_path'] + 'experiment_config.json')
         print('model finished, saving now')
 
     def log_params(self):
@@ -376,13 +400,26 @@ class RNNGui():
             except FileExistsError:
                 pass
             try:
-                os.mkdir(self.args['save_path'] + '/Eval/')
+                os.mkdir(self.args['save_path'] + '/Eval_A/')
+            except FileExistsError:
+                pass
+            try:
+                os.mkdir(self.args['save_path'] + '/Real_B/')
+            except FileExistsError:
+                pass
+            try:
+                os.mkdir(self.args['save_path'] + '/Real_A/')
+            except FileExistsError:
+                pass
+            try:
+                os.mkdir(self.args['save_path'] + '/Eval_B/')
             except FileExistsError:
                 pass
         else:
             print('config not built, parameters not saved')
 
     def run_gui(self):
+        p1 = pathlib.Path(__file__).parent.resolve()
         while True:
 
             event, values = self.window.read()
@@ -403,7 +440,7 @@ class RNNGui():
                 break
             # ----------------- Menu choices -----------------
             if event == '-browse-expert':
-                newfolder = sg.popup_get_folder('Select Folder Containing Expert Data', no_window=True)
+                newfolder = sg.popup_get_folder('Select Folder Containing Expert Data',initial_folder=str(p1)+'/demos/rl_demo/data', no_window=True)
                 if newfolder is None:
                     continue
     
@@ -414,7 +451,7 @@ class RNNGui():
                 self.window.refresh()
             
             elif event == '-browse-save':
-                newfolder = sg.popup_get_folder('Select Folder To Save Data In', no_window=True)
+                newfolder = sg.popup_get_folder('Select Folder To Save Data In',initial_folder=str(p1)+'/demos/rl_demo/data', no_window=True)
                 if newfolder is None:
                     continue
     
@@ -425,7 +462,7 @@ class RNNGui():
                 self.window.refresh()
 
             elif event == '-browse-load':
-                newfolder = sg.popup_get_folder('Select Folder To Save Data In', no_window=True)
+                newfolder = sg.popup_get_folder('Select Folder To Save Data In',initial_folder=str(p1)+'/demos/rl_demo/data', no_window=True)
                 if newfolder is None:
                     continue
     

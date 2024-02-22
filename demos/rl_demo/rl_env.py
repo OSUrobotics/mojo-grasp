@@ -153,10 +153,11 @@ class SingleShapeEnv(Environment):
         self.hand = hand
         self.obj = obj
         mass_link = .036
-        if 'B' in hand_type:
-            self.hand_type = 'B'
-        else:
-            self.hand_type = 'A'
+        key_nums = hand_type.split('_')
+        self.f1 = key_nums[1]
+        self.f2 = key_nums[2]
+        self.width = key_nums[-1]
+        np.random.seed(42)
         if rand_start =='obj':
             self.rand_start = True
             self.rand_finger_pos = False
@@ -203,24 +204,35 @@ class SingleShapeEnv(Environment):
             #no noise
             obj_change = np.array([0,0])
 
-        
-        if self.hand_type =='A':
-            p.resetJointState(self.hand_id, 0, -.725)
-            p.resetJointState(self.hand_id, 1, 1.45)
-            p.resetJointState(self.hand_id, 3, .725)
-            p.resetJointState(self.hand_id, 4, -1.45)
-        if self.hand_type == 'B':
-            p.resetJointState(self.hand_id, 0, -.46)
-            p.resetJointState(self.hand_id, 1, 1.5)
-            p.resetJointState(self.hand_id, 3, .46)
-            p.resetJointState(self.hand_id, 4, -1.5)
-        
+        if self.width == '53':
+            if self.f1 =='50.50':
+                p.resetJointState(self.hand_id, 0, -.725)
+                p.resetJointState(self.hand_id, 1, 1.45)
+            elif self.f1 == '65.35':
+                p.resetJointState(self.hand_id, 0, -.4)
+                p.resetJointState(self.hand_id, 1, 1.4)
+            if self.f2 =='50.50':
+                p.resetJointState(self.hand_id, 3, .725)
+                p.resetJointState(self.hand_id, 4, -1.45)
+            elif self.f2 == '65.35':
+                p.resetJointState(self.hand_id, 3, .45)
+                p.resetJointState(self.hand_id, 4, -1.45)
+            elif self.f1 == '35.65':
+                p.resetJointState(self.hand_id, 0, -.46)
+                p.resetJointState(self.hand_id, 1, 1.5)
+            elif self.f2 == '35.65':
+                p.resetJointState(self.hand_id, 3, .46)
+                p.resetJointState(self.hand_id, 4, -1.5)
+        else:
+            raise KeyError('width other than 53 are not accepted at this time')
+        f1_dist = p.getClosestPoints(self.obj.id, self.hand.id, 10, -1, 1, -1)
+        f2_dist = p.getClosestPoints(self.obj.id, self.hand.id, 10, -1, 4, -1)
+        print('f1 dist', max(f1_dist[0][8], 0))
+        print('f2_dist', max(f2_dist[0][8], 0))
         p.resetBasePositionAndOrientation(self.obj_id, posObj=[0.0+obj_change[0], 0.10+obj_change[1], .05], ornObj=[0,0,0,1])
-
         if self.rand_start:
             f1_pos = [0.026749999999999996+obj_change[0], 0.10778391676312778+obj_change[1], 0.05]
             f2_pos = [-0.026749999999999996+obj_change[0], 0.10778391676312778+obj_change[1], 0.05]
-            
             f1_angs = p.calculateInverseKinematics(self.hand_id, 2, f1_pos, maxNumIterations=3000)
             f2_angs = p.calculateInverseKinematics(self.hand_id, 5, f2_pos, maxNumIterations=3000)
             p.resetJointState(self.hand_id, 0, -np.pi/2)
@@ -236,26 +248,29 @@ class SingleShapeEnv(Environment):
                 self.step()
         if self.rand_finger_pos:
             y_change = np.random.uniform(-0.01,0.01,2)
-            f1_pos = [0.026749999999999996, 0.10778391676312778 + y_change[0], 0.05]
-            f2_pos = [-0.026749999999999996, 0.10778391676312778 + y_change[1], 0.05]
-            
+            # y_change = [0,0]
+            print('howdy')
+            # link1_pose = p.getLinkState(self.hand_id, 2)[0]
+            # link2_pose = p.getLinkState(self.hand_id, 5)[0]
+            f1_pos = [0.026749999999999996, 0.10778391676312778+ y_change[0], 0.05]
+            f2_pos = [-0.026749999999999996, 0.10778391676312778+ y_change[1], 0.05]
+            # f1_pos = [link1_pose[0], link1_pose[1] + y_change[0], 0.05]
+            # f2_pos = [link2_pose[0], link2_pose[1] + y_change[1], 0.05]
             f1_angs = p.calculateInverseKinematics(self.hand_id, 2, f1_pos, maxNumIterations=3000)
             f2_angs = p.calculateInverseKinematics(self.hand_id, 5, f2_pos, maxNumIterations=3000)
             p.resetJointState(self.hand_id, 0, -np.pi/2)
             p.resetJointState(self.hand_id, 1, np.pi/4)
             p.resetJointState(self.hand_id, 3, np.pi/2)
             p.resetJointState(self.hand_id, 4, -np.pi/4)
-            
+            # print('wtf')
+
             positions = np.linspace([-np.pi/2,np.pi/4,np.pi/2,-np.pi/4],[f1_angs[0],f1_angs[1],f2_angs[2],f2_angs[3]],20)
             for action_to_execute in positions:
                 p.setJointMotorControlArray(self.hand_id, jointIndices=self.hand.get_joint_numbers(),
                                             controlMode=p.POSITION_CONTROL, targetPositions=action_to_execute,
                                             positionGains=[0.8,0.8,0.8,0.8], forces=[0.4,0.4,0.4,0.4])
                 self.step()
-        f1_dist = p.getClosestPoints(self.obj.id, self.hand.id, 10, -1, 1, -1)
-        f2_dist = p.getClosestPoints(self.obj.id, self.hand.id, 10, -1, 4, -1)
-        print('f1 dist', f1_dist)
-        print('f2_dist', f2_dist)
+
         
 
     def reset_to_pos(self, object_pos, finger_angles):
