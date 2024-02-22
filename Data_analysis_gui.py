@@ -69,7 +69,7 @@ def main():
     menu = [['File', ['Open Folder', 'Exit']], ['Help', ['About', ]]]
 
 
-    scatter_plot_tab = [[sg.Button('End Dist', size=(8, 2)), sg.Button('End Poses', size=(8, 2)), sg.Button('Contact Dist', size=(8, 2)), sg.Button('Average Goals', key='Average Goals',size=(8, 2)), sg.Button('', key='',size=(8, 2))],
+    scatter_plot_tab = [[sg.Button('End Dist', size=(8, 2)), sg.Button('End Poses', size=(8, 2)), sg.Button('Contact Dist', size=(8, 2)), sg.Button('Average Goals', key='Average Goals',size=(8, 2)), sg.Button('Orientation Multi', key='Orientation Multi',size=(8, 2))],
                         [sg.Button('Orientation', size=(8,2))],
                         [sg.Text('Colormap'),sg.Input('plasma_r',key='-cmap',size=(8, 1))]]
 
@@ -138,7 +138,7 @@ def main():
         event, values = window.read()
         # print('values', values)
         if not(values['d1']|values['d2']|values['d3']|values['d4']):
-            rf_key = 'Distance'
+            rf_key = 'rotation_with_finger'
         elif values['d1']:
             rf_key = 'single_scaled'
         elif values['d2']:
@@ -341,6 +341,9 @@ def main():
             figure_canvas_agg.draw()
         elif event =='Orientation':
             backend.draw_orientation(episode_data)
+            figure_canvas_agg.draw()
+        elif event =='Orientation Multi':
+            backend.draw_orientation_success_rate(folder,success_range)
             figure_canvas_agg.draw()
         elif event == '-SAVE-':
             if '.png' in values['save_name']:
