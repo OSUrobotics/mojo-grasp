@@ -27,6 +27,7 @@ import json
 from stable_baselines3 import TD3, PPO, DDPG, HerReplayBuffer
 from stable_baselines3.common.vec_env import SubprocVecEnv
 from stable_baselines3.common.evaluation import evaluate_policy
+from stable_baselines3.common.utils import get_device
 import wandb
 import numpy as np
 import time
@@ -140,13 +141,13 @@ def make_pybullet(arg_dict, pybullet_instance, rank, hand_info):
     elif (args['task'] == 'Rotation_single') | (args['task'] == 'Rotation+Finger'):
         # this will be changed
         # I want to be sure we can rotate the thing in the middle first
-        x = [0.0]*100
-        y = [0.0]*100
-        orientations = np.random.uniform(-np.pi+0.1, np.pi-0.1,100)
+        x = [0.0]*1000
+        y = [0.0]*1000
+        orientations = np.random.uniform(-np.pi/2+0.1, np.pi/2-0.1,1000)
         orientations = orientations + np.sign(orientations)*0.1
         xeval = x
         yeval = y
-        eval_orientations = np.random.uniform(-np.pi+0.1, np.pi-0.1,100)
+        eval_orientations = np.random.uniform(-np.pi/2+0.1, np.pi/2-0.1,1000)
         eval_orientations = eval_orientations + np.sign(eval_orientations)*0.1
     elif args['task'] == 'Rotation_region':
         df = pd.read_csv(args['points_path'], index_col=False)
@@ -403,12 +404,18 @@ def main(filepath = None,learn_type='run'):
     elif learn_type == 'run':
         model = model_type("MlpPolicy", vec_env,tensorboard_log=args['tname'])
 
-    model.learn(total_timesteps=args['epochs']*(args['tsteps']+1), callback=callback)
-    filename = os.path.dirname(filepath)
-    model.save(filename+'/last_model')
+    try:
+        print('starting the training using', get_device())
+        
+        model.learn(total_timesteps=args['epochs']*(args['tsteps']+1), callback=callback)
+        filename = os.path.dirname(filepath)
+        model.save(filename+'/last_model')
 
-    evaluate(filepath, "A")
-    evaluate(filepath, "B")
+        evaluate(filepath, "A")
+        evaluate(filepath, "B")
+    except KeyboardInterrupt:
+        filename = os.path.dirname(filepath)
+        model.save(filename+'/canceled_model')
     # vec_env.env_method('evaluate')
     # for _ in range(1200):
     #     obs =  vec_env.env_method('reset')
@@ -480,6 +487,6 @@ if __name__ == '__main__':
     # evaluate("./data/JA_newstate_A_rand/experiment_config.json")
     # evaluate("./data/JA_newstate_A_rand/experiment_config.json","B")
 
-    # main("./data/FTP_single_rotate/experiment_config.json")
-    # main("./data/FTP_region_rotate/experiment_config.json")
-    main("./data/FTP_single_rotation_low_distance_scaling/experiment_config.json")
+    # main("./data/FTP_long_train_finger_half/experiment_config.json")
+    # main("./data/FTP_long_no_finger/experiment_config.json")
+    main("./data/FTP_long_full_half/experiment_config.json")

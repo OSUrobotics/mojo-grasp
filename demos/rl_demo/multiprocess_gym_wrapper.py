@@ -18,6 +18,7 @@ from PIL import Image
 from stable_baselines3.common.callbacks import EvalCallback
 from demos.rl_demo.rl_gym_wrapper import NoiseAdder
 import mojograsp.simcore.reward_functions as rf
+import time
 
 class MultiEvaluateCallback(EvalCallback):
 
@@ -63,6 +64,8 @@ class MultiprocessGymWrapper(gym.Env):
         self.viz = False
         self.eval_run = 0
         self.timestep = 0
+        self.past_time = time.time()
+        self.thing = []
         self.first = True
         self.small_enough = args['epochs'] <= 100000
         self.episode_type = 'train'
@@ -108,10 +111,13 @@ class MultiprocessGymWrapper(gym.Env):
         elif self.REWARD_TYPE == 'ScaledDistance + Finger':
             self.build_reward = rf.scaled
         elif self.TASK == 'Rotation+Finger':
+            print('rotation and finger')
             self.build_reward = rf.rotation_with_finger
         elif (self.TASK == 'Rotation_single')|(self.TASK =='Rotation_region'):
+            print('just rotation no sliding, stay in place dammit')
             self.build_reward = rf.rotation
         elif self.TASK == 'slide_and_rotate':
+            print('All them rotation and sliding')
             self.build_reward = rf.slide_and_rotate
         elif (self.REWARD_TYPE == 'ScaledDistance+ScaledFinger') and (self.TASK != 'multi'):
             self.build_reward = rf.double_scaled
@@ -128,10 +134,15 @@ class MultiprocessGymWrapper(gym.Env):
 
 
     def reset(self,special=None):
+        
+        # if self.thing%1000 == 0:
+        # print(self.thing)
         if not self.first:
-            
+            self.thing.append(time.time()-self.past_time)
+            self.past_time = time.time()
             if self.manipulation_phase.episode >= self.manipulation_phase.state.objects[-1].len:
                 self.manipulation_phase.reset()
+                print('average time of episode',np.average(self.thing))
             new_goal = self.manipulation_phase.next_ep()
             # print('new goal from reset', new_goal)
         else:

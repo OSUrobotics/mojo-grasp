@@ -65,6 +65,8 @@ class PlotBackend():
             self.build_reward = rf.solo_rotation
         elif key == 'slide_and_rotate':
             self.build_reward = rf.slide_and_rotate
+        elif key == 'rotation_with_finger':
+            self.build_reward = rf.rotation_with_finger
         elif key == 'single_scaled':
             self.build_reward = rf.double_scaled
         elif key == 'SFS':
@@ -1657,6 +1659,7 @@ class PlotBackend():
         fig = plt.figure(constrained_layout=True, figsize=(8,6))
         ax = fig.add_gridspec(4, 3)
         ax1 = fig.add_subplot(ax[0:3, :])
+        ax1.set_aspect('equal',adjustable='box')
         ax2 = fig.add_subplot(ax[-1, :])
 
         # print('need to load in episode all first')
@@ -1729,7 +1732,7 @@ class PlotBackend():
             ax1.scatter(small_pose[:,0]*100, small_pose[:,1]*100)
             self.legend.extend(['<= '+str(small_thold*100)+' cm'])
         # ax2.bar(['<0.5 cm','<1 cm','<2 cm','>2 cm'], [len(small_pose),len(med_pose),len(large_pose), len(fucked)])
-        ax2.bar(bins, num_things, width=0.05/100)
+        ax2.bar(bins*100, num_things, width=5/100)
         plt.tight_layout()
         # self.legend.extend(['Ending Goal Distance'])
         # self.ax.legend(self.legend)
@@ -2028,6 +2031,59 @@ class PlotBackend():
         self.legend.append(legend_thing)
         self.ax.legend(self.legend)
         # self.ax.scatter(end_poses[:,0],end_poses[:,1])
+
+    def draw_orientation_success_rate(self,folder,success_range):
+        self.clear_axes()
+        rotations = []
+        goals = []
+        episode_files = [os.path.join(folder, f) for f in os.listdir(folder) if f.lower().endswith('.pkl')]
+        filenames_only = [f for f in os.listdir(folder) if f.lower().endswith('.pkl')]
+        
+        filenums = [re.findall('\d+',f) for f in filenames_only]
+        final_filenums = []
+        for i in filenums:
+            if len(i) > 0 :
+                final_filenums.append(int(i[0]))
+        
+        sorted_inds = np.argsort(final_filenums)
+        final_filenums = np.array(final_filenums)
+        episode_files = np.array(episode_files)
+        filenames_only = np.array(filenames_only)
+
+        episode_files = episode_files[sorted_inds].tolist()
+        rewards = []
+        rotation = []   
+        count = 0
+        for episode_file in episode_files:
+            with open(episode_file, 'rb') as ef:
+                tempdata = pkl.load(ef)
+            data = tempdata['timestep_list']
+
+            if data[-1]['reward']['distance_to_goal'] < success_range:
+                print(episode_file)
+                obj_rotation = data[-1]['reward']['object_orientation'][2]
+                obj_rotation = (obj_rotation + np.pi)%(np.pi*2)
+                obj_rotation = obj_rotation - np.pi
+                goal_rotation = data[-1]['state']['goal_pose']['goal_orientation']
+
+                rewards.append(abs(obj_rotation-goal_rotation))
+                rotation.append(goal_rotation)
+                # for tstep in data:
+                #     obj_rotation = tstep['reward']['object_orientation'][2]
+                #     obj_rotation = (obj_rotation + np.pi)%(np.pi*2)
+                #     obj_rotation = obj_rotation - np.pi
+                #     rotations.append(obj_rotation)
+                #     goals.append(tstep['reward']['goal_orientation'])
+                # rewards.append(sum(individual_rewards))
+                # if count% 100 ==0:
+                #     print('count = ', count)
+                count +=1
+        print(rewards,rotation)
+        self.ax.scatter(rotation,rewards)
+        # self.ax.plot(range(len(goals)), goals)
+        self.ax.set_xlabel('Starting distance')
+        self.ax.set_ylabel('Ending Distance')
+        # self.ax.legend(['Object Angle','Goal Angle'])
 
     def draw_orientation(self,data_dict):
         self.clear_axes()
