@@ -233,7 +233,7 @@ def make_pybullet(filepath, pybullet_instance, rank):
 
 
 def main(filepath = None):
-    num_cpu = multiprocessing.cpu_count() # Number of processes to use
+    num_cpu = 16#multiprocessing.cpu_count() # Number of processes to use
     # Create the vectorized environment
     if filepath is None:
         filename = 'JA_fullstate_A_rand'
