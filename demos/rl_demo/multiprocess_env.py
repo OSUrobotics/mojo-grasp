@@ -302,6 +302,7 @@ class MultiprocessSingleShapeEnv(Environment):
                                             controlMode=self.p.POSITION_CONTROL, targetPositions=action_to_execute,
                                             positionGains=[0.8,0.8,0.8,0.8], forces=[0.4,0.4,0.4,0.4])
                 self.step()
+            thing = self.p.getBaseVelocity(self.obj_id)
         if self.rand_finger_pos:
             # print('we here')
             y_change = np.random.uniform(-0.01,0.01,2)
