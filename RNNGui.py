@@ -94,6 +94,7 @@ class RNNGui():
                        [sg.Checkbox('Joint Angle', default=False, k='-ja')],
                        [sg.Checkbox('Object Position', default=True, k='-op')],
                        [sg.Checkbox('Object Orientation', default=False, k='-oo')],
+                       [sg.Checkbox('Object Angle',default=False,k='-oa')],
                        [sg.Checkbox('Finger Object Distance', default=False, k='-fod')],
                        [sg.Checkbox('Finger Tip Angle',default=True, k='-fta')],
                        [sg.Checkbox('Goal Position',default=True, k='-gp')],
@@ -212,6 +213,11 @@ class RNNGui():
                 state_maxes.extend([1,1,1,1])
             state_len += 4
             state_list.append('oo')
+        if values['-oa']:
+            state_mins.extend([-1,-1])
+            state_maxes.extend([1,1])
+            state_len += 2
+            state_list.append('oa')
         if values['-ja']:
             state_mins.extend([-np.pi/2, -2.09, -np.pi/2, 0])
             state_maxes.extend([np.pi/2, 0, np.pi/2, 2.09])

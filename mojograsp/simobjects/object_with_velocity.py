@@ -1,4 +1,5 @@
 from mojograsp.simobjects.object_base import ObjectBase
+from scipy.spatial.transform import Rotation as R
 
 class ObjectWithVelocity(ObjectBase):
     def __init__(self, id: int = None, path: str = None, name: str = None, physicsClientId: int = 0):
@@ -15,4 +16,5 @@ class ObjectWithVelocity(ObjectBase):
         data = {}
         data["pose"] = self.get_curr_pose()
         data["velocity"] = self.get_curr_velocity()
+        data['z_angle'] = R.from_quat(data['pose'][1]).as_euler('xyz')[-1]
         return data
