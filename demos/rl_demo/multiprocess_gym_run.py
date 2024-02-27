@@ -167,9 +167,9 @@ def make_pybullet(arg_dict, pybullet_instance, rank, hand_info, viz=False):
         df2 = pd.read_csv(overall_path + '/demos/rl_demo/resources/test_points_big.csv', index_col=False)
         xeval = df2['x']
         yeval = df2['y']
-        orientations = np.random.uniform(-np.pi+0.1, np.pi-0.1,1200)
+        orientations = np.random.uniform(-np.pi/2+0.1, np.pi/2-0.1,1200)
         orientations = orientations + np.sign(orientations)*0.1
-        eval_orientations = np.random.uniform(-np.pi+0.1, np.pi-0.1,1200)
+        eval_orientations = np.random.uniform(-np.pi/2+0.1, np.pi/2-0.1,1200)
         eval_orientations = eval_orientations + np.sign(eval_orientations)*0.1
     else:
         df = pd.read_csv(args['points_path'], index_col=False)
@@ -401,7 +401,7 @@ def replay(argpath, episode_path):
         # return
             
 def main(filepath = None,learn_type='run'):
-    num_cpu =  multiprocessing.cpu_count() # Number of processes to use
+    num_cpu = 16# multiprocessing.cpu_count() # Number of processes to use
     # Create the vectorized environment
 
     if filepath is None:
@@ -535,3 +535,4 @@ if __name__ == '__main__':
     # main("./data/region_rotation_JA/experiment_config.json")
     
     replay("./data/region_rotation_JA/experiment_config.json", "./data/region_rotation_JA/Eval_A/Episode_241204.pkl")
+
