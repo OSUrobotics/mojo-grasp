@@ -44,7 +44,7 @@ def make_env(arg_dict=None,rank=0,hand_info=None):
         return env
     return _init
 
-def make_pybullet(arg_dict, pybullet_instance, rank, hand_info):
+def make_pybullet(arg_dict, pybullet_instance, rank, hand_info, viz=False):
     # resource paths
     this_path = os.path.abspath(__file__)
     overall_path = os.path.dirname(os.path.dirname(os.path.dirname(this_path)))
@@ -156,9 +156,9 @@ def make_pybullet(arg_dict, pybullet_instance, rank, hand_info):
         df2 = pd.read_csv(overall_path + '/demos/rl_demo/resources/test_points_big.csv', index_col=False)
         xeval = df2['x']/2
         yeval = df2['y']/2
-        orientations = np.random.uniform(-np.pi+0.1, np.pi-0.1,1200)
+        orientations = np.random.uniform(-np.pi/2+0.1, np.pi/2-0.1,1200)
         orientations = orientations + np.sign(orientations)*0.1
-        eval_orientations = np.random.uniform(-np.pi+0.1, np.pi-0.1,1200)
+        eval_orientations = np.random.uniform(-np.pi/2+0.1, np.pi/2-0.1,1200)
         eval_orientations = eval_orientations + np.sign(eval_orientations)*0.1
     elif args['task'] == 'slide_and_rotate':
         df = pd.read_csv(args['points_path'], index_col=False)
@@ -195,7 +195,10 @@ def make_pybullet(arg_dict, pybullet_instance, rank, hand_info):
     eval_pose_list = np.array(eval_pose_list[int(num_eval*rank[0]/rank[1]):int(num_eval*(rank[0]+1)/rank[1])])
     # print(args)
     
-    physics_client = pybullet_instance.connect(pybullet_instance.DIRECT)
+    if viz:
+        physics_client = pybullet_instance.connect(pybullet_instance.GUI)
+    else:
+        physics_client = pybullet_instance.connect(pybullet_instance.DIRECT)
     pybullet_instance.setAdditionalSearchPath(pybullet_data.getDataPath())
     pybullet_instance.setGravity(0, 0, -10)
     pybullet_instance.setPhysicsEngineParameter(contactBreakingThreshold=.001)
@@ -356,7 +359,47 @@ def evaluate(filepath=None,aorb = 'A'):
             # time.sleep(0.5)
         # p2.disconnect()
             # return
-
+            
+def replay(argpath, episode_path):
+    
+    with open(argpath, 'r') as argfile:
+        args = json.load(argfile)
+    
+    key_file = os.path.abspath(__file__)
+    key_file = os.path.dirname(key_file)
+    key_file = os.path.join(key_file,'resources','hand_bank','hand_params.json')
+    with open(key_file,'r') as hand_file:
+        hand_params = json.load(hand_file)
+    if args['model'] == 'PPO':
+        model_type = PPO
+    elif 'DDPG' in args['model']:
+        model_type = DDPG
+    elif 'TD3' in args['model']:
+        model_type = TD3
+        
+        
+    with open(episode_path,'rb') as efile:
+        data = pkl.load(efile)
+    
+    actions = [a['action']['actor_output'] for a in data['timestep_list']]
+    import pybullet as p2
+    eval_env , _, poses= make_pybullet(args,p2, [0,1], hand_params,viz=True)
+    eval_env.evaluate()
+    start_position = {'goal_position':data['timestep_list'][0]['state']['goal_pose']['goal_position']}
+    # model = model_type("MlpPolicy", eval_env, tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-2.3}).load(args['save_path']+'best_model', env=eval_env)
+    obs = eval_env.reset(start_position)
+    done = False
+    # print(np.shape(obs))
+    thing = 0
+    for act in actions:
+        # _, _ = model.predict(obs,deterministic=True)
+        obs, _, done, _ = eval_env.step(np.array(act),viz=True)
+        print(f'step {thing}')
+        thing +=1
+        # time.sleep(0.5)
+    # p2.disconnect()
+        # return
+            
 def main(filepath = None,learn_type='run'):
     num_cpu =  multiprocessing.cpu_count() # Number of processes to use
     # Create the vectorized environment
@@ -488,5 +531,7 @@ if __name__ == '__main__':
     # evaluate("./data/JA_newstate_A_rand/experiment_config.json","B")
 
     # main("./data/JA_single_rotation/experiment_config.json")
-    # main("./data/JA_region_rotation/experiment_config.json")
-    main("./data/JA_slide_and_rotate/experiment_config.json")
+    # main("./data/region_rotation_FTP/experiment_config.json")
+    # main("./data/region_rotation_JA/experiment_config.json")
+    
+    replay("./data/region_rotation_JA/experiment_config.json", "./data/region_rotation_JA/Eval_A/Episode_241204.pkl")
