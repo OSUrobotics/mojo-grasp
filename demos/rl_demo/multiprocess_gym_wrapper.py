@@ -154,8 +154,10 @@ class MultiprocessGymWrapper(gym.Env):
             # print('evaluating at eval run', self.eval_run)
             # print('fack',self.manipulation_phase.state.objects[-1].run_num)
             self.eval_run +=1
-        if special is not None:
+        if type(special) is list:
             self.env.reset_to_pos(special[0],special[1])
+        elif type(special) is dict:
+            self.env.reset(special['goal_position'])
         elif self.TASK == 'Rotation_region':
             self.env.reset(new_goal['goal_position'])
             # print(new_goal)
