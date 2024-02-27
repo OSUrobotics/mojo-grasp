@@ -479,14 +479,15 @@ if __name__ == '__main__':
     
     # evaluate("./data/JA_fullstate_A_rand/experiment_config.json")
     # evaluate("./data/JA_fullstate_A_rand/experiment_config.json","B")
-    # evaluate("./data/JA_halfstate_A_rand/experiment_config.json")
-    # evaluate("./data/JA_halfstate_A_rand/experiment_config.json","B")
 
-    # evaluate("./data/FTP_newstate_A_rand/experiment_config.json")
-    # evaluate("./data/FTP_newstate_A_rand/experiment_config.json","B")
-    # evaluate("./data/JA_newstate_A_rand/experiment_config.json")
-    # evaluate("./data/JA_newstate_A_rand/experiment_config.json","B")
 
-    # main("./data/JA_single_rotation/experiment_config.json")
-    # main("./data/JA_region_rotation/experiment_config.json")
-    #main("./data/JA_slide_and_rotate/experiment_config.json")
+    # evaluate("./data/FTP_long_train_finger_half/experiment_config.json")
+    # evaluate("./data/FTP_long_train_finger_half/experiment_config.json","B")
+    # evaluate("./data/FTP_long_no_finger/experiment_config.json")
+    # evaluate("./data/FTP_long_no_finger/experiment_config.json","B")
+    # evaluate("./data/FTP_long_full_half/experiment_config.json")
+    # evaluate("./data/FTP_long_full_half/experiment_config.json","B")
+
+    # main("./data/FTP_long_full_half/experiment_config.json")
+    # main("./data/FTP_long_train_finger_half/experiment_config.json")
+    main("./data/JA_long_full_half/experiment_config.json")
