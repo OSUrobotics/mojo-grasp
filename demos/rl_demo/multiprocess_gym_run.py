@@ -387,7 +387,7 @@ def replay(argpath, episode_path):
     eval_env.evaluate()
     start_position = {'goal_position':data['timestep_list'][0]['state']['goal_pose']['goal_position']}
     # model = model_type("MlpPolicy", eval_env, tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-2.3}).load(args['save_path']+'best_model', env=eval_env)
-    obs = eval_env.reset(start_position)
+    obs = eval_env.reset()
     done = False
     # print(np.shape(obs))
     thing = 0
@@ -523,5 +523,5 @@ if __name__ == '__main__':
     # evaluate("./data/JA_fullstate_A_rand/experiment_config.json")
     # evaluate("./data/JA_fullstate_A_rand/experiment_config.json","B")
 
-    replay("./data/region_rotation_JA/experiment_config.json", "./data/region_rotation_JA/Eval_A/Episode_241204.pkl")
+    replay("./data/FTP_long_full_half/experiment_config.json", "./data/FTP_long_full_half/Eval_A/Episode_32.pkl")
 

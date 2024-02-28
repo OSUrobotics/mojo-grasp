@@ -370,7 +370,7 @@ class MultiprocessSingleShapeEnv(Environment):
                         flags=self.p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
 
 
-        self.p.changeDynamics(plane_id,-1,lateralFriction=0.5, spinningFriction=0.0, rollingFriction=0.0)
+        self.p.changeDynamics(plane_id,-1,lateralFriction=0.5, spinningFriction=0.5, rollingFriction=0.5)
         self.p.changeDynamics(self.obj.id, -1, mass=.03, restitution=.95, lateralFriction=0.5)
         
         self.p.setGravity(0, 0, -10)
