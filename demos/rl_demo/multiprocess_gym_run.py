@@ -522,17 +522,7 @@ if __name__ == '__main__':
     
     # evaluate("./data/JA_fullstate_A_rand/experiment_config.json")
     # evaluate("./data/JA_fullstate_A_rand/experiment_config.json","B")
-    # evaluate("./data/JA_halfstate_A_rand/experiment_config.json")
-    # evaluate("./data/JA_halfstate_A_rand/experiment_config.json","B")
 
-    # evaluate("./data/FTP_newstate_A_rand/experiment_config.json")
-    # evaluate("./data/FTP_newstate_A_rand/experiment_config.json","B")
-    # evaluate("./data/JA_newstate_A_rand/experiment_config.json")
-    # evaluate("./data/JA_newstate_A_rand/experiment_config.json","B")
-
-    # main("./data/JA_single_rotation/experiment_config.json")
-    # main("./data/region_rotation_FTP/experiment_config.json")
-    # main("./data/region_rotation_JA/experiment_config.json")
-    
     replay("./data/region_rotation_JA/experiment_config.json", "./data/region_rotation_JA/Eval_A/Episode_241200.pkl")
+
 
