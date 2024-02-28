@@ -534,5 +534,5 @@ if __name__ == '__main__':
     # main("./data/region_rotation_FTP/experiment_config.json")
     # main("./data/region_rotation_JA/experiment_config.json")
     
-    replay("./data/region_rotation_JA/experiment_config.json", "./data/region_rotation_JA/Eval_A/Episode_241204.pkl")
+    replay("./data/region_rotation_JA/experiment_config.json", "./data/region_rotation_JA/Eval_A/Episode_241200.pkl")
 
