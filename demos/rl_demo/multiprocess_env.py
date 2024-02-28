@@ -97,7 +97,7 @@ class MultiprocessEnv():
         # p.resetJointState(hand_id, 1, f1_angs[1])
         # p.resetJointState(hand_id, 3, f2_angs[2])
         # p.resetJointState(hand_id, 4, f2_angs[3])
-        self.p.changeDynamics(plane_id,-1,lateralFriction=0.05, spinningFriction=0.05, rollingFriction=0.05)
+        self.p.changeDynamics(plane_id,-1,lateralFriction=0.5, spinningFriction=0.05, rollingFriction=0.05)
         self.p.changeDynamics(self.obj.id, -1, mass=.03, restitution=.95, lateralFriction=0.5)
         # p.resetJointState(hand_id, 0, .695)
         # p.resetJointState(hand_id, 1, -1.487)
@@ -150,7 +150,7 @@ class MultiprocessEnv():
                         flags=self.p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
 
 
-        self.p.changeDynamics(plane_id,-1,lateralFriction=0.5, spinningFriction=0.0, rollingFriction=0.0)
+        self.p.changeDynamics(plane_id,-1,lateralFriction=0.5, spinningFriction=0.05, rollingFriction=0.05)
         self.p.changeDynamics(self.obj.id, -1, mass=.03, restitution=.95, lateralFriction=0.5)
         # p.resetJointState(hand_id, 0, .695)
         # p.resetJointState(hand_id, 1, -1.487)
@@ -222,7 +222,7 @@ class MultiprocessSingleShapeEnv(Environment):
         self.p.changeDynamics(self.hand_id, 1, jointLowerLimit=0, jointUpperLimit=2.09, mass=mass_link)
         self.p.changeDynamics(self.hand_id, 3, jointLowerLimit=-1.57, jointUpperLimit=1.57, mass=mass_link)
         self.p.changeDynamics(self.hand_id, 4, jointLowerLimit=-2.09, jointUpperLimit=0, mass=mass_link)
-        self.p.changeDynamics(self.plane_id,-1,lateralFriction=0.5, spinningFriction=0.001, rollingFriction=0.0)
+        self.p.changeDynamics(self.plane_id,-1,lateralFriction=0.5, spinningFriction=0.05, rollingFriction=0.05)
         self.p.changeDynamics(self.obj.id, -1, mass=.03, restitution=.95, lateralFriction=0.5, localInertiaDiagonal=[0.000029435425,0.000029435425,0.00000725805])
         self.p.changeVisualShape(self.hand_id, -1, rgbaColor=[0.3, 0.3, 0.3, 1])
         self.p.changeVisualShape(self.hand_id, 0, rgbaColor=[1, 0.5, 0, 1])
@@ -370,7 +370,7 @@ class MultiprocessSingleShapeEnv(Environment):
                         flags=self.p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
 
 
-        self.p.changeDynamics(plane_id,-1,lateralFriction=0.5, spinningFriction=0.5, rollingFriction=0.5)
+        self.p.changeDynamics(plane_id,-1,lateralFriction=0.5, spinningFriction=0.05, rollingFriction=0.05)
         self.p.changeDynamics(self.obj.id, -1, mass=.03, restitution=.95, lateralFriction=0.5)
         
         self.p.setGravity(0, 0, -10)

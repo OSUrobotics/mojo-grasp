@@ -523,5 +523,6 @@ if __name__ == '__main__':
     # evaluate("./data/JA_fullstate_A_rand/experiment_config.json")
     # evaluate("./data/JA_fullstate_A_rand/experiment_config.json","B")
 
-    replay("./data/FTP_long_full_half/experiment_config.json", "./data/FTP_long_full_half/Eval_A/Episode_32.pkl")
+    replay("./data/region_rotation_JA/experiment_config.json", "./data/region_rotation_JA/Eval_A/Episode_241200.pkl")
+
 
