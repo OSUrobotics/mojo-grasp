@@ -2081,8 +2081,10 @@ class PlotBackend():
         print(rewards,rotation)
         self.ax.scatter(rotation,rewards)
         # self.ax.plot(range(len(goals)), goals)
-        self.ax.set_xlabel('Starting distance')
-        self.ax.set_ylabel('Ending Distance')
+        self.ax.set_xlabel('Starting Orientation')
+        self.ax.set_ylabel('Ending Orientation Error')
+        self.ax.set_ylim(-0.01,1.01)
+
         # self.ax.legend(['Object Angle','Goal Angle'])
 
     def draw_orientation(self,data_dict):
