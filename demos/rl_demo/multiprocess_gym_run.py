@@ -401,7 +401,7 @@ def replay(argpath, episode_path):
         # return
             
 def main(filepath = None,learn_type='run'):
-    num_cpu = 16# multiprocessing.cpu_count() # Number of processes to use
+    num_cpu = multiprocessing.cpu_count() # Number of processes to use
     # Create the vectorized environment
 
     if filepath is None:
@@ -511,7 +511,7 @@ if __name__ == '__main__':
     
     '''
     # main('./data/FTP_halfstate_A_rand_old_finger_poses/experiment_config.json','run')
-    # main("./data/JA_newstate_A_rand/experiment_config.json",'run')
+    # main("./data/region_rotation_JA_finger/experiment_config.json",'run')
 
     # main("./data/JA_newstate_A_noisy/experiment_config.json",'run')
     # main("./data/FTP_halfstate_A_rand/experiment_config.json",'run')
@@ -523,6 +523,6 @@ if __name__ == '__main__':
     # evaluate("./data/JA_fullstate_A_rand/experiment_config.json")
     # evaluate("./data/JA_fullstate_A_rand/experiment_config.json","B")
 
-    replay("./data/region_rotation_JA/experiment_config.json", "./data/region_rotation_JA/Eval_A/Episode_241200.pkl")
+    replay("./data/region_rotation_JA/experiment_config.json", "./data/region_rotation_JA/Eval_A/Episode_15.pkl")
 
 
