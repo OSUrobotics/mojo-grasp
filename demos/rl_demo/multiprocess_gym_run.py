@@ -6,7 +6,7 @@ Created on Tue Jul 13 10:53:58 2023
 @author: orochi
 """
 
-from pybullet_utils import bullet_client as bc
+# from pybullet_utils import bullet_client as bc
 import pybullet_data
 from demos.rl_demo import multiprocess_env
 from demos.rl_demo import multiprocess_manipulation_phase
@@ -513,7 +513,7 @@ if __name__ == '__main__':
     # main('./data/FTP_halfstate_A_rand_old_finger_poses/experiment_config.json','run')
     # main("./data/region_rotation_JA_finger/experiment_config.json",'run')
 
-    # main("./data/JA_newstate_A_noisy/experiment_config.json",'run')
+    main("./data/JA_finger_reward_region_10_1/experiment_config.json",'run')
     # main("./data/FTP_halfstate_A_rand/experiment_config.json",'run')
     # evaluate("./data/FTP_halfstate_A_rand/experiment_config.json")
     # evaluate("./data/FTP_halfstate_A_rand/experiment_config.json","B")
@@ -523,6 +523,5 @@ if __name__ == '__main__':
     # evaluate("./data/JA_fullstate_A_rand/experiment_config.json")
     # evaluate("./data/JA_fullstate_A_rand/experiment_config.json","B")
 
-    replay("./data/region_rotation_JA/experiment_config.json", "./data/region_rotation_JA/Eval_A/Episode_15.pkl")
 
 
