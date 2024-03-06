@@ -99,6 +99,7 @@ class RNNGui():
                        [sg.Checkbox('Finger Tip Angle',default=True, k='-fta')],
                        [sg.Checkbox('Goal Position',default=True, k='-gp')],
                        [sg.Checkbox('Goal Orientation', default=True, k = '-go')],
+                       [sg.Checkbox('Goal Finger Pos', default=True, k='-gf')],
                        [sg.Checkbox('Eigenvalues',default=False,key='-eva')],
                        [sg.Checkbox('Eigenvectors',default=False,key='-evc')],
                        [sg.Checkbox('HandParameters',default=False,key='-params')],
@@ -272,8 +273,13 @@ class RNNGui():
         if values['-go']:
             state_mins.append(-np.pi/2)
             state_maxes.append(np.pi/2)
-            state_len +=1
+            state_len += 1
             state_list.append('go')
+        if values['-gf']:
+            state_mins.extend([-0.072, 0.018, -0.072, 0.018])
+            state_maxes.extend([0.072, 0.172, 0.072, 0.172])
+            state_len += 4
+            state_list.append('gf')
         if self.args['pv'] > 0:
             state_len += state_len * self.args['pv']
             temp_mins = state_mins.copy()

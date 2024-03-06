@@ -115,11 +115,13 @@ class MultiprocessGymWrapper(gym.Env):
             self.build_reward = rf.rotation_with_finger
         elif (self.TASK == 'Rotation_single')|(self.TASK =='Rotation_region'):
             print('just rotation no sliding, stay in place dammit, added finger. make sure contact scaling is 0 if no finger desired')
-
             self.build_reward = rf.rotation_with_finger
         elif self.TASK == 'slide_and_rotate':
             print('All them rotation and sliding')
             self.build_reward = rf.slide_and_rotate
+        elif self.TASK == 'contact point':
+            print('assigned the reward function')
+            self.build_reward = rf.contact_point
         elif (self.REWARD_TYPE == 'ScaledDistance+ScaledFinger') and (self.TASK != 'multi'):
             self.build_reward = rf.double_scaled
         elif self.REWARD_TYPE == 'SFS':
@@ -130,6 +132,7 @@ class MultiprocessGymWrapper(gym.Env):
             self.build_reward = rf.double_smart
         elif (self.TASK == 'multi') and (self.REWARD_TYPE =='ScaledDistance+ScaledFinger'):
             self.build_reward = rf.multi_scaled
+        
         else:
             raise Exception('reward type does not match list of known reward types')
 
@@ -284,6 +287,8 @@ class MultiprocessGymWrapper(gym.Env):
                         state.extend(state_container['previous_state'][i]['goal_pose']['goal_position'])
                     elif key == 'go':
                         state.append(state_container['previous_state'][i]['goal_pose']['goal_orientation'])
+                    elif key == 'gf':
+                        state.extend(state_container['previous_state'][i]['goal_pose']['goal_finger'])
                     else:
                         raise Exception('key does not match list of known keys')
 
@@ -323,7 +328,8 @@ class MultiprocessGymWrapper(gym.Env):
                 state.extend(state_container['goal_pose']['goal_position'])
             elif key == 'go':
                 state.append(state_container['goal_pose']['goal_orientation'])
-                
+            elif key == 'gf':
+                state.extend(state_container['goal_pose']['goal_finger'])
             else:
                 raise Exception('key does not match list of known keys')
         return state
