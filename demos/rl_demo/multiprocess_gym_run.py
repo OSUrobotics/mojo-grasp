@@ -171,6 +171,24 @@ def make_pybullet(arg_dict, pybullet_instance, rank, hand_info, viz=False):
         orientations = orientations + np.sign(orientations)*0.1
         eval_orientations = np.random.uniform(-np.pi/2+0.1, np.pi/2-0.1,1200)
         eval_orientations = eval_orientations + np.sign(eval_orientations)*0.1
+    elif args['task'] == 'contact point':
+        x = [0.0]*1000
+        y = [0.0]*1000
+        orientations = np.zeros(1000)
+        xeval,yeval,eval_orientations = x,y,orientations
+        finger_ys = np.random.uniform( 0.10778391676312778-0.02, 0.10778391676312778+0.02,(1000,2))
+        finger_contacts = np.ones((1000,4))
+        finger_contacts[:,0] = 0.026749999999999996
+        finger_contacts[:,1] = finger_ys[:,0]
+        finger_contacts[:,2] = -0.026749999999999996
+        finger_contacts[:,3] = finger_ys[:,1]
+        eval_finger_ys = np.random.uniform( 0.10778391676312778-0.02, 0.10778391676312778+0.02,(1000,2))
+        eval_finger_contacts = np.ones((1000,4))
+        eval_finger_contacts[:,0] = 0.026749999999999996
+        eval_finger_contacts[:,1] = eval_finger_ys[:,0]
+        eval_finger_contacts[:,2] = -0.026749999999999996
+        eval_finger_contacts[:,3] = eval_finger_ys[:,1]
+        print('eval')
     else:
         df = pd.read_csv(args['points_path'], index_col=False)
         print('EVALUATING BOOOIIII')
@@ -238,25 +256,29 @@ def make_pybullet(arg_dict, pybullet_instance, rank, hand_info, viz=False):
     obj = ObjectWithVelocity(obj_id, path=args['object_path'],name='obj_2')
     
     # For standard loaded goal poses
-
-    try:
-        goal_poses = GoalHolder(pose_list,orientations)
-        eval_goal_poses = GoalHolder(eval_pose_list, eval_orientations)
-    except:
-        if args['task'] == 'unplanned_random':
-            goal_poses = RandomGoalHolder([0.02,0.065])
-            try:
-                eval_goal_poses = GoalHolder(eval_pose_list,goal_names=eval_names)
-            except NameError:
-                # print('No names')
-                eval_goal_poses = GoalHolder(eval_pose_list)
-        else:    
-            goal_poses = GoalHolder(pose_list)
-            try:
-                eval_goal_poses = GoalHolder(eval_pose_list,goal_names=eval_names)
-            except NameError:
-                # print('No names')
-                eval_goal_poses = GoalHolder(eval_pose_list)
+    if args['task'] == 'contact point':
+        goal_poses = GoalHolder(pose_list,orientations,finger_contacts)
+        eval_goal_poses = GoalHolder(eval_pose_list,eval_orientations,eval_finger_contacts)
+        print('made the goal holders')
+    else:
+        try:
+            goal_poses = GoalHolder(pose_list,orientations)
+            eval_goal_poses = GoalHolder(eval_pose_list, eval_orientations)
+        except:
+            if args['task'] == 'unplanned_random':
+                goal_poses = RandomGoalHolder([0.02,0.065])
+                try:
+                    eval_goal_poses = GoalHolder(eval_pose_list,goal_names=eval_names)
+                except NameError:
+                    # print('No names')
+                    eval_goal_poses = GoalHolder(eval_pose_list)
+            else:    
+                goal_poses = GoalHolder(pose_list)
+                try:
+                    eval_goal_poses = GoalHolder(eval_pose_list,goal_names=eval_names)
+                except NameError:
+                    # print('No names')
+                    eval_goal_poses = GoalHolder(eval_pose_list)
     
     # time.sleep(10)
     # state, action and reward
@@ -513,7 +535,7 @@ if __name__ == '__main__':
     # main('./data/FTP_halfstate_A_rand_old_finger_poses/experiment_config.json','run')
     # main("./data/region_rotation_JA_finger/experiment_config.json",'run')
 
-    main("./data/JA_finger_reward_region_10_1/experiment_config.json",'run')
+    main("./data/contact_test1/experiment_config.json",'run')
     # main("./data/FTP_halfstate_A_rand/experiment_config.json",'run')
     # evaluate("./data/FTP_halfstate_A_rand/experiment_config.json")
     # evaluate("./data/FTP_halfstate_A_rand/experiment_config.json","B")
