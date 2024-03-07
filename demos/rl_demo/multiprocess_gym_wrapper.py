@@ -143,6 +143,7 @@ class MultiprocessGymWrapper(gym.Env):
             if self.manipulation_phase.episode >= self.manipulation_phase.state.objects[-1].len:
                 self.manipulation_phase.reset()
                 print('average time of episode',np.average(self.thing))
+                self.thing = []
             new_goal = self.manipulation_phase.next_ep()
             # print('new goal from reset', new_goal)
         else:
