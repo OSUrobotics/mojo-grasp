@@ -138,7 +138,7 @@ def main():
         event, values = window.read()
         # print('values', values)
         if not(values['d1']|values['d2']|values['d3']|values['d4']):
-            rf_key = 'rotation_with_finger'
+            rf_key = 'contact point'
         elif values['d1']:
             rf_key = 'single_scaled'
         elif values['d2']:

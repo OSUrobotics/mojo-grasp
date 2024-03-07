@@ -77,6 +77,8 @@ class PlotBackend():
             self.build_reward = rf.double_smart
         elif key == 'multi_scaled':
             self.build_reward = rf.multi_scaled
+        elif key =='contact point':
+            self.build_reward = rf.contact_point
         else:
             raise Exception('reward type does not match list of known reward types')
     

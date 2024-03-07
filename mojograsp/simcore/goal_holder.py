@@ -1,15 +1,20 @@
 import numpy as np
 
 class GoalHolder():
-    def __init__(self, goal_pose, goal_orientation = None,goal_names = None):
+    def __init__(self, goal_pose, goal_orientation = None,goal_finger = None, goal_names = None):
         self.pose = goal_pose
         self.name = 'goal_pose'
-        print(goal_orientation)
+        # print(goal_orientation)
         if goal_orientation is not None:
             self.orientation = goal_orientation
         else:
             self.orientation = np.array([None] * len(self.pose))
-            
+        
+        if goal_finger is not None:
+            self.finger = goal_finger
+        else:
+            self.finger = np.array([None,None,None,None] * len(self.pose))
+        print(type(self.orientation), type(self.pose))
         self.len = len(self.pose)
         self.goal_names = goal_names
         print(f'orientation type: {type(self.orientation)}')
@@ -18,7 +23,7 @@ class GoalHolder():
         self.run_num = 0
     
     def get_data(self):
-        return {'goal_position':self.pose[self.run_num%self.len],'goal_orientation':self.orientation[self.run_num%self.len]}
+        return {'goal_position':self.pose[self.run_num%self.len],'goal_orientation':self.orientation[self.run_num%self.len], 'goal_finger':self.finger[self.run_num%self.len]}
     
     def get_name(self):
         try:

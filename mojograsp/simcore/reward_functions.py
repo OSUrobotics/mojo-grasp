@@ -2,8 +2,6 @@
 import numpy as np
 import scipy.spatial.transform.rotation as R
 
-
-
 def sparse(reward_container, tholds):
     tstep_reward = -1 + 2*(reward_container['distance_to_goal'] < tholds['SUCCESS_THRESHOLD'])
 
@@ -84,18 +82,15 @@ def multi_scaled(reward_container, tholds):
     tstep_reward = temp*tholds['DISTANCE_SCALING'] + ftemp*tholds['CONTACT_SCALING'] + success * tholds['SUCCESS_REWARD']
     return float(tstep_reward), False
 
-
 def solo_rotation(reward_container, tholds):
     # goal angle should be +/- pi
     # make the current angle set between +/- pi then subtract the two
-
     obj_rotation = reward_container['object_orientation'][2]
     thing1 = (obj_rotation-reward_container['goal_orientation'])%(np.pi*2)
     thing2 = (reward_container['goal_orientation']-obj_rotation)%(np.pi*2)
     rot_temp = min(thing1,thing2)
     reward = -rot_temp
     return float(reward), False
-
 
 def rotation(reward_container, tholds):
     # goal angle should be +/- pi
@@ -107,7 +102,6 @@ def rotation(reward_container, tholds):
     rot_temp = min(thing1,thing2)
     reward = -rot_temp - goal_dist*tholds['DISTANCE_SCALING']
     return float(reward), False
-
 
 def rotation_with_finger(reward_container, tholds):
     # goal angle should be +/- pi
@@ -131,6 +125,17 @@ def slide_and_rotate(reward_container, tholds):
     ftemp,temp = max(ftemp,-2), max(temp, -2)
     tstep_reward = temp*tholds['DISTANCE_SCALING'] + ftemp*tholds['CONTACT_SCALING'] - rotation_temp/np.pi
     return float(tstep_reward), False
+
+def contact_point(reward_container, tholds):
+    if reward_container['timestep'] == 5:
+        # print('assigning the reward')
+        end_dist = np.abs(reward_container['goal_finger'] - reward_container['finger_pose'])
+        start_dist = np.abs(reward_container['goal_finger'] - reward_container['start_finger'])
+        dist_reward = -np.sum(end_dist-start_dist)
+        # print(dist_reward, reward_container['distance_to_goal'])
+        return float(dist_reward/0.01-reward_container['distance_to_goal']/0.01),False
+    else:
+        return float(0), False
 
 
 if __name__ == '__main__':

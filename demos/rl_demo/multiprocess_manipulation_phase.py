@@ -64,7 +64,7 @@ class MultiprocessManipulation(Phase):
         self.controller.pre_step()
         self.state.init_state()
         start_state = self.state.get_state()
-        self.reward.setup_reward(start_state['obj_2']['pose'])
+        self.reward.setup_reward(start_state)
 
     def pre_step(self):
         # Get the target action
