@@ -35,6 +35,10 @@ def save_element_as_file(element, filename):
     grab.save(filename)
 
 class RNNGui():
+    slide_rewards = ['Sparse','Distance','Distance + Finger', 'Hinge Distance + Finger', 'Slope', 'Slope + Finger','SmartDistance + Finger','SmartDistance + SmartFinger','ScaledDistance + Finger','ScaledDistance+ScaledFinger', 'SFS','DFS',]
+    rotate_rewards = ["Rotation", "Rotation+Finger"]
+    finger_rewards = ["continuous_finger", "end_finger"]
+    full_task_rewards = ["full", "full+finger"]
     def __init__(self):
         self.toggle_btn_off = b'iVBORw0KGgoAAAANSUhEUgAAACgAAAAoCAYAAACM/rhtAAAABmJLR0QA/wD/AP+gvaeTAAAED0lEQVRYCe1WTWwbRRR+M/vnv9hO7BjHpElMKSlpqBp6gRNHxAFVcKM3qgohQSqoqhQ45YAILUUVDRxAor2VAweohMSBG5ciodJUSVqa/iikaePEP4nj2Ovdnd1l3qqJksZGXscVPaylt7Oe/d6bb9/svO8BeD8vA14GvAx4GXiiM0DqsXv3xBcJU5IO+RXpLQvs5yzTijBmhurh3cyLorBGBVokQG9qVe0HgwiXLowdy9aKsY3g8PA5xYiQEUrsk93JTtjd1x3siIZBkSWQudUK4nZO1w3QuOWXV+HuP/fL85klAJuMCUX7zPj4MW1zvC0Ej4yMp/w++K2rM9b70sHBYCjo34x9bPelsgp/XJksZ7KFuwZjr3732YcL64ttEDw6cq5bVuCvgy/sje7rT0sI8PtkSHSEIRIKgCQKOAUGM6G4VoGlwiqoVd2Za9Vl8u87bGJqpqBqZOj86eEHGNch+M7otwHJNq4NDexJD+59RiCEQG8qzslFgN8ibpvZNsBifgXmFvJg459tiOYmOElzYvr2bbmkD509e1ylGEZk1Y+Ssfan18n1p7vgqVh9cuiDxJPxKPT3dfGXcN4Tp3dsg/27hUQs0qMGpRMYjLz38dcxS7Dm3nztlUAb38p0d4JnLozPGrbFfBFm79c8hA3H2AxcXSvDz7/+XtZE1kMN23hjV7LTRnKBh9/cZnAj94mOCOD32gi2EUw4FIRUMm6LGhyiik86nO5NBdGRpxYH14bbjYfJteN/OKR7UiFZVg5T27QHYu0RBxoONV9W8KQ7QVp0iXdE8fANUGZa0QAvfhhXlkQcmjJZbt631oIBnwKmacYoEJvwiuFgWncWnXAtuVBBEAoVVXWCaQZzxmYuut68b631KmoVBEHMUUrJjQLXRAQVSxUcmrKVHfjWWjC3XOT1FW5QrWpc5IJdQhDKVzOigEqS5dKHMVplnNOqrmsXqUSkn+YzWaHE9RW1FeXL7SKZXBFUrXW6jIV6YTEvMAUu0W/G3kcxPXP5ylQZs4fa6marcWvvZfJu36kuHjlc/nMSuXz+/ejxgqPFpuQ/xVude9eu39Jxu27OLvBGoMjrUN04zrNMbgVmOBZ96iPdPZmYntH5Ls76KuxL9NyoLA/brav7n382emDfHqeooXyhQmARVhSnAwNNMx5bu3V1+habun5nWdXhwJZ2C5mirTesyUR738sv7g88UQ0rEkTDlp+1wwe8Pf0klegUenYlgyg7bby75jUTITs2rhCAXXQ2vwxz84vlB0tZ0wL4NEcLX/04OrrltG1s8aOrHhk51SaK0us+n/K2xexBxljcsm1n6x/Fuv1PCWGiKOaoQCY1Vb9gWPov50+fdEqd21ge3suAlwEvA14G/ucM/AuppqNllLGPKwAAAABJRU5ErkJggg=='
         self.toggle_btn_on = b'iVBORw0KGgoAAAANSUhEUgAAACgAAAAoCAYAAACM/rhtAAAABmJLR0QA/wD/AP+gvaeTAAAD+UlEQVRYCe1XzW8bVRCffbvrtbP+2NhOD7GzLm1VoZaPhvwDnKBUKlVyqAQ3/gAkDlWgPeVQEUCtEOIP4AaHSI0CqBWCQyXOdQuRaEFOk3g3IMWO46+tvZ+PeZs6apq4ipON1MNafrvreTPzfvub92bGAOEnZCBkIGQgZOClZoDrh25y5pdjruleEiX+A+rCaQo05bpuvJ/+IHJCSJtwpAHA/e269g8W5RbuzF6o7OVjF8D3Pr4tSSkyjcqfptPDMDKSleW4DKIggIAD5Yf+Oo4DNg6jbUBlvWLUNutAwZu1GnDjzrcXzGcX2AHw/emFUV6Sfk0pqcKpEydkKSo9q3tkz91uF5aWlo1Gs/mYc+i7tz4//19vsW2AU9O381TiioVCQcnlRsWeQhD3bJyH1/MiFLICyBHiuzQsD1arDvypW7DR9nzZmq47q2W95prm+I9fXfqXCX2AF2d+GhI98Y8xVX0lnxvl2UQQg0csb78ag3NjEeD8lXZ7pRTgftmCu4864OGzrq+5ZU0rCa3m+NzXlzvoAoB3+M+SyWQuaHBTEzKMq/3BMbgM+FuFCDBd9kK5XI5PJBKqLSev+POTV29lKB8rT0yMD0WjUSYLZLxzNgZvIHODOHuATP72Vwc6nQ4Uiw8MUeBU4nHS5HA6TYMEl02wPRcZBJuv+ya+UCZOIBaLwfCwQi1Mc4QXhA+PjWRkXyOgC1uIhW5Qd8yG2TK7kSweLcRGKKVnMNExWWBDTQsH9qVmtmzjiThQDs4Qz/OUSGTwcLwIQTLW58i+yOjpXDLqn1tgmDzXzRCk9eDenjo9yhvBmlizrB3V5dDrNTuY0A7opdndStqmaQLPC1WCGfShYRgHdLe32UrV3ntiH9LliuNrsToNlD4kruN8v75eafnSgC6Luo2+B3fGKskilj5muV6pNhk2Qqg5v7lZ51nBZhNBjGrbxfI1+La5t2JCzfD8RF1HTBGJXyDzs1MblONulEqPDVYXgwDIfNx91IUVbAbY837GMur+/k/XZ75UWmJ77ou5mfM1/0x7vP1ls9XQdF2z9uNsPzosXPNFA5m0/EX72TBSiqsWzN8z/GZB08pWq9VeEZ+0bjKb7RTD2i1P4u6r+bwypo5tZUumEcDAmuC3W8ezIqSGfE6g/sTd1W5p5bKjaWubrmWd29Fu9TD0GlYlmTx+8tTJoZeqYe2BZC1/JEU+wQR5TVEUPptJy3Fs+Vkzgf8lemqHumP1AnYoMZSwsVEz6o26i/G9Lgitb+ZmLu/YZtshfn5FZDPBCcJFQRQ+8ih9DctOFvdLIKHH6uUQnq9yhFu0bec7znZ+xpAGmuqef5/wd8hAyEDIQMjAETHwP7nQl2WnYk4yAAAAAElFTkSuQmCC'
@@ -51,7 +55,6 @@ class RNNGui():
         self.single_names = ['forward','backward','left','right','forward_left','forward_right','backward_right','backward_left']
         self.double_names = ['f-b', 'l-r', 'diag-up', 'diag-down']
         self.alt_double_names = ['l-r','f','b']
-        
         # define layout, show and read the window
         data_layout =  [ [sg.Text('Model Type'), sg.OptionMenu(values=('TD3', 'TD3+HER', 'DDPG','DDPG+HER', 'PPO'),  k='-model', default_value='PPO')],
                          [sg.Text('Path to Expert Data if using FD')],
@@ -70,10 +73,11 @@ class RNNGui():
                          [sg.Checkbox('2v2_35.65_65.35_43',key='2v2_35.65_65.35_1.1_43', default=False),sg.Checkbox('2v2_35.65_65.35_53',key='2v2_35.65_65.35_1.1_53', default=False),sg.Checkbox('2v2_35.65_65.35_63',key='2v2_35.65_65.35_1.1_63', default=False),sg.Checkbox('2v2_35.65_65.35_73',key='2v2_35.65_65.35_1.1_73', default=False)],
                          [sg.Checkbox('2v2_70.30_70.30_43',key='2v2_70.30_70.30_1.1_43', default=False),sg.Checkbox('2v2_70.30_70.30_53',key='2v2_70.30_70.30_1.1_53', default=False),sg.Checkbox('2v2_70.30_70.30_63',key='2v2_70.30_70.30_1.1_63', default=False),sg.Checkbox('2v2_70.30_70.30_73',key='2v2_70.30_70.30_1.1_73', default=False)],
                          [sg.Checkbox('2v2_70.30_50.50_43',key='2v2_70.30_50.50_1.1_43', default=False),sg.Checkbox('2v2_70.30_50.50_53',key='2v2_70.30_50.50_1.1_53', default=False),sg.Checkbox('2v2_70.30_50.50_63',key='2v2_70.30_50.50_1.1_63', default=False),sg.Checkbox('2v2_70.30_50.50_73',key='2v2_70.30_50.50_1.1_73', default=False)],
-                         [sg.Text("Task"), sg.OptionMenu(values=('asterisk','single',"big_random","Rotation+Finger",
-                          "Rotation_single", "Rotation_region", "slide_and_rotate",'triple', 'multi', "contact point", "contact"), k='-task', default_value='unplanned_random')],
-                         [sg.Checkbox("Randomized Start Position", key='-rstart',default=False), sg.Checkbox("Randomized Finger Position", key='-rfinger',default=False)],
-                         [sg.Text('Replay Buffer Sampling'), sg.OptionMenu(values=('priority','random','random+expert'), k='-sampling', default_value='priority')]]
+                         [sg.Text("Task"), sg.OptionMenu(values=('asterisk','single',"big_random",
+                          "Rotation_single", "Rotation_region", "full_task",'triple', 'multi', "contact point", "contact"), k='-task', default_value='unplanned_random')],
+                         [sg.Text("Reward"), sg.OptionMenu(values=('Sparse','Distance','Distance + Finger', 'Hinge Distance + Finger', 'Slope', 'Slope + Finger','SmartDistance + Finger','SmartDistance + SmartFinger','ScaledDistance + Finger','ScaledDistance+ScaledFinger', 'SFS','DFS'), k='-reward',default_value='ScaledDistance+ScaledFinger')],
+                         [sg.Checkbox("Object Start Position", key='-rstart',default=False), sg.Checkbox("Relative Finger Position", key='-rfinger',default=False),sg.Checkbox("Object Orientation", key='-ror',default=False), sg.Checkbox("Finger Open", key='-rfo',default=False)],
+                         [sg.Text('Replay Buffer Sampling'), sg.OptionMenu(values=['priority', 'random','random+expert'], k='-sampling', default_value='priority')]]
         
         
         model_layout = [ [sg.Text('Num Epochs'), sg.Input(1000000, key='-epochs',size=(8, 2)), sg.Text('Batch Size'), sg.Input(100, key='-batch-size',size=(8, 2))],
@@ -83,7 +87,8 @@ class RNNGui():
                          [sg.Text('Evaluation Period'), sg.Input(10000,key='-eval',size=(8, 2)), sg.Text('Tau'), sg.Input(0.0005, key='-tau',size=(8, 2))],
                          [sg.Text('Timesteps per Episode'), sg.Input(15,key='-tsteps',size=(8, 2)), sg.Text('Timesteps in Evaluation'), sg.Input(15,key='-eval-tsteps',size=(8, 2))],
                          [sg.Text('State Training Noise'), sg.Input(0.0, key='-snoise',size=(8, 2)),sg.Text('Start Pos Range (mm)'), sg.Input(0, key='-start-noise',size=(8, 2))],
-                         [sg.Text('Timestep Frequency'), sg.Input(3,key='-freq',size=(8, 2)), sg.Text('Entropy'), sg.Input(0.0,key='-entropy',size=(8, 2))]]
+                         [sg.Text('Timestep Frequency'), sg.Input(3,key='-freq',size=(8, 2)), sg.Text('Entropy'), sg.Input(0.0,key='-entropy',size=(8, 2))],
+                         [sg.Text('Finger off object frequency'), sg.Input(0.0, key='-fobfreq', size=(8,2))]]
         
         plotting_layout = [[sg.Text('Model Title')],
                        [sg.Input('test1',key='-title')],
@@ -104,8 +109,7 @@ class RNNGui():
                        [sg.Checkbox('Eigenvectors',default=False,key='-evc')],
                        [sg.Checkbox('HandParameters',default=False,key='-params')],
                        [sg.Checkbox('Eigenvectors Times Eigenvalues',default=False,key='-evv')],
-                       [sg.Text('Num Previous States'),sg.Input(4, k='-pv',size=(8, 2))],
-                       [sg.Text("Reward"), sg.OptionMenu(values=('Sparse','Distance','Distance + Finger', 'Hinge Distance + Finger', 'Slope', 'Slope + Finger','SmartDistance + Finger','SmartDistance + SmartFinger','ScaledDistance + Finger','ScaledDistance+ScaledFinger', 'SFS','DFS','Rotation'), k='-reward',default_value='ScaledDistance+ScaledFinger'), sg.Text('Success Radius (mm)'), sg.Input(2, key='-sr',size=(8, 2)),],
+                       [sg.Text('Num Previous States'),sg.Input(4, k='-pv',size=(8, 2)), sg.Text('Success Radius (mm)'), sg.Input(2, key='-sr',size=(8, 2))],
                        [sg.Text("Distance Scale"),  sg.Input(1,key='-distance_scale',size=(8, 2)), sg.Text('Contact Scale'),  sg.Input(0.2,key='-contact_scale',size=(8, 2)), sg.Text('Success Reward'), sg.Input(1,key='-success_reward',size=(8, 2)), sg.Text('Rotation Scale'), sg.Input(1,key='-rotation_scale',size=(8, 2))],
                        [sg.Text("Action"), sg.OptionMenu(values=('Joint Velocity','Finger Tip Position'), k='-action',default_value='Finger Tip Position')],
                        [sg.Checkbox('Vizualize Simulation',default=False, k='-viz'), sg.Checkbox('Real World?',default=False, k='-rw'), sg.Checkbox('IK every sim step?', default=False, key='-ik-freq')],
@@ -152,25 +156,32 @@ class RNNGui():
                      'contact_scaling': float(values['-contact_scale']),
                      'freq': int(values['-freq']),
                      'IK_freq': bool(values['-ik-freq']),
-                     'rotation_scale': float(values['-rotation_scale'])}
+                     'rotation_scale': float(values['-rotation_scale']),
+                     'fobfreq': float(values['-fobfreq']),
+                     'object_random_start': bool('-rstart'),
+                     'finger_random_start': bool('-rfinger'),
+                     'object_random_orientation': bool('-ror'),
+                     'finger_random_off': bool('-rfo')}
         state_len = 0
         state_mins = []
         state_maxes = []
         state_list = []
-        if values['-task'] == 'Rotation_region':
-            self.args['rstart'] ='end'
-        elif bool(values['-rstart']) and bool(values['-rfinger']):
-            self.args['rstart']= 'both'
-        elif not bool(values['-rstart']) and bool(values['-rfinger']):
-            self.args['rstart']= 'finger'
-        elif not bool(values['-rstart']) and not bool(values['-rfinger']):
-            self.args['rstart']= 'no'
-        elif bool(values['-rstart']) and not bool(values['-rfinger']):
-            self.args['rstart']= 'obj'
-        elif values['-task'] == 'contact point':
-            pass
-        elif values['-task'] == 'contact':
-            pass
+        
+        # Replacing with the object random start and such
+        # if values['-task'] == 'Rotation_region':
+        #     self.args['rstart'] ='end'
+        # elif bool(values['-rstart']) and bool(values['-rfinger']):
+        #     self.args['rstart']= 'both'
+        # elif not bool(values['-rstart']) and bool(values['-rfinger']):
+        #     self.args['rstart']= 'finger'
+        # elif not bool(values['-rstart']) and not bool(values['-rfinger']):
+        #     self.args['rstart']= 'no'
+        # elif bool(values['-rstart']) and not bool(values['-rfinger']):
+        #     self.args['rstart']= 'obj'
+        # elif values['-task'] == 'contact point':
+        #     pass
+        # elif values['-task'] == 'contact':
+        #     pass
 
         if values['-ftp']:
             if not RW:
@@ -435,10 +446,12 @@ class RNNGui():
 
     def run_gui(self):
         p1 = pathlib.Path(__file__).parent.resolve()
+        values = {'-task':'unplanned_random'}
         while True:
-
-            event, values = self.window.read()
+            prev = values['-task']
+            event, values = self.window.Read()
             # print(values.keys())
+            print('event happened')
             # --------------------- Button & Keyboard ---------------------
             if event == sg.WIN_CLOSED:
                 break
@@ -501,7 +514,15 @@ class RNNGui():
                     print('Build Successful')
                 else:
                     print('Build Not Successful')
-                
+            if values['-task'] !=prev:
+                if 'contact' in values['-task']:
+                    self.window.Element("-reward").Update(values=RNNGui.finger_rewards)
+                elif 'Rotation' in values['-task']:
+                    self.window.Element("-reward").Update(values=RNNGui.rotate_rewards)
+                elif values['-task'] =='full_task':
+                    self.window.Element("-reward").Update(values=RNNGui.full_task_rewards)
+                else:
+                    self.window.Element("-reward").Update(values=RNNGui.slide_rewards)
             # elif event == '-update':
             #     print(values['-update'])
                 

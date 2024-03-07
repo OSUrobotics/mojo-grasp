@@ -125,11 +125,9 @@ def slide_and_rotate(reward_container, tholds):
 
 def contact_point(reward_container, tholds):
     if reward_container['timestep'] == 5:
-        # print('assigning the reward')
         end_dist = np.abs(reward_container['goal_finger'] - reward_container['finger_pose'])
         start_dist = np.abs(reward_container['goal_finger'] - reward_container['start_finger'])
         dist_reward = -np.sum(end_dist-start_dist)
-        # print(dist_reward, reward_container['distance_to_goal'])
-        return float(dist_reward/0.01-reward_container['distance_to_goal']/0.01),False
+        return float(dist_reward/0.01-reward_container['distance_to_goal']/0.01), False
     else:
         return float(0), False
