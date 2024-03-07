@@ -93,48 +93,49 @@ class MultiprocessGymWrapper(gym.Env):
         :param state: :func:`~mojograsp.simcore.reward.Reward` object.
         :type state: :func:`~mojograsp.simcore.reward.Reward`
         """        
-        print(self.REWARD_TYPE)
-        if self.REWARD_TYPE == 'Sparse':
-            self.build_reward = rf.sparse
-        elif self.REWARD_TYPE == 'Distance':
-            self.build_reward = rf.distance
-        elif self.REWARD_TYPE == 'Distance + Finger':
-            self.build_reward = rf.distance_finger
-        elif self.REWARD_TYPE == 'Hinge Distance + Finger':
-            self.build_reward = rf.hinge_distance
-        elif self.REWARD_TYPE == 'Slope':
-            self.build_reward = rf.slope
-        elif self.REWARD_TYPE == 'Slope + Finger':
-            self.build_reward = rf.slope_finger
-        elif self.REWARD_TYPE == 'SmartDistance + Finger':
-            self.build_reward = rf.smart
-        elif self.REWARD_TYPE == 'ScaledDistance + Finger':
-            self.build_reward = rf.scaled
-        elif self.TASK == 'Rotation+Finger':
-            print('rotation and finger')
-            self.build_reward = rf.rotation_with_finger
-        elif (self.TASK == 'Rotation_single')|(self.TASK =='Rotation_region'):
-            print('just rotation no sliding, stay in place dammit, added finger. make sure contact scaling is 0 if no finger desired')
-            self.build_reward = rf.rotation_with_finger
-        elif self.TASK == 'slide_and_rotate':
+        print(self.TASK,self.REWARD_TYPE)
+        if 'Rotation' in self.TASK:
+            if self.TASK == 'Rotation+Finger':
+                print('rotation and finger')
+                self.build_reward = rf.rotation_with_finger
+            elif (self.TASK == 'Rotation_single')|(self.TASK =='Rotation_region'):
+                print('just rotation no sliding, stay in place dammit, added finger. make sure contact scaling is 0 if no finger desired')
+                self.build_reward = rf.rotation_with_finger
+        elif 'contact' in self.TASK:
+            self.build_reward = rf.contact_point 
+        elif self.TASK =='full_task':
             print('All them rotation and sliding')
-            self.build_reward = rf.slide_and_rotate
-        elif self.TASK == 'contact point':
-            print('assigned the reward function')
-            self.build_reward = rf.contact_point
-        elif (self.REWARD_TYPE == 'ScaledDistance+ScaledFinger') and (self.TASK != 'multi'):
-            self.build_reward = rf.double_scaled
-        elif self.REWARD_TYPE == 'SFS':
-            self.build_reward = rf.sfs
-        elif self.REWARD_TYPE == 'DFS':
-            self.build_reward = rf.dfs
-        elif self.REWARD_TYPE == 'SmartDistance + SmartFinger':
-            self.build_reward = rf.double_smart
-        elif (self.TASK == 'multi') and (self.REWARD_TYPE =='ScaledDistance+ScaledFinger'):
-            self.build_reward = rf.multi_scaled
-        
+            self.build_reward = rf.slide_and_rotate 
         else:
-            raise Exception('reward type does not match list of known reward types')
+            if self.REWARD_TYPE == 'Sparse':
+                self.build_reward = rf.sparse
+            elif self.REWARD_TYPE == 'Distance':
+                self.build_reward = rf.distance
+            elif self.REWARD_TYPE == 'Distance + Finger':
+                self.build_reward = rf.distance_finger
+            elif self.REWARD_TYPE == 'Hinge Distance + Finger':
+                self.build_reward = rf.hinge_distance
+            elif self.REWARD_TYPE == 'Slope':
+                self.build_reward = rf.slope
+            elif self.REWARD_TYPE == 'Slope + Finger':
+                self.build_reward = rf.slope_finger
+            elif self.REWARD_TYPE == 'SmartDistance + Finger':
+                self.build_reward = rf.smart
+            elif self.REWARD_TYPE == 'ScaledDistance + Finger':
+                self.build_reward = rf.scaled
+            elif (self.REWARD_TYPE == 'ScaledDistance+ScaledFinger') and (self.TASK != 'multi'):
+                self.build_reward = rf.double_scaled
+            elif self.REWARD_TYPE == 'SFS':
+                self.build_reward = rf.sfs
+            elif self.REWARD_TYPE == 'DFS':
+                self.build_reward = rf.dfs
+            elif self.REWARD_TYPE == 'SmartDistance + SmartFinger':
+                self.build_reward = rf.double_smart
+            elif (self.TASK == 'multi') and (self.REWARD_TYPE =='ScaledDistance+ScaledFinger'):
+                self.build_reward = rf.multi_scaled
+            
+            else:
+                raise Exception('reward type does not match list of known reward types')
 
 
     def reset(self,special=None):

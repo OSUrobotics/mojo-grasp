@@ -156,7 +156,7 @@ def make_pybullet(arg_dict, pybullet_instance, rank, hand_info, viz=False):
         df2 = pd.read_csv(overall_path + '/demos/rl_demo/resources/test_points_big.csv', index_col=False)
         xeval = df2['x']/2
         yeval = df2['y']/2
-        orientations = np.random.uniform(-np.pi/2+0.1, np.pi/2-0.1,1200)
+        orientations = np.random.uniform(-np.pi/2+0.1, np.pi/2-0.1,1000)
         orientations = orientations + np.sign(orientations)*0.1
         eval_orientations = np.random.uniform(-np.pi/2+0.1, np.pi/2-0.1,1200)
         eval_orientations = eval_orientations + np.sign(eval_orientations)*0.1
@@ -172,22 +172,28 @@ def make_pybullet(arg_dict, pybullet_instance, rank, hand_info, viz=False):
         eval_orientations = np.random.uniform(-np.pi/2+0.1, np.pi/2-0.1,1200)
         eval_orientations = eval_orientations + np.sign(eval_orientations)*0.1
     elif args['task'] == 'contact point':
-        x = [0.0]*1000
-        y = [0.0]*1000
+        df = pd.read_csv(args['points_path'], index_col=False)
+        x = df["x"]/2
+        y = df["y"]/2
+        print('x length', len(x))
+        df2 = pd.read_csv(overall_path + '/demos/rl_demo/resources/test_points_big.csv', index_col=False)
+        xeval = df2['x']/2
+        yeval = df2['y']/2
         orientations = np.zeros(1000)
-        xeval,yeval,eval_orientations = x,y,orientations
+        eval_orientations = orientations
+
         finger_ys = np.random.uniform( 0.10778391676312778-0.02, 0.10778391676312778+0.02,(1000,2))
         finger_contacts = np.ones((1000,4))
-        finger_contacts[:,0] = 0.026749999999999996
-        finger_contacts[:,1] = finger_ys[:,0]
-        finger_contacts[:,2] = -0.026749999999999996
-        finger_contacts[:,3] = finger_ys[:,1]
-        eval_finger_ys = np.random.uniform( 0.10778391676312778-0.02, 0.10778391676312778+0.02,(1000,2))
-        eval_finger_contacts = np.ones((1000,4))
-        eval_finger_contacts[:,0] = 0.026749999999999996
-        eval_finger_contacts[:,1] = eval_finger_ys[:,0]
-        eval_finger_contacts[:,2] = -0.026749999999999996
-        eval_finger_contacts[:,3] = eval_finger_ys[:,1]
+        finger_contacts[:,0] = x + 0.026749999999999996
+        finger_contacts[:,1] = y + finger_ys[:,0]
+        finger_contacts[:,2] = x + -0.026749999999999996
+        finger_contacts[:,3] = y + finger_ys[:,1]
+        eval_finger_ys = np.random.uniform( 0.10778391676312778-0.02, 0.10778391676312778+0.02,(1200,2))
+        eval_finger_contacts = np.ones((1200,4))
+        eval_finger_contacts[:,0] = xeval + 0.026749999999999996
+        eval_finger_contacts[:,1] = yeval + eval_finger_ys[:,0]
+        eval_finger_contacts[:,2] = xeval + -0.026749999999999996
+        eval_finger_contacts[:,3] = yeval + eval_finger_ys[:,1]
         print('eval')
     else:
         df = pd.read_csv(args['points_path'], index_col=False)
@@ -304,7 +310,7 @@ def make_pybullet(arg_dict, pybullet_instance, rank, hand_info, viz=False):
     
     # environment and recording
     
-    env = multiprocess_env.MultiprocessSingleShapeEnv(pybullet_instance, hand=hand, obj=obj, hand_type=hand_type, rand_start=args['rstart'])
+    env = multiprocess_env.MultiprocessSingleShapeEnv(pybullet_instance, hand=hand, obj=obj, hand_type=hand_type, args=args)
 
     # env = rl_env.ExpertEnv(hand=hand, obj=cylinder)
     
@@ -535,7 +541,7 @@ if __name__ == '__main__':
     # main('./data/FTP_halfstate_A_rand_old_finger_poses/experiment_config.json','run')
     # main("./data/region_rotation_JA_finger/experiment_config.json",'run')
 
-    main("./data/contact_test1/experiment_config.json",'run')
+    main("./data/contact_test_2/experiment_config.json",'run')
     # main("./data/FTP_halfstate_A_rand/experiment_config.json",'run')
     # evaluate("./data/FTP_halfstate_A_rand/experiment_config.json")
     # evaluate("./data/FTP_halfstate_A_rand/experiment_config.json","B")
