@@ -2068,7 +2068,7 @@ class PlotBackend():
                 obj_rotation = obj_rotation - np.pi
                 goal_rotation = data[-1]['state']['goal_pose']['goal_orientation']
 
-                rewards.append(abs(obj_rotation-goal_rotation))
+                rewards.append(goal_rotation- obj_rotation)
                 rotation.append(goal_rotation)
                 # for tstep in data:
                 #     obj_rotation = tstep['reward']['object_orientation'][2]
@@ -2083,9 +2083,11 @@ class PlotBackend():
         print(rewards,rotation)
         self.ax.scatter(rotation,rewards)
         # self.ax.plot(range(len(goals)), goals)
-        self.ax.set_xlabel('Starting Orientation')
+        self.ax.plot([-5,5],[-5,5])
+        self.ax.set_xlabel('Goal Orientation')
         self.ax.set_ylabel('Ending Orientation Error')
-        self.ax.set_ylim(-0.01,1.01)
+        self.ax.set_ylim(-1.01,1.01)
+        self.ax.set_xlim(-1.51,1.51)
 
         # self.ax.legend(['Object Angle','Goal Angle'])
 
