@@ -164,7 +164,7 @@ class MultiprocessGymWrapper(gym.Env):
             self.env.reset_to_pos(special[0],special[1])
         elif type(special) is dict:
             self.env.reset(special['goal_position'])
-        elif self.TASK == 'Rotation_region':
+        elif (self.TASK == 'Rotation_region')|('contact' in self.TASK):
             self.env.reset(new_goal['goal_position'])
             # print(new_goal)
         else:

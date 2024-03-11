@@ -2122,3 +2122,62 @@ class PlotBackend():
         self.ax.set_ylabel('angle (rad)')
         self.ax.set_aspect('auto',adjustable='box')
         self.ax.legend(['Object Angle','Goal Angle'])
+        
+    def draw_finger_goal_path(self, data_dict):
+        self.clear_axes()
+        data = data_dict['timestep_list']
+        episode_number = data_dict['number']
+        trajectory_points = [f['state']['obj_2']['pose'][0] for f in data]
+        fingertip1_points = [f['state']['f1_pos'] for f in data]
+        fingertip2_points = [f['state']['f2_pos'] for f in data]
+        goal_pose = data[1]['reward']['goal_position']
+        trajectory_points = np.array(trajectory_points)
+        fingertip1_points = np.array(fingertip1_points)
+        fingertip2_points = np.array(fingertip2_points)
+        arrow_len = max(int(len(trajectory_points)/25),1)
+        arrow_points = np.linspace(0,len(trajectory_points)-arrow_len-1,10,dtype=int)
+        next_points = arrow_points + arrow_len
+        goal_points = data[0]['reward']['goal_finger']
+        self.clear_axes()
+         
+        self.ax.plot(trajectory_points[:,0], trajectory_points[:,1])
+        self.ax.plot(fingertip1_points[:,0], fingertip1_points[:,1])
+        self.ax.plot(fingertip2_points[:,0], fingertip2_points[:,1])
+        self.ax.plot([trajectory_points[0,0], goal_pose[0]],[trajectory_points[0,1],goal_pose[1]])
+        self.ax.plot(fingertip1_points[0,0], fingertip1_points[0,1], marker='o',
+                     markersize=5,markerfacecolor='orange',markeredgecolor='orange')
+        self.ax.plot(fingertip2_points[0,0], fingertip2_points[0,1], marker='o',
+                     markersize=5,markerfacecolor='green',markeredgecolor='green')
+        self.ax.plot(goal_points[0], goal_points[1], marker='o',
+                     markersize=5,markerfacecolor='orange',markeredgecolor='orange')
+        self.ax.plot(goal_points[2], goal_points[3], marker='o',
+                     markersize=5,markerfacecolor='green',markeredgecolor='green')
+        # self.ax.plot(finger_contact1[0], finger_contact1[1], marker='s', markersize=5,
+        #              markerfacecolor='darkorange',markeredgecolor='darkorange')
+        # self.ax.plot(finger_contact2[0], finger_contact2[1], marker='s', markersize=5,
+        #              markerfacecolor='darkgreen',markeredgecolor='darkgreen')
+        self.ax.set_xlim([-0.08,0.08])
+        self.ax.set_ylim([0.02,0.18])
+        self.ax.set_xlabel('X pos (m)')
+        self.ax.set_ylabel('Y pos (m)')
+        for i,j in zip(arrow_points,next_points):
+            self.ax.arrow(trajectory_points[i,0],trajectory_points[i,1], 
+                          trajectory_points[j,0]-trajectory_points[i,0],
+                          trajectory_points[j,1]-trajectory_points[i,1], 
+                          color='blue', width=0.001, head_width = 0.002, length_includes_head=True)
+            self.ax.arrow(fingertip1_points[i,0],fingertip1_points[i,1], 
+                          fingertip1_points[j,0]-fingertip1_points[i,0],
+                          fingertip1_points[j,1]-fingertip1_points[i,1],
+                          color='orange', width=0.001, head_width = 0.002, length_includes_head=True)
+            self.ax.arrow(fingertip2_points[i,0],fingertip2_points[i,1], 
+                          fingertip2_points[j,0]-fingertip2_points[i,0],
+                          fingertip2_points[j,1]-fingertip2_points[i,1],
+                          color='green', width=0.001, head_width = 0.002, length_includes_head=True)
+            
+        # self.ax.add_patch(Rectangle((0-0.038/2, 0.1-0.038/2), 0.038, 0.038,edgecolor='black',facecolor='white',alpha=0.5))
+        self.legend.extend(['Object Trajectory','Right Finger Trajectory',
+                            'Left Finger Trajectory','Ideal Path to Goal'])
+        self.ax.legend(self.legend)
+        self.ax.set_title('Object and Finger Path - Episode: '+str(episode_number))
+         
+        self.curr_graph = 'path'
