@@ -72,12 +72,12 @@ def main():
 
 
     scatter_plot_tab = [[sg.Button('End Dist', size=(8, 2)), sg.Button('End Poses', size=(8, 2)), sg.Button('Contact Dist', size=(8, 2)), sg.Button('Average Goals', key='Average Goals',size=(8, 2)), sg.Button('Orientation Multi', key='Orientation Multi',size=(8, 2))],
-                        [sg.Button('Average Actor Values', size=(8,2))],
+                        [sg.Button('Average Actor Values', size=(8,2)),sg.Button('Explored Region', size=(8,2)),sg.Button('End Region', size=(8,2))],
                         [sg.Text('Colormap'),sg.Input('plasma_r',key='-cmap',size=(8, 1))]]
 
     plot_buttons = [[sg.Button('Object Path', size=(8, 2)), sg.Button('Finger Angles', size=(8, 2)),sg.Button('Rewards', size=(8, 2), key='FullRewards'), sg.Button('Contact Rewards', key='ContactRewards',size=(8, 2)), sg.Button('Distance/Slope Rewards', key='SimpleRewards',size=(8, 2))],
-                    [sg.Button('Explored Region', size=(8,2)), sg.Button('Actor Output', size=(8, 2)), sg.Button('Aout Comparison', size=(8, 2)), sg.Button('RewardSplit',size=(8, 2)), sg.Button('Max Percent', size=(8,2))],
-                    [sg.Button('End Region', size=(8,2)), sg.Button('Orientation', size=(8,2)), sg.Button('Episode Rewards', size=(8,2)), sg.Button('Finger Object Avg', size=(8,2)), sg.Button('Shortest Goal Dist', size=(8,2))],
+                    [sg.Button('Finger Goal Path',size=(8,2)), sg.Button('Actor Output', size=(8, 2)), sg.Button('Aout Comparison', size=(8, 2)), sg.Button('RewardSplit',size=(8, 2)), sg.Button('Max Percent', size=(8,2))],
+                    [sg.Button('',size=(8,2)), sg.Button('Orientation', size=(8,2)), sg.Button('Episode Rewards', size=(8,2)), sg.Button('Finger Object Avg', size=(8,2)), sg.Button('Shortest Goal Dist', size=(8,2))],
                     [sg.Button('Path + Action', size=(8,2)), sg.Button('Success Rate', size=(8,2)), sg.Button('Ending Velocity', size=(8,2)), sg.Button('Finger Object Max', size=(8,2)), sg.Button('Ending Goal Dist', size=(8,2))],
                     [sg.Button('Fingertip Route', size=(8,2)), sg.Button('Average Finger Tip', size=(8,2)), sg.Button('Average Dist Reward', size=(8,2)), sg.Button('Draw Obj Contacts', size=(8,2)),sg.Button('Multireward', size=(8,2))],
                     [sg.Slider((1,20),10,1,1,key='moving_avg',orientation='h', size=(48,6)), sg.Text("Keep previous graph", size=(10, 3), key='-toggletext-'), sg.Button(image_data=toggle_btn_off, key='-TOGGLE-GRAPHIC-', button_color=(sg.theme_background_color(), sg.theme_background_color()), border_width=0, metadata=False)],
@@ -228,6 +228,9 @@ def main():
             figure_canvas_agg.draw()
         elif event == 'Max Percent':
             backend.draw_actor_max_percent(folder)
+            figure_canvas_agg.draw()
+        elif event == 'Finger Goal Path':
+            backend.draw_finger_goal_path(episode_data)
             figure_canvas_agg.draw()
         elif event == 'Success Rate':
             if 'all' in filename:
