@@ -180,7 +180,7 @@ def make_pybullet(arg_dict, pybullet_instance, rank, hand_info, viz=False):
         xeval = df2['x']/2
         yeval = df2['y']/2
         orientations = np.zeros(1000)
-        eval_orientations = orientations
+        eval_orientations = np.zeros(1200)
 
         finger_ys = np.random.uniform( 0.10778391676312778-0.02, 0.10778391676312778+0.02,(1000,2))
         finger_contacts = np.ones((1000,4))
@@ -194,7 +194,7 @@ def make_pybullet(arg_dict, pybullet_instance, rank, hand_info, viz=False):
         eval_finger_contacts[:,1] = yeval + eval_finger_ys[:,0]
         eval_finger_contacts[:,2] = xeval + -0.026749999999999996
         eval_finger_contacts[:,3] = yeval + eval_finger_ys[:,1]
-        print('eval')
+        print('x eval length', len(xeval))
     else:
         df = pd.read_csv(args['points_path'], index_col=False)
         print('EVALUATING BOOOIIII')
@@ -217,6 +217,8 @@ def make_pybullet(arg_dict, pybullet_instance, rank, hand_info, viz=False):
 
     num_eval = len(eval_pose_list)
     eval_pose_list = np.array(eval_pose_list[int(num_eval*rank[0]/rank[1]):int(num_eval*(rank[0]+1)/rank[1])])
+    eval_finger_contacts = np.array(eval_finger_contacts[int(num_eval*rank[0]/rank[1]):int(num_eval*(rank[0]+1)/rank[1])])
+    eval_orientations = np.array(eval_orientations[int(num_eval*rank[0]/rank[1]):int(num_eval*(rank[0]+1)/rank[1])])
     # print(args)
     
     if viz:
@@ -260,7 +262,7 @@ def make_pybullet(arg_dict, pybullet_instance, rank, hand_info, viz=False):
     pybullet_instance.changeVisualShape(hand_id, 3, rgbaColor=[1, 0.5, 0, 1])
     pybullet_instance.changeVisualShape(hand_id, 4, rgbaColor=[0.3, 0.3, 0.3, 1])
     obj = ObjectWithVelocity(obj_id, path=args['object_path'],name='obj_2')
-    
+    print('eval pose list length', len(eval_pose_list))
     # For standard loaded goal poses
     if args['task'] == 'contact point':
         goal_poses = GoalHolder(pose_list,orientations,finger_contacts)

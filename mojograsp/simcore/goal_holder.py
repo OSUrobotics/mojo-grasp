@@ -18,6 +18,7 @@ class GoalHolder():
         self.len = len(self.pose)
         self.goal_names = goal_names
         print(f'orientation type: {type(self.orientation)}')
+        print(f'lengths: pos {len(self.pose)}, orientation {len(self.orientation)}, finger {len(self.finger)}')
         if len(np.shape(self.pose)) == 1:
             self.pose = [self.pose]
         self.run_num = 0
@@ -33,6 +34,7 @@ class GoalHolder():
     
     def next_run(self):
         self.run_num +=1
+        self.check_data()
         # print({'goal_pose':self.pose[self.run_num%self.len],'goal_orientation':self.orientation[self.run_num%self.len]})
         
     def reset(self):
@@ -41,7 +43,12 @@ class GoalHolder():
         np.random.shuffle(inds)
         self.pose = self.pose[inds]
         self.orientation = self.orientation[inds]
+        self.finger = self.finger[inds]
         print('shuffling the pose order')
+    
+    def check_data(self):
+        assert (self.pose[self.run_num%self.len][0] < self.finger[self.run_num%self.len][0]) and (self.pose[self.run_num%self.len][0] > self.finger[self.run_num%self.len][2])
+        
     
     def __len__(self):
         return len(self.pose)

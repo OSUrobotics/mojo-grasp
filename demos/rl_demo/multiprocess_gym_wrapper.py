@@ -133,7 +133,6 @@ class MultiprocessGymWrapper(gym.Env):
                 self.build_reward = rf.double_smart
             elif (self.TASK == 'multi') and (self.REWARD_TYPE =='ScaledDistance+ScaledFinger'):
                 self.build_reward = rf.multi_scaled
-            
             else:
                 raise Exception('reward type does not match list of known reward types')
 
@@ -415,6 +414,7 @@ class MultiprocessGymWrapper(gym.Env):
         self.p.disconnect()
         
     def evaluate(self):
+        print('EVALUATE TRIGGERED')
         self.eval = True
         self.eval_run = 0
         self.manipulation_phase.state.evaluate()
