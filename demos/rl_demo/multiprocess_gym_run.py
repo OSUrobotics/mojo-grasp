@@ -541,7 +541,7 @@ if __name__ == '__main__':
     # main('./data/FTP_halfstate_A_rand_old_finger_poses/experiment_config.json','run')
     # main("./data/region_rotation_JA_finger/experiment_config.json",'run')
 
-    main("./data/contact_test_2/experiment_config.json",'run')
+    # main("./data/JA_region_100_5/experiment_config.json",'run')
     # main("./data/FTP_halfstate_A_rand/experiment_config.json",'run')
     # evaluate("./data/FTP_halfstate_A_rand/experiment_config.json")
     # evaluate("./data/FTP_halfstate_A_rand/experiment_config.json","B")
@@ -551,5 +551,5 @@ if __name__ == '__main__':
     # evaluate("./data/JA_fullstate_A_rand/experiment_config.json")
     # evaluate("./data/JA_fullstate_A_rand/experiment_config.json","B")
 
-
+    replay("./data/JA_region_100_5/experiment_config.json","./data/JA_region_100_5/Eval_A/Episode_8.pkl")
 
