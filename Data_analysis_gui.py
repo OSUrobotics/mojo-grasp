@@ -3,7 +3,9 @@ import os
 import numpy as np
 import re
 import pathlib
+print('pre backend')
 from mojograsp.simcore.data_gui_backend import PlotBackend
+print('post backend')
 from PIL import ImageGrab
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import pickle as pkl
