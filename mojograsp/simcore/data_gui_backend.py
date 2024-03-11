@@ -5,7 +5,6 @@ Created on Mon Aug 28 10:04:51 2023
 
 @author: orochi
 """
-
 import os
 import pickle as pkl
 import matplotlib.pyplot as plt
@@ -17,7 +16,6 @@ import time
 from matplotlib.patches import Rectangle
 from scipy.spatial.transform import Rotation as R
 import mojograsp.simcore.reward_functions as rf
-
 
 def moving_average(a, n) :
     ret = np.cumsum(a, dtype=float)
@@ -114,6 +112,7 @@ class PlotBackend():
         self.legend.extend(['RL Object Trajectory - episode '+str(episode_number), 'Ideal Path to Goal - episode '+str(episode_number)])
         self.ax.legend(self.legend)
         self.ax.set_title('Object Path')
+        self.ax.set_aspect('equal',adjustable='box')
         self.curr_graph = 'path'
 
     def draw_asterisk(self, folder_or_data_dict):
@@ -181,6 +180,7 @@ class PlotBackend():
         self.ax.legend(self.legend)
         self.ax.set_title('Object Paths')
         self.curr_graph = 'path'
+        self.ax.set_aspect('equal',adjustable='box')
 
     def draw_error(self,data_dict):
         
@@ -202,6 +202,7 @@ class PlotBackend():
         for i,poses in enumerate(actual_pos):
             errors += poses - desired_pos[i]
         print(errors)    
+        
         
     def draw_angles(self, data_dict):
         data = data_dict['timestep_list']
@@ -233,6 +234,7 @@ class PlotBackend():
         self.ax.set_xlabel('Timestep (1/30 s)')
         self.ax.set_title('Joint Angles')
         self.curr_graph = 'angles'
+        self.ax.set_aspect('auto',adjustable='box')
         
     def draw_actor_output(self, data_dict):
         data = data_dict['timestep_list']
@@ -262,6 +264,7 @@ class PlotBackend():
         self.ax.set_xlabel('Timestep (1/30 s)')
         self.ax.set_title('Actor Output')
         self.curr_graph = 'angles'
+        self.ax.set_aspect('auto',adjustable='box')
 
     def draw_critic_output(self, data_dict):
         episode_number = data_dict['number']
@@ -283,6 +286,7 @@ class PlotBackend():
         self.ax.set_xlabel('Timestep (1/30 s)')
         self.ax.set_title('Critic Output')
         self.curr_graph = 'rewards'
+        self.ax.set_aspect('auto',adjustable='box')
 
     def draw_distance_rewards(self, data_dict):
         episode_number = data_dict['number']
@@ -302,6 +306,7 @@ class PlotBackend():
         self.ax.set_title('Reward Plot')
          
         self.curr_graph = 'rewards'
+        self.ax.set_aspect('auto',adjustable='box')
     
     def draw_contact_rewards(self, data_dict):
         episode_number = data_dict['number']
@@ -320,7 +325,7 @@ class PlotBackend():
         self.ax.set_ylabel('Reward')
         self.ax.set_xlabel('Timestep (1/30 s)')
         self.ax.set_title('Contact Reward Plot')
-         
+        self.ax.set_aspect('auto',adjustable='box')
         self.curr_graph = 'rewards'
         
     def draw_combined_rewards(self, data_dict):
@@ -348,7 +353,7 @@ class PlotBackend():
         self.ax.set_xlabel('Timestep (1/30 s)')
         self.ax.set_title(title)
         self.ax.grid(True)
-         
+        self.ax.set_aspect('auto',adjustable='box')
         self.curr_graph = 'rewards'
          
     def draw_explored_region(self, all_data_dict):
@@ -388,7 +393,7 @@ class PlotBackend():
         self.ax.set_xlabel('X pos (m)')
         self.ax.set_ylabel('Y pos (m)')
         self.ax.set_title("Explored Object Poses")
-        
+        self.ax.set_aspect('equal',adjustable='box')
         self.colorbar = self.fig.colorbar(c, ax=self.ax)
          
         self.curr_graph = 'explored'
@@ -445,7 +450,7 @@ class PlotBackend():
             if zi[i] <1:
                 zi[i] = term
         self.clear_axes()
-         
+        self.ax.set_aspect('equal',adjustable='box')
         print('about to do the colormesh')
         c = self.ax.pcolormesh(xi, yi, zi.reshape(xi.shape), shading='auto')
 
@@ -487,7 +492,7 @@ class PlotBackend():
         self.ax.set_xlabel('X pos (m)')
         self.ax.set_ylabel('Y pos (m)')
         self.ax.set_title("explored object poses")
-        
+        self.ax.set_aspect('equal',adjustable='box')
         self.colorbar = self.fig.colorbar(c, ax=self.ax)
          
         self.curr_graph = 'explored'
@@ -558,7 +563,7 @@ class PlotBackend():
         # self.ax.set_ylim([-12, 0])
         self.ax.legend(self.legend)
         self.ax.grid(True)
-         
+        self.ax.set_aspect('auto',adjustable='box')
         self.curr_graph = 'Group_Reward'
         return return_rewards
         
@@ -629,7 +634,7 @@ class PlotBackend():
         # self.ax.set_ylim([-12, 0])
         self.ax.legend(self.legend)
         self.ax.grid(True)
-         
+        self.ax.set_aspect('auto',adjustable='box')
         self.curr_graph = 'Group_Reward'
         return return_rewards
 
@@ -698,7 +703,7 @@ class PlotBackend():
         self.ax.set_xlabel('Episode')
         self.ax.grid(True)
         self.ax.set_title('Finger Object Distance Per Episode')
-         
+        self.ax.set_aspect('auto',adjustable='box')
         self.curr_graph = 'fing_obj_dist'
 
     def draw_finger_obj_dist_max(self, folder_or_data_dict):
@@ -765,7 +770,7 @@ class PlotBackend():
         self.ax.set_ylabel('Finger Object Distance')
         self.ax.set_xlabel('Episode')
         self.ax.set_title('Finger Object Distance Per Episode')
-         
+        self.ax.set_aspect('auto',adjustable='box')
         self.curr_graph = 'fing_obj_dist'
         
     def draw_timestep_bar_plot(self,all_data_dict):
@@ -793,6 +798,7 @@ class PlotBackend():
         self.ax.set_ylabel('Number of Timesteps')
         self.ax.set_xlabel('Episode')
         self.ax.set_title('Number of Timesteps per Episode')
+        self.ax.set_aspect('auto',adjustable='box')
          
     def draw_avg_actor_output(self, folder_or_data_dict):
         if type(folder_or_data_dict) is str:
@@ -876,7 +882,7 @@ class PlotBackend():
         self.ax.set_xlabel('Episode')
         self.ax.grid(True)
         self.ax.set_title('Actor Output')
-         
+        self.ax.set_aspect('auto',adjustable='box')
         self.curr_graph = 'angles_total'    
 
     def draw_shortest_goal_dist(self, folder_or_data_dict):
@@ -941,7 +947,7 @@ class PlotBackend():
         self.ax.set_xlabel('Episode')
         self.ax.grid(True)
         self.ax.set_title('Distance to Goal Per Episode')
-         
+        self.ax.set_aspect('auto',adjustable='box')
         self.curr_graph = 'goal_dist'
         return return_mins
             
@@ -969,7 +975,7 @@ class PlotBackend():
         self.ax.set_xlabel('episode')
         self.ax.grid(True)
         self.ax.set_title("Ending Velocity")
-         
+        self.ax.set_aspect('auto',adjustable='box')
         self.curr_graph = 'vel'
 
     def draw_success_rate(self, folder_or_data_dict, success_range):
@@ -1034,7 +1040,7 @@ class PlotBackend():
         titlething = 'Percent of Trials over ' + str(self.moving_avg)+' window that are successful'
         self.ax.set_title(titlething)
         self.ax.grid(True)
-         
+        self.ax.set_aspect('auto',adjustable='box')
         self.curr_graph = 's_f'
         return return_dists
 
@@ -1099,7 +1105,7 @@ class PlotBackend():
         self.ax.set_xlabel('Episode')
         self.ax.set_title('Distance to Goal Per Episode')
         self.ax.grid(True)
-         
+        self.ax.set_aspect('auto',adjustable='box')
         self.curr_graph = 'goal_dist'
         return [mean, std]
         
@@ -1145,7 +1151,7 @@ class PlotBackend():
         self.ax.set_xlabel('Episode')
         self.ax.set_title('Net Reward By Direction')
         self.ax.grid(True)
-         
+        self.ax.set_aspect('auto',adjustable='box')
         self.curr_graph = 'direction_success_thing' 
 
     def draw_actor_max_percent(self, folder_path):
@@ -1202,7 +1208,7 @@ class PlotBackend():
         self.ax.set_ylabel('Actor Output')
         self.ax.set_xlabel('Timestep (1/30 s)')
         self.ax.set_title('Fraction of Episode that Action is Maxed')
-         
+        self.ax.set_aspect('auto',adjustable='box')
         self.curr_graph = 'angles'
     
     def draw_goal_s_f(self, all_data_dict, success_range): # Depreciated
@@ -1239,7 +1245,7 @@ class PlotBackend():
         self.ax.set_xlabel('Episode')
         self.ax.set_title('Net Reward By Direction')
         self.ax.grid(True)
-         
+        self.ax.set_aspect('auto',adjustable='box')
         self.curr_graph = 'direction_reward_thing'   
     
     def draw_fingertip_path(self, data_dict):
@@ -1293,7 +1299,7 @@ class PlotBackend():
                             'Left Finger Trajectory','Ideal Path to Goal'])
         self.ax.legend(self.legend)
         self.ax.set_title('Object and Finger Path - Episode: '+str(episode_number))
-         
+        self.ax.set_aspect('equal',adjustable='box')
         self.curr_graph = 'path'
 
     def draw_obj_contacts(self, data_dict):
@@ -1374,7 +1380,7 @@ class PlotBackend():
                             'Right Fingertip','Left Fingertip','Right Contact','Left Contact'])
         self.ax.legend(self.legend)
         self.ax.set_title('Object and Finger Path - Episode: '+str( episode_number))
-         
+        self.ax.set_aspect('equal',adjustable='box')
         self.curr_graph = 'path'
 
     def draw_net_finger_reward(self, folder_or_data_dict):
@@ -1443,7 +1449,7 @@ class PlotBackend():
         self.ax.legend(self.legend)
         # self.ax.set_ylim([-0.61, 0.001])
         self.ax.grid(True)
-         
+        self.ax.set_aspect('auto',adjustable='box')
         self.curr_graph = 'Group_Reward'
         return return_finger_rewards
             
@@ -1509,7 +1515,7 @@ class PlotBackend():
         self.ax.set_title('Distance to Goals')
         self.ax.grid(False)
         self.colorbar = self.fig.colorbar(a, ax=self.ax, extend='max')
-         
+        self.ax.set_aspect('equal',adjustable='box')
         self.curr_graph = 'scatter'
         print(f'average end distance {mean} +/- {std}')
         print(f'success percent = {np.sum(num_success)/len(num_success)*100}')
@@ -1564,7 +1570,8 @@ class PlotBackend():
         self.ax.set_title('Maximum Finger Distance')
         self.ax.grid(False)
         self.colorbar = self.fig.colorbar(a, ax=self.ax)
-         
+        self.ax.set_aspect('equal',adjustable='box')
+        
         self.curr_graph = 'scatter'
     
     def draw_multifigure_rewards(self,data_dict):
@@ -1753,7 +1760,7 @@ class PlotBackend():
         # ax1.plot(linec[:,0],linec[:,1])
         # ax1.plot(lined[:,0],lined[:,1])
         ax1.legend(self.legend)
-         
+        self.ax.set_aspect('equal',adjustable='box')
         self.curr_graph = 'scatter'
         return fig, (ax1, ax2)
     
@@ -1799,6 +1806,7 @@ class PlotBackend():
                             'Left Y - episode ' + str( episode_number)])
         self.curr_graph = 'aout'
         self.ax.legend(self.legend)
+        self.ax.set_aspect('auto',adjustable='box')
         
     def clear_axes(self):
         if self.colorbar:
@@ -1847,6 +1855,7 @@ class PlotBackend():
         self.ax.legend(self.legend)
         self.ax.set_title('Average goals in 100 episodes')
         self.curr_graph = 'path'
+        self.ax.set_aspect('auto',adjustable='box')
     
     def draw_average_efficiency(self, folder_or_data_dict):
         episode_files = [os.path.join(folder_or_data_dict, f) for f in os.listdir(folder_or_data_dict) if f.lower().endswith('.pkl')]
@@ -1898,6 +1907,7 @@ class PlotBackend():
         self.ax.set_ylim(-0.01,1.01)                                                                                                                                                                                                                            
         # self.legend.extend(['Goals'])
         # self.ax.legend(self.legend)
+        self.ax.set_aspect('auto',adjustable='box')
         self.ax.set_title('Average Movement Efficiency')
         self.curr_graph = 'path'
         return [mean, std]
@@ -1944,6 +1954,7 @@ class PlotBackend():
         self.ax.legend(['Goal Poses', 'End Poses'])
         self.ax.set_xlim([-0.1,0.1])
         self.ax.set_ylim([0.0,0.2])
+        self.ax.set_aspect('equal',adjustable='box')
 
     def draw_radar(self,folder_or_data_dict,legend_thing):
         episode_files = [os.path.join(folder_or_data_dict, f) for f in os.listdir(folder_or_data_dict) if f.lower().endswith('.pkl')]
@@ -2032,6 +2043,7 @@ class PlotBackend():
         self.ax.set_ylabel('Y pos (m)')
         self.legend.append(legend_thing)
         self.ax.legend(self.legend)
+        self.ax.set_aspect('equal',adjustable='box')
         # self.ax.scatter(end_poses[:,0],end_poses[:,1])
 
     def draw_orientation_success_rate(self,folder,success_range):
@@ -2083,13 +2095,13 @@ class PlotBackend():
         print(rewards,rotation)
         self.ax.scatter(rotation,rewards)
         # self.ax.plot(range(len(goals)), goals)
-        self.ax.plot([-5,5],[-5,5])
+        self.ax.plot([-5,5],[-5,5],color='orange')
         self.ax.set_xlabel('Goal Orientation')
         self.ax.set_ylabel('Ending Orientation Error')
-        self.ax.set_ylim(-1.01,1.01)
-        self.ax.set_xlim(-1.51,1.51)
-
-        # self.ax.legend(['Object Angle','Goal Angle'])
+        self.ax.set_ylim(-1.6,1.6)
+        self.ax.set_xlim(-1.6,1.6)
+        self.ax.set_aspect('equal',adjustable='box')
+        self.ax.legend(['Achieved Angles','No Movement Line'])
 
     def draw_orientation(self,data_dict):
         self.clear_axes()
@@ -2108,6 +2120,7 @@ class PlotBackend():
         self.ax.plot(range(len(goals)), goals)
         self.ax.set_xlabel('timestep')
         self.ax.set_ylabel('angle (rad)')
+        self.ax.set_aspect('auto',adjustable='box')
         self.ax.legend(['Object Angle','Goal Angle'])
         
     def draw_finger_goal_path(self, data_dict):
