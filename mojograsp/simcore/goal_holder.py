@@ -34,7 +34,7 @@ class GoalHolder():
     
     def next_run(self):
         self.run_num +=1
-        self.check_data()
+        # self.check_data()
         # print({'goal_pose':self.pose[self.run_num%self.len],'goal_orientation':self.orientation[self.run_num%self.len]})
         
     def reset(self):

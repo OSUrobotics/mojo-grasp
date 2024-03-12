@@ -13,7 +13,7 @@ from PIL import Image
 
 class MultiprocessManipulation(Phase):
 
-    def __init__(self, hand: TwoFingerGripper, cube: ObjectBase, x, y, state: State, action: Action, reward: Reward, env, replay_buffer: ReplayBufferDefault = None, args: dict = None,physicsClientId = None, hand_type=None):
+    def __init__(self, hand: TwoFingerGripper, cube: ObjectBase, state: State, action: Action, reward: Reward, env, replay_buffer: ReplayBufferDefault = None, args: dict = None,physicsClientId = None, hand_type=None):
         self.name = "manipulation"
         self.hand = hand
         self.cube = cube
@@ -30,8 +30,6 @@ class MultiprocessManipulation(Phase):
             self.terminal_step = 150
         self.timestep = 0
         self.episode = 0
-        self.x = x
-        self.y = y
         self.use_ik = args['ik_flag']
         print('ARE WE USING IK', self.use_ik)
         self.image_path = args['save_path'] + 'Videos/'
@@ -123,7 +121,7 @@ class MultiprocessManipulation(Phase):
                                             controlMode=self.p.POSITION_CONTROL, targetPositions=goal_angs, positionGains=[0.8,0.8,0.8,0.8], forces=[0.4,0.4,0.4,0.4])
             self.env.step()
 
-            if viz:
+            if viz and (i%10 == 0):
                 img = self.p.getCameraImage(640, 480,viewMatrix=self.camera_view_matrix,
                                         projectionMatrix=self.camera_projection_matrix,
                                         shadow=1,
