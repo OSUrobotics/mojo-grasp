@@ -65,4 +65,4 @@ def make_video(filepath):
     frame_one.save(filepath+"Episode.gif", format="GIF", append_images=frames,
                save_all=True, duration=15*8, loop=0)
 
-make_video('/home/mothra/mojo-grasp/demos/rl_demo/data/JA_region_10_1/')
+make_video('/home/mothra/mojo-grasp/demos/rl_demo/data/FTP_halfstate_A_rand/')
