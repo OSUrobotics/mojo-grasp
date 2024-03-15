@@ -433,11 +433,11 @@ def replay(argpath, episode_path):
 
     # initialize with obeject in desired position. 
     # TODO fix this so that I don't need to comment/uncomment this to get desired behavior
-    # start_position = {'goal_position':data['timestep_list'][0]['state']['goal_pose']['goal_position']}
+    start_position = {'goal_position':data['timestep_list'][0]['state']['goal_pose']['goal_position']}
 
-    _ = eval_env.reset()
+    _ = eval_env.reset(start_position)
     print(data['timestep_list'][0]['state']['goal_pose'])
-    temp = data['timestep_list'][0]['state']['goal_pose']['goal_pose']
+    temp = data['timestep_list'][0]['state']['goal_pose']['goal_position']
     # p2.addUserDebugPoints([[data['timestep_list'][0]['state']['goal_pose']['goal_position'][0],data['timestep_list'][0]['state']['goal_pose']['goal_position'][1]+0.1,0.1]], [[1,1,1]], pointSize=5)
     visualShapeId = p2.createVisualShape(shapeType=p2.GEOM_SPHERE,
                                         rgbaColor=[1, 0, 0, 1],
@@ -453,6 +453,45 @@ def replay(argpath, episode_path):
                     baseVisualShapeIndex=visualShapeId,
                     basePosition=[temp[0]-0.0025,temp[1]+0.1-0.0025,0.11],
                     useMaximalCoordinates=True)
+
+    temp = data['timestep_list'][0]['state']['goal_pose']['goal_finger'][0:2]
+    # p2.addUserDebugPoints([[data['timestep_list'][0]['state']['goal_pose']['goal_position'][0],data['timestep_list'][0]['state']['goal_pose']['goal_position'][1]+0.1,0.1]], [[1,1,1]], pointSize=5)
+    visualShapeId = p2.createVisualShape(shapeType=p2.GEOM_SPHERE,
+                                        rgbaColor=[0, 1, 0, 1],
+                                        radius=0.005,
+                                        specularColor=[0.4, .4, 0],
+                                        visualFramePosition=[[temp[0],temp[1],0.1]])
+    collisionShapeId = p2.createCollisionShape(shapeType=p2.GEOM_SPHERE,
+                                               radius=0.001)
+
+    p2.createMultiBody(baseMass=0,
+                    baseInertialFramePosition=[0,0,0],
+                    baseCollisionShapeIndex=collisionShapeId,
+                    baseVisualShapeIndex=visualShapeId,
+                    basePosition=[temp[0]-0.0025,temp[1]-0.0025,0.11],
+                    useMaximalCoordinates=True)
+    
+    
+    
+    temp = data['timestep_list'][0]['state']['goal_pose']['goal_finger'][2:4]
+    # p2.addUserDebugPoints([[data['timestep_list'][0]['state']['goal_pose']['goal_position'][0],data['timestep_list'][0]['state']['goal_pose']['goal_position'][1]+0.1,0.1]], [[1,1,1]], pointSize=5)
+    visualShapeId = p2.createVisualShape(shapeType=p2.GEOM_SPHERE,
+                                        rgbaColor=[0, 0, 1, 1],
+                                        radius=0.005,
+                                        specularColor=[0.4, .4, 0],
+                                        visualFramePosition=[[temp[0],temp[1],0.1]])
+    collisionShapeId = p2.createCollisionShape(shapeType=p2.GEOM_SPHERE,
+                                               radius=0.001)
+
+    p2.createMultiBody(baseMass=0,
+                    baseInertialFramePosition=[0,0,0],
+                    baseCollisionShapeIndex=collisionShapeId,
+                    baseVisualShapeIndex=visualShapeId,
+                    basePosition=[temp[0]-0.0025,temp[1]-0.0025,0.11],
+                    useMaximalCoordinates=True)
+
+
+
     
     p2.configureDebugVisualizer(p2.COV_ENABLE_RENDERING,1)
     step_num = 0
@@ -523,4 +562,4 @@ if __name__ == '__main__':
     # evaluate("./data/JA_fullstate_A_rand/experiment_config.json")
     # evaluate("./data/JA_fullstate_A_rand/experiment_config.json","B")
     # replay("./data/JA_region_100_5/experiment_config.json","./data/JA_region_100_5/Eval_A/Episode_8.pkl")
-    replay("./data/FTP_halfstate_A_rand/experiment_config.json","./data/FTP_halfstate_A_rand/Eval_B/Evaluate_72.pkl")
+    replay("./data/contact_test_2/experiment_config.json","./data/contact_test_2/Eval_A/Episode_250.pkl")
