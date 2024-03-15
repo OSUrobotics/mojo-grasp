@@ -34,7 +34,7 @@ import time
 import os
 import multiprocessing
 import json
-
+from scipy.spatial.transform import Rotation as R
 # from stable_baselines3.DQN import MlpPolicy
 
 def make_env(arg_dict=None,rank=0,hand_info=None):
@@ -61,7 +61,7 @@ def load_set(args):
         xeval = x.copy()
         yeval = y.copy()
     
-    if 'rotation' in args['task']:
+    if ('rotation' in args['task']) | ('full' in args['task']):
         orientations = np.random.uniform(-np.pi/2+0.1, np.pi/2-0.1,len(x))
         orientations = orientations + np.sign(orientations)*0.1
         eval_orientations = np.random.uniform(-np.pi/2+0.1, np.pi/2-0.1,len(xeval))
@@ -89,6 +89,9 @@ def load_set(args):
 
     pose_list = np.array([[i,j] for i,j in zip(x,y)])
     eval_pose_list = [[i,j] for i,j in zip(xeval,yeval)]
+    # print(pose_list)
+    assert len(pose_list)==len(orientations)
+    assert len(eval_pose_list) ==len(eval_orientations)
     return pose_list, eval_pose_list, orientations, eval_orientations, finger_contacts, eval_finger_contacts
 
     
@@ -308,7 +311,7 @@ def make_pybullet(arg_dict, pybullet_instance, rank, hand_info, viz=False):
     hand_id = pybullet_instance.loadURDF(args['hand_path'] + '/' + this_hand, useFixedBase=True,
                          basePosition=[0.0, 0.0, 0.05], flags=pybullet_instance.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
     obj_id = pybullet_instance.loadURDF(args['object_path'], basePosition=[0.0, 0.10, .05], flags=pybullet_instance.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
-    
+    print(f'OBJECT ID:{obj_id}')
     # Create TwoFingerGripper Object and set the initial joint positions
     hand = TwoFingerGripper(hand_id, path=args['hand_path'] + '/' + this_hand,hand_params=hand_param_dict)
     
@@ -427,40 +430,65 @@ def replay(argpath, episode_path):
         data = pkl.load(efile)
     
     actions = [a['action']['actor_output'] for a in data['timestep_list']]
+    obj_pose = [s['state']['obj_2']['pose'] for s in data['timestep_list']]
     import pybullet as p2
     eval_env , _, poses= make_pybullet(args,p2, [0,1], hand_params,viz=True)
     eval_env.evaluate()
 
     # initialize with obeject in desired position. 
     # TODO fix this so that I don't need to comment/uncomment this to get desired behavior
-    # start_position = {'goal_position':data['timestep_list'][0]['state']['goal_pose']['goal_position']}
+    start_position = {'goal_position':data['timestep_list'][0]['state']['goal_pose']['goal_position']}
 
-    _ = eval_env.reset()
+    _ = eval_env.reset(start_position)
     print(data['timestep_list'][0]['state']['goal_pose'])
-    temp = data['timestep_list'][0]['state']['goal_pose']['goal_pose']
+    temp = data['timestep_list'][0]['state']['goal_pose']['goal_position']
+    angle = data['timestep_list'][0]['state']['goal_pose']['goal_orientation']
+    
+    t= R.from_euler('z',angle)
+    quat = t.as_quat()
     # p2.addUserDebugPoints([[data['timestep_list'][0]['state']['goal_pose']['goal_position'][0],data['timestep_list'][0]['state']['goal_pose']['goal_position'][1]+0.1,0.1]], [[1,1,1]], pointSize=5)
-    visualShapeId = p2.createVisualShape(shapeType=p2.GEOM_SPHERE,
+    visualShapeId = p2.createVisualShape(shapeType=p2.GEOM_CYLINDER,
                                         rgbaColor=[1, 0, 0, 1],
-                                        radius=0.005,
+                                        radius=0.004,
+                                        length=0.02,
                                         specularColor=[0.4, .4, 0],
-                                        visualFramePosition=[[temp[0],temp[1]+0.1,0.1]])
-    collisionShapeId = p2.createCollisionShape(shapeType=p2.GEOM_SPHERE,
-                                               radius=0.001)
+                                        visualFramePosition=[[temp[0],temp[1]+0.1,0.1]],
+                                        visualFrameOrientation=[ 0.7071068, 0, 0, 0.7071068 ])
+    collisionShapeId = p2.createCollisionShape(shapeType=p2.GEOM_CYLINDER,
+                                               radius=0.002,
+                                               height=0.002,)
 
-    p2.createMultiBody(baseMass=0,
+    tting = p2.createMultiBody(baseMass=0,
                     baseInertialFramePosition=[0,0,0],
                     baseCollisionShapeIndex=collisionShapeId,
                     baseVisualShapeIndex=visualShapeId,
                     basePosition=[temp[0]-0.0025,temp[1]+0.1-0.0025,0.11],
+                    baseOrientation =quat,
                     useMaximalCoordinates=True)
     
+        # p2.addUserDebugPoints([[data['timestep_list'][0]['state']['goal_pose']['goal_position'][0],data['timestep_list'][0]['state']['goal_pose']['goal_position'][1]+0.1,0.1]], [[1,1,1]], pointSize=5)
+
+
+
+    t1 = R.from_euler('x',np.pi/2)
+    t2 = R.from_quat(obj_pose[0][1])
+    temp_pos = obj_pose[0][0].copy()
+    temp_pos[2] += 0.06
+    t3 = t2*t1
+    curr_id=p2.loadURDF('./resources/object_models/2v2_mod/2v2_mod_cylinder_small_alt.urdf', flags=p2.URDF_ENABLE_CACHED_GRAPHICS_SHAPES,
+                globalScaling=0.2, basePosition=temp_pos, baseOrientation=[ 0.7071068, 0, 0, 0.7071068 ])
+    p2.changeVisualShape(curr_id, -1,rgbaColor=[1, 0.5, 0, 1])
+
+    cid = p2.createConstraint(2, -1, curr_id, -1, p2.JOINT_FIXED, [0, 0, 0], [0, 0, 0], [0,0.06,0], childFrameOrientation=[ 0.7071068, 0, 0, 0.7071068 ])
+    print(p2.getConstraintInfo(cid))
+    p2.setCollisionFilterPair(curr_id,tting,-1,-1,0)
     p2.configureDebugVisualizer(p2.COV_ENABLE_RENDERING,1)
     step_num = 0
+    input('asdf')
     for act in actions:
         eval_env.step(np.array(act),viz=True)
-        print(f'step {step_num}')
         step_num +=1
-            
+
 def main(filepath = None,learn_type='run'):
     num_cpu = multiprocessing.cpu_count() # Number of processes to use
     # Create the vectorized environment
@@ -514,7 +542,7 @@ if __name__ == '__main__':
 
     # main('./data/FTP_halfstate_A_rand_old_finger_poses/experiment_config.json','run')
     # main("./data/region_rotation_JA_finger/experiment_config.json",'run')
-    # main("./data/JA_sliding_sub_policy/experiment_config.json",'run')
+    main("./data/JA_full_task_20_1/experiment_config.json",'run')
     # main("./data/FTP_halfstate_A_rand/experiment_config.json",'run')
     # evaluate("./data/FTP_halfstate_A_rand/experiment_config.json")
     # evaluate("./data/FTP_halfstate_A_rand/experiment_config.json","B")
@@ -522,5 +550,5 @@ if __name__ == '__main__':
     # evaluate("./data/FTP_fullstate_A_rand/experiment_config.json","B")
     # evaluate("./data/JA_fullstate_A_rand/experiment_config.json")
     # evaluate("./data/JA_fullstate_A_rand/experiment_config.json","B")
-    # replay("./data/JA_region_100_5/experiment_config.json","./data/JA_region_100_5/Eval_A/Episode_8.pkl")
-    replay("./data/FTP_halfstate_A_rand/experiment_config.json","./data/FTP_halfstate_A_rand/Eval_B/Evaluate_72.pkl")
+    # replay("./data/JA_finger_reward_region_10_1/experiment_config.json","./data/JA_finger_reward_region_10_1/Eval_A/Episode_4.pkl")
+    # replay("./data/FTP_halfstate_A_rand/experiment_config.json","./data/FTP_halfstate_A_rand/Eval_B/Evaluate_72.pkl")
