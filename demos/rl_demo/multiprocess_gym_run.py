@@ -446,6 +446,7 @@ def replay(argpath, episode_path):
     
     t= R.from_euler('z',angle)
     quat = t.as_quat()
+
     # p2.addUserDebugPoints([[data['timestep_list'][0]['state']['goal_pose']['goal_position'][0],data['timestep_list'][0]['state']['goal_pose']['goal_position'][1]+0.1,0.1]], [[1,1,1]], pointSize=5)
     visualShapeId = p2.createVisualShape(shapeType=p2.GEOM_CYLINDER,
                                         rgbaColor=[1, 0, 0, 1],
@@ -465,6 +466,45 @@ def replay(argpath, episode_path):
                     basePosition=[temp[0]-0.0025,temp[1]+0.1-0.0025,0.11],
                     baseOrientation =quat,
                     useMaximalCoordinates=True)
+
+    temp = data['timestep_list'][0]['state']['goal_pose']['goal_finger'][0:2]
+    # p2.addUserDebugPoints([[data['timestep_list'][0]['state']['goal_pose']['goal_position'][0],data['timestep_list'][0]['state']['goal_pose']['goal_position'][1]+0.1,0.1]], [[1,1,1]], pointSize=5)
+    visualShapeId = p2.createVisualShape(shapeType=p2.GEOM_SPHERE,
+                                        rgbaColor=[0, 1, 0, 1],
+                                        radius=0.005,
+                                        specularColor=[0.4, .4, 0],
+                                        visualFramePosition=[[temp[0],temp[1],0.1]])
+    collisionShapeId = p2.createCollisionShape(shapeType=p2.GEOM_SPHERE,
+                                               radius=0.001)
+
+    p2.createMultiBody(baseMass=0,
+                    baseInertialFramePosition=[0,0,0],
+                    baseCollisionShapeIndex=collisionShapeId,
+                    baseVisualShapeIndex=visualShapeId,
+                    basePosition=[temp[0]-0.0025,temp[1]-0.0025,0.11],
+                    useMaximalCoordinates=True)
+    
+    
+    
+    temp = data['timestep_list'][0]['state']['goal_pose']['goal_finger'][2:4]
+    # p2.addUserDebugPoints([[data['timestep_list'][0]['state']['goal_pose']['goal_position'][0],data['timestep_list'][0]['state']['goal_pose']['goal_position'][1]+0.1,0.1]], [[1,1,1]], pointSize=5)
+    visualShapeId = p2.createVisualShape(shapeType=p2.GEOM_SPHERE,
+                                        rgbaColor=[0, 0, 1, 1],
+                                        radius=0.005,
+                                        specularColor=[0.4, .4, 0],
+                                        visualFramePosition=[[temp[0],temp[1],0.1]])
+    collisionShapeId = p2.createCollisionShape(shapeType=p2.GEOM_SPHERE,
+                                               radius=0.001)
+
+    p2.createMultiBody(baseMass=0,
+                    baseInertialFramePosition=[0,0,0],
+                    baseCollisionShapeIndex=collisionShapeId,
+                    baseVisualShapeIndex=visualShapeId,
+                    basePosition=[temp[0]-0.0025,temp[1]-0.0025,0.11],
+                    useMaximalCoordinates=True)
+
+
+
     
         # p2.addUserDebugPoints([[data['timestep_list'][0]['state']['goal_pose']['goal_position'][0],data['timestep_list'][0]['state']['goal_pose']['goal_position'][1]+0.1,0.1]], [[1,1,1]], pointSize=5)
 
@@ -551,4 +591,3 @@ if __name__ == '__main__':
     # evaluate("./data/JA_fullstate_A_rand/experiment_config.json")
     # evaluate("./data/JA_fullstate_A_rand/experiment_config.json","B")
     # replay("./data/JA_finger_reward_region_10_1/experiment_config.json","./data/JA_finger_reward_region_10_1/Eval_A/Episode_4.pkl")
-    # replay("./data/FTP_halfstate_A_rand/experiment_config.json","./data/FTP_halfstate_A_rand/Eval_B/Evaluate_72.pkl")
