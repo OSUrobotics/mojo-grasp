@@ -5,11 +5,10 @@ Created on Sun Jun 18 10:53:23 2023
 
 @author: orochi
 """
-from reportlab.lib.pagesizes import letter
+from reportlab.lib.pagesizes import letter, landscape
 from reportlab.pdfgen import canvas
 # from reportlab.lib import utils
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Image, Spacer
-from reportlab.lib.pagesizes import letter
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Image, Spacer, Table
 from mojograsp.simcore.data_gui_backend import PlotBackend
 import matplotlib.pyplot as plt
 import json
@@ -26,7 +25,7 @@ class CanvasMock():
         pass
     
 class ImageMaker():
-    def __init__(self, save_path,not_stand=False):
+    def __init__(self, save_path,not_stand=False,land=False):
         self.folder = pathlib.Path(save_path)
         self.data_type = None
         self.fig, self.ax = plt.subplots()
@@ -43,33 +42,49 @@ class ImageMaker():
         self.use_distance = False
         self.backend = PlotBackend(str(self.folder))
         self.backend.moving_avg = 20
+        self.table = []
+        self.tablen = 8
         # self.pdf_canvas = canvas.Canvas(str(self.folder)+'/StandardPlots.pdf', pagesize=letter)
-        if not_stand:
-            self.doc = SimpleDocTemplate(str(self.folder)+'/OtherPlots.pdf', pagesize=letter)
+        if landscape:
+            if not_stand:
+                self.doc = SimpleDocTemplate(str(self.folder)+'/OtherPlots.pdf', pagesize=landscape(letter), )
+            else:
+                self.doc = SimpleDocTemplate(str(self.folder)+'/StandardPlots.pdf', pagesize=landscape(letter))
         else:
-            self.doc = SimpleDocTemplate(str(self.folder)+'/StandardPlots.pdf', pagesize=letter)
+            if not_stand:
+                self.doc = SimpleDocTemplate(str(self.folder)+'/OtherPlots.pdf', pagesize=letter, )
+            else:
+                self.doc = SimpleDocTemplate(str(self.folder)+'/StandardPlots.pdf', pagesize=letter)
         self.images =[]
         self.imnames = []
         self.flowables =[]
         self.count = 0
-        
+        self.thing = False
 
     def plot_to_png(self,fig_name=''):
         self.fig.canvas.draw()
         
         plt.savefig(f'temp{self.count}.png')
-        spacer=Spacer(600, 15)
+        
+        # spacer=Spacer(600, 15)
         # buf = np.frombuffer(self.fig.canvas.tostring_rgb(), dtype=np.uint8)
         # buf = buf.reshape(self.fig.canvas.get_width_height()[::-1] + (3,))
         # imthing = Image.fromarray(buf)
         # self.images.append(imgdata.copy())
         # self.imnames.append(fig_name)
         # letter size is 612x792 points'
-        temp = Image(f'temp{self.count}.png')
+        
         # self.pdf_canvas.drawString(100, self.height, fig_name)
-        self.flowables.append(Paragraph(fig_name))
-        self.flowables.append(temp)
-        self.flowables.append(spacer)
+        if not self.thing:
+            self.table.append([Paragraph(fig_name)])
+            self.table.append([Image(f'temp{self.count}.png',width=300,height = 200,hAlign='LEFT')])
+        if self.thing:
+            print(self.count, len(self.table))
+            
+            self.table[(self.count-self.tablen)*2].append(Paragraph(fig_name))
+            self.table[(self.count-self.tablen)*2 + 1].append(Image(f'temp{self.count}.png',width=300,height = 200,hAlign='RIGHT'))
+            
+
         self.count += 1 
         # self.pdf_canvas.drawImage(imgdata, 60, self.height, width=500, height=500)
         # self.pdf_canvas.
@@ -80,6 +95,7 @@ class ImageMaker():
         #     self.pdf_canvas.drawString(100, 100, name)
         #     self.pdf_canvas.drawImage(image, 30, 600, width=100, height=100)
         # self.pdf_canvas.save()
+        self.flowables.append(Table(self.table))
         self.doc.build(self.flowables)
         files = os.listdir()
         
@@ -188,44 +204,16 @@ if __name__ == '__main__':
     base_path = pathlib.Path(__file__)
     base_path = base_path.parent
     
-    base_path = base_path.joinpath('demos/rl_demo/data')
-    # print(base_path)
-    JAs = ['Full', 'Half']
-    hand_params = ['Hand', 'NoHand']
-    Action_space = ['FTP','JA']
-    hands = ['PalmInterp','FingerInterp', 'Everything']
-
-    things = []
-    for k1 in JAs:
-        for k2 in hand_params:
-            for k3 in Action_space:
-                for k4 in hands:
-                    temp = '_'.join([k1,k2,k3,k4])
-                    things.append(temp)
-    precursor = './data/'
-    post = '/experiment_config.json'
-    top_row = ['',"2v2_65.35_65.35_1.1_53",'','','',
-    "2v2_50.50_50.50_1.1_53",'','','',
-    "2v2_70.30_70.30_1.1_53",'','','',
-    "2v2_35.65_35.65_1.1_53",'','','',
-    "2v2_65.35_65.35_1.1_63",'','','',
-    "2v2_50.50_50.50_1.1_63",'','','',
-    "2v2_70.30_70.30_1.1_63",'','','',
-    "2v2_35.65_35.65_1.1_63",'','','',
-    "2v2_65.35_65.35_1.1_73",'','','',
-    "2v2_50.50_50.50_1.1_73",'','','',
-    "2v2_70.30_70.30_1.1_73",'','','',
-    "2v2_35.65_35.65_1.1_73",'','','']
-    middle_row = ['Average Goal Distance','STD Dev','Average Efficiency','STD Dev']*12
-    middle_row.insert(0,'')
-    with open('./distance_and_efficiency.csv', 'w', newline='') as csvfile:
-        writer = csv.writer(csvfile, delimiter=',',
-                                quotechar='|', quoting=csv.QUOTE_MINIMAL)
-        writer.writerow(top_row)
-        writer.writerow(middle_row)
-    for folder_name in things:
-        a = ImageMaker(str(base_path)+'/'+folder_name,False)
-        a.eval_plots()
-        # input('continue?')
-    # image_path = 'snakehead.jpg'
-    # add_image(image_path)
+    base_path = base_path.joinpath('demos/rl_demo/data/HPC Runs/')
+    base_path=str(base_path)+'/'
+    subpaths = ['FTP_euler_3', 'FTP_euler_5', 'FTP_quat_3','FTP_quat_5','JA_euler_3','JA_euler_5','JA_quat_3','JA_quat_5']
+    image_boi = ImageMaker(base_path+'FTP_euler_3',land=True)
+    for path in subpaths:
+        image_boi.backend.draw_orientation_success_rate(base_path+path+'/Eval_A/',5000)
+        image_boi.plot_to_png(path)
+    image_boi.thing=True
+    # image_boi.count=0
+    for path in subpaths:
+        image_boi.backend.draw_end_poses(base_path+path+'/Eval_A/')
+        image_boi.plot_to_png(path)
+    image_boi.save_pdf()

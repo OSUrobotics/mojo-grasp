@@ -166,22 +166,6 @@ class RNNGui():
         state_mins = []
         state_maxes = []
         state_list = []
-        
-        # Replacing with the object random start and such
-        # if values['-task'] == 'Rotation_region':
-        #     self.args['rstart'] ='end'
-        # elif bool(values['-rstart']) and bool(values['-rfinger']):
-        #     self.args['rstart']= 'both'
-        # elif not bool(values['-rstart']) and bool(values['-rfinger']):
-        #     self.args['rstart']= 'finger'
-        # elif not bool(values['-rstart']) and not bool(values['-rfinger']):
-        #     self.args['rstart']= 'no'
-        # elif bool(values['-rstart']) and not bool(values['-rfinger']):
-        #     self.args['rstart']= 'obj'
-        # elif values['-task'] == 'contact point':
-        #     pass
-        # elif values['-task'] == 'contact':
-        #     pass
 
         if values['-ftp']:
             if not RW:
@@ -347,10 +331,12 @@ class RNNGui():
             self.args['max_action'] = 0.01
         if (values['-task'] == 'full_random') | (values['-task'] == 'unplanned_random'):
             self.args['points_path'] = str(resource_path.joinpath('points.csv'))
-        elif (values['-task'] == 'big_random') | (values['-task'] =='multi')|(values['-task'] =='slide_and_rotate')|(values['-task'] =='Rotation_region'):
+            self.args['points_path'] = str(resource_path.joinpath('test_points.csv'))
+        elif (values['-task'] == 'big_random') | (values['-task'] =='multi')|(values['-task'] =='full_task')|(values['-task'] =='Rotation_region'):
             self.args['points_path'] = str(resource_path.joinpath('train_points_big.csv'))
+            self.args['points_path'] = str(resource_path.joinpath('test_points_big.csv'))
         else:
-            self.args['points_path'] = str(resource_path.joinpath('train_points.csv'))
+            self.args['points_path'] = ''
             
         if self.args['task'] == 'single':
             
