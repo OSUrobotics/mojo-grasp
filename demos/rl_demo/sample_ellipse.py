@@ -58,7 +58,7 @@ dirs = [[x_e,y_e],[x_ne, y_ne],[x_n,y_n],[x_nw,y_nw],[x_w,y_w],[x_sw,y_sw],[x_s,
 #         y = r * np.cos(theta)
 #         name[0].append(x)
 #         name[1].append(y)
-x_pts,y_pts = [], []
+x_pts,y_pts, angs = [], [], []
 for j in range(NUM_POINTS):
     theta = random.uniform(0, 2*np.pi)
     r = (1-(random.uniform(0, 0.95))**2) * 70/1000
@@ -68,12 +68,21 @@ for j in range(NUM_POINTS):
     y = r * np.cos(theta)
     x_pts.append(x)
     y_pts.append(y)
-
+    orientation = np.random.uniform(-np.pi/2+0.1, np.pi/2-0.1)
+    orientation = orientation + np.sign(orientation)*0.1
+    angs.append(orientation)
+finger1 = np.random.uniform(-0.01,0.01,NUM_POINTS)
+finger1 = list(finger1)
+finger2 = np.random.uniform(-0.01,0.01,NUM_POINTS)
+finger2 = list(finger2)
 df = pd.DataFrame(
     {'x': x_pts,
-      'y': y_pts
+      'y': y_pts,
+      'ang':angs,
+      'f1y':finger1,
+      'f2y':finger2
       })
-df.to_csv("resources/test_points_big.csv", index=False)            
+df.to_csv("resources/rotation_only_train.csv", index=False)            
 # create dataframe from lists
 # df = pd.DataFrame(
 #     {'x': x_n,
@@ -126,6 +135,7 @@ df.to_csv("resources/test_points_big.csv", index=False)
 # for things in dirs:
 plt.scatter(x_pts,y_pts)
 plt.show()
+plt.scatter(range(len(angs)),angs)
 # create dataframe from lists
 # df2 = pd.DataFrame(
 #     {'x': x_test,

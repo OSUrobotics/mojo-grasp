@@ -2077,10 +2077,10 @@ class PlotBackend():
                 print(episode_file)
                 obj_rotation = data[-1]['reward']['object_orientation'][2]
                 obj_rotation = (obj_rotation + np.pi)%(np.pi*2)
-                obj_rotation = obj_rotation - np.pi
-                goal_rotation = data[-1]['state']['goal_pose']['goal_orientation']
+                obj_rotation = (obj_rotation - np.pi)*180/np.pi
+                goal_rotation = data[-1]['state']['goal_pose']['goal_orientation']*180/np.pi
 
-                rewards.append(goal_rotation- obj_rotation)
+                rewards.append(goal_rotation-obj_rotation)
                 rotation.append(goal_rotation)
                 # for tstep in data:
                 #     obj_rotation = tstep['reward']['object_orientation'][2]
@@ -2095,11 +2095,11 @@ class PlotBackend():
         print(rewards,rotation)
         self.ax.scatter(rotation,rewards)
         # self.ax.plot(range(len(goals)), goals)
-        self.ax.plot([-5,5],[-5,5],color='orange')
+        self.ax.plot([-360,360],[-360,360],color='orange')
         self.ax.set_xlabel('Goal Orientation')
         self.ax.set_ylabel('Ending Orientation Error')
-        self.ax.set_ylim(-1.6,1.6)
-        self.ax.set_xlim(-1.6,1.6)
+        self.ax.set_ylim(-95,95)
+        self.ax.set_xlim(-95,95)
         self.ax.set_aspect('equal',adjustable='box')
         self.ax.legend(['Achieved Angles','No Movement Line'])
 
@@ -2111,15 +2111,15 @@ class PlotBackend():
         for tstep in data:
             obj_rotation = tstep['reward']['object_orientation'][2]
             obj_rotation = (obj_rotation + np.pi)%(np.pi*2)
-            obj_rotation = obj_rotation - np.pi
+            obj_rotation = (obj_rotation - np.pi)*180/np.pi
             rotations.append(obj_rotation)
-            goals.append(tstep['reward']['goal_orientation'])
+            goals.append(tstep['reward']['goal_orientation']*180/np.pi)
         print(data[0]['reward'])
         print(data[0]['state'])
         self.ax.plot(range(len(rotations)), rotations)
         self.ax.plot(range(len(goals)), goals)
         self.ax.set_xlabel('timestep')
-        self.ax.set_ylabel('angle (rad)')
+        self.ax.set_ylabel('angle (deg)')
         self.ax.set_aspect('auto',adjustable='box')
         self.ax.legend(['Object Angle','Goal Angle'])
         
@@ -2181,3 +2181,82 @@ class PlotBackend():
         self.ax.set_title('Object and Finger Path - Episode: '+str(episode_number))
          
         self.curr_graph = 'path'
+        
+    def draw_relative_reward_strength(self,folder,tholds):        
+        # get list of pkl files in folder
+        episode_files = [os.path.join(folder, f) for f in os.listdir(folder) if f.lower().endswith('.pkl')]
+        filenames_only = [f for f in os.listdir(folder) if f.lower().endswith('.pkl')]
+        
+        filenums = [re.findall('\d+',f) for f in filenames_only]
+        final_filenums = []
+        for i in filenums:
+            if len(i) > 0 :
+                final_filenums.append(int(i[0]))
+        
+        
+        sorted_inds = np.argsort(final_filenums)
+        final_filenums = np.array(final_filenums)
+        temp = final_filenums[sorted_inds]
+        episode_files = np.array(episode_files)
+        filenames_only = np.array(filenames_only)
+
+        episode_files = episode_files[sorted_inds].tolist()
+        rewards = []
+        count = 0
+        ftemp = 0
+        rot_temp = 0
+        goal_dist = 0
+        # goal angle should be +/- pi
+        # make the current angle set between +/- pi then subtract the two
+        contact_rewards = []
+        orientation_rewards = []
+        sliding_rewards = []
+        for episode_file in episode_files:
+            with open(episode_file, 'rb') as ef:
+                tempdata = pkl.load(ef)
+            data = tempdata['timestep_list']
+            for timestep in data:
+                goal_dist -= timestep['reward']['distance_to_goal']/0.01 *tholds['DISTANCE_SCALING']# divide to turn into cm
+                obj_rotation = timestep['reward']['object_orientation'][2]
+                thing1 = (obj_rotation-timestep['reward']['goal_orientation'])%(np.pi*2)
+                thing2 = (timestep['reward']['goal_orientation']-obj_rotation)%(np.pi*2)
+                rot_temp -= min(thing1,thing2)*tholds['ROTATION_SCALING']
+                ftemp -= max(timestep['reward']['f1_dist'], timestep['reward']['f2_dist']) * 100 *tholds['CONTACT_SCALING']
+            contact_rewards.append(ftemp)
+            orientation_rewards.append(rot_temp)
+            sliding_rewards.append(goal_dist)
+            rewards.append(ftemp+rot_temp+goal_dist)
+            ftemp = 0
+            rot_temp = 0
+            goal_dist = 0
+            
+            if count% 100 ==0:
+                print('count = ', count)
+            count +=1
+        return_rewards = rewards.copy()
+        if self.moving_avg != 1:
+            contact_rewards = moving_average(contact_rewards,self.moving_avg)
+            orientation_rewards = moving_average(orientation_rewards,self.moving_avg)
+            sliding_rewards = moving_average(sliding_rewards,self.moving_avg)
+            rewards = moving_average(rewards,self.moving_avg)
+        if self.clear_plots | (self.curr_graph !='Group_Reward'):
+            self.clear_axes()
+             
+        self.legend.append('Average Distance Reward')
+        self.ax.plot(range(len(sliding_rewards)), sliding_rewards)
+        self.ax.plot(range(len(orientation_rewards)), orientation_rewards)
+        self.ax.plot(range(len(contact_rewards)), contact_rewards)
+        self.ax.plot(range(len(rewards)),rewards)
+        self.ax.set_xlabel('Episode Number')
+        self.ax.set_ylabel('Total Reward Over the Entire Episode')
+        self.ax.set_title("Agent Reward over Episode")
+        # self.ax.set_ylim([-12, 0])
+        self.ax.legend(['Sliding Rewards','Orientation Rewards','Contact Rewards','Net Rewards'])
+        self.ax.grid(True)
+        self.ax.set_aspect('auto',adjustable='box')
+        self.curr_graph = 'Group_Reward'
+        return return_rewards
+        
+        
+        
+        

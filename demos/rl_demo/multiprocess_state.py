@@ -63,9 +63,9 @@ class MultiprocessState(StateDefault):
     def next_run(self):
         for thing in self.objects:
             if (type(thing) == GoalHolder) | (type(thing) == RandomGoalHolder):
-                thing.next_run()
+                fingerys = thing.next_run()
                 temp = thing.get_data()
-        return temp
+        return temp, fingerys
         
     def reset(self):
         self.run_num = 0

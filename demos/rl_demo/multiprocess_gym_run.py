@@ -52,23 +52,37 @@ def load_set(args):
         df = pd.read_csv(args['points_path'], index_col=False)
         x = df['x']
         y = df['y']
+        if 'ang' in df.keys():
+            orientations=df['ang']
+        else:
+            orientations= np.zeros(len(x))
+        if 'f1y' in df.keys():
+            f1y = df['f1y']
+            f2y= df['f2y']
+        else:
+            f1y = np.random.uniform(-0.01,0.01, len(x))
+            f2y = np.random.uniform(-0.01,0.01, len(y))
 
     if 'test_path' in args.keys():
         df2 = pd.read_csv(args['test_path'],index_col=False)
         xeval = df2['x']
         yeval = df2['y']
+        if 'ang' in df2.keys():
+            eval_orientations=df2['ang']
+        else:
+            eval_orientations= np.zeros(len(x))
+        if 'f1y' in df.keys():
+            ef1y = df['f1y']
+            ef2y= df['f2y']
+        else:
+            ef1y = np.random.uniform(-0.01,0.01, len(x))
+            ef2y = np.random.uniform(-0.01,0.01, len(y))
     else:
         xeval = x.copy()
         yeval = y.copy()
-    
-    if ('rotation' in args['task']) | ('full' in args['task']):
-        orientations = np.random.uniform(-np.pi/2+0.1, np.pi/2-0.1,len(x))
-        orientations = orientations + np.sign(orientations)*0.1
-        eval_orientations = np.random.uniform(-np.pi/2+0.1, np.pi/2-0.1,len(xeval))
-        eval_orientations = eval_orientations + np.sign(eval_orientations)*0.1
-    else:
-        orientations = np.zeros(len(x))
-        eval_orientations = np.zeros(len(xeval))
+        eval_orientations = orientations.copy()
+        ef1y = f1y.copy()
+        ef2y=f2y.copy()
 
     if 'contact' in args['task']:
         finger_ys = np.random.uniform( 0.10778391676312778-0.02, 0.10778391676312778+0.02,(len(y),2))
@@ -89,10 +103,18 @@ def load_set(args):
 
     pose_list = np.array([[i,j] for i,j in zip(x,y)])
     eval_pose_list = [[i,j] for i,j in zip(xeval,yeval)]
+    orientations = [ i for i in orientations]
+    eval_orientations = [i for i in eval_orientations]
+    f1y = [ i for i in f1y]
+    f2y = [i for i in f2y]
+    ef1y = [ i for i in ef1y]
+    ef2y = [i for i in ef2y]
+    
     # print(pose_list)
     assert len(pose_list)==len(orientations)
     assert len(eval_pose_list) ==len(eval_orientations)
-    return pose_list, eval_pose_list, orientations, eval_orientations, finger_contacts, eval_finger_contacts
+    # print(f1y)
+    return pose_list, eval_pose_list, orientations, eval_orientations, finger_contacts, eval_finger_contacts, [f1y,f2y,ef1y,ef2y]
 
     
 def make_pybullet(arg_dict, pybullet_instance, rank, hand_info, viz=False):
@@ -103,7 +125,7 @@ def make_pybullet(arg_dict, pybullet_instance, rank, hand_info, viz=False):
     print(args['task'])
 
     # load the desired test set based on the task
-    pose_list, eval_pose_list, orientations, eval_orientations, finger_contacts, eval_finger_contacts = load_set(args)
+    pose_list, eval_pose_list, orientations, eval_orientations, finger_contacts, eval_finger_contacts, finger_starts = load_set(args)
     '''
     if args['task'] == 'asterisk':
         x = [0.03, 0, -0.03, -0.04, -0.03, 0, 0.03, 0.04]
@@ -262,21 +284,23 @@ def make_pybullet(arg_dict, pybullet_instance, rank, hand_info, viz=False):
     num_eval = len(eval_pose_list)
     eval_pose_list = np.array(eval_pose_list[int(num_eval*rank[0]/rank[1]):int(num_eval*(rank[0]+1)/rank[1])])
     eval_orientations = np.array(eval_orientations[int(num_eval*rank[0]/rank[1]):int(num_eval*(rank[0]+1)/rank[1])])
+    eval_finger_starts = [finger_starts[2][int(num_eval*rank[0]/rank[1]):int(num_eval*(rank[0]+1)/rank[1])],finger_starts[3][int(num_eval*rank[0]/rank[1]):int(num_eval*(rank[0]+1)/rank[1])]]
 
+    # print(type(finger_starts), np.shape(np.array(finger_starts[0:2])))
     # set up goal holders based on task and points given
     if finger_contacts is not None:
         eval_finger_contacts = np.array(eval_finger_contacts[int(num_eval*rank[0]/rank[1]):int(num_eval*(rank[0]+1)/rank[1])])
-        goal_poses = GoalHolder(pose_list,orientations,finger_contacts)
-        eval_goal_poses = GoalHolder(eval_pose_list,eval_orientations,eval_finger_contacts)
+        goal_poses = GoalHolder(pose_list, np.array(finger_starts[0:2]),orientations,finger_contacts)
+        eval_goal_poses = GoalHolder(eval_pose_list, np.array(eval_finger_starts),eval_orientations,eval_finger_contacts)
     elif orientations is not None:
-        goal_poses = GoalHolder(pose_list,orientations)
-        eval_goal_poses = GoalHolder(eval_pose_list, eval_orientations)
+        goal_poses = GoalHolder(pose_list, np.array(finger_starts[0:2]), orientations,mix_orientation=True, mix_finger=True)
+        eval_goal_poses = GoalHolder(eval_pose_list, np.array(eval_finger_starts), eval_orientations)
     elif args['task'] == 'unplanned_random':
         goal_poses = RandomGoalHolder([0.02,0.065])
         eval_goal_poses = GoalHolder(eval_pose_list)
     else:    
-        goal_poses = GoalHolder(pose_list)
-        eval_goal_poses = GoalHolder(eval_pose_list)
+        goal_poses = GoalHolder(pose_list, finger_starts[0:2])
+        eval_goal_poses = GoalHolder(eval_pose_list, finger_starts[2:4])
     
     # setup pybullet client to either run with or without rendering
     if viz:
@@ -431,18 +455,22 @@ def replay(argpath, episode_path):
     
     actions = [a['action']['actor_output'] for a in data['timestep_list']]
     obj_pose = [s['state']['obj_2']['pose'] for s in data['timestep_list']]
+    f1_poses = [s['state']['f1_pos'] for s in data['timestep_list']]
+    f2_poses = [s['state']['f2_pos'] for s in data['timestep_list']]
+    joint_angles = [s['state']['two_finger_gripper']['joint_angles'] for s in data['timestep_list']]
     import pybullet as p2
     eval_env , _, poses= make_pybullet(args,p2, [0,1], hand_params,viz=True)
     eval_env.evaluate()
-
+    temp = [joint_angles[0]['finger0_segment0_joint'],joint_angles[0]['finger0_segment1_joint'],joint_angles[0]['finger1_segment0_joint'],joint_angles[0]['finger1_segment1_joint']]
     # initialize with obeject in desired position. 
     # TODO fix this so that I don't need to comment/uncomment this to get desired behavior
-    start_position = {'goal_position':data['timestep_list'][0]['state']['goal_pose']['goal_position']}
+    start_position = {'goal_position':data['timestep_list'][0]['state']['goal_pose']['goal_position'], 'fingers':temp}
 
     _ = eval_env.reset(start_position)
     print(data['timestep_list'][0]['state']['goal_pose'])
     temp = data['timestep_list'][0]['state']['goal_pose']['goal_position']
     angle = data['timestep_list'][0]['state']['goal_pose']['goal_orientation']
+
     
     t= R.from_euler('z',angle)
     quat = t.as_quat()
@@ -522,13 +550,18 @@ def replay(argpath, episode_path):
     cid = p2.createConstraint(2, -1, curr_id, -1, p2.JOINT_FIXED, [0, 0, 0], [0, 0, 0], [0,0.06,0], childFrameOrientation=[ 0.7071068, 0, 0, 0.7071068 ])
     print(p2.getConstraintInfo(cid))
     p2.setCollisionFilterPair(curr_id,tting,-1,-1,0)
+    # p2.setCollisionFilterPair()
     p2.configureDebugVisualizer(p2.COV_ENABLE_RENDERING,1)
     step_num = 0
+    print(joint_angles[0])
     input('asdf')
-    for act in actions:
+    for i,act in enumerate(actions):
+        print('joints in pkl file',joint_angles[i+1])
         eval_env.step(np.array(act),viz=True)
         step_num +=1
-
+        # print(f'finger poses in pkl file, {f1_poses[i+1]}, {f2_poses[i]}')
+        # print(data['timestep_list'][i]['action'])
+        input('next step?')
 def main(filepath = None,learn_type='run'):
     num_cpu = multiprocessing.cpu_count() # Number of processes to use
     # Create the vectorized environment
@@ -582,12 +615,12 @@ if __name__ == '__main__':
 
     # main('./data/FTP_halfstate_A_rand_old_finger_poses/experiment_config.json','run')
     # main("./data/region_rotation_JA_finger/experiment_config.json",'run')
-    main("./data/JA_full_task_20_1/experiment_config.json",'run')
-    # main("./data/FTP_halfstate_A_rand/experiment_config.json",'run')
+    # main("./data/JA_full_task_20_1/experiment_config.json",'run')
+    main("./data/contact_test_3/experiment_config.json",'run')
     # evaluate("./data/FTP_halfstate_A_rand/experiment_config.json")
     # evaluate("./data/FTP_halfstate_A_rand/experiment_config.json","B")
     # evaluate("./data/FTP_fullstate_A_rand/experiment_config.json")
     # evaluate("./data/FTP_fullstate_A_rand/experiment_config.json","B")
     # evaluate("./data/JA_fullstate_A_rand/experiment_config.json")
     # evaluate("./data/JA_fullstate_A_rand/experiment_config.json","B")
-    # replay("./data/JA_finger_reward_region_10_1/experiment_config.json","./data/JA_finger_reward_region_10_1/Eval_A/Episode_4.pkl")
+    # replay("./data/contact_test_2/experiment_config.json","./data/contact_test_2/Eval_A/Episode_4.pkl")
