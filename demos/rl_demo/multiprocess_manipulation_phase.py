@@ -62,6 +62,7 @@ class MultiprocessManipulation(Phase):
         self.controller.pre_step()
         self.state.init_state()
         start_state = self.state.get_state()
+        # print('start state',start_state['f1_pos'],start_state['f2_pos'])
         self.reward.setup_reward(start_state)
 
     def pre_step(self):
@@ -146,7 +147,7 @@ class MultiprocessManipulation(Phase):
 
     def next_goal(self):
         new_goal = self.state.next_run()
-        print('new goal from manip_phase.new_goal', new_goal)
+        # print('new goal from manip_phase.new_goal', new_goal)
         self.reward.update_start(new_goal, self.cube)
 
     def get_episode_info(self):
@@ -179,8 +180,8 @@ class MultiprocessManipulation(Phase):
         # increment episode count and return next goal
         if not self.eval:
             self.episode += 1
-        self.state.next_run()
-        return self.state.objects[-1].get_data()
+        _, fingerys = self.state.next_run()
+        return self.state.objects[-1].get_data(), fingerys
 
     def reset(self):
         # temp = list(range(len(self.x)))

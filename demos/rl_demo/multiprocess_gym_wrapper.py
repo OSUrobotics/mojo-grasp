@@ -148,10 +148,11 @@ class MultiprocessGymWrapper(gym.Env):
                 self.manipulation_phase.reset()
                 print('average time of episode',np.average(self.thing))
                 self.thing = []
-            new_goal = self.manipulation_phase.next_ep()
+            new_goal,fingerys = self.manipulation_phase.next_ep()
             # print('new goal from reset', new_goal)
         else:
             new_goal = {'goal_position':[0,0]}
+            fingerys = [0,0]
 
         self.timestep=0
         self.first = False
@@ -162,9 +163,12 @@ class MultiprocessGymWrapper(gym.Env):
         if type(special) is list:
             self.env.reset_to_pos(special[0],special[1])
         elif type(special) is dict:
-            self.env.reset(special['goal_position'])
+            if 'fingers' in special.keys():
+                self.env.reset(special['goal_position'], special['fingers'])
+            else:
+                self.env.reset(special['goal_position'])
         elif (self.TASK == 'Rotation_region')|('contact' in self.TASK):
-            self.env.reset(new_goal['goal_position'])
+            self.env.reset(new_goal['goal_position'],fingerys=fingerys)
             # print(new_goal)
         else:
             self.env.reset()
@@ -173,7 +177,7 @@ class MultiprocessGymWrapper(gym.Env):
         state, _ = self.manipulation_phase.get_episode_info()
         # print('state and prev states')
         # print(state['goal_pose']['goal_pose'])
-        # print(state['previous_state'][0]['f1_pos'],state['previous_state'][0]['f2_pos'])
+        # print('after episode info',state['f1_pos'],state['f2_pos'])
         state = self.build_state(state)
         
         # print('Episode ',self.manipulation_phase.episode,' goal pose', self.manipulation_phase.goal_position)
@@ -183,8 +187,6 @@ class MultiprocessGymWrapper(gym.Env):
 
     def step(self, action, mirror=False, viz=False,hand_type=None):
         '''
-        currently this does not use the action fed in in action, it uses the action applied to self.action in the sim manager
-
         Parameters
         ----------
         action : TYPE
@@ -207,7 +209,8 @@ class MultiprocessGymWrapper(gym.Env):
             self.record.record_timestep()
         # print('recorded timesteps')
         state, reward_container = self.manipulation_phase.get_episode_info()
-        # print(state['obj_2'])
+        # print(f'finger poses in gym wrapper, {state["f1_pos"]}, {state["f2_pos"]}')
+        # print(f"joint angles in gym wrapper, {state['two_finger_gripper']['joint_angles']}")
         info = {}
         if mirror:
             state = self.build_mirror_state(state)

@@ -1,9 +1,11 @@
 import numpy as np
 
 class GoalHolder():
-    def __init__(self, goal_pose, goal_orientation = None,goal_finger = None, goal_names = None):
+    def __init__(self, goal_pose, finger_start, goal_orientation = None,goal_finger = None, goal_names = None, mix_orientation=False, mix_finger=False):
         self.pose = goal_pose
         self.name = 'goal_pose'
+        self.mix_orientation = mix_orientation
+        self.mix_finger = mix_finger
         # print(goal_orientation)
         if goal_orientation is not None:
             self.orientation = goal_orientation
@@ -14,6 +16,9 @@ class GoalHolder():
             self.finger = goal_finger
         else:
             self.finger = np.array([None,None,None,None] * len(self.pose))
+            
+        self.finger_start = finger_start
+        print(np.shape(finger_start))
         print(type(self.orientation), type(self.pose))
         self.len = len(self.pose)
         self.goal_names = goal_names
@@ -34,6 +39,7 @@ class GoalHolder():
     
     def next_run(self):
         self.run_num +=1
+        return [self.finger_start[0][self.run_num%self.len],self.finger_start[1][self.run_num%self.len]]
         # self.check_data()
         # print({'goal_pose':self.pose[self.run_num%self.len],'goal_orientation':self.orientation[self.run_num%self.len]})
         
@@ -42,7 +48,15 @@ class GoalHolder():
         inds = list(range(len(self.pose)))
         np.random.shuffle(inds)
         self.pose = self.pose[inds]
-        self.orientation = self.orientation[inds]
+        if self.mix_orientation:
+            np.random.shuffle(self.orientation)
+        else:
+            self.orientation = self.orientation[inds]
+        if self.mix_finger:
+            np.random.shuffle(self.finger_start)
+        else:
+            self.finger_start[0]=self.finger_start[0][inds]
+            self.finger_start[1]=self.finger_start[1][inds]
         self.finger = self.finger[inds]
         print('shuffling the pose order')
     

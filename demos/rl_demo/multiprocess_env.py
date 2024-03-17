@@ -229,14 +229,14 @@ class MultiprocessSingleShapeEnv(Environment):
             self.p.createConstraint(self.obj_id, -1, -1, -1, self.p.JOINT_POINT2POINT, [0, 0, 1],
                        [0, 0, 0], [0, 0.1, 0])
 
-    def reset(self, start_pos=None):
+    def reset(self, start_pos=None,finger=None,fingerys=None):
         # reset the simulator
         if start_pos is not None:
             obj_change = start_pos
         else:
             #no noise
             obj_change = np.array([0,0])
-
+        
 
         self.p.resetJointState(self.hand.id, 0, self.hand.starting_angles[0])
         self.p.resetJointState(self.hand.id, 1, self.hand.starting_angles[1])
@@ -246,18 +246,37 @@ class MultiprocessSingleShapeEnv(Environment):
         self.p.resetBasePositionAndOrientation(self.obj_id, posObj=[0.0+obj_change[0], 0.10+obj_change[1], .05], ornObj=[0,0,0,1])
         # f1_dist = self.p.getClosestPoints(self.obj.id, self.hand.id, 10, -1, 1, -1)
         # f2_dist = self.p.getClosestPoints(self.obj.id, self.hand.id, 10, -1, 4, -1)
-        if self.rand_finger_all_open and (np.random.rand() < self.finger_open_fraction):
+        if fingerys is None:
+            y_change = np.random.uniform(-0.01,0.01,2) * self.rand_finger_position
+        else:
+            y_change = fingerys* self.rand_finger_position
+        if finger is not None:
+            self.p.resetJointState(self.hand_id, 0, -np.pi/2)
+            self.p.resetJointState(self.hand_id, 1, np.pi/4)
+            self.p.resetJointState(self.hand_id, 3, np.pi/2)
+            self.p.resetJointState(self.hand_id, 4, -np.pi/4)
+            
+            positions = np.linspace([-np.pi/2,np.pi/4,np.pi/2,-np.pi/4],[finger[0],finger[1],finger[2],finger[3]],20)
+            real_positions = np.ones((30,4))
+            real_positions[0:20,:] = positions
+            real_positions[20:,:]=finger
+            for action_to_execute in real_positions:
+                self.p.setJointMotorControlArray(self.hand_id, jointIndices=self.hand.get_joint_numbers(),
+                                            controlMode=self.p.POSITION_CONTROL, targetPositions=action_to_execute,
+                                            positionGains=[0.8,0.8,0.8,0.8], forces=[0.4,0.4,0.4,0.4])
+                self.step()
+            
+        elif self.rand_finger_all_open and (np.random.rand() < self.finger_open_fraction):
             self.p.resetJointState(self.hand_id, 0, -np.pi/2)
             self.p.resetJointState(self.hand_id, 1, np.pi/4)
             self.p.resetJointState(self.hand_id, 3, np.pi/2)
             self.p.resetJointState(self.hand_id, 4, -np.pi/4)
         else:
-            y_change = np.random.uniform(-0.01,0.01,2) * self.rand_finger_position
+
             link1_pose = self.p.getLinkState(self.hand_id, 2)[0]
             link2_pose = self.p.getLinkState(self.hand_id, 5)[0]
             f1_pos = [link1_pose[0]+obj_change[0], link1_pose[1] + obj_change[1] + y_change[0], 0.05]
             f2_pos = [link2_pose[0]+obj_change[0], link2_pose[1] + obj_change[1] + y_change[1], 0.05]
-            
             f1_angs = self.p.calculateInverseKinematics(self.hand_id, 2, f1_pos, maxNumIterations=3000)
             f2_angs = self.p.calculateInverseKinematics(self.hand_id, 5, f2_pos, maxNumIterations=3000)
             self.p.resetJointState(self.hand_id, 0, -np.pi/2)
@@ -266,11 +285,15 @@ class MultiprocessSingleShapeEnv(Environment):
             self.p.resetJointState(self.hand_id, 4, -np.pi/4)
             
             positions = np.linspace([-np.pi/2,np.pi/4,np.pi/2,-np.pi/4],[f1_angs[0],f1_angs[1],f2_angs[2],f2_angs[3]],20)
-            for action_to_execute in positions:
+            real_positions = np.ones((30,4))
+            real_positions[0:20,:] = positions
+            real_positions[20:,:]=[f1_angs[0],f1_angs[1],f2_angs[2],f2_angs[3]]
+            for action_to_execute in real_positions:
                 self.p.setJointMotorControlArray(self.hand_id, jointIndices=self.hand.get_joint_numbers(),
                                             controlMode=self.p.POSITION_CONTROL, targetPositions=action_to_execute,
                                             positionGains=[0.8,0.8,0.8,0.8], forces=[0.4,0.4,0.4,0.4])
                 self.step()
+
             # thing = self.p.getBaseVelocity(self.obj_id)
             
 

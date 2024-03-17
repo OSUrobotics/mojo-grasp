@@ -72,7 +72,7 @@ def main():
 
 
     scatter_plot_tab = [[sg.Button('End Dist', size=(8, 2)), sg.Button('End Poses', size=(8, 2)), sg.Button('Contact Dist', size=(8, 2)), sg.Button('Average Goals', key='Average Goals',size=(8, 2)), sg.Button('Orientation Multi', key='Orientation Multi',size=(8, 2))],
-                        [sg.Button('Average Actor Values', size=(8,2)),sg.Button('Explored Region', size=(8,2)),sg.Button('End Region', size=(8,2))],
+                        [sg.Button('Average Actor Values', size=(8,2)),sg.Button('Explored Region', size=(8,2)),sg.Button('End Region', size=(8,2)), sg.Button('Reward Comparison', size=(8,2))],
                         [sg.Text('Colormap'),sg.Input('plasma_r',key='-cmap',size=(8, 1))]]
 
     plot_buttons = [[sg.Button('Object Path', size=(8, 2)), sg.Button('Finger Angles', size=(8, 2)),sg.Button('Rewards', size=(8, 2), key='FullRewards'), sg.Button('Contact Rewards', key='ContactRewards',size=(8, 2)), sg.Button('Distance/Slope Rewards', key='SimpleRewards',size=(8, 2))],
@@ -104,7 +104,7 @@ def main():
                  distance_radios,
                  [sg.Text('Secondary Reward')],
                  finger_radios,
-                 [sg.Text("Distance Scale"),  sg.Input(1,key='-distance_scale',size=(5, 1)), sg.Text('Contact Scale'),  sg.Input(0.2,key='-contact_scale',size=(5, 1)), sg.Text('Success Reward'), sg.Input(1,key='-success_reward',size=(5, 1))]]
+                 [sg.Text("Distance Scale"),  sg.Input(1,key='-distance_scale',size=(5, 1)), sg.Text('Contact Scale'),  sg.Input(0.2,key='-contact_scale',size=(5, 1)), sg.Text('Success Reward'), sg.Input(1,key='-success_reward',size=(5, 1)), sg.Text('Rotation Scaling'),sg.Input(1,key='-rotation_scale',size=(5, 1))]]
 
 
     layout = [[sg.Menu(menu)], [sg.Col(col_files), sg.Col(col)]]
@@ -152,7 +152,8 @@ def main():
         tholds = {'SUCCESS_THRESHOLD':float(values['success_range']),
                         'DISTANCE_SCALING':float(values['-distance_scale']),
                         'CONTACT_SCALING':float(values['-contact_scale']),
-                        'SUCCESS_REWARD':float(values['-success_reward'])}
+                        'SUCCESS_REWARD':float(values['-success_reward']),
+                        'ROTATION_SCALING':float(values['-rotation_scale'])}
         backend.set_tholds(tholds)
         backend.set_reward_func(rf_key)
         backend.moving_avg = int(values['moving_avg'])
@@ -349,6 +350,9 @@ def main():
             figure_canvas_agg.draw()
         elif event =='Orientation Multi':
             backend.draw_orientation_success_rate(folder,success_range)
+            figure_canvas_agg.draw()
+        elif event == 'Reward Comparison':
+            backend.draw_relative_reward_strength(folder,tholds)
             figure_canvas_agg.draw()
         elif event == '-SAVE-':
             if '.png' in values['save_name']:
