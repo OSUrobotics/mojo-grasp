@@ -16,6 +16,7 @@ class MultiprocessReward(RewardDefault):
         self.timestep_num = 0
 
     def set_reward(self, goal_info: dict, cube: ObjectBase, hand: TwoFingerGripper, end_reward):
+        #TODO add the finger contact goal distance stuff
         current_cube_pose = cube.get_curr_pose()
         # Finds distance between current cube position and goal position
         
@@ -83,7 +84,6 @@ class MultiprocessReward(RewardDefault):
         self.start_dist = None
         self.timestep_num = 0
         self.start_finger = [start_state['f1_pos'][0],start_state['f1_pos'][1],start_state['f2_pos'][0],start_state['f2_pos'][1]]
-        # print(self.start_pos)
 
     def update_start(self, goal_info: dict, cube):
         current_cube_pose = cube.get_curr_pose()

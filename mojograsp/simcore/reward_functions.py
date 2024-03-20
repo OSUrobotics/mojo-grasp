@@ -135,6 +135,15 @@ def contact_point(reward_container, tholds):
     else:
         return float(0), False
 
+def direction(reward_container, tholds):
+    return reward_container['dist_reward'] - 0.1*max(reward_container['f1_dist'],reward_container['f2_dist']), False
+
+def rotation(reward_container, tholds): 
+    goal_dist = reward_container['dist_from_start']/0.01 # divide to turn into cm
+    ftemp = -max(reward_container['f1_dist'], reward_container['f2_dist']) * 100 
+    reward = (reward_container['object_orientation'][2] - reward_container['starting_orientation'][2])* reward_container['pos_neg'] - goal_dist*tholds['DISTANCE_SCALING']  + ftemp*tholds['CONTACT_SCALING']
+    return reward, False
+
 
 if __name__ == '__main__':
     import matplotlib.pyplot as plt

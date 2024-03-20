@@ -155,8 +155,10 @@ class MultiprocessState(StateDefault):
     def get_goal(self):
         # print(self.current_state)
         # print('goal from state.get_goal',self.current_state['goal_pose'])
-        return self.current_state['goal_pose']
-
+        try:
+            return self.current_state['goal_pose']
+        except KeyError:
+            return [0,0]
     def __eq__(self, o):
         # Doesnt check that the objects are the same or that the run number is the same,
         # only checks that the values saved in state are the same

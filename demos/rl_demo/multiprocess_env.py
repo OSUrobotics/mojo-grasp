@@ -28,27 +28,11 @@ class MultiprocessEnv():
         else:
             #no noise
             obj_change = np.array([0,0])
-        
-        
-
-        # print('object pose', obj_change + np.array([0,0.1]))
-        # print('f1 pos', f1_pos)
-        # print('f2 pos', f2_pos)
-        # hand_id = p.loadURDF(self.hand.path, useFixedBase=True,
-        #                      basePosition=[0.0, 0.0, 0.05])
-        # p.resetJointState(hand_id, 0, .75)
-        # p.resetJointState(hand_id, 1, -1.4)
-        # p.resetJointState(hand_id, 2, -.75)
-        # p.resetJointState(hand_id, 3, 1.4)
+    
         
         # For alt configuration
         hand_id = self.p.loadURDF(self.hand.path, useFixedBase=True,
                              basePosition=[0.0, 0.0, 0.05], flags=self.p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
-        # p.setPhysicsEngineParameter(contactBreakingThreshold = 0.001)
-        # p.resetJointState(hand_id, 0, .75)
-        # p.resetJointState(hand_id, 1, -1.4)
-        # p.resetJointState(hand_id, 3, -.75)
-        # p.resetJointState(hand_id, 4, 1.4)
 
         if self.hand_type =='A':
             self.p.resetJointState(hand_id, 0, -.725)
@@ -180,7 +164,7 @@ class MultiprocessEnv():
         self.p.stepSimulation()
 
 class MultiprocessSingleShapeEnv(Environment):
-    def __init__(self,pybulletInstance, hand: TwoFingerGripper, obj: ObjectBase, hand_type ,args=None):
+    def __init__(self,pybulletInstance, hand: TwoFingerGripper, obj: ObjectBase, hand_type ,args=None,finger_points=None):
         self.hand = hand
         self.obj = obj
         self.p = pybulletInstance
@@ -194,7 +178,13 @@ class MultiprocessSingleShapeEnv(Environment):
         self.rand_object_orientation = args['object_random_orientation']
         self.rand_finger_all_open = args['finger_random_off']
         self.finger_open_fraction = args['fobfreq']
-
+        
+        if finger_points is None:
+            self.finger_points = finger_points
+        else:
+            self.finger_points = []
+            self.finger_points.append(self.p.createConstraint(finger_points[0].id,-1,-1,-1,self.p.JOINT_FIXED,[0,0,0],[0,0,0],[0,0,1]))
+            self.finger_points.append(self.p.createConstraint(finger_points[1].id,-1,-1,-1,self.p.JOINT_FIXED,[0,0,0],[0,0,0],[0,0,1]))
         
         self.p.resetSimulation()
         self.plane_id = self.p.loadURDF("plane.urdf", flags=self.p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
@@ -244,8 +234,7 @@ class MultiprocessSingleShapeEnv(Environment):
         self.p.resetJointState(self.hand.id, 4, self.hand.starting_angles[3])
         
         self.p.resetBasePositionAndOrientation(self.obj_id, posObj=[0.0+obj_change[0], 0.10+obj_change[1], .05], ornObj=[0,0,0,1])
-        # f1_dist = self.p.getClosestPoints(self.obj.id, self.hand.id, 10, -1, 1, -1)
-        # f2_dist = self.p.getClosestPoints(self.obj.id, self.hand.id, 10, -1, 4, -1)
+
         if fingerys is None:
             y_change = np.random.uniform(-0.01,0.01,2) * self.rand_finger_position
         else:
@@ -352,3 +341,9 @@ class MultiprocessSingleShapeEnv(Environment):
     def step(self):
         super().step()
         
+    def set_finger_contact_goal(self,finger_goals):
+        if self.finger_points is None:
+            raise EnvironmentError('Tried to set finger goal points in an environment without finger goal objects')
+        else:
+            for finger,goal in zip(self.finger_points,finger_goals):
+                self.p.changeConstraint(finger,goal)

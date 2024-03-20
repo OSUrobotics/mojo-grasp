@@ -37,7 +37,7 @@ class MultiprocessRecordData(RecordDataRLPKL):
                         self.data_prefix + "_" + str(int(self.eval_num*self.num_threads+self.my_thread)) + ".pkl"
                 else:
                     file_path = self.data_path + 'Train/' + filename + ".pkl"
-            print(file_path)
+            # print(file_path)
             
             with open(file_path, 'wb') as fout:
                 pkl.dump(self.current_episode, fout)
