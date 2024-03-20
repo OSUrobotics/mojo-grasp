@@ -94,17 +94,17 @@ class PlotBackend():
         data = data_dict['timestep_list']
         episode_number=data_dict['number']
         trajectory_points = [f['state']['obj_2']['pose'][0] for f in data]
-        print('goal position in state', data[0]['state']['goal_pose'])
-        goal_poses = np.array([i['state']['goal_pose']['goal_position'] for i in data])
+        # print('goal position in state', data[0]['state']['goal_pose'])
+        # goal_poses = np.array([i['state']['goal_pose']['goal_position'] for i in data])
         # print(trajectory_points)
         trajectory_points = np.array(trajectory_points)
-        ideal = np.zeros([len(goal_poses)+1,2])
-        ideal[0,:] = trajectory_points[0,0:2]
-        ideal[1:,:] = goal_poses + np.array([0,0.1])
+        # ideal = np.zeros([len(goal_poses)+1,2])
+        # ideal[0,:] = trajectory_points[0,0:2]
+        # ideal[1:,:] = goal_poses + np.array([0,0.1])
         if self.clear_plots | (self.curr_graph != 'path'):
             self.clear_axes()
         self.ax.plot(trajectory_points[:,0], trajectory_points[:,1])
-        self.ax.plot(ideal[:,0],ideal[:,1])
+        # self.ax.plot(ideal[:,0],ideal[:,1])
         self.ax.set_xlim([-0.08,0.08])
         self.ax.set_ylim([0.02,0.18])
         self.ax.set_xlabel('X pos (m)')
@@ -114,6 +114,7 @@ class PlotBackend():
         self.ax.set_title('Object Path')
         self.ax.set_aspect('equal',adjustable='box')
         self.curr_graph = 'path'
+        print(data[0]['state']['direction'])
 
     def draw_asterisk(self, folder_or_data_dict):
         
@@ -292,7 +293,7 @@ class PlotBackend():
         episode_number = data_dict['number']
 
         data = data_dict['timestep_list']
-        current_reward_dict = [-f['reward']['distance_to_goal'] for f in data]
+        current_reward_dict = [f['reward']['dist_reward'] for f in data]
 
         if self.clear_plots | (self.curr_graph != 'rewards'):
             self.clear_axes()
@@ -2230,7 +2231,7 @@ class PlotBackend():
             rot_temp = 0
             goal_dist = 0
             
-            if count% 100 ==0:
+            if count% 1000 ==0:
                 print('count = ', count)
             count +=1
         return_rewards = rewards.copy()

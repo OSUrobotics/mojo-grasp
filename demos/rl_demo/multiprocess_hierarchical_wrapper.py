@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Tue Jun 13 10:05:29 2023
+Created on Tue Mar 19 10:53:29 2023
 
 @author: orochi
 """
 
 # import gymnasium as gym
 # from gymnasium import spaces
+from typing import Tuple
 import gym
 from gym import spaces
 # from environment import Environment
@@ -34,10 +35,10 @@ class MultiEvaluateCallback(EvalCallback):
 
 class MultiprocessGymWrapper(gym.Env):
     '''
-    Example environment that follows gym interface to allow us to use openai gym learning algorithms with mojograsp
+    Environment that follows gym interface to allow us to use openai gym learning algorithms with mojograsp
     '''
     
-    def __init__(self, rl_env, manipulation_phase,record_data, args):
+    def __init__(self, rl_env, manipulation_phase, record_data, args):
         super(MultiprocessGymWrapper,self).__init__()
         self.env = rl_env
         self.discrete = False
@@ -64,6 +65,7 @@ class MultiprocessGymWrapper(gym.Env):
         self.viz = False
         self.eval_run = 0
         self.timestep = 0
+        self.count = 0
         self.past_time = time.time()
         self.thing = []
         self.first = True
@@ -93,99 +95,24 @@ class MultiprocessGymWrapper(gym.Env):
         :param state: :func:`~mojograsp.simcore.reward.Reward` object.
         :type state: :func:`~mojograsp.simcore.reward.Reward`
         """        
-        print(self.TASK,self.REWARD_TYPE)
-        if 'Rotation' in self.TASK:
-            if self.TASK == 'Rotation+Finger':
-                print('rotation and finger')
-                self.build_reward = rf.rotation_with_finger
-            elif (self.TASK == 'Rotation_single')|(self.TASK =='Rotation_region'):
-                print('just rotation no sliding, stay in place dammit, added finger. make sure contact scaling is 0 if no finger desired')
-                self.build_reward = rf.rotation_with_finger
-        elif 'contact' in self.TASK:
-            self.build_reward = rf.contact_point 
-        elif self.TASK =='full_task':
-            print('All them rotation and sliding')
-            self.build_reward = rf.slide_and_rotate 
-        else:
-            if self.REWARD_TYPE == 'Sparse':
-                self.build_reward = rf.sparse
-            elif self.REWARD_TYPE == 'Distance':
-                self.build_reward = rf.distance
-            elif self.REWARD_TYPE == 'Distance + Finger':
-                self.build_reward = rf.distance_finger
-            elif self.REWARD_TYPE == 'Hinge Distance + Finger':
-                self.build_reward = rf.hinge_distance
-            elif self.REWARD_TYPE == 'Slope':
-                self.build_reward = rf.slope
-            elif self.REWARD_TYPE == 'Slope + Finger':
-                self.build_reward = rf.slope_finger
-            elif self.REWARD_TYPE == 'SmartDistance + Finger':
-                self.build_reward = rf.smart
-            elif self.REWARD_TYPE == 'ScaledDistance + Finger':
-                self.build_reward = rf.scaled
-            elif (self.REWARD_TYPE == 'ScaledDistance+ScaledFinger') and (self.TASK != 'multi'):
-                self.build_reward = rf.double_scaled
-            elif self.REWARD_TYPE == 'SFS':
-                self.build_reward = rf.sfs
-            elif self.REWARD_TYPE == 'DFS':
-                self.build_reward = rf.dfs
-            elif self.REWARD_TYPE == 'SmartDistance + SmartFinger':
-                self.build_reward = rf.double_smart
-            elif (self.TASK == 'multi') and (self.REWARD_TYPE =='ScaledDistance+ScaledFinger'):
-                self.build_reward = rf.multi_scaled
-            else:
-                raise Exception('reward type does not match list of known reward types')
+        self.build_reward = rf.direction
 
 
     def reset(self,special=None):
-        
+        self.count += 1
         # if self.thing%1000 == 0:
         # print(self.thing)
-        if not self.first:
-            self.thing.append(time.time()-self.past_time)
-            self.past_time = time.time()
-            if self.manipulation_phase.episode >= self.manipulation_phase.state.objects[-1].len:
-                self.manipulation_phase.reset()
-                print('average time of episode',np.average(self.thing))
-                self.thing = []
-            new_goal,fingerys = self.manipulation_phase.next_ep()
-            # print('new goal from reset', new_goal)
-        else:
-            new_goal = {'goal_position':[0,0]}
-            fingerys = [0,0]
 
         self.timestep=0
         self.first = False
-        if self.eval:
-            # print('evaluating at eval run', self.eval_run)
-            # print('fack',self.manipulation_phase.state.objects[-1].run_num)
-            self.eval_run +=1
-        if type(special) is list:
-            self.env.reset_to_pos(special[0],special[1])
-        elif type(special) is dict:
-            if 'fingers' in special.keys():
-                self.env.reset(special['goal_position'], special['fingers'])
-            else:
-                self.env.reset(special['goal_position'])
-        elif (self.TASK == 'Rotation_region')|('contact' in self.TASK):
-            self.env.reset(new_goal['goal_position'],fingerys=fingerys)
-            # print(new_goal)
-        else:
-            self.env.reset()
+        self.env.reset()
         self.manipulation_phase.setup()
         
         state, _ = self.manipulation_phase.get_episode_info()
-        if state['goal_pose']['goal_finger'] is not None:
-            self.env.set_finger_contact_goal(state['goal_pose']['goal_finger'])
-        # print('state and prev states')
-        # print(state['goal_pose']['goal_pose'])
-        # print('after episode info',state['f1_pos'],state['f2_pos'])
-        state = self.build_state(state)
-        
 
-        # print('Episode ',self.manipulation_phase.episode,' goal pose', self.manipulation_phase.goal_position)
-        # print('fack',self.manipulation_phase.state.objects[-1].run_num)
-        # input('going?')
+        state = self.build_state(state)
+        if self.count % 1000==0:
+            print('thing')
         return state
 
     def step(self, action, mirror=False, viz=False,hand_type=None):
@@ -200,9 +127,6 @@ class MultiprocessGymWrapper(gym.Env):
         None.
 
         '''
-        if self.discrete:
-            action = action-1
-            # print(action)
         self.manipulation_phase.gym_pre_step(action)
         self.manipulation_phase.execute_action(viz=viz)
         done = self.manipulation_phase.exit_condition()
@@ -210,10 +134,7 @@ class MultiprocessGymWrapper(gym.Env):
         
         if self.eval or self.small_enough:
             self.record.record_timestep()
-        # print('recorded timesteps')
         state, reward_container = self.manipulation_phase.get_episode_info()
-        # print(f'finger poses in gym wrapper, {state["f1_pos"]}, {state["f2_pos"]}')
-        # print(f"joint angles in gym wrapper, {state['two_finger_gripper']['joint_angles']}")
         info = {}
         if mirror:
             state = self.build_mirror_state(state)
@@ -221,17 +142,9 @@ class MultiprocessGymWrapper(gym.Env):
             state = self.build_state(state)
         if self.STATE_NOISE > 0:
             state = self.noisey_boi.add_noise(state, self.STATE_NOISE)
-        reward, done2 = self.build_reward(reward_container, self.tholds)
+        # print(reward_container)
+        reward, _ = self.build_reward(reward_container, self.tholds)
 
-        if self.TASK == 'multi':
-            if done2 and not done:
-                # print('doing next goal')
-                # print(reward)
-                self.manipulation_phase.next_goal()
-        else:
-            done = done | done2
-
-        
         if done:
             # print('done, recording stuff')
             if self.eval or self.small_enough:
@@ -437,3 +350,122 @@ class MultiprocessGymWrapper(gym.Env):
         self.manipulation_phase.state.reset()
         self.reset()
         self.episode_type = 'train'
+
+
+class SimpleHRLWrapper(gym.Env):
+    def __init__(self, HRL_env, manipulation_phase, record_data, sub_policies, args):
+        super(MultiprocessGymWrapper,self).__init__()
+        self.env = HRL_env
+        self.sub_policies = sub_policies
+
+        self.p = self.env.p
+        self.action_space = spaces.Box(low=np.array([-1]* len(sub_policies)), high=np.array([1]* len(sub_policies)))
+        self.manipulation_phase = manipulation_phase
+        self.observation_space = spaces.Box(np.array(args['state_mins']),np.array(args['state_maxes']))
+        self.STATE_NOISE = args['state_noise']
+        if self.STATE_NOISE > 0:
+            print('we are getting noisey')
+            self.noisey_boi = NoiseAdder(np.array(args['state_mins']), np.array(args['state_maxes']))
+        self.PREV_VALS = args['pv']
+        self.REWARD_TYPE = args['reward']
+        self.TASK = args['task']
+        self.state_list = args['state_list']
+        self.CONTACT_SCALING = args['contact_scaling']
+        self.DISTANCE_SCALING = args['distance_scaling'] 
+        self.image_path = args['save_path'] + 'Videos/'
+        self.record = record_data
+        self.eval = False
+        self.viz = False
+        self.eval_run = 0
+        self.timestep = 0
+        self.count = 0
+        self.past_time = time.time()
+        self.thing = []
+        self.first = True
+        self.small_enough = args['epochs'] <= 100000
+        self.episode_type = 'train'
+        try:
+            self.SUCCESS_REWARD = args['success_reward']
+        except KeyError:
+            self.SUCCESS_REWARD = 1
+        self.SUCCESS_THRESHOLD = args['sr']/1000
+        self.camera_view_matrix = self.p.computeViewMatrix((0.0,0.1,0.5),(0.0,0.1,0.005), (0.0,1,0.0))
+        # self.camera_projection_matrix = self.p = self.env.pp.computeProjectionMatrix(-0.1,0.1,-0.1,0.1,-0.1,0.1)
+        self.camera_projection_matrix = self.p.computeProjectionMatrixFOV(60,4/3,0.1,0.9)
+
+        self.build_reward = []
+        self.prep_reward()
+        self.tholds = {'SUCCESS_THRESHOLD':self.SUCCESS_THRESHOLD,
+                       'DISTANCE_SCALING':self.DISTANCE_SCALING,
+                       'CONTACT_SCALING':self.CONTACT_SCALING,
+                       'SUCCESS_REWARD':self.SUCCESS_REWARD}
+        
+        self.build_reward = rf.direction
+
+    def step(self, action, mirror=False, viz=False,hand_type=None):
+        '''
+        Parameters
+        ----------
+        action : TYPE
+            DESCRIPTION.
+
+        Returns
+        -------
+        None.
+
+        '''
+        # action is a weight vector which we multiply by the output of the sub-polcies
+        substate = self.manipulation_phase.get_built_sub_state()
+        sub_actions = [policy.predict(substate) for policy in self.sub_policies]
+        final_action = np.dot(action,sub_actions)
+        self.manipulation_phase.gym_pre_step(final_action)
+        self.manipulation_phase.execute_action(viz=viz)
+        done = self.manipulation_phase.exit_condition()
+        self.manipulation_phase.post_step()
+        
+        if self.eval or self.small_enough:
+            self.record.record_timestep()
+        state, reward_container = self.manipulation_phase.get_episode_info()
+        info = {}
+        if mirror:
+            state = self.build_mirror_state(state)
+        else:
+            state = self.build_state(state)
+        if self.STATE_NOISE > 0:
+            state = self.noisey_boi.add_noise(state, self.STATE_NOISE)
+        # print(reward_container)
+        reward, _ = self.build_reward(reward_container, self.tholds)
+
+        if done:
+            # print('done, recording stuff')
+            if self.eval or self.small_enough:
+                self.record.record_episode(self.episode_type)
+                if self.eval:
+                    self.record.save_episode(self.episode_type, hand_type=hand_type)
+                else:
+                    self.record.save_episode(self.episode_type)
+
+        self.timestep +=1
+        return state, reward, done, info
+        
+
+    def reset(self):
+        self.count += 1
+
+        self.timestep=0
+        self.first = False
+        self.env.reset()
+        self.manipulation_phase.setup()
+        
+        state, _ = self.manipulation_phase.get_episode_info()
+
+        state = self.build_state(state)
+        if self.count % 1000==0:
+            print('thing')
+        return state
+    
+    def render(self):
+        pass
+    
+    def close(self):
+        self.p.disconnect()

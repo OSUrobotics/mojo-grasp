@@ -82,3 +82,25 @@ class RandomGoalHolder(GoalHolder):
     
     def get_data(self):
         return {'goal_position':self.pose}
+    
+class SimpleGoalHolder(GoalHolder):
+    def __init__(self, direction):
+        self.direction = direction
+        self.name = 'direction'
+    def next_run(self):
+        pass
+
+    def get_data(self):
+        return {'goal_direction': self.direction}
+    
+    def __len__(self):
+        return 1
+    
+    def check_data(self):
+        pass
+
+    def get_name(self):
+        return None
+    
+    def reset(self):
+        pass
