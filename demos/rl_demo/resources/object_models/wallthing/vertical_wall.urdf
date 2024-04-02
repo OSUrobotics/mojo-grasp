@@ -9,6 +9,7 @@
             </geometry>
         </visual>
         <collision>
+            <origin rpy="0 0 1.57079632679" xyz="0 0 0"/>
             <geometry>
                 <mesh filename="obj_files/2v2_mod_cuboid_large_collision.obj" scale="1 0.2 0.2"/>
             </geometry>

@@ -239,3 +239,13 @@ class ActuatedObject(ObjectBase):
             angle_dict[names[i]] = angles[i]
         data["joint_angles"] = angle_dict
         return data
+
+class FixedObject(ObjectBase):
+    def __init__(self, id: int = None, path: str = None, name: str = None, physicsClientId: BulletClient = None):
+        super().__init__(id, path, name, physicsClientId)
+        pose = p.getBasePositionAndOrientation(id)
+        self.constraint = p.createConstraint(self.id, -1, -1, -1, p.JOINT_FIXED, [0, 0, 0], [0, 0, 0], pose[0], childFrameOrientation=pose[1])
+    
+    def set_curr_pose(self, pos, orn):
+        p.changeConstraint(self.constraint,pos,orn)
+        return super().set_curr_pose(pos, orn)

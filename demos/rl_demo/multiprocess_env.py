@@ -164,7 +164,7 @@ class MultiprocessEnv():
         self.p.stepSimulation()
 
 class MultiprocessSingleShapeEnv(Environment):
-    def __init__(self,pybulletInstance, hand: TwoFingerGripper, obj: ObjectBase, hand_type ,args=None,finger_points=None):
+    def __init__(self,pybulletInstance, hand: TwoFingerGripper, obj: ObjectBase, hand_type , args=None, finger_points=None):
         self.hand = hand
         self.obj = obj
         self.p = pybulletInstance
@@ -182,16 +182,21 @@ class MultiprocessSingleShapeEnv(Environment):
         if finger_points is None:
             self.finger_points = finger_points
         else:
+            print('WE SHOULD NOT BE HERE IF YOU SEE THIS SHIT WENT DOWN')
             self.finger_points = []
             self.finger_points.append(self.p.createConstraint(finger_points[0].id,-1,-1,-1,self.p.JOINT_FIXED,[0,0,0],[0,0,0],[0,0,1]))
             self.finger_points.append(self.p.createConstraint(finger_points[1].id,-1,-1,-1,self.p.JOINT_FIXED,[0,0,0],[0,0,0],[0,0,1]))
         
         self.p.resetSimulation()
+
         self.plane_id = self.p.loadURDF("plane.urdf", flags=self.p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
         self.hand_id = self.p.loadURDF(self.hand.path, useFixedBase=True,
                              basePosition=[0.0, 0.0, 0.05], flags=self.p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
         self.obj_id = self.p.loadURDF(self.obj.path, basePosition=[0.0, 0.10, .05],
                                  flags=self.p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
+        print('object path', self.obj.path)
+        # assert 1==0
+
         self.p.changeDynamics(self.hand_id, 1, lateralFriction=0.5, rollingFriction=0.04,
                          mass=.036)
         self.p.changeDynamics(self.hand_id, 4, lateralFriction=0.5, rollingFriction=0.04,
@@ -218,6 +223,15 @@ class MultiprocessSingleShapeEnv(Environment):
         if fixed:
             self.p.createConstraint(self.obj_id, -1, -1, -1, self.p.JOINT_POINT2POINT, [0, 0, 1],
                        [0, 0, 0], [0, 0.1, 0])
+            
+        # need to update friction values
+        self.finger_lateral_friction_range = [0.5, 0.501]
+        self.finger_spinning_friction_range = [0.01,0.0101]
+        self.finger_rolling_friction_range = [0.04,0.0401]
+        self.floor_lateral_friction_range = [0.5,0.501]
+        self.floor_spinning_friction_range = [0.01,0.0101]
+        self.floor_rolling_friction_range = [0.05,0.0501]
+        self.object_mass_range = [0.015, 0.045]
 
     def reset(self, start_pos=None,finger=None,fingerys=None):
         # reset the simulator
@@ -226,29 +240,29 @@ class MultiprocessSingleShapeEnv(Environment):
         else:
             #no noise
             obj_change = np.array([0,0])
-        
-
+        # print('starting object pose', obj_change)
         self.p.resetJointState(self.hand.id, 0, self.hand.starting_angles[0])
         self.p.resetJointState(self.hand.id, 1, self.hand.starting_angles[1])
         self.p.resetJointState(self.hand.id, 3, self.hand.starting_angles[2])
         self.p.resetJointState(self.hand.id, 4, self.hand.starting_angles[3])
         
         self.p.resetBasePositionAndOrientation(self.obj_id, posObj=[0.0+obj_change[0], 0.10+obj_change[1], .05], ornObj=[0,0,0,1])
+        self.p.resetBaseVelocity(self.obj_id, [0,0,0], [0,0,0])
 
         if fingerys is None:
-            y_change = np.random.uniform(-0.01,0.01,2) * self.rand_finger_position
+            y_change = np.random.uniform(-0.0,0.0,2) * self.rand_finger_position
         else:
             y_change = fingerys* self.rand_finger_position
+        
         if finger is not None:
             self.p.resetJointState(self.hand_id, 0, -np.pi/2)
             self.p.resetJointState(self.hand_id, 1, np.pi/4)
             self.p.resetJointState(self.hand_id, 3, np.pi/2)
             self.p.resetJointState(self.hand_id, 4, -np.pi/4)
-            
             positions = np.linspace([-np.pi/2,np.pi/4,np.pi/2,-np.pi/4],[finger[0],finger[1],finger[2],finger[3]],20)
             real_positions = np.ones((30,4))
             real_positions[0:20,:] = positions
-            real_positions[20:,:]=finger
+            real_positions[20:,:] = finger
             for action_to_execute in real_positions:
                 self.p.setJointMotorControlArray(self.hand_id, jointIndices=self.hand.get_joint_numbers(),
                                             controlMode=self.p.POSITION_CONTROL, targetPositions=action_to_execute,
@@ -261,7 +275,6 @@ class MultiprocessSingleShapeEnv(Environment):
             self.p.resetJointState(self.hand_id, 3, np.pi/2)
             self.p.resetJointState(self.hand_id, 4, -np.pi/4)
         else:
-
             link1_pose = self.p.getLinkState(self.hand_id, 2)[0]
             link2_pose = self.p.getLinkState(self.hand_id, 5)[0]
             f1_pos = [link1_pose[0]+obj_change[0], link1_pose[1] + obj_change[1] + y_change[0], 0.05]
@@ -282,9 +295,28 @@ class MultiprocessSingleShapeEnv(Environment):
                                             controlMode=self.p.POSITION_CONTROL, targetPositions=action_to_execute,
                                             positionGains=[0.8,0.8,0.8,0.8], forces=[0.4,0.4,0.4,0.4])
                 self.step()
-
             # thing = self.p.getBaseVelocity(self.obj_id)
-            
+
+        # print(self.p.getContactPoints(self.obj_id))
+        # print('joint info', self.p.getJointInfo(self.hand_id,0))
+        # print('object info', self.p.getDynamicsInfo(self.obj.id,-1))
+
+    def apply_domain_randomization(self, finger_friction, floor_friction, object_mass):
+        # print('dr terms',finger_friction, floor_friction, object_mass)
+        if object_mass:
+            new_mass = np.random.uniform(self.object_mass_range[0], self.object_mass_range[1])
+            self.p.changeDynamics(self.obj_id, -1, mass=new_mass)
+        if floor_friction:
+            new_lateral_friction = np.random.uniform(self.floor_lateral_friction_range[0],self.floor_lateral_friction_range[1])
+            new_spinning_friction = np.random.uniform(self.floor_spinning_friction_range[0],self.floor_spinning_friction_range[1])
+            new_rolling_friction = np.random.uniform(self.floor_rolling_friction_range[0],self.floor_rolling_friction_range[1])
+            self.p.changeDynamics(self.plane_id, -1, lateralFriction=new_lateral_friction, spinningFriction=new_spinning_friction, rollingFriction=new_rolling_friction)
+        if finger_friction:
+            new_lateral_friction = np.random.uniform(self.finger_lateral_friction_range[0],self.finger_lateral_friction_range[1])
+            new_spinning_friction = np.random.uniform(self.finger_spinning_friction_range[0],self.finger_spinning_friction_range[1])
+            new_rolling_friction = np.random.uniform(self.finger_rolling_friction_range[0],self.finger_rolling_friction_range[1])
+            self.p.changeDynamics(self.hand_id, 1, lateralFriction=new_lateral_friction, spinningFriction=new_spinning_friction)
+            self.p.changeDynamics(self.hand_id, 4, lateralFriction=new_lateral_friction, spinningFriction=new_spinning_friction, rollingFriction=new_rolling_friction)
 
     def reset_to_pos(self, object_pos, finger_angles):
         # reset the simulator
@@ -292,7 +324,6 @@ class MultiprocessSingleShapeEnv(Environment):
         # reload the objects
         plane_id = self.p.loadURDF("plane.urdf", flags=self.p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
 
-        
         # For alt configuration
         hand_id = self.p.loadURDF(self.hand.path, useFixedBase=True,
                              basePosition=[0.0, 0.0, 0.05], flags=self.p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
@@ -338,6 +369,7 @@ class MultiprocessSingleShapeEnv(Environment):
     def setup(self):
         super().setup()
 
+
     def step(self):
         super().step()
         
@@ -347,3 +379,29 @@ class MultiprocessSingleShapeEnv(Environment):
         else:
             for finger,goal in zip(self.finger_points,finger_goals):
                 self.p.changeConstraint(finger,goal)
+
+
+
+class MultiprocessMazeEnv(MultiprocessSingleShapeEnv):
+    def __init__(self, pybulletInstance, hand: TwoFingerGripper, obj: ObjectBase, wall: ObjectBase, goal_block, hand_type, args=None, finger_points=None):
+        super().__init__(pybulletInstance, hand, obj, hand_type, args, finger_points)
+        print(self.p.getBaseVelocity(self.obj_id))
+        # print('checking something')
+        self.wall = wall
+        self.goals = goal_block
+        self.wall_id = self.p.loadURDF(self.wall.path, basePosition=[0,0.02,0.02],
+                                 flags=self.p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
+
+        self.p.setCollisionFilterPair(self.wall_id, self.hand_id,-1,0,0)
+        self.p.setCollisionFilterPair(self.wall_id, self.hand_id,-1,1,0)
+        self.p.setCollisionFilterPair(self.wall_id, self.hand_id,-1,2,0)
+        self.p.setCollisionFilterPair(self.wall_id, self.hand_id,-1,3,0)
+        self.p.setCollisionFilterPair(self.wall_id, self.hand_id,-1,4,0)
+        self.p.setCollisionFilterPair(self.wall_id, self.hand_id,-1,5,0)
+    def set_goal(self,goal):
+        self.goals.set_goal(goal)
+        self.p.setCollisionFilterPair(self.wall_id, self.obj_id,-1,-1,0)
+    def set_wall_pose(self,pose):
+        self.wall.set_pose(pose)
+
+    

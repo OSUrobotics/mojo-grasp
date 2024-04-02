@@ -354,7 +354,7 @@ class MultiprocessGymWrapper(gym.Env):
 
 class SimpleHRLWrapper(gym.Env):
     def __init__(self, HRL_env, manipulation_phase, record_data, sub_policies, args):
-        super(MultiprocessGymWrapper,self).__init__()
+        super(SimpleHRLWrapper,self).__init__()
         self.env = HRL_env
         self.sub_policies = sub_policies
 
@@ -382,7 +382,7 @@ class SimpleHRLWrapper(gym.Env):
         self.past_time = time.time()
         self.thing = []
         self.first = True
-        self.small_enough = args['epochs'] <= 100000
+        self.small_enough = args['epochs'] <= 500000
         self.episode_type = 'train'
         try:
             self.SUCCESS_REWARD = args['success_reward']
@@ -394,13 +394,12 @@ class SimpleHRLWrapper(gym.Env):
         self.camera_projection_matrix = self.p.computeProjectionMatrixFOV(60,4/3,0.1,0.9)
 
         self.build_reward = []
-        self.prep_reward()
         self.tholds = {'SUCCESS_THRESHOLD':self.SUCCESS_THRESHOLD,
                        'DISTANCE_SCALING':self.DISTANCE_SCALING,
                        'CONTACT_SCALING':self.CONTACT_SCALING,
                        'SUCCESS_REWARD':self.SUCCESS_REWARD}
         
-        self.build_reward = rf.direction
+        self.build_reward = rf.double_scaled
 
     def step(self, action, mirror=False, viz=False,hand_type=None):
         '''
@@ -415,7 +414,7 @@ class SimpleHRLWrapper(gym.Env):
 
         '''
         # action is a weight vector which we multiply by the output of the sub-polcies
-        substate = self.manipulation_phase.get_built_sub_state()
+        substate = self.manipulation_phase.get_built_sub_state(self.sub_state_list)
         sub_actions = [policy.predict(substate) for policy in self.sub_policies]
         final_action = np.dot(action,sub_actions)
         self.manipulation_phase.gym_pre_step(final_action)
@@ -469,3 +468,100 @@ class SimpleHRLWrapper(gym.Env):
     
     def close(self):
         self.p.disconnect()
+        
+    
+    def build_state(self, state_container: State):
+        """
+        Method takes in a State object 
+        Extracts state information from state_container and returns it as a list based on
+        current used states contained in self.state_list
+
+        :param state: :func:`~mojograsp.simcore.phase.State` object.
+        :type state: :func:`~mojograsp.simcore.phase.State`
+        """
+        angle_keys = ["finger0_segment0_joint","finger0_segment1_joint","finger1_segment0_joint","finger1_segment1_joint"]
+        state = []
+        if self.PREV_VALS > 0:
+            for i in range(self.PREV_VALS):
+                for key in self.state_list:
+                    if key == 'op':
+                        state.extend(state_container['previous_state'][i]['obj_2']['pose'][0][0:2])
+                    elif key == 'oo':
+                        state.extend(state_container['previous_state'][i]['obj_2']['pose'][1])
+                    elif key == 'oa':
+                        state.extend([np.sin(state_container['previous_state'][i]['obj_2']['z_angle']),np.cos(state_container['previous_state'][i]['obj_2']['z_angle'])])
+                    elif key == 'ftp':
+                        state.extend(state_container['previous_state'][i]['f1_pos'][0:2])
+                        state.extend(state_container['previous_state'][i]['f2_pos'][0:2])
+                    elif key == 'fbp':
+                        state.extend(state_container['previous_state'][i]['f1_base'][0:2])
+                        state.extend(state_container['previous_state'][i]['f2_base'][0:2])
+                    elif key == 'fcp':
+                        state.extend(state_container['previous_state'][i]['f1_contact_pos'][0:2])
+                        state.extend(state_container['previous_state'][i]['f2_contact_pos'][0:2])
+                    elif key == 'ja':
+                        state.extend([state_container['previous_state'][i]['two_finger_gripper']['joint_angles'][item] for item in angle_keys])
+                    elif key == 'fta':
+                        state.extend([state_container['previous_state'][i]['f1_ang'],state_container['previous_state'][i]['f2_ang']])
+                    elif key == 'eva':
+                        state.extend(state_container['previous_state'][i]['two_finger_gripper']['eigenvalues'])
+                    elif key == 'evc':
+                        state.extend(state_container['previous_state'][i]['two_finger_gripper']['eigenvectors'])
+                    elif key == 'evv':
+                        evecs = state_container['previous_state'][i]['two_finger_gripper']['eigenvectors']
+                        evals = state_container['previous_state'][i]['two_finger_gripper']['eigenvalues']
+                        scaled = [evals[0]*evecs[0],evals[0]*evecs[2],evals[1]*evecs[1],evals[1]*evecs[3],
+                                  evals[2]*evecs[4],evals[2]*evecs[6],evals[3]*evecs[5],evals[3]*evecs[7]]
+                        state.extend(scaled)
+                    elif key == 'params':
+                        state.extend(state_container['hand_params'])
+                    elif key == 'gp':
+                        state.extend(state_container['previous_state'][i]['goal_pose']['goal_position'])
+                    elif key == 'go':
+                        state.append(state_container['previous_state'][i]['goal_pose']['goal_orientation'])
+                    elif key == 'gf':
+                        state.extend(state_container['previous_state'][i]['goal_pose']['goal_finger'])
+                    else:
+                        raise Exception('key does not match list of known keys')
+
+        for key in self.state_list:
+            if key == 'op':
+                state.extend(state_container['obj_2']['pose'][0][0:2])
+            elif key == 'oo':
+                state.extend(state_container['obj_2']['pose'][1])
+            elif key == 'oa':
+                state.extend([np.sin(state_container['obj_2']['z_angle']),np.cos(state_container['obj_2']['z_angle'])])
+            elif key == 'ftp':
+                state.extend(state_container['f1_pos'][0:2])
+                state.extend(state_container['f2_pos'][0:2])
+            elif key == 'fbp':
+                state.extend(state_container['f1_base'][0:2])
+                state.extend(state_container['f2_base'][0:2])
+            elif key == 'fcp':
+                state.extend(state_container['f1_contact_pos'][0:2])
+                state.extend(state_container['f2_contact_pos'][0:2])
+            elif key == 'ja':
+                state.extend([state_container['two_finger_gripper']['joint_angles'][item] for item in angle_keys])
+            elif key == 'fta':
+                state.extend([state_container['f1_ang'],state_container['f2_ang']])
+            elif key == 'eva':
+                state.extend(state_container['two_finger_gripper']['eigenvalues'])
+            elif key == 'evc':
+                state.extend(state_container['two_finger_gripper']['eigenvectors'])
+            elif key == 'evv':
+                evecs = state_container['two_finger_gripper']['eigenvectors']
+                evals = state_container['two_finger_gripper']['eigenvalues']
+                scaled = [evals[0]*evecs[0],evals[0]*evecs[2],evals[1]*evecs[1],evals[1]*evecs[3],
+                          evals[2]*evecs[4],evals[2]*evecs[6],evals[3]*evecs[5],evals[3]*evecs[7]]
+                state.extend(scaled)
+            elif key == 'params':
+                state.extend(state_container['hand_params'])
+            elif key == 'gp':
+                state.extend(state_container['goal_pose']['goal_position'])
+            elif key == 'go':
+                state.append(state_container['goal_pose']['goal_orientation'])
+            elif key == 'gf':
+                state.extend(state_container['goal_pose']['goal_finger'])
+            else:
+                raise Exception('key does not match list of known keys')
+        return state

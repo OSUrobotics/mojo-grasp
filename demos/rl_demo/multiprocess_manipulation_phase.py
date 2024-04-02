@@ -155,6 +155,9 @@ class MultiprocessManipulation(Phase):
         self.state.set_state()
         return self.state.get_state(), self.reward.get_reward()
 
+    def get_built_sub_state(self, statekeys):
+        pass
+
     def exit_condition(self, eval_exit=False) -> bool:
         # If we reach 400 steps or the controller exit condition finishes we exit the phase
         if eval_exit:

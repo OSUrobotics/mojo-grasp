@@ -68,6 +68,15 @@ class MultiprocessGymWrapper(gym.Env):
         self.thing = []
         self.first = True
         self.small_enough = args['epochs'] <= 100000
+        self.OBJECT_POSE_RANDOMIZATION = args['object_random_start']
+        try:
+            self.DOMAIN_RANDOMIZATION_MASS = args['domain_randomization_object_mass']
+            self.DOMAIN_RANDOMIZATION_FINGER = args['domain_randomization_finger_friction']
+            self.DOMAIN_RANDOMIZATION_FLOOR = args['domain_randomization_floor_friction']
+        except KeyError:
+            self.DOMAIN_RANDOMIZATION_MASS = False
+            self.DOMAIN_RANDOMIZATION_FINGER = False
+            self.DOMAIN_RANDOMIZATION_FLOOR = False
         self.episode_type = 'train'
         try:
             self.SUCCESS_REWARD = args['success_reward']
@@ -156,6 +165,7 @@ class MultiprocessGymWrapper(gym.Env):
 
         self.timestep=0
         self.first = False
+        self.env.apply_domain_randomization(self.DOMAIN_RANDOMIZATION_FINGER,self.DOMAIN_RANDOMIZATION_FLOOR,self.DOMAIN_RANDOMIZATION_MASS)
         if self.eval:
             # print('evaluating at eval run', self.eval_run)
             # print('fack',self.manipulation_phase.state.objects[-1].run_num)
@@ -170,6 +180,11 @@ class MultiprocessGymWrapper(gym.Env):
         elif (self.TASK == 'Rotation_region')|('contact' in self.TASK):
             self.env.reset(new_goal['goal_position'],fingerys=fingerys)
             # print(new_goal)
+        elif self.OBJECT_POSE_RANDOMIZATION:
+            random_start = np.random.uniform(0,1,2)
+            x = (1-random_start[0]**2) * np.sin(random_start[1]*2*np.pi) * 0.05
+            y = (1-random_start[0]**2) * np.cos(random_start[1]*2*np.pi) * 0.05
+            self.env.reset([x,y])
         else:
             self.env.reset()
         self.manipulation_phase.setup()
@@ -437,3 +452,6 @@ class MultiprocessGymWrapper(gym.Env):
         self.manipulation_phase.state.reset()
         self.reset()
         self.episode_type = 'train'
+
+    def set_goal(self,goal):
+        self.env.set_goal(goal)

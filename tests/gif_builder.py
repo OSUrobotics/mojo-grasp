@@ -41,7 +41,8 @@ def plot_actor_output_with_video(filepath, episode_number, test=False):
     with open(data_path,'rb') as file:
         data = pkl.load(file)
 
-    eival_list = np.array([f['state']['two_finger_gripper']['eigenvalues'] for f in data['timestep_list']])
+    eival_list = np.array([f['state'][
+        'two_finger_gripper']['eigenvalues'] for f in data['timestep_list']])
     eival_ratio1 = np.max(eival_list[0:2],axis=1)/np.min(eival_list[0:2],axis=1)
     eival_ratio2 = np.max(eival_list[2:4],axis=1)/np.min(eival_list[2:4],axis=1)
     running_plot_and_video(frame_list, x, actor_list,
@@ -54,7 +55,7 @@ def make_video(filepath):
     file_thing = 'eval'
     frame_list = []
     frames = []
-    for i in range(5):
+    for i in range(14):
         for j in range(8):
             print(video_path)
             frame_path = video_path+file_thing+'_frame_'+str(i)+'_'+str(j*10)+'.png'
@@ -64,4 +65,4 @@ def make_video(filepath):
     frame_one.save(filepath+"Episode.gif", format="GIF", append_images=frames,
                save_all=True, duration=15*8, loop=0)
 
-make_video('/home/orochi/mojo/mojo-grasp/demos/rl_demo/data/contact_test_2/')
+make_video('/home/mothra/mojo-grasp/demos/rl_demo/data/JA_finger_reward_region_10_1/')

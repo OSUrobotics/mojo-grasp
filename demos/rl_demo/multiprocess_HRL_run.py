@@ -44,10 +44,10 @@ def make_env(arg_dict=None,rank=0,hand_info=None, goal_dir=None):
         return env
     return _init
 
-def make_HRL_env(arg_dict=None,rank=0,hand_info=None):
+def make_HRL_env(arg_dict=None,rank=0,hand_info=None,sub_policies=None):
     def _init():
         import pybullet as p1
-        env, _ = make_HRL_pybullet(arg_dict, p1, rank, hand_info)
+        env, _ = make_HRL_pybullet(arg_dict, p1, rank, hand_info,sub_policies)
         return env
     return _init
 
@@ -144,7 +144,7 @@ def make_pybullet(arg_dict, pybullet_instance, rank, hand_info, goal_dir, viz=Fa
     gym_env = multiprocess_hierarchical_wrapper.MultiprocessGymWrapper(env, manipulation, record_data, args)
     return gym_env, args
 
-def make_HRL_pybullet(arg_dict, pybullet_instance, rank, hand_info, viz=False):
+def make_HRL_pybullet(arg_dict, pybullet_instance, rank, hand_info, sub_policies, viz=False):
     # resource paths
     this_path = os.path.abspath(__file__)
     overall_path = os.path.dirname(os.path.dirname(os.path.dirname(this_path)))
@@ -239,7 +239,7 @@ def make_HRL_pybullet(arg_dict, pybullet_instance, rank, hand_info, viz=False):
         data_path=args['save_path'], state=state, action=action, reward=reward, save_all=False, controller=manipulation.controller)
     
     # gym wrapper around pybullet environment
-    gym_env = multiprocess_hierarchical_wrapper.MultiprocessGymWrapper(env, manipulation, record_data, args)
+    gym_env = multiprocess_hierarchical_wrapper.SimpleHRLWrapper(env, manipulation, record_data, sub_policies, args)
     return gym_env, args
 
 
@@ -450,7 +450,7 @@ def main(filepath = None, train_type='pre'):
         for name, direction in zip(red_names, red_dir):
             vec_env = SubprocVecEnv([make_env(args,[i,num_cpu],hand_info=hand_params,goal_dir=direction) for i in range(num_cpu)])
 
-            # callback = multiprocess_gym_wrapper.MultiEvaluateCallback(vec_env,n_eval_episodes=int(1200), eval_freq=train_timesteps, best_model_save_path=args['save_path'])
+            # 
             model = model_type("MlpPolicy", vec_env,tensorboard_log=args['tname'])
 
             try:
@@ -463,13 +463,26 @@ def main(filepath = None, train_type='pre'):
                 filename = os.path.dirname(filepath)
                 model.save(filename+'/canceled_model_'+name)
     else:
+        filename = os.path.dirname(filepath)
         policy_folder = os.listdir(filename)
         names = [p for p in policy_folder if 'last_model' in p]
         subpolicies = []
+        direction = [0,0]
+        import pybullet as p1
         for name in names:
-            model = model_type("MlpPolicy", vec_env, tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-2.3}).load(args['load_path']+name, env=vec_env)
+            model = model_type("MlpPolicy", None, _init_setup_model=False).load(filename+'/'+name)
             subpolicies.append(model)
-        vec_env = SubprocVecEnv([make_HRL_env(args,[i,num_cpu],hand_info=hand_params) for i in range(num_cpu)])
+        env, _ = make_HRL_pybullet(args,pybullet_instance=p1, rank=[0,1],hand_info=hand_params,sub_policies=subpolicies)
+        # callback = multiprocess_gym_wrapper.MultiEvaluateCallback(vec_env,n_eval_episodes=int(1200), eval_freq=train_timesteps, best_model_save_path=args['save_path'])
+        model = model_type('MlpPolicy',env,  tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-2.3})
+        try:
+            print('starting the training using', get_device())
+            model.learn(total_timesteps=500000*(args['tsteps']+1))
+            filename = os.path.dirname(filepath)
+            model.save(filename+'/last_model_full')
 
+        except KeyboardInterrupt:
+            filename = os.path.dirname(filepath)
+            model.save(filename+'/canceled_model_full')
 if __name__ == '__main__':
-    main('./data/HRL_test_1/experiment_config.json')
+    main('./data/HRL_test_1/experiment_config.json', 'getfucked')
