@@ -42,7 +42,7 @@
         <child link="finger0_segment0"/>
         <origin rpy="0 0 0" xyz="0.02675 0 0.0"/>
         <axis xyz="0 0 1"/>
-        <limit effort="1000.0" lower="-3.14" upper="3.14" velocity="0.5"/>
+        <limit effort="1000.0" lower="-3.14" upper="3.14" velocity="0.0005"/>
     </joint>
 
     <link name="finger0_segment1">

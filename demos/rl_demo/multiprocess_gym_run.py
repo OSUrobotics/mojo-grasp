@@ -70,13 +70,13 @@ def load_set(args):
         if 'ang' in df2.keys():
             eval_orientations=df2['ang']
         else:
-            eval_orientations= np.zeros(len(x))
+            eval_orientations= np.zeros(len(xeval))
         if 'f1y' in df.keys():
             ef1y = df['f1y']
             ef2y= df['f2y']
         else:
-            ef1y = np.random.uniform(-0.01,0.01, len(x))
-            ef2y = np.random.uniform(-0.01,0.01, len(y))
+            ef1y = np.random.uniform(-0.01,0.01, len(xeval))
+            ef2y = np.random.uniform(-0.01,0.01, len(yeval))
     else:
         xeval = x.copy()
         yeval = y.copy()
@@ -110,7 +110,8 @@ def load_set(args):
     ef1y = [ i for i in ef1y]
     ef2y = [i for i in ef2y]
     
-    # print(pose_list)
+    # print(len(pose_list),len(orientations))
+    # print(len(eval_pose_list), len(eval_orientations))
     assert len(pose_list)==len(orientations)
     assert len(eval_pose_list) ==len(eval_orientations)
     # print(f1y)
@@ -167,13 +168,27 @@ def make_pybullet(arg_dict, pybullet_instance, rank, hand_info, viz=False):
         raise IndexError('TOO MANY HANDS FOR NUMBER OF PROVIDED CORES')
     elif rank[1] % len(args['hand_file_list']) != 0:
         print('WARNING: number of hands does not evenly divide into number of pybullet instances. Hands will have uneven number of samples')
+    
+    if type(args['object_path']) == str:
+        object_path = args['object_path']
+        object_key = "small"
+        print('older version of object loading, no object domain randomization used')
+    else:
+        object_path = args['object_path'][rank[0]%len(args['object_path'])]
+        if 'add10' in object_path:
+            object_key = 'add10'
+        elif 'sub10' in object_path:
+            object_key = 'sub10'
+        else:
+            object_key = 'small'
+        
     this_hand = args['hand_file_list'][rank[0]%len(args['hand_file_list'])]
     hand_type = this_hand.split('/')[0]
     hand_keys = hand_type.split('_')
     info_1 = hand_info[hand_keys[-1]][hand_keys[1]]
     info_2 = hand_info[hand_keys[-1]][hand_keys[2]]
     hand_param_dict = {"link_lengths":[info_1['link_lengths'],info_2['link_lengths']],
-                       "starting_angles":[info_1['start_angles'][0],info_1['start_angles'][1],-info_2['start_angles'][0],-info_2['start_angles'][1]],
+                       "starting_angles":[info_1['start_angles'][object_key][0],info_1['start_angles'][object_key][1],-info_2['start_angles'][object_key][0],-info_2['start_angles'][object_key][1]],
                        "palm_width":info_1['palm_width'],
                        "hand_name":hand_type}
 
@@ -181,8 +196,9 @@ def make_pybullet(arg_dict, pybullet_instance, rank, hand_info, viz=False):
     plane_id = pybullet_instance.loadURDF("plane.urdf", flags=pybullet_instance.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
     hand_id = pybullet_instance.loadURDF(args['hand_path'] + '/' + this_hand, useFixedBase=True,
                          basePosition=[0.0, 0.0, 0.05], flags=pybullet_instance.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
-    obj_id = pybullet_instance.loadURDF(args['object_path'], basePosition=[0.0, 0.10, .05], flags=pybullet_instance.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
+    obj_id = pybullet_instance.loadURDF(object_path, basePosition=[0.0, 0.10, .05], flags=pybullet_instance.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
     print(f'OBJECT ID:{obj_id}')
+
     # Create TwoFingerGripper Object and set the initial joint positions
     hand = TwoFingerGripper(hand_id, path=args['hand_path'] + '/' + this_hand,hand_params=hand_param_dict)
     
@@ -192,7 +208,7 @@ def make_pybullet(arg_dict, pybullet_instance, rank, hand_info, viz=False):
     pybullet_instance.changeVisualShape(hand_id, 1, rgbaColor=[0.3, 0.3, 0.3, 1])
     pybullet_instance.changeVisualShape(hand_id, 3, rgbaColor=[1, 0.5, 0, 1])
     pybullet_instance.changeVisualShape(hand_id, 4, rgbaColor=[0.3, 0.3, 0.3, 1])
-    obj = ObjectWithVelocity(obj_id, path=args['object_path'],name='obj_2')
+    obj = ObjectWithVelocity(obj_id, path=object_path,name='obj_2')
 
     # state, action and reward
     state = MultiprocessState(pybullet_instance, objects=[hand, obj, goal_poses], prev_len=args['pv'],eval_goals = eval_goal_poses)
@@ -270,15 +286,18 @@ def evaluate(filepath=None,aorb = 'A'):
         print('not going to evaluate, aorb is wrong')
         return
     import pybullet as p2
-    eval_env , _, poses= make_pybullet(args,p2, [0,1], hand_params)
+    eval_env , _, poses= make_pybullet(args,p2, [0,1], hand_params, viz=True)
     eval_env.evaluate()
     model = model_type("MlpPolicy", eval_env, tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-2.3}).load(args['save_path']+'best_model', env=eval_env)
     for _ in range(1200):
-        obs = eval_env.reset()
+        tihng = {'goal_position':[0.0,0.0]}
+        obs = eval_env.reset(tihng)
         done = False
+        # time.sleep(1)
         while not done:
             action, _ = model.predict(obs,deterministic=True)
             obs, _, done, _ = eval_env.step(action,hand_type=ht)
+            time.sleep(0.05)
 
 def mirror_action(filename):
     with open(filename,'rb') as file:
@@ -291,7 +310,6 @@ def mirror_action(filename):
 def replay(argpath, episode_path):
     # replays the exact behavior contained in a pkl file without any learning agent running
     # images are saved in videos folder associated with the argfile
-
     # get parameters from argpath such as action type/size
     with open(argpath, 'r') as argfile:
         args = json.load(argfile)
@@ -315,11 +333,14 @@ def replay(argpath, episode_path):
     import pybullet as p2
     eval_env , _, poses= make_pybullet(args,p2, [0,1], hand_params,viz=True)
     eval_env.evaluate()
-    temp = [joint_angles[0]['finger0_segment0_joint'],joint_angles[0]['finger0_segment1_joint'],joint_angles[0]['finger1_segment0_joint'],joint_angles[0]['finger1_segment1_joint']]
+    # temp = [joint_angles[0]['finger0_segment0_joint'],joint_angles[0]['finger0_segment1_joint'],joint_angles[0]['finger1_segment0_joint'],joint_angles[0]['finger1_segment1_joint']]
+    temp = [-joint_angles[0]['finger1_segment0_joint'],-joint_angles[0]['finger1_segment1_joint'],-joint_angles[0]['finger0_segment0_joint'],-joint_angles[0]['finger0_segment1_joint']]
+    obj_temp = data['timestep_list'][0]['state']['goal_pose']['goal_position'].copy()
+    obj_temp[0] = -obj_temp[0]
     # initialize with obeject in desired position. 
     # TODO fix this so that I don't need to comment/uncomment this to get desired behavior
     if ('Rotation' in args['task']) | ('contact' in args['task']):
-        start_position = {'goal_position':data['timestep_list'][0]['state']['goal_pose']['goal_position'], 'fingers':temp}
+        start_position = {'goal_position':obj_temp, 'fingers':temp}
 
         _ = eval_env.reset(start_position)
 
@@ -327,18 +348,19 @@ def replay(argpath, episode_path):
         _ = eval_env.reset()
     print(data['timestep_list'][0]['state']['goal_pose'])
     temp = data['timestep_list'][0]['state']['goal_pose']['goal_position']
-    angle = data['timestep_list'][0]['state']['goal_pose']['goal_orientation']
+    # angle = data['timestep_list'][0]['state']['goal_pose']['goal_orientation']
 
-    
+    angle = -data['timestep_list'][0]['state']['goal_pose']['goal_orientation']
+
     t= R.from_euler('z',angle)
     quat = t.as_quat()
-
+    #obj_temp
     visualShapeId = p2.createVisualShape(shapeType=p2.GEOM_CYLINDER,
                                         rgbaColor=[1, 0, 0, 1],
                                         radius=0.004,
                                         length=0.02,
                                         specularColor=[0.4, .4, 0],
-                                        visualFramePosition=[[temp[0],temp[1]+0.1,0.1]],
+                                        visualFramePosition=[[obj_temp[0],obj_temp[1]+0.1,0.1]],
                                         visualFrameOrientation=[ 0.7071068, 0, 0, 0.7071068 ])
     collisionShapeId = p2.createCollisionShape(shapeType=p2.GEOM_CYLINDER,
                                             radius=0.002,
@@ -348,7 +370,7 @@ def replay(argpath, episode_path):
                     baseInertialFramePosition=[0,0,0],
                     baseCollisionShapeIndex=collisionShapeId,
                     baseVisualShapeIndex=visualShapeId,
-                    basePosition=[temp[0]-0.0025,temp[1]+0.1-0.0025,0.11],
+                    basePosition=[obj_temp[0]-0.0025,obj_temp[1]+0.1-0.0025,0.11],
                     baseOrientation =quat,
                     useMaximalCoordinates=True)
     
@@ -398,13 +420,14 @@ def replay(argpath, episode_path):
 
     p2.configureDebugVisualizer(p2.COV_ENABLE_RENDERING,1)
     step_num = 0
-    input('start')
+    print('starting position', f1_poses[0],f2_poses[0], joint_angles[0])
+    # input('start')
     for i,act in enumerate(mirrored):
-        print('action vs mirrored:', actions[i],act)
+        # print('action vs mirrored:', actions[i],act)
         print('joints in pkl file',joint_angles[i+1])
         eval_env.step(np.array(act),viz=True)
         step_num +=1
-        time.sleep(0.5)
+        # time.sleep(0.5)
         # print(f'finger poses in pkl file, {f1_poses[i+1]}, {f2_poses[i]}')
         # print(data['timestep_list'][i]['action'])
         # input('next step?')
@@ -463,11 +486,12 @@ if __name__ == '__main__':
     # main('./data/FTP_halfstate_A_rand_old_finger_poses/experiment_config.json','run')
     # main("./data/region_rotation_JA_finger/experiment_config.json",'run')
     # main("./data/JA_full_task_20_1/experiment_config.json",'run')
-    # main("./data/contact_test_3/experiment_config.json",'run')
+    main("./data/Domain_randomization_test/experiment_config.json",'run')
     # evaluate("./data/FTP_halfstate_A_rand/experiment_config.json")
     # evaluate("./data/FTP_halfstate_A_rand/experiment_config.json","B")
     # evaluate("./data/FTP_fullstate_A_rand/experiment_config.json")
     # evaluate("./data/FTP_fullstate_A_rand/experiment_config.json","B")
     # evaluate("./data/JA_fullstate_A_rand/experiment_config.json")
+    # evaluate("./data/JA_halfstate_A_rand/experiment_config.json", "B")
     # evaluate("./data/JA_fullstate_A_rand/experiment_config.json","B")
-    replay("./data/JA_finger_reward_region_100_5/experiment_config.json","./data/JA_finger_reward_region_100_5/Eval_A/Episode_26.pkl")
+    # replay("./data/JA_finger_reward_region_10_1/experiment_config.json","./data/JA_finger_reward_region_10_1/Eval_A/Episode_79.pkl")

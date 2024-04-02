@@ -15,6 +15,7 @@ class GoalHolder():
         if goal_finger is not None:
             self.finger = goal_finger
         else:
+            print('you guessz it')
             self.finger = np.array([None,None,None,None] * len(self.pose))
             
         self.finger_start = finger_start
@@ -29,6 +30,9 @@ class GoalHolder():
         self.run_num = 0
     
     def get_data(self):
+        # print('p',self.pose[self.run_num%self.len])
+        # print('o',self.orientation[self.run_num%self.len])
+        # print('f', self.finger[self.run_num%self.len])
         return {'goal_position':self.pose[self.run_num%self.len],'goal_orientation':self.orientation[self.run_num%self.len], 'goal_finger':self.finger[self.run_num%self.len]}
     
     def get_name(self):
@@ -104,3 +108,28 @@ class SimpleGoalHolder(GoalHolder):
     
     def reset(self):
         pass
+
+class SingleGoalHolder(GoalHolder):
+    def __init__(self, pose):
+        self.pose = pose
+        self.name = 'goal_pose'
+    def next_run(self):
+        pass
+
+    def get_data(self):
+        return {'goal_position': self.pose, 'goal_orientation':None, 'goal_finger': None}
+    
+    def __len__(self):
+        return 1
+    
+    def check_data(self):
+        pass
+
+    def get_name(self):
+        return None
+    
+    def reset(self):
+        pass
+
+    def set_goal(self,goal):
+        self.pose = goal

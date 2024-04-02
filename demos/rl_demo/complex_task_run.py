@@ -12,7 +12,7 @@ from demos.rl_demo import multiprocess_env
 from demos.rl_demo import multiprocess_manipulation_phase
 # import rl_env
 from demos.rl_demo.multiprocess_state import MultiprocessState
-from mojograsp.simcore.goal_holder import  GoalHolder, RandomGoalHolder
+from mojograsp.simcore.goal_holder import  GoalHolder, RandomGoalHolder, SingleGoalHolder
 from demos.rl_demo import rl_action
 from demos.rl_demo import multiprocess_reward
 from demos.rl_demo import multiprocess_gym_wrapper
@@ -21,6 +21,7 @@ import pandas as pd
 from demos.rl_demo.multiprocess_record import MultiprocessRecordData
 from mojograsp.simobjects.two_finger_gripper import TwoFingerGripper
 from mojograsp.simobjects.object_with_velocity import ObjectWithVelocity
+from mojograsp.simobjects.object_base import FixedObject
 from mojograsp.simcore.priority_replay_buffer import ReplayBufferPriority
 import pickle as pkl
 import json
@@ -35,9 +36,9 @@ import os
 import multiprocessing
 import json
 
-def make_pybullet(args, viz=True):
+def make_pybullet(args, pybullet_instance, viz=True):
 
-    import pybullet as pybullet_instance
+    
     if viz:
         physics_client = pybullet_instance.connect(pybullet_instance.GUI)
     else:
@@ -68,9 +69,10 @@ def make_pybullet(args, viz=True):
     hand_id = pybullet_instance.loadURDF(args['hand_path'] + '/' + this_hand, useFixedBase=True,
                          basePosition=[0.0, 0.0, 0.05], flags=pybullet_instance.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
     obj_id = pybullet_instance.loadURDF(args['object_path'], basePosition=[0.0, 0.10, .05], flags=pybullet_instance.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
-    
+    print(f'OBJECT ID:{obj_id}')
     # Create TwoFingerGripper Object and set the initial joint positions
     hand = TwoFingerGripper(hand_id, path=args['hand_path'] + '/' + this_hand,hand_params=hand_param_dict)
+    
     # change visual of gripper
     pybullet_instance.changeVisualShape(hand_id, -1, rgbaColor=[0.3, 0.3, 0.3, 1])
     pybullet_instance.changeVisualShape(hand_id, 0, rgbaColor=[1, 0.5, 0, 1])
@@ -80,26 +82,12 @@ def make_pybullet(args, viz=True):
     obj = ObjectWithVelocity(obj_id, path=args['object_path'],name='obj_2')
     
     # For standard loaded goal poses
-
-    try:
-        goal_poses = GoalHolder(pose_list,orientations)
-        eval_goal_poses = GoalHolder(eval_pose_list, eval_orientations)
-    except:
-        if args['task'] == 'unplanned_random':
-            goal_poses = RandomGoalHolder([0.02,0.065])
-            try:
-                eval_goal_poses = GoalHolder(eval_pose_list,goal_names=eval_names)
-            except NameError:
-                # print('No names')
-                eval_goal_poses = GoalHolder(eval_pose_list)
-        else:    
-            goal_poses = GoalHolder(pose_list)
-            try:
-                eval_goal_poses = GoalHolder(eval_pose_list,goal_names=eval_names)
-            except NameError:
-                # print('No names')
-                eval_goal_poses = GoalHolder(eval_pose_list)
-    
+    pose_list = [0.05,0]
+    orientations = [[0,0,0,0],[0,0,0,0]]
+    eval_pose_list = [0.05,0]
+    eval_orientations = [[0,0,0,0],[0,0,0,0]]
+    goal_poses = SingleGoalHolder(pose_list)
+    eval_goal_poses = SingleGoalHolder(eval_pose_list)
     # time.sleep(10)
     # state, action and reward
     state = MultiprocessState(pybullet_instance, objects=[hand, obj, goal_poses], prev_len=args['pv'],eval_goals = eval_goal_poses)
@@ -110,12 +98,13 @@ def make_pybullet(args, viz=True):
         action = rl_action.InterpAction(args['freq'])
     
     reward = multiprocess_reward.MultiprocessReward(pybullet_instance)
-    pybullet_instance.changeDynamics(plane_id,-1,lateralFriction=0.05, spinningFriction=0.01, rollingFriction=0.05)
-    #argument preprocessing
+    #change initial physics parameters
+    pybullet_instance.changeDynamics(plane_id,-1,lateralFriction=0.05, spinningFriction=0.05, rollingFriction=0.05)
     pybullet_instance.changeDynamics(obj.id, -1, mass=.03, restitution=.95, lateralFriction=1)
-    cubeId = pybullet_instance.loadURDF("./resources/object_models/wallthing/vertical_wall.urdf",basePosition=[0.0, 0.10, .05])
-    cid = pybullet_instance.createConstraint(cubeId, -1, -1, -1, pybullet_instance.JOINT_FIXED, [0, 0, 0], [0, 0, 0], [0, 0.09, 0.02], childFrameOrientation=[ 0, 0, 0.7071068, 0.7071068 ])
 
+    wall_id = pybullet_instance.loadURDF("./resources/object_models/wallthing/vertical_wall.urdf",basePosition=[0.0, 0.10, .05])
+    cid = pybullet_instance.createConstraint(wall_id, -1, -1, -1, pybullet_instance.JOINT_FIXED, [0, 0, 0], [0, 0, 0], [0, 0.09, 0.02], childFrameOrientation=[ 0, 0, 0.0, 1 ])
+    wall = FixedObject(wall_id,"./resources/object_models/wallthing/vertical_wall.urdf",'wall')
     arg_dict = args.copy()
     if args['action'] == 'Joint Velocity':
         arg_dict['ik_flag'] = False
@@ -125,21 +114,113 @@ def make_pybullet(args, viz=True):
     # replay buffer
     replay_buffer = ReplayBufferPriority(buffer_size=4080000)
     
-    # environment and recording
-    
-    env = multiprocess_env.MultiprocessSingleShapeEnv(pybullet_instance, hand=hand, obj=obj, hand_type=hand_type, rand_start=args['rstart'])
-
-    # env = rl_env.ExpertEnv(hand=hand, obj=cylinder)
-    
+    # pybullet environment
+    env = multiprocess_env.MultiprocessMazeEnv(pybullet_instance, hand=hand, obj=obj, wall=wall,hand_type=hand_type, goal_block=goal_poses,args=args)
     # Create phase
     manipulation = multiprocess_manipulation_phase.MultiprocessManipulation(
-        hand, obj, x, y, state, action, reward, env, replay_buffer=replay_buffer, args=arg_dict, hand_type=hand_type)
-    
+        hand, obj, state, action, reward, env, args=arg_dict, hand_type=hand_type)
     
     # data recording
-    record_data = MultiprocessRecordData(rank,
+    record_data = MultiprocessRecordData([0,1],
         data_path=args['save_path'], state=state, action=action, reward=reward, save_all=False, controller=manipulation.controller)
-    
-    
+    # gym wrapper around pybullet environment
     gym_env = multiprocess_gym_wrapper.MultiprocessGymWrapper(env, manipulation, record_data, args)
-    return gym_env, args, [pose_list,eval_pose_list]
+
+    return gym_env, args, [obj_id, wall_id]
+
+
+# control types: conventional + options, full, feudal? option keyboard?
+
+
+def simple_interpolatinator(base_path):
+    # drastically reduces number of points
+    # find the vectors that the thing uses and only switch when there is a large change
+    print(len(base_path))
+    small_vectors = [[base_path[i+1][0] - base_path[i][0],base_path[i+1][1] - base_path[i][1],base_path[i+1][2] - base_path[i][2]] for i in range(len(base_path)-1)]
+    small_vectors = [sm/np.linalg.norm(sm) for sm in small_vectors]
+    ang_diff = [np.dot(small_vectors[i+1],small_vectors[i]) for i in range(len(small_vectors)-1)]
+    turn_points = []
+    for i, ag in enumerate(ang_diff):
+        if ag <0.85:
+            print('we found a change point')
+            turn_points.append(base_path[i])
+    turn_points.append(base_path[-1])
+    return turn_points
+
+def fancy_interpolatinator(base_path):
+    # drastically reduces number of points into slide and rotation points
+    # find the vectors that the thing uses and only switch when there is a large change
+    print(len(base_path))
+    small_vectors = [[base_path[i+1][0] - base_path[i][0],base_path[i+1][1] - base_path[i][1],base_path[i+1][2] - base_path[i][2]] for i in range(len(base_path)-1)]
+    small_vectors = [sm/np.linalg.norm(sm) for sm in small_vectors]
+    ang_diff = [np.dot(small_vectors[i+1],small_vectors[i]) for i in range(len(small_vectors)-1)]
+    turn_points = []
+    for i, ag in enumerate(ang_diff):
+        if ag <0.85:
+            print('we found a change point')
+            turn_points.append(base_path[i])
+    turn_points.append(base_path[-1])
+    return turn_points
+
+
+import pybullet_tools.utils as pp
+
+filepath = './data/JA_halfstate_A_rand/experiment_config.json'
+filename = './data/JA_halfstate_A_rand'
+with open(filepath, 'r') as argfile:
+    args = json.load(argfile)
+import pybullet as p
+key_file = os.path.abspath(__file__)
+key_file = os.path.dirname(key_file)
+key_file = os.path.join(key_file,'resources','hand_bank','hand_params.json')
+with open(key_file,'r') as hand_file:
+    hand_params = json.load(hand_file)
+if args['model'] == 'PPO':
+    model_type = PPO
+elif 'DDPG' in args['model']:
+    model_type = DDPG
+elif 'TD3' in args['model']:
+    model_type = TD3
+subpolicies = {}
+names = ['best_model']
+for name in names:
+    model = model_type("MlpPolicy", None, _init_setup_model=False).load(filename+'/'+name)
+    subpolicies[name] = model
+env, args, ids = make_pybullet(args,p)
+wall_id = ids[1]
+obj_id = ids[0]
+# print(self.p.getBaseVelocity(self.obj_id))
+tihng = {'goal_position':[-0.05,0.0]}
+state =env.reset(tihng)
+
+goal_pose = (0.05,0.1,0)
+
+obj_limits = ((-0.06, 0.04), (0.06,0.16))
+obj_path = pp.plan_base_motion(obj_id, goal_pose, obj_limits, obstacles=[wall_id])
+print('Original path length: ', len(obj_path))
+print(obj_path)
+reduced_obj_path = simple_interpolatinator(obj_path)
+print(reduced_obj_path)
+input('things')
+# state =env.reset(tihng)
+count = 0
+obj_temp = reduced_obj_path[0]
+curr_id=p.loadURDF('./resources/object_models/2v2_mod/2v2_mod_cylinder_small_alt.urdf', flags=p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES,
+            globalScaling=0.2, basePosition=obj_temp, baseOrientation=[ 0.7071068, 0, 0, 0.7071068 ])
+p.changeVisualShape(curr_id,-1, rgbaColor=[1, 0.0, 0.0, 1])
+constraint_id = p.createConstraint(curr_id, -1, -1, -1, p.JOINT_FIXED, [0, 0, 0], [0, 0, 0], 
+                                   [obj_temp[0]-0.0025,obj_temp[1]-0.0025,0.11], childFrameOrientation=[0,0,0,1])
+# TODO get a policy that isnt shit working with this
+# TODO get a gif of the thing workign with the wall in the way
+# TODO maybe make a more diffcult environment for the thing
+for obj_goal in reduced_obj_path:
+    print('going to goal pose', obj_goal)
+    env.set_goal([obj_goal[0],obj_goal[1]-0.1])
+    p.changeConstraint(constraint_id, [obj_goal[0]-0.0025,obj_goal[1]-0.0025,0.11])
+    for i in range(15):
+        action,_ = subpolicies['best_model'].predict(state,deterministic=True)
+        print('dem actions', action)
+        state, _, _, _ = env.step(np.array(action))
+        time.sleep(0.4)
+    print('finished goal number ', count)
+    count +=1

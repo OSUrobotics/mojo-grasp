@@ -62,7 +62,7 @@ class MultiprocessController():
         self.cube = cube
         self.path = data_file
         self.end_effector_links = [1, 3]
-
+        # print('checking velocity in controller', self.p.getBaseVelocity(cube.id))
         # world coordinates
         self.goal_position = None
         # world coordinates

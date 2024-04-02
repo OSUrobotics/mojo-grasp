@@ -20,6 +20,7 @@ import pathlib
     Data Plotter
     
     This is based on the Demo_PNG_Viewer by PySimpleGUI
+    
 '''
 
 def save_element_as_file(element, filename):
@@ -76,9 +77,7 @@ class RNNGui():
                           "Rotation_single", "Rotation_region", "full_task",'triple', 'multi', "contact point", "contact","direction"), k='-task', default_value='unplanned_random')],
                          [sg.Text("Reward"), sg.OptionMenu(values=('Sparse','Distance','Distance + Finger', 'Hinge Distance + Finger', 'Slope', 'Slope + Finger','SmartDistance + Finger','SmartDistance + SmartFinger','ScaledDistance + Finger','ScaledDistance+ScaledFinger', 'SFS','DFS'), k='-reward',default_value='ScaledDistance+ScaledFinger')],
                          [sg.Checkbox("Object Start Position", key='-rstart',default=False), sg.Checkbox("Relative Finger Position", key='-rfinger',default=False),sg.Checkbox("Object Orientation", key='-ror',default=False), sg.Checkbox("Finger Open", key='-rfo',default=False)],
-                         [sg.Text('Replay Buffer Sampling'), sg.OptionMenu(values=['priority', 'random','random+expert'], k='-sampling', default_value='priority')],
-                         [sg.Text('Domain Randomization Options')],
-                         [sg.Checkbox('Finger Friction', default=True, k='-DRFI'),sg.Checkbox('Floor Friction', default=True, k='-DRFL'),sg.Checkbox('Object Size', default=True, k='-DROS'), sg.Checkbox('Object Mass', default=True, k='-DROM')]]
+                         [sg.Text('Replay Buffer Sampling'), sg.OptionMenu(values=['priority', 'random','random+expert'], k='-sampling', default_value='priority')]]
         
         
         model_layout = [ [sg.Text('Num Epochs'), sg.Input(1000000, key='-epochs',size=(8, 2)), sg.Text('Batch Size'), sg.Input(100, key='-batch-size',size=(8, 2))],
@@ -159,14 +158,10 @@ class RNNGui():
                      'IK_freq': bool(values['-ik-freq']),
                      'rotation_scale': float(values['-rotation_scale']),
                      'fobfreq': float(values['-fobfreq']),
-                     'object_random_start': bool(values['-rstart']),
-                     'finger_random_start': bool(values['-rfinger']),
-                     'object_random_orientation': bool(values['-ror']),
-                     'finger_random_off': bool(values['-rfo']),
-                     'domain_randomization_finger_friction':bool(values['-DRFI']),
-                     'domain_randomization_floor_friction':bool(values['-DRFL']),
-                     'domain_randomization_object_size':bool(values['-DROS']),
-                     'domain_randomization_object_mass':bool(values['-DROM'])}
+                     'object_random_start': bool('-rstart'),
+                     'finger_random_start': bool('-rfinger'),
+                     'object_random_orientation': bool('-ror'),
+                     'finger_random_off': bool('-rfo')}
         state_len = 0
         state_mins = []
         state_maxes = []
@@ -327,19 +322,9 @@ class RNNGui():
                         print('adding thing', k+'/hand/'+k+'.urdf')
                         self.args['hand_file_list'].append(k+'/hand/'+k+'.urdf')
         if values['-object'] == 'Cube':
-            if self.args['domain_randomization_object_size']:
-                self.args['object_path'] = [str(resource_path.joinpath('object_models/2v2_mod/2v2_mod_cuboid_small.urdf')),
-                                            str(resource_path.joinpath('object_models/2v2_mod/2v2_mod_cuboid_small_sub10.urdf')),
-                                            str(resource_path.joinpath('object_models/2v2_mod/2v2_mod_cuboid_small_add10.urdf'))]
-            else:
-                self.args['object_path'] = [str(resource_path.joinpath('object_models/2v2_mod/2v2_mod_cuboid_small.urdf'))]
+            self.args['object_path'] = str(resource_path.joinpath('object_models/2v2_mod/2v2_mod_cuboid_small.urdf'))
         elif values['-object'] == 'Cylinder':
-            if self.args['domain_randomization_object_size']:
-                self.args['object_path'] = [str(resource_path.joinpath('resources/object_models/2v2_mod/2v2_mod_cylinder_small_alt.urdf')),
-                                            str(resource_path.joinpath('resources/object_models/2v2_mod/2v2_mod_cylinder_small_alt_sub10.urdf')),
-                                            str(resource_path.joinpath('resources/object_models/2v2_mod/2v2_mod_cylinder_small_alt_add10.urdf'))]
-            else:
-                self.args['object_path'] = [str(resource_path.joinpath('resources/object_models/2v2_mod/2v2_mod_cylinder_small_alt.urdf'))]
+            self.args['object_path'] = str(resource_path.joinpath('resources/object_models/2v2_mod/2v2_mod_cylinder_small_alt.urdf'))
         if values['-action'] == 'Joint Velocity':
             self.args['max_action'] = 1.57
         elif values['-action'] == 'Finger Tip Position':
