@@ -58,6 +58,7 @@ class MultiprocessGymWrapper(gym.Env):
         self.state_list = args['state_list']
         self.CONTACT_SCALING = args['contact_scaling']
         self.DISTANCE_SCALING = args['distance_scaling'] 
+        self.ROTATION_SCALING = args['rotation_scaling']
         self.image_path = args['save_path'] + 'Videos/'
         self.record = record_data
         self.eval = False
@@ -92,7 +93,9 @@ class MultiprocessGymWrapper(gym.Env):
         self.tholds = {'SUCCESS_THRESHOLD':self.SUCCESS_THRESHOLD,
                        'DISTANCE_SCALING':self.DISTANCE_SCALING,
                        'CONTACT_SCALING':self.CONTACT_SCALING,
+                       'ROTATION_SCALING':self.ROTATION_SCALING,
                        'SUCCESS_REWARD':self.SUCCESS_REWARD}
+
     def prep_reward(self):
         """
         Method takes in a Reward object
@@ -134,6 +137,8 @@ class MultiprocessGymWrapper(gym.Env):
                 self.build_reward = rf.scaled
             elif (self.REWARD_TYPE == 'ScaledDistance+ScaledFinger') and (self.TASK != 'multi'):
                 self.build_reward = rf.double_scaled
+            elif self.REWARD_TYPE == 'TripleScaled':
+                self.build_reward = rf.triple_scaled_slide
             elif self.REWARD_TYPE == 'SFS':
                 self.build_reward = rf.sfs
             elif self.REWARD_TYPE == 'DFS':
@@ -147,7 +152,6 @@ class MultiprocessGymWrapper(gym.Env):
 
 
     def reset(self,special=None):
-        
         # if self.thing%1000 == 0:
         # print(self.thing)
         if not self.first:
@@ -196,11 +200,6 @@ class MultiprocessGymWrapper(gym.Env):
         # print(state['goal_pose']['goal_pose'])
         # print('after episode info',state['f1_pos'],state['f2_pos'])
         state = self.build_state(state)
-        
-
-        # print('Episode ',self.manipulation_phase.episode,' goal pose', self.manipulation_phase.goal_position)
-        # print('fack',self.manipulation_phase.state.objects[-1].run_num)
-        # input('going?')
         return state
 
     def step(self, action, mirror=False, viz=False,hand_type=None):
