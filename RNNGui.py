@@ -34,7 +34,7 @@ def save_element_as_file(element, filename):
     grab.save(filename)
 
 class RNNGui():
-    slide_rewards = ['Sparse','Distance','Distance + Finger', 'Hinge Distance + Finger', 'Slope', 'Slope + Finger','SmartDistance + Finger','SmartDistance + SmartFinger','ScaledDistance + Finger','ScaledDistance+ScaledFinger', 'SFS','DFS',]
+    slide_rewards = ['Sparse','Distance','Distance + Finger', 'Hinge Distance + Finger', 'Slope', 'Slope + Finger','SmartDistance + Finger','SmartDistance + SmartFinger','ScaledDistance + Finger','ScaledDistance+ScaledFinger', 'SFS','DFS','TripleScaled']
     rotate_rewards = ["Rotation", "Rotation+Finger"]
     finger_rewards = ["continuous_finger", "end_finger"]
     full_task_rewards = ["full", "full+finger"]
@@ -155,9 +155,9 @@ class RNNGui():
                      'eval-tsteps':int(values['-eval-tsteps']),
                      'distance_scaling': float(values['-distance_scale']),
                      'contact_scaling': float(values['-contact_scale']),
+                     'rotation_scaling': float(values['-rotation_scale']),
                      'freq': int(values['-freq']),
                      'IK_freq': bool(values['-ik-freq']),
-                     'rotation_scale': float(values['-rotation_scale']),
                      'fobfreq': float(values['-fobfreq']),
                      'object_random_start': bool(values['-rstart']),
                      'finger_random_start': bool(values['-rfinger']),

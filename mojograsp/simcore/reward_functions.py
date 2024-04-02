@@ -89,7 +89,7 @@ def solo_rotation(reward_container, tholds):
     thing1 = (obj_rotation-reward_container['goal_orientation'])%(np.pi*2)
     thing2 = (reward_container['goal_orientation']-obj_rotation)%(np.pi*2)
     rot_temp = min(thing1,thing2)
-    reward = -rot_temp
+    reward = -rot_temp*tholds['ROTATION_SCALING']
     return float(reward), False
 
 def rotation(reward_container, tholds):
@@ -100,7 +100,7 @@ def rotation(reward_container, tholds):
     thing1 = (obj_rotation-reward_container['goal_orientation'])%(np.pi*2)
     thing2 = (reward_container['goal_orientation']-obj_rotation)%(np.pi*2)
     rot_temp = min(thing1,thing2)
-    reward = -rot_temp - goal_dist*tholds['DISTANCE_SCALING']
+    reward = -rot_temp*tholds['ROTATION_SCALING'] - goal_dist*tholds['DISTANCE_SCALING']
     return float(reward), False
 
 def rotation_with_finger(reward_container, tholds):
@@ -112,7 +112,7 @@ def rotation_with_finger(reward_container, tholds):
     thing2 = (reward_container['goal_orientation']-obj_rotation)%(np.pi*2)
     rot_temp = min(thing1,thing2)
     ftemp = -max(reward_container['f1_dist'], reward_container['f2_dist']) * 100 
-    reward = -rot_temp - goal_dist*tholds['DISTANCE_SCALING']  + ftemp*tholds['CONTACT_SCALING']
+    reward = -rot_temp*tholds['ROTATION_SCALING'] - goal_dist*tholds['DISTANCE_SCALING']  + ftemp*tholds['CONTACT_SCALING']
     return float(reward), False
 
 def slide_and_rotate(reward_container, tholds):
@@ -123,7 +123,7 @@ def slide_and_rotate(reward_container, tholds):
     ftemp = -max(reward_container['f1_dist'], reward_container['f2_dist']) * 100 # 100 here to make ftemp = -1 when at 1 cm
     temp = -reward_container['distance_to_goal']/reward_container['start_dist'] # should scale this so that it is -1 at start 
     ftemp,temp = max(ftemp,-2), max(temp, -2)
-    tstep_reward = temp*tholds['DISTANCE_SCALING'] + ftemp*tholds['CONTACT_SCALING'] - rotation_temp/np.pi
+    tstep_reward = temp*tholds['DISTANCE_SCALING'] + ftemp*tholds['CONTACT_SCALING'] - rotation_temp/np.pi*tholds['ROTATION_SCALING']
     return float(tstep_reward), False
 
 def contact_point(reward_container, tholds):
@@ -138,11 +138,16 @@ def contact_point(reward_container, tholds):
 def direction(reward_container, tholds):
     return reward_container['dist_reward'] - 0.1*max(reward_container['f1_dist'],reward_container['f2_dist']), False
 
-def rotation(reward_container, tholds): 
-    goal_dist = reward_container['dist_from_start']/0.01 # divide to turn into cm
-    ftemp = -max(reward_container['f1_dist'], reward_container['f2_dist']) * 100 
-    reward = (reward_container['object_orientation'][2] - reward_container['starting_orientation'][2])* reward_container['pos_neg'] - goal_dist*tholds['DISTANCE_SCALING']  + ftemp*tholds['CONTACT_SCALING']
-    return reward, False
+def triple_scaled_slide(reward_container, tholds):
+    ftemp = -max(reward_container['f1_dist'], reward_container['f2_dist']) * 100 # 100 here to make ftemp = -1 when at 1 cm
+    temp = -reward_container['distance_to_goal']/reward_container['start_dist'] # should scale this so that it is -1 at start 
+    obj_rotation = reward_container['object_orientation'][2]
+    thing1 = (obj_rotation-reward_container['goal_orientation'])%(np.pi*2)
+    thing2 = (reward_container['goal_orientation']-obj_rotation)%(np.pi*2)
+    rotation_temp = min(thing1,thing2)
+    ftemp,temp = max(ftemp,-2), max(temp, -2)
+    tstep_reward = temp*tholds['DISTANCE_SCALING'] + ftemp*tholds['CONTACT_SCALING'] + rotation_temp*tholds['ROTATION_SCALING']
+    return float(tstep_reward), False
 
 
 if __name__ == '__main__':
@@ -150,7 +155,7 @@ if __name__ == '__main__':
     goal_angs = np.linspace(-12.56,12.56,1000)
     end_angs = np.linspace(-12.56,12.56,1000)
     goal = 1
-    tholds = {'DISTANCE_SCALING':0.1, 'CONTACT_SCALING':0.2}
+    tholds = {'DISTANCE_SCALING':0.1, 'CONTACT_SCALING':0.2, 'ROTATION_SCALING': 1}
     y = np.zeros(len(end_angs))
     for i, a1 in enumerate(end_angs):
         reward_container = {'distance_to_goal':0, 'f1_dist':0, 'f2_dist':0, 'object_orientation':[0,0,a1], 'goal_orientation':goal}
