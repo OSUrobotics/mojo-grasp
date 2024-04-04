@@ -22,11 +22,11 @@ class MultiprocessEnv():
         # reload the objects
         plane_id = self.p.loadURDF("plane.urdf", flags=self.p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
         
-        #adding noise
+        # adding noise
         if self.rand_start:
             obj_change = np.random.normal(0,0.01,2)
         else:
-            #no noise
+            # no noise
             obj_change = np.array([0,0])
     
         
@@ -194,7 +194,7 @@ class MultiprocessSingleShapeEnv(Environment):
                              basePosition=[0.0, 0.0, 0.05], flags=self.p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
         self.obj_id = self.p.loadURDF(self.obj.path, basePosition=[0.0, 0.10, .05],
                                  flags=self.p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
-        print('object path', self.obj.path)
+        # print('object path', self.obj.path)
         # assert 1==0
 
         self.p.changeDynamics(self.hand_id, 1, lateralFriction=0.5, rollingFriction=0.04,
@@ -205,8 +205,8 @@ class MultiprocessSingleShapeEnv(Environment):
         self.p.changeDynamics(self.hand_id, 1, jointLowerLimit=0, jointUpperLimit=2.09, mass=mass_link)
         self.p.changeDynamics(self.hand_id, 3, jointLowerLimit=-1.57, jointUpperLimit=1.57, mass=mass_link)
         self.p.changeDynamics(self.hand_id, 4, jointLowerLimit=-2.09, jointUpperLimit=0, mass=mass_link)
-        self.p.changeDynamics(self.plane_id,-1,lateralFriction=0.5, spinningFriction=0.01, rollingFriction=0.05)
-        self.p.changeDynamics(self.obj.id, -1, mass=.03, restitution=.95, lateralFriction=0.5, localInertiaDiagonal=[0.000029435425,0.000029435425,0.00000725805])
+        self.p.changeDynamics(self.plane_id,-1,lateralFriction=0.25, spinningFriction=0.01, rollingFriction=0.05)
+        self.p.changeDynamics(self.obj.id, -1, mass=.03, restitution=.95, lateralFriction=1, localInertiaDiagonal=[0.000029435425,0.000029435425,0.00000725805])
         self.p.changeVisualShape(self.hand_id, -1, rgbaColor=[0.3, 0.3, 0.3, 1])
         self.p.changeVisualShape(self.hand_id, 0, rgbaColor=[1, 0.5, 0, 1])
         self.p.changeVisualShape(self.hand_id, 1, rgbaColor=[0.3, 0.3, 0.3, 1])
@@ -225,10 +225,10 @@ class MultiprocessSingleShapeEnv(Environment):
                        [0, 0, 0], [0, 0.1, 0])
             
         # need to update friction values
-        self.finger_lateral_friction_range = [0.5, 0.501]
+        self.finger_lateral_friction_range = [0.25, 0.75]
         self.finger_spinning_friction_range = [0.01,0.0101]
         self.finger_rolling_friction_range = [0.04,0.0401]
-        self.floor_lateral_friction_range = [0.5,0.501]
+        self.floor_lateral_friction_range = [0.15,0.45]
         self.floor_spinning_friction_range = [0.01,0.0101]
         self.floor_rolling_friction_range = [0.05,0.0501]
         self.object_mass_range = [0.015, 0.045]
@@ -240,7 +240,7 @@ class MultiprocessSingleShapeEnv(Environment):
         else:
             #no noise
             obj_change = np.array([0,0])
-        # print('starting object pose', obj_change)
+        # print('starting object pose', obj_change, self.obj.path)
         self.p.resetJointState(self.hand.id, 0, self.hand.starting_angles[0])
         self.p.resetJointState(self.hand.id, 1, self.hand.starting_angles[1])
         self.p.resetJointState(self.hand.id, 3, self.hand.starting_angles[2])
@@ -389,7 +389,7 @@ class MultiprocessMazeEnv(MultiprocessSingleShapeEnv):
         # print('checking something')
         self.wall = wall
         self.goals = goal_block
-        self.wall_id = self.p.loadURDF(self.wall.path, basePosition=[0,0.02,0.02],
+        self.wall_id = self.p.loadURDF(self.wall.path, basePosition=[0,0.19,0.02],
                                  flags=self.p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
 
         self.p.setCollisionFilterPair(self.wall_id, self.hand_id,-1,0,0)
@@ -398,9 +398,13 @@ class MultiprocessMazeEnv(MultiprocessSingleShapeEnv):
         self.p.setCollisionFilterPair(self.wall_id, self.hand_id,-1,3,0)
         self.p.setCollisionFilterPair(self.wall_id, self.hand_id,-1,4,0)
         self.p.setCollisionFilterPair(self.wall_id, self.hand_id,-1,5,0)
+        self.p.changeVisualShape(self.wall_id, -1, rgbaColor=[0.2, 0.2, 1, 1])
+        # print('total constraints',self.p.getNumConstraints())
+        self.wall.init_constraint([0,0.18,0.02],[0,0,0,1])
+
     def set_goal(self,goal):
         self.goals.set_goal(goal)
-        self.p.setCollisionFilterPair(self.wall_id, self.obj_id,-1,-1,0)
+        # self.p.setCollisionFilterPair(self.wall_id, self.obj_id,-1,-1,0)
     def set_wall_pose(self,pose):
         self.wall.set_pose(pose)
 
