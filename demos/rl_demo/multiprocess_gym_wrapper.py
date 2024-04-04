@@ -105,7 +105,7 @@ class MultiprocessGymWrapper(gym.Env):
         :param state: :func:`~mojograsp.simcore.reward.Reward` object.
         :type state: :func:`~mojograsp.simcore.reward.Reward`
         """        
-        print(self.TASK,self.REWARD_TYPE)
+        # print(self.TASK,self.REWARD_TYPE)
         if 'Rotation' in self.TASK:
             if self.TASK == 'Rotation+Finger':
                 print('rotation and finger')

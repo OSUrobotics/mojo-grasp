@@ -55,7 +55,7 @@ def make_video(filepath):
     file_thing = 'eval'
     frame_list = []
     frames = []
-    for i in range(14):
+    for i in range(69):
         for j in range(8):
             print(video_path)
             frame_path = video_path+file_thing+'_frame_'+str(i)+'_'+str(j*10)+'.png'
@@ -63,6 +63,6 @@ def make_video(filepath):
     frames = [Image.open(image) for image in frame_list]
     frame_one = frames[0]
     frame_one.save(filepath+"Episode.gif", format="GIF", append_images=frames,
-               save_all=True, duration=15*8, loop=0)
+               save_all=True, duration=13*8, loop=0)
 
-make_video('/home/mothra/mojo-grasp/demos/rl_demo/data/JA_finger_reward_region_10_1/')
+make_video('/home/mothra/mojo-grasp/demos/rl_demo/data/Domain_randomization_test/')

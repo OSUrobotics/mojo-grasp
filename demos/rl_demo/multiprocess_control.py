@@ -52,7 +52,7 @@ class MultiprocessController():
         self.final_reward = 0
         
         self.old_epsilon = self.epsilon
-        print('epsilon and edecay', self.epsilon, self.COOLING_RATE)
+        # print('epsilon and edecay', self.epsilon, self.COOLING_RATE)
         
         self.rand_episode = np.random.rand() < self.epsilon
         self.useIK = args['action']=="Finger Tip Position"

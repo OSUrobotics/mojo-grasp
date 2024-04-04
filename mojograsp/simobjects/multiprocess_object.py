@@ -260,11 +260,14 @@ class ObjectWithVelocity(MultiprocessObjectBase):
         return data
 
 class MultiprocessFixedObject(MultiprocessObjectBase):
-    def __init__(self, id: int = None, path: str = None, name: str = None, physicsClientId: BulletClient = None):
-        super().__init__(id, path, name, physicsClientId)
+    def __init__(self, physicsClientId, id: int = None, path: str = None, name: str = None):
+        super().__init__(physicsClientId, id, path, name, )
         pose = self.p.getBasePositionAndOrientation(id)
         self.constraint = self.p.createConstraint(self.id, -1, -1, -1, self.p.JOINT_FIXED, [0, 0, 0], [0, 0, 0], pose[0], childFrameOrientation=pose[1])
     
+    def init_constraint(self,pos,orn):
+        self.constraint = self.p.createConstraint(self.id, -1, -1, -1, self.p.JOINT_FIXED, [0, 0, 0], [0, 0, 0], pos, childFrameOrientation=orn)
+
     def set_curr_pose(self, pos, orn):
         self.p.changeConstraint(self.constraint,pos,orn)
         return super().set_curr_pose(pos, orn)
