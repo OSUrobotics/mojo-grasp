@@ -123,7 +123,7 @@ def make_pybullet(arg_dict, pybullet_instance, rank, hand_info, viz=False):
     this_path = os.path.abspath(__file__)
     overall_path = os.path.dirname(os.path.dirname(os.path.dirname(this_path)))
     args=arg_dict
-    print(args['task'])
+    # print(args['task'])
 
     # load the desired test set based on the task
     pose_list, eval_pose_list, orientations, eval_orientations, finger_contacts, eval_finger_contacts, finger_starts = load_set(args)
@@ -197,7 +197,7 @@ def make_pybullet(arg_dict, pybullet_instance, rank, hand_info, viz=False):
     hand_id = pybullet_instance.loadURDF(args['hand_path'] + '/' + this_hand, useFixedBase=True,
                          basePosition=[0.0, 0.0, 0.05], flags=pybullet_instance.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
     obj_id = pybullet_instance.loadURDF(object_path, basePosition=[0.0, 0.10, .05], flags=pybullet_instance.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
-    print(f'OBJECT ID:{obj_id}')
+    # print(f'OBJECT ID:{obj_id}')
 
     # Create TwoFingerGripper Object and set the initial joint positions
     hand = TwoFingerGripper(hand_id, path=args['hand_path'] + '/' + this_hand,hand_params=hand_param_dict)
@@ -286,18 +286,18 @@ def evaluate(filepath=None,aorb = 'A'):
         print('not going to evaluate, aorb is wrong')
         return
     import pybullet as p2
-    eval_env , _, poses= make_pybullet(args,p2, [0,1], hand_params, viz=True)
+    eval_env , _, poses= make_pybullet(args,p2, [0,1], hand_params, viz=False)
     eval_env.evaluate()
     model = model_type("MlpPolicy", eval_env, tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-2.3}).load(args['save_path']+'best_model', env=eval_env)
     for _ in range(1200):
-        tihng = {'goal_position':[0.0,0.0]}
-        obs = eval_env.reset(tihng)
+        tihng = {'goal_position':[-0.05,0.0]}
+        obs = eval_env.reset()
         done = False
         # time.sleep(1)
         while not done:
             action, _ = model.predict(obs,deterministic=True)
             obs, _, done, _ = eval_env.step(action,hand_type=ht)
-            time.sleep(0.05)
+            # time.sleep(0.05)
 
 def mirror_action(filename):
     with open(filename,'rb') as file:
@@ -486,12 +486,12 @@ if __name__ == '__main__':
     # main('./data/FTP_halfstate_A_rand_old_finger_poses/experiment_config.json','run')
     # main("./data/region_rotation_JA_finger/experiment_config.json",'run')
     # main("./data/JA_full_task_20_1/experiment_config.json",'run')
-    main("./data/Domain_randomization_test/experiment_config.json",'run')
+    main("./data/DR_R+T/experiment_config.json",'run')
     # evaluate("./data/FTP_halfstate_A_rand/experiment_config.json")
     # evaluate("./data/FTP_halfstate_A_rand/experiment_config.json","B")
     # evaluate("./data/FTP_fullstate_A_rand/experiment_config.json")
     # evaluate("./data/FTP_fullstate_A_rand/experiment_config.json","B")
-    # evaluate("./data/JA_fullstate_A_rand/experiment_config.json")
+    # evaluate("./data/Domain_randomization_test/experiment_config.json")
     # evaluate("./data/JA_halfstate_A_rand/experiment_config.json", "B")
     # evaluate("./data/JA_fullstate_A_rand/experiment_config.json","B")
     # replay("./data/JA_finger_reward_region_10_1/experiment_config.json","./data/JA_finger_reward_region_10_1/Eval_A/Episode_79.pkl")

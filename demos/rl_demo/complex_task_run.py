@@ -21,7 +21,7 @@ import pandas as pd
 from demos.rl_demo.multiprocess_record import MultiprocessRecordData
 from mojograsp.simobjects.two_finger_gripper import TwoFingerGripper
 from mojograsp.simobjects.object_with_velocity import ObjectWithVelocity
-from mojograsp.simobjects.object_base import FixedObject
+from mojograsp.simobjects.multiprocess_object import MultiprocessFixedObject
 from mojograsp.simcore.priority_replay_buffer import ReplayBufferPriority
 import pickle as pkl
 import json
@@ -48,7 +48,18 @@ def make_pybullet(args, pybullet_instance, viz=True):
     pybullet_instance.setPhysicsEngineParameter(contactBreakingThreshold=.001)
     pybullet_instance.resetDebugVisualizerCamera(cameraDistance=.02, cameraYaw=0, cameraPitch=-89.9999,
                                  cameraTargetPosition=[0, 0.1, 0.5])
-    
+    if type(args['object_path']) == str:
+        object_path = args['object_path']
+        object_key = "small"
+        print('older version of object loading, no object domain randomization used')
+    else:
+        object_path = args['object_path'][0%len(args['object_path'])]
+        if 'add10' in object_path:
+            object_key = 'add10'
+        elif 'sub10' in object_path:
+            object_key = 'sub10'
+        else:
+            object_key = 'small'
     # load objects into pybullet
     this_hand = "2v2_50.50_50.50_1.1_53/hand/2v2_50.50_50.50_1.1_53.urdf"
     hand_type = this_hand.split('/')[0]
@@ -60,7 +71,7 @@ def make_pybullet(args, pybullet_instance, viz=True):
     info_1 = hand_info[hand_keys[-1]][hand_keys[1]]
     info_2 = hand_info[hand_keys[-1]][hand_keys[2]]
     hand_param_dict = {"link_lengths":[info_1['link_lengths'],info_2['link_lengths']],
-                       "starting_angles":[info_1['start_angles'][0],info_1['start_angles'][1],-info_2['start_angles'][0],-info_2['start_angles'][1]],
+                       "starting_angles":[info_1['start_angles'][object_key][0],info_1['start_angles'][object_key][1],-info_2['start_angles'][object_key][0],-info_2['start_angles'][object_key][1]],
                        "palm_width":info_1['palm_width'],
                        "hand_name":hand_type}
     # load objects into pybullet
@@ -68,7 +79,7 @@ def make_pybullet(args, pybullet_instance, viz=True):
     plane_id = pybullet_instance.loadURDF("plane.urdf", flags=pybullet_instance.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
     hand_id = pybullet_instance.loadURDF(args['hand_path'] + '/' + this_hand, useFixedBase=True,
                          basePosition=[0.0, 0.0, 0.05], flags=pybullet_instance.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
-    obj_id = pybullet_instance.loadURDF(args['object_path'], basePosition=[0.0, 0.10, .05], flags=pybullet_instance.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
+    obj_id = pybullet_instance.loadURDF(object_path, basePosition=[0.0, 0.10, .05], flags=pybullet_instance.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
     print(f'OBJECT ID:{obj_id}')
     # Create TwoFingerGripper Object and set the initial joint positions
     hand = TwoFingerGripper(hand_id, path=args['hand_path'] + '/' + this_hand,hand_params=hand_param_dict)
@@ -79,7 +90,7 @@ def make_pybullet(args, pybullet_instance, viz=True):
     pybullet_instance.changeVisualShape(hand_id, 1, rgbaColor=[0.3, 0.3, 0.3, 1])
     pybullet_instance.changeVisualShape(hand_id, 3, rgbaColor=[1, 0.5, 0, 1])
     pybullet_instance.changeVisualShape(hand_id, 4, rgbaColor=[0.3, 0.3, 0.3, 1])
-    obj = ObjectWithVelocity(obj_id, path=args['object_path'],name='obj_2')
+    obj = ObjectWithVelocity(obj_id, path=object_path,name='obj_2')
     
     # For standard loaded goal poses
     pose_list = [0.05,0]
@@ -104,7 +115,7 @@ def make_pybullet(args, pybullet_instance, viz=True):
 
     wall_id = pybullet_instance.loadURDF("./resources/object_models/wallthing/vertical_wall.urdf",basePosition=[0.0, 0.10, .05])
     cid = pybullet_instance.createConstraint(wall_id, -1, -1, -1, pybullet_instance.JOINT_FIXED, [0, 0, 0], [0, 0, 0], [0, 0.09, 0.02], childFrameOrientation=[ 0, 0, 0.0, 1 ])
-    wall = FixedObject(wall_id,"./resources/object_models/wallthing/vertical_wall.urdf",'wall')
+    wall = MultiprocessFixedObject(pybullet_instance,wall_id,"./resources/object_models/wallthing/vertical_wall.urdf",'wall')
     arg_dict = args.copy()
     if args['action'] == 'Joint Velocity':
         arg_dict['ik_flag'] = False
@@ -156,7 +167,7 @@ def fancy_interpolatinator(base_path):
     ang_diff = [np.dot(small_vectors[i+1],small_vectors[i]) for i in range(len(small_vectors)-1)]
     turn_points = []
     for i, ag in enumerate(ang_diff):
-        if ag <0.85:
+        if ag <0.9:
             print('we found a change point')
             turn_points.append(base_path[i])
     turn_points.append(base_path[-1])
@@ -165,8 +176,8 @@ def fancy_interpolatinator(base_path):
 
 import pybullet_tools.utils as pp
 
-filepath = './data/JA_halfstate_A_rand/experiment_config.json'
-filename = './data/JA_halfstate_A_rand'
+filepath = './data/Domain_randomization_test/experiment_config.json'
+filename = './data/Domain_randomization_test'
 with open(filepath, 'r') as argfile:
     args = json.load(argfile)
 import pybullet as p
@@ -195,32 +206,42 @@ state =env.reset(tihng)
 
 goal_pose = (0.05,0.1,0)
 
-obj_limits = ((-0.06, 0.04), (0.06,0.16))
+obj_limits = ((-0.06, 0.06), (0.06,0.14))
 obj_path = pp.plan_base_motion(obj_id, goal_pose, obj_limits, obstacles=[wall_id])
 print('Original path length: ', len(obj_path))
-print(obj_path)
+# print(obj_path)
+import matplotlib.pyplot as plt
+xs = [o[0] for o in obj_path]
+ys = [o[1] for o in obj_path]
+
 reduced_obj_path = simple_interpolatinator(obj_path)
 print(reduced_obj_path)
-input('things')
+
 # state =env.reset(tihng)
 count = 0
 obj_temp = reduced_obj_path[0]
-curr_id=p.loadURDF('./resources/object_models/2v2_mod/2v2_mod_cylinder_small_alt.urdf', flags=p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES,
-            globalScaling=0.2, basePosition=obj_temp, baseOrientation=[ 0.7071068, 0, 0, 0.7071068 ])
-p.changeVisualShape(curr_id,-1, rgbaColor=[1, 0.0, 0.0, 1])
-constraint_id = p.createConstraint(curr_id, -1, -1, -1, p.JOINT_FIXED, [0, 0, 0], [0, 0, 0], 
-                                   [obj_temp[0]-0.0025,obj_temp[1]-0.0025,0.11], childFrameOrientation=[0,0,0,1])
+for goal in reduced_obj_path:
+    print(goal)
+    temp_id=p.loadURDF('./resources/object_models/2v2_mod/2v2_mod_cylinder_small_alt.urdf', flags=p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES,
+                globalScaling=0.2, basePosition=[goal[0],goal[1],0.11], baseOrientation=[ 0., 0, 0, 1 ])
+    p.changeVisualShape(temp_id,-1, rgbaColor=[1, 0.0, 0.0, 1])
+    constraint_id = p.createConstraint(temp_id, -1, -1, -1, p.JOINT_FIXED, [0, 0, 0], [0, 0, 0], 
+                                    [goal[0]-0.0025,goal[1]-0.0025,0.11], childFrameOrientation=[0,0,0,1])
+    p.setCollisionFilterPair(temp_id, obj_id,-1,-1,0)
+    print(temp_id)
+plt.scatter(xs,ys)
+plt.show()
 # TODO get a policy that isnt shit working with this
 # TODO get a gif of the thing workign with the wall in the way
 # TODO maybe make a more diffcult environment for the thing
 for obj_goal in reduced_obj_path:
     print('going to goal pose', obj_goal)
     env.set_goal([obj_goal[0],obj_goal[1]-0.1])
-    p.changeConstraint(constraint_id, [obj_goal[0]-0.0025,obj_goal[1]-0.0025,0.11])
-    for i in range(15):
+    # p.changeConstraint(constraint_id, [obj_goal[0]-0.0025,obj_goal[1]-0.0025,0.11])
+    for i in range(10):
         action,_ = subpolicies['best_model'].predict(state,deterministic=True)
         print('dem actions', action)
-        state, _, _, _ = env.step(np.array(action))
-        time.sleep(0.4)
+        state, _, _, _ = env.step(np.array(action),viz=True)
+        # time.sleep(0.4)
     print('finished goal number ', count)
     count +=1
