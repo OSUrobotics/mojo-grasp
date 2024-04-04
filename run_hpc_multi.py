@@ -11,13 +11,10 @@ import sys
 from demos.rl_demo import multiprocess_gym_run
 
 def main(run_id):
-    #print(run_id)
-    folder_names = ['FTP_euler_3','FTP_euler_5',
-                    'FTP_quat_3','FTP_quat_5',
-                    'JA_euler_3','JA_euler_5',
-                    'JA_quat_3','JA_quat_5']    
+    print(run_id)
+    folder_names = ['JA_rs1','JA_rs10','JA_rs100']    
     overall_path = pathlib.Path(__file__).parent.resolve()
-    run_path = overall_path.joinpath('demos/rl_demo/data/HPC Runs')
+    run_path = overall_path.joinpath('demos/rl_demo/data/HPC_reward_scaling_search')
     final_path = run_path.joinpath(folder_names[run_id-1])
     print(str(final_path))
     multiprocess_gym_run.main(str(final_path) + '/experiment_config.json')
