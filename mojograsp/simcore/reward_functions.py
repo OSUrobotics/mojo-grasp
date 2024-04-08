@@ -124,6 +124,8 @@ def slide_and_rotate(reward_container, tholds):
     temp = -reward_container['distance_to_goal']/reward_container['start_dist'] # should scale this so that it is -1 at start 
     ftemp,temp = max(ftemp,-2), max(temp, -2)
     tstep_reward = temp*tholds['DISTANCE_SCALING'] + ftemp*tholds['CONTACT_SCALING'] - rotation_temp/np.pi*tholds['ROTATION_SCALING']
+    print('reward start dist', reward_container['start_dist'])
+    print('things before scaling', temp, ftemp, -rotation_temp/np.pi)
     return float(tstep_reward), False
 
 def contact_point(reward_container, tholds):
