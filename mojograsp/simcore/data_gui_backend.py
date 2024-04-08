@@ -2261,6 +2261,52 @@ class PlotBackend():
         self.curr_graph = 'Group_Reward'
         return return_rewards
         
+    def draw_dist_relationship(self,folder, cmap='plasma'):
+        # get list of pkl files in folder
+        episode_files = [os.path.join(folder, f) for f in os.listdir(folder) if f.lower().endswith('.pkl')]
+        filenames_only = [f for f in os.listdir(folder) if f.lower().endswith('.pkl')]
+        
+        filenums = [re.findall('\d+',f) for f in filenames_only]
+        final_filenums = []
+        for i in filenums:
+            if len(i) > 0 :
+                final_filenums.append(int(i[0]))
         
         
+        sorted_inds = np.argsort(final_filenums)
+        final_filenums = np.array(final_filenums)
+        temp = final_filenums[sorted_inds]
+        episode_files = np.array(episode_files)
+        filenames_only = np.array(filenames_only)
+
+        episode_files = episode_files[sorted_inds].tolist()
+
+        # goal angle should be +/- pi
+        # make the current angle set between +/- pi then subtract the two
+        start_pos = []
+        end_dist = []
+        start_dist = []
+        for episode_file in episode_files:
+            with open(episode_file, 'rb') as ef:
+                tempdata = pkl.load(ef)
+            data = tempdata['timestep_list']
+            # print(data[0]['reward'])
+            start_dist.append(data[0]['reward']['distance_to_goal'])
+            end_dist.append(data[-1]['reward']['distance_to_goal'])
+            start_pos.append([data[0]['state']['obj_2']['pose'][0][0],data[0]['state']['obj_2']['pose'][0][1]-0.1])
         
+        self.clear_axes()
+        start_pos = np.array(start_pos)
+        end_dists = np.array(end_dist)
+        end_dists= np.clip(end_dist, 0, 0.025)
+        a = self.ax.scatter(start_pos[:,0]*100, start_pos[:,1]*100, c = end_dists*100, cmap=cmap)
+        self.ax.set_ylabel('Y position (cm)')
+        self.ax.set_xlabel('X position (cm)')
+        self.ax.set_xlim([-7,7])
+        self.ax.set_ylim([-7,7])
+        self.ax.set_title('Ending Distance Based on START Position')
+        self.ax.grid(False)
+        self.colorbar = self.fig.colorbar(a, ax=self.ax, extend='max')
+        self.ax.set_aspect('equal',adjustable='box')
+        
+        self.curr_graph = 'scatter'
