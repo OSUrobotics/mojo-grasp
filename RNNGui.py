@@ -347,12 +347,12 @@ class RNNGui():
         if (values['-task'] == 'full_random') | (values['-task'] == 'unplanned_random'):
             self.args['points_path'] = str(resource_path.joinpath('points.csv'))
             self.args['test_path'] = str(resource_path.joinpath('test_points.csv'))
-        elif (values['-task'] == 'big_random') | (values['-task'] =='multi')|(values['-task'] =='full_task'):
+        elif (values['-task'] == 'big_random') | (values['-task'] =='multi'):
             self.args['points_path'] = str(resource_path.joinpath('train_points_big.csv'))
             self.args['test_path'] = str(resource_path.joinpath('test_points_big.csv'))
-        elif values['-task'] =='Rotation_region':
+        elif (values['-task'] =='Rotation_region')|(values['-task'] =='full_task'):
             self.args['points_path'] = str(resource_path.joinpath('rotation_only_train.csv'))
-            self.args['test_path'] = str(resource_path.joinpath('test_points_big.csv'))
+            self.args['test_path'] = str(resource_path.joinpath('rotation_only_test.csv'))
         else:
             self.args['points_path'] = ''
             
