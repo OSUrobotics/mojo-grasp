@@ -6,7 +6,6 @@ Created on Tue Jul 13 10:53:58 2023
 @author: orochi
 """
 
-# from pybullet_utils import bullet_client as bc
 import pybullet_data
 from demos.rl_demo import multiprocess_env
 from demos.rl_demo import multiprocess_manipulation_phase
@@ -16,26 +15,20 @@ from mojograsp.simcore.goal_holder import  GoalHolder, RandomGoalHolder
 from demos.rl_demo import rl_action
 from demos.rl_demo import multiprocess_reward
 from demos.rl_demo import multiprocess_gym_wrapper
-from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv
+from stable_baselines3.common.vec_env import SubprocVecEnv
 import pandas as pd
 from demos.rl_demo.multiprocess_record import MultiprocessRecordData
 from mojograsp.simobjects.two_finger_gripper import TwoFingerGripper
 from mojograsp.simobjects.object_with_velocity import ObjectWithVelocity
-from mojograsp.simcore.priority_replay_buffer import ReplayBufferPriority
 import pickle as pkl
 import json
 from stable_baselines3 import TD3, PPO, DDPG, HerReplayBuffer
-from stable_baselines3.common.vec_env import SubprocVecEnv
-from stable_baselines3.common.evaluation import evaluate_policy
 from stable_baselines3.common.utils import get_device
-import wandb
 import numpy as np
 import time
 import os
 import multiprocessing
-import json
 from scipy.spatial.transform import Rotation as R
-# from stable_baselines3.DQN import MlpPolicy
 
 def make_env(arg_dict=None,rank=0,hand_info=None):
     def _init():
@@ -45,6 +38,8 @@ def make_env(arg_dict=None,rank=0,hand_info=None):
     return _init
 
 def load_set(args):
+    print(args['points_path'])
+    print(args['test_path'])
     if args['points_path'] =='':
         x = [0.0]
         y = [0.0]
@@ -55,6 +50,7 @@ def load_set(args):
         if 'ang' in df.keys():
             orientations=df['ang']
         else:
+            print('NO RANDOM ORIENTATIONS')
             orientations= np.zeros(len(x))
         if 'f1y' in df.keys():
             f1y = df['f1y']
@@ -70,6 +66,7 @@ def load_set(args):
         if 'ang' in df2.keys():
             eval_orientations=df2['ang']
         else:
+            print('NO RANDOM ORIENTATIONS')
             eval_orientations= np.zeros(len(xeval))
         if 'f1y' in df.keys():
             ef1y = df['f1y']
@@ -487,7 +484,7 @@ if __name__ == '__main__':
     # main('./data/FTP_halfstate_A_rand_old_finger_poses/experiment_config.json','run')
     # main("./data/region_rotation_JA_finger/experiment_config.json",'run')
     # main("./data/JA_full_task_20_1/experiment_config.json",'run')
-    main("./data/DR_R+T/experiment_config.json",'run')
+    # main("./data/DR_R+T/experiment_config.json",'run')
     # evaluate("./data/FTP_halfstate_A_rand/experiment_config.json")
     # evaluate("./data/FTP_halfstate_A_rand/experiment_config.json","B")
     # evaluate("./data/FTP_fullstate_A_rand/experiment_config.json")
@@ -496,3 +493,4 @@ if __name__ == '__main__':
     # evaluate("./data/JA_halfstate_A_rand/experiment_config.json", "B")
     # evaluate("./data/JA_fullstate_A_rand/experiment_config.json","B")
     # replay("./data/JA_finger_reward_region_10_1/experiment_config.json","./data/JA_finger_reward_region_10_1/Eval_A/Episode_79.pkl")
+    main("./data/Full_task_hyperparameter_search/JA_1-3/experiment_config.json",'run')

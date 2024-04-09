@@ -6,7 +6,7 @@ import time
 class ForwardKinematicsSIM():
     def __init__(self, hand_id, finger_info: dict, p) -> None:
         # finger information and pybullet body id
-        print(finger_info)
+        # print(finger_info)
         self.p = p
         self.hand_id = hand_id
         self.finger_name = finger_info["name"]
