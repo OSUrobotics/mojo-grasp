@@ -185,6 +185,7 @@ class MultiprocessGymWrapper(gym.Env):
             self.env.reset(new_goal['goal_position'],fingerys=fingerys)
             # print(new_goal)
         elif self.OBJECT_POSE_RANDOMIZATION:
+            print('WE ARE RANDOMIZING THE START POSE')
             random_start = np.random.uniform(0,1,2)
             x = (1-random_start[0]**2) * np.sin(random_start[1]*2*np.pi) * 0.05
             y = (1-random_start[0]**2) * np.cos(random_start[1]*2*np.pi) * 0.05
