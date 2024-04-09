@@ -9,7 +9,7 @@ import json
 import os
 import pathlib
 
-folder_path = './demos/rl_demo/data/HPC_reward_scaling_search'
+folder_path = './demos/rl_demo/data/HPC_DR_testing'
 
 overall_path = pathlib.Path(__file__).parent.resolve()
 resource_path = overall_path.joinpath('demos/rl_demo/resources')
@@ -39,7 +39,8 @@ for folder in subfolders:
         elif type(config[k]) == list:
             for i in range(len(config[k])):
                 if type(config[k][i])==str:
-                    config[k][i] = config[k].replace(high_level_path, str(overall_path))
+                    print(config[k][i])
+                    config[k][i] = config[k][i].replace(high_level_path, str(overall_path))
 
     with open(curr_folder+'/experiment_config.json', 'w') as file:
         json.dump(config,file)
