@@ -6,7 +6,6 @@ Created on Tue Jul 13 10:53:58 2023
 @author: orochi
 """
 
-# from pybullet_utils import bullet_client as bc
 import pybullet_data
 from demos.rl_demo import multiprocess_env
 from demos.rl_demo import multiprocess_manipulation_phase
@@ -16,26 +15,20 @@ from mojograsp.simcore.goal_holder import  GoalHolder, RandomGoalHolder
 from demos.rl_demo import rl_action
 from demos.rl_demo import multiprocess_reward
 from demos.rl_demo import multiprocess_gym_wrapper
-from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv
+from stable_baselines3.common.vec_env import SubprocVecEnv
 import pandas as pd
 from demos.rl_demo.multiprocess_record import MultiprocessRecordData
 from mojograsp.simobjects.two_finger_gripper import TwoFingerGripper
 from mojograsp.simobjects.object_with_velocity import ObjectWithVelocity
-from mojograsp.simcore.priority_replay_buffer import ReplayBufferPriority
 import pickle as pkl
 import json
 from stable_baselines3 import TD3, PPO, DDPG, HerReplayBuffer
-from stable_baselines3.common.vec_env import SubprocVecEnv
-from stable_baselines3.common.evaluation import evaluate_policy
 from stable_baselines3.common.utils import get_device
-import wandb
 import numpy as np
 import time
 import os
 import multiprocessing
-import json
 from scipy.spatial.transform import Rotation as R
-# from stable_baselines3.DQN import MlpPolicy
 
 def make_env(arg_dict=None,rank=0,hand_info=None):
     def _init():
