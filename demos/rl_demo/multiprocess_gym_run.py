@@ -45,6 +45,8 @@ def make_env(arg_dict=None,rank=0,hand_info=None):
     return _init
 
 def load_set(args):
+    print(args['points_path'])
+    print(args['test_path'])
     if args['points_path'] =='':
         x = [0.0]
         y = [0.0]
@@ -55,6 +57,7 @@ def load_set(args):
         if 'ang' in df.keys():
             orientations=df['ang']
         else:
+            print('NO RANDOM ORIENTATIONS')
             orientations= np.zeros(len(x))
         if 'f1y' in df.keys():
             f1y = df['f1y']
@@ -70,6 +73,7 @@ def load_set(args):
         if 'ang' in df2.keys():
             eval_orientations=df2['ang']
         else:
+            print('NO RANDOM ORIENTATIONS')
             eval_orientations= np.zeros(len(xeval))
         if 'f1y' in df.keys():
             ef1y = df['f1y']
@@ -486,7 +490,7 @@ if __name__ == '__main__':
     # main('./data/FTP_halfstate_A_rand_old_finger_poses/experiment_config.json','run')
     # main("./data/region_rotation_JA_finger/experiment_config.json",'run')
     # main("./data/JA_full_task_20_1/experiment_config.json",'run')
-    main("./data/DR_R+T/experiment_config.json",'run')
+    # main("./data/DR_R+T/experiment_config.json",'run')
     # evaluate("./data/FTP_halfstate_A_rand/experiment_config.json")
     # evaluate("./data/FTP_halfstate_A_rand/experiment_config.json","B")
     # evaluate("./data/FTP_fullstate_A_rand/experiment_config.json")
@@ -495,3 +499,4 @@ if __name__ == '__main__':
     # evaluate("./data/JA_halfstate_A_rand/experiment_config.json", "B")
     # evaluate("./data/JA_fullstate_A_rand/experiment_config.json","B")
     # replay("./data/JA_finger_reward_region_10_1/experiment_config.json","./data/JA_finger_reward_region_10_1/Eval_A/Episode_79.pkl")
+    main("./data/Full_task_hyperparameter_search/JA_1-3/experiment_config.json",'run')
