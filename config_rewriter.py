@@ -39,8 +39,9 @@ for folder in subfolders:
         elif type(config[k]) == list:
             for i in range(len(config[k])):
                 if type(config[k][i])==str:
-                    print(config[k][i])
+                    print('old',k,config[k][i])
                     config[k][i] = config[k][i].replace(high_level_path, str(overall_path))
+                    print('new',k,config[k][i])
 
     with open(curr_folder+'/experiment_config.json', 'w') as file:
         json.dump(config,file)
