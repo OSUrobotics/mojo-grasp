@@ -10,6 +10,8 @@ from numpy.random import shuffle
 from math import isclose
 from PIL import Image
 
+# import numpy as np
+# import matplotlib.pyplot as plt
 
 class MultiprocessManipulation(Phase):
 
@@ -81,11 +83,9 @@ class MultiprocessManipulation(Phase):
 
     def gym_pre_step(self, gym_action):
         # Get the target action
-        if self.use_ik:
-            self.target, self.actor_portion = self.controller.find_angles(gym_action)
-            # print('manipulation phase rl',self.actor_portion)
-        else:
-            self.target, self.actor_portion =  self.controller.find_angles(gym_action)
+        # print('prestepping by going into find angles in controller')
+
+        self.target, self.actor_portion =  self.controller.find_angles(gym_action)
 
         # Set the next action before the sim is stepped for Action (Done so that replay buffer and record data work)
         self.action.set_action(self.target, self.actor_portion)
@@ -94,7 +94,13 @@ class MultiprocessManipulation(Phase):
 
     def execute_action(self, action_to_execute=None, pybullet_thing = None, viz = False):
         # Execute the target that we got from the controller in pre_step()
-
+        errs = []
+        goals =[ ]
+        actual = []
+        forces = []
+        f2 = []
+        f3 = []
+        f4 = []
         for i in range(self.interp_ratio):
             # print(self.timestep,i)
             if pybullet_thing is not None:
@@ -108,20 +114,28 @@ class MultiprocessManipulation(Phase):
             elif action_to_execute:
                 # temp = p.getJointStates(self.hand.id, [0,1,3,4])
                 # print('joint states before motion', temp[0][0], temp[1][0], temp[2][0], temp[3][0])
-                # print('joint goals', action_to_execute)
+                # print('joint goals', action_to_execute
                 self.p.setJointMotorControlArray(self.hand.id, jointIndices=self.hand.get_joint_numbers(),
-                                            controlMode=self.p.POSITION_CONTROL, targetPositions=action_to_execute, positionGains=[0.8,0.8,0.8,0.8], forces=[0.4,0.4,0.4,0.4])
+                                            controlMode=self.p.POSITION_CONTROL, targetPositions=action_to_execute, positionGains=[0.8,0.8,0.8,0.8], forces=[0.4,0.4,0.4,0.4],
+                                            velocityGains=[0,0,0,0])
             else:
                 goal_angs = self.action.get_joint_angles()
                 # print(f'goal angles {goal_angs}')
-                # temp = p.getJointStates(self.hand.id, [0,1,3,4])
+                
+                temp = self.p.getJointStates(self.hand.id, [0,1,3,4])
                 # print('joint states before motion', temp[0][0], temp[1][0], temp[2][0], temp[3][0])
                 # print('joint goals',goal_angs)
+                # print('errors', temp[0][0]-goal_angs[0], temp[1][0]-goal_angs[1], temp[2][0]-goal_angs[2], temp[3][0]-goal_angs[3])
+                # errs.append([temp[0][0]-goal_angs[0], temp[1][0]-goal_angs[1], temp[2][0]-goal_angs[2], temp[3][0]-goal_angs[3]])
+                # goals.append(goal_angs[0])
+                # actual.append(temp[0][0])
+                # print(self.hand.get_joint_numbers())
                 # print('no action given',self.action.get_joint_angles())
                 self.p.setJointMotorControlArray(self.hand.id, jointIndices=self.hand.get_joint_numbers(),
                                             controlMode=self.p.POSITION_CONTROL, targetPositions=goal_angs, positionGains=[0.8,0.8,0.8,0.8], forces=[0.4,0.4,0.4,0.4])
-            self.env.step()
 
+            self.env.step()
+            
             if viz and (i%10 == 0):
                 img = self.p.getCameraImage(640, 480,viewMatrix=self.camera_view_matrix,
                                         projectionMatrix=self.camera_projection_matrix,
@@ -130,15 +144,33 @@ class MultiprocessManipulation(Phase):
                 img = Image.fromarray(img[2])
                 temp = 'eval'
                 img.save(self.image_path+ temp + '_frame_'+ str(self.timestep)+'_'+str(i)+'.png')
-            # if pybullet_thing is not None:
-            #     temp = pybullet_thing.getJointStates(self.hand.id, [0,1,3,4])
-            # elif action_to_execute:
-            #     temp = p.getJointStates(self.hand.id, [0,1,3,4])
-            # else:
-            #     temp = p.getJointStates(self.hand.id, [0,1,3,4])
 
+            # temp = self.p.getJointStates(self.hand.id, [0,1,3,4])
             # print('joint states after motion', temp[0][0], temp[1][0], temp[2][0], temp[3][0])
-            
+            # print('forces ', temp[0][3], temp[1][3], temp[2][3], temp[3][3])
+            # forces.append(temp[0][3])
+            # f2.append(temp[1][3])
+            # f3.append(temp[2][3])
+            # f4.append(temp[3][3])
+        # errs = np.array(errs)
+        # plt.plot(range(len(errs)), errs[:,0])
+        # fig, (ax1, ax2) = plt.subplots(2, 1)
+        # ax1.plot(range(len(goals)),goals)
+        # ax1.plot(range(len(actual)),actual)
+        # plt.legend(['goal positions','actual positions'])
+        # plt.plot(range(len(errs)), errs[:,1])
+        # plt.plot(range(len(errs)), errs[:,2])
+        # plt.plot(range(len(errs)), errs[:,3])
+        # ax1.set_xlabel('sim-step (1/240 s)')
+        # ax1.set_ylabel('Error (rad)')
+        # ax1.set_grid(True)
+
+        # ax2.plot(range(len(forces)),forces)
+        # ax2.plot(range(len(f2)),f2)
+        # ax2.plot(range(len(f3)),f3)
+        # ax2.plot(range(len(f4)),f4)
+
+        # plt.show()
         self.timestep += 1
 
     def post_step(self):
