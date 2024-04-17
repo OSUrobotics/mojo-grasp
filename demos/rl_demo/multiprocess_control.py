@@ -103,7 +103,9 @@ class MultiprocessController():
         self.MAX_ANGLE_CHANGE = self.MAX_ANGLE_CHANGE/8
 
     def find_angles(self,actor_output):
+        # print('finding angles')
         if self.useIK:
+            # print('we should not see this')
             finger_pos1 = self.p.getLinkState(self.gripper.id, 2) #RIGHT FINGER
             finger_pos2 = self.p.getLinkState(self.gripper.id, 5) #LEFT FINGER
             finger_pos1 = finger_pos1[0]
@@ -142,12 +144,20 @@ class MultiprocessController():
         else:
             finger_angles = self.gripper.get_joint_angles()
             action_list = []
-            # print(actor_output, finger_angles)
+            # print('current finger angles', finger_angles)
             for i in range(self.num_tsteps):
                 action = ((actor_output)*self.MAX_ANGLE_CHANGE + finger_angles).tolist()
+                # print('regular', action)
                 action = clip_angs(action)
+                # print('clipped', action)
                 action_list.append(action)
                 finger_angles = action
+            # print('EVERYTHING IS WRONG FOR TESTING PURPOSES. IF YOU SEE THIS GO TO MULTIPROCESS CONTROL TO FIX IT')
+            # temp = (actor_output*self.MAX_ANGLE_CHANGE*self.num_tsteps + finger_angles).tolist()
+            # action_list = []
+            # for _ in range(self.num_tsteps):
+            #     action_list.append(temp.copy())
+            
         # print(f'action_list {action_list}')
         return action_list, actor_output
         

@@ -73,6 +73,7 @@ def main():
 
     scatter_plot_tab = [[sg.Button('End Dist', size=(8, 2)), sg.Button('End Poses', size=(8, 2)), sg.Button('Contact Dist', size=(8, 2)), sg.Button('Average Goals', key='Average Goals',size=(8, 2)), sg.Button('Orientation Multi', key='Orientation Multi',size=(8, 2))],
                         [sg.Button('Average Actor Values', size=(8,2)),sg.Button('Explored Region', size=(8,2)),sg.Button('End Region', size=(8,2)), sg.Button('Reward Comparison', size=(8,2)), sg.Button('Ending Distances', size=(8,2))],
+                        [sg.Button('Goal Wizard', size=(8,2)), sg.Button('Goal Spell', size=(8,2)), sg.Button('Path Spell', size=(8,2))],
                         [sg.Text('Colormap'),sg.Input('plasma_r',key='-cmap',size=(8, 1))]]
 
     plot_buttons = [[sg.Button('Object Path', size=(8, 2)), sg.Button('Finger Angles', size=(8, 2)),sg.Button('Rewards', size=(8, 2), key='FullRewards'), sg.Button('Contact Rewards', key='ContactRewards',size=(8, 2)), sg.Button('Distance/Slope Rewards', key='SimpleRewards',size=(8, 2))],
@@ -110,10 +111,10 @@ def main():
     layout = [[sg.Menu(menu)], [sg.Col(col_files), sg.Col(col)]]
     # layout = [[sg.Menu(menu)], [sg.TabGroup([[sg.Tab('Single Plotting', [[sg.Col(col_files), sg.Col(col)]]),
     #                         sg.Tab('Scatter Plotting', [[sg.Col(col_files), sg.Col(scatter_col)]])]], key='-group1-', tab_location='top', selected_title_color='purple')]]
-    
+
 
     window = sg.Window('Analysis Window', layout, return_keyboard_events=True, use_default_focus=False, finalize=True)
-    
+
     window.move(1000, 20)
     canvas = window['-CANVAS-'].TKCanvas
 
@@ -133,12 +134,30 @@ def main():
     filenum, filename = 0, episode_files[0]
 
     episode_data = load_data(filename)
+    class click_thingy:
+        def __init__(self):
+            self.x = None
+            self.y = None
+
+        def reset(self):
+            self.x = None
+            self.y = None
+
+        def callback(self,event):
+            self.x=event.xdata
+            self.y=event.ydata
+            print(self.x,self.y)
+    clicks = click_thingy()
+    figure_canvas_agg.callbacks.connect('button_press_event', clicks.callback)
+
+
 
     # input('about to start loop')
     # TODO: add in functionality to check which type of file it is and send in either the epidoe data OR the string to the folder
     while True:
         event, values = window.read()
         # print('values', values)
+        # print('event', event)
         if not(values['d1']|values['d2']|values['d3']|values['d4']):
             rf_key = 'contact point'
         elif values['d1']:
@@ -357,6 +376,25 @@ def main():
         elif event == 'Reward Comparison':
             backend.draw_relative_reward_strength(folder,tholds)
             figure_canvas_agg.draw()
+        elif event == 'Goal Wizard':
+            backend.draw_scatter_end_magic(folder,values['-cmap'])
+            figure_canvas_agg.draw()
+        elif event == 'Goal Spell':
+            backend.draw_scatter_spell([clicks.x, clicks.y], values['-cmap'])
+            figure_canvas_agg.draw()
+        elif event == 'Path Spell':
+            spellname = backend.draw_path_spell([clicks.x, clicks.y])
+            if spellname:
+                figure_canvas_agg.draw()
+                print('spellname', spellname)
+                temps = np.where([i == spellname for i in filenames_only])
+                print(temps)
+                filenum = temps[0][0]
+                print(filenum)
+                filename = os.path.join(folder, spellname)
+                print(filename)
+                window['-LISTBOX-'].update(set_to_index=filenum, scroll_to_index=filenum)
+                episode_data = load_data(filename)
         elif event == '-SAVE-':
             if '.png' in values['save_name']:
                 filename = './figs/'+values['save_name']
@@ -373,7 +411,8 @@ def main():
             # get list of pkl files in folder
             episode_files = [os.path.join(folder, f) for f in os.listdir(folder) if f.lower().endswith('.pkl')]
             filenames_only = [f for f in os.listdir(folder) if f.lower().endswith('.pkl')]
-            
+            backend.reset()
+            print('we just called backend.reset')
             filenums = [re.findall('\d+',f) for f in filenames_only]
             final_filenums = []
             for i in filenums:
@@ -441,6 +480,7 @@ def main():
             folder_location = os.path.abspath(episode_files[0])
             overall_path = pathlib.Path(folder_location).parent.resolve()
             window['-print-path'].update()
+            backend.reset()
         # ----------------- Menu choices -----------------
         if event == 'Open Folder':
             newfolder = sg.popup_get_folder('Episode Folder to open',initial_folder=str(p1)+'/demos/rl_demo/data')
@@ -450,7 +490,8 @@ def main():
             folder = newfolder
             episode_files = [os.path.join(folder, f) for f in os.listdir(folder) if f.lower().endswith('.pkl')]
             filenames_only = [f for f in os.listdir(folder) if f.lower().endswith('.pkl')]
-
+            backend.reset()
+            print('we just called backend.reset')
             window['-LISTBOX-'].update(values=filenames_only)
             window.refresh()
 

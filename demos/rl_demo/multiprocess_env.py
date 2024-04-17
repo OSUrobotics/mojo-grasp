@@ -241,6 +241,8 @@ class MultiprocessSingleShapeEnv(Environment):
             #no noise
             obj_change = np.array([0,0])
         # print('starting object pose', obj_change, self.obj.path)
+
+
         self.p.resetJointState(self.hand.id, 0, self.hand.starting_angles[0])
         self.p.resetJointState(self.hand.id, 1, self.hand.starting_angles[1])
         self.p.resetJointState(self.hand.id, 3, self.hand.starting_angles[2])
