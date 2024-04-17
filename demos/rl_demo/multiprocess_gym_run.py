@@ -249,6 +249,7 @@ def evaluate(filepath=None,aorb = 'A'):
 
     with open(filepath, 'r') as argfile:
         args = json.load(argfile)
+    args['eval-tsteps'] = 30
     high_level_folder = os.path.abspath(filepath)
     high_level_folder = os.path.dirname(high_level_folder)
     print(high_level_folder)
@@ -286,15 +287,21 @@ def evaluate(filepath=None,aorb = 'A'):
     eval_env , _, poses= make_pybullet(args,p2, [0,1], hand_params, viz=False)
     eval_env.evaluate()
     model = model_type("MlpPolicy", eval_env, tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-2.3}).load(args['save_path']+'best_model', env=eval_env)
-    for _ in range(1200):
-        tihng = {'goal_position':[-0.05,0.0]}
-        obs = eval_env.reset()
-        done = False
-        # time.sleep(1)
-        while not done:
-            action, _ = model.predict(obs,deterministic=True)
-            obs, _, done, _ = eval_env.step(action,hand_type=ht)
-            # time.sleep(0.05)
+    thetas = np.linspace(0,8*np.pi,64)
+    rs = np.linspace(0,0.05,64)
+    xs = rs*np.sin(thetas)
+    ys = rs*np.cos(thetas)
+    for x,y in zip(xs, ys):
+        tihng = {'goal_position':[x,y]}
+        for _ in range(1200):
+            
+            obs = eval_env.reset(tihng)
+            done = False
+            # time.sleep(1)
+            while not done:
+                action, _ = model.predict(obs,deterministic=True)
+                obs, _, done, _ = eval_env.step(action,hand_type=ht)
+                # time.sleep(0.05)
 
 def mirror_action(filename):
     with open(filename,'rb') as file:
@@ -330,10 +337,10 @@ def replay(argpath, episode_path):
     import pybullet as p2
     eval_env , _, poses= make_pybullet(args,p2, [0,1], hand_params,viz=True)
     eval_env.evaluate()
-    # temp = [joint_angles[0]['finger0_segment0_joint'],joint_angles[0]['finger0_segment1_joint'],joint_angles[0]['finger1_segment0_joint'],joint_angles[0]['finger1_segment1_joint']]
-    temp = [-joint_angles[0]['finger1_segment0_joint'],-joint_angles[0]['finger1_segment1_joint'],-joint_angles[0]['finger0_segment0_joint'],-joint_angles[0]['finger0_segment1_joint']]
+    temp = [joint_angles[0]['finger0_segment0_joint'],joint_angles[0]['finger0_segment1_joint'],joint_angles[0]['finger1_segment0_joint'],joint_angles[0]['finger1_segment1_joint']]
+    # temp = [-joint_angles[0]['finger1_segment0_joint'],-joint_angles[0]['finger1_segment1_joint'],-joint_angles[0]['finger0_segment0_joint'],-joint_angles[0]['finger0_segment1_joint']]
     obj_temp = data['timestep_list'][0]['state']['goal_pose']['goal_position'].copy()
-    obj_temp[0] = -obj_temp[0]
+    # obj_temp[0] = -obj_temp[0]
     # initialize with obeject in desired position. 
     # TODO fix this so that I don't need to comment/uncomment this to get desired behavior
     if ('Rotation' in args['task']) | ('contact' in args['task']):
@@ -342,12 +349,13 @@ def replay(argpath, episode_path):
         _ = eval_env.reset(start_position)
 
     else:
-        _ = eval_env.reset()
+        start_position = {'goal_position':[obj_pose[0][0][0], obj_pose[0][0][1]-0.1], 'fingers':temp}
+        _ = eval_env.reset(start_position)
     print(data['timestep_list'][0]['state']['goal_pose'])
     temp = data['timestep_list'][0]['state']['goal_pose']['goal_position']
-    # angle = data['timestep_list'][0]['state']['goal_pose']['goal_orientation']
+    angle = data['timestep_list'][0]['state']['goal_pose']['goal_orientation']
 
-    angle = -data['timestep_list'][0]['state']['goal_pose']['goal_orientation']
+    # angle = -data['timestep_list'][0]['state']['goal_pose']['goal_orientation']
 
     t= R.from_euler('z',angle)
     quat = t.as_quat()
@@ -419,11 +427,14 @@ def replay(argpath, episode_path):
     step_num = 0
     print('starting position', f1_poses[0],f2_poses[0], joint_angles[0])
     # input('start')
-    for i,act in enumerate(mirrored):
+    for i,act in enumerate(actions):
         # print('action vs mirrored:', actions[i],act)
-        print('joints in pkl file',joint_angles[i+1])
+        # print('joints in pkl file',joint_angles[i+1])
+        print(f'step {i}')
+        print(act)
         eval_env.step(np.array(act),viz=True)
         step_num +=1
+        # input('next step?')
         # time.sleep(0.5)
         # print(f'finger poses in pkl file, {f1_poses[i+1]}, {f2_poses[i]}')
         # print(data['timestep_list'][i]['action'])
@@ -480,16 +491,19 @@ def main(filepath = None,learn_type='run'):
 
 if __name__ == '__main__':
 
-    # main('./data/FTP_halfstate_A_rand_old_finger_poses/experiment_config.json','run')
+    main('./data/HPC_slide_all_randomizations/FTP_S1/experiment_config.json','run')
     # main("./data/region_rotation_JA_finger/experiment_config.json",'run')
     # main("./data/JA_full_task_20_1/experiment_config.json",'run')
     # main("./data/DR_R+T/experiment_config.json",'run')
-    # evaluate("./data/FTP_halfstate_A_rand/experiment_config.json")
+    # evaluate("./data/HPC_DR_testing/Size/experiment_config.json")
+    # evaluate("./data/HPC_DR_testing/Mass/experiment_config.json")
+    # evaluate("./data/HPC_DR_testing/Friction/experiment_config.json")
+    # evaluate("./data/HPC_DR_testing/Start Position/experiment_config.json")
     # evaluate("./data/FTP_halfstate_A_rand/experiment_config.json","B")
     # evaluate("./data/FTP_fullstate_A_rand/experiment_config.json")
     # evaluate("./data/FTP_fullstate_A_rand/experiment_config.json","B")
     # evaluate("./data/Domain_randomization_test/experiment_config.json")
     # evaluate("./data/JA_halfstate_A_rand/experiment_config.json", "B")
     # evaluate("./data/JA_fullstate_A_rand/experiment_config.json","B")
-    # replay("./data/JA_finger_reward_region_10_1/experiment_config.json","./data/JA_finger_reward_region_10_1/Eval_A/Episode_79.pkl")
-    main("./data/Full_task_hyperparameter_search/JA_1-3/experiment_config.json",'run')
+    # replay("./data/HPC_DR_testing/Start Position/experiment_config.json","./data/HPC_DR_testing/Start Position/Eval_A/Episode_58927.pkl")
+    # main("./data/Full_task_hyperparameter_search/JA_1-3/experiment_config.json",'run')
