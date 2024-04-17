@@ -12,7 +12,7 @@ from demos.rl_demo import multiprocess_gym_run
 
 def main(run_id):
     print(run_id)
-    folder_names = ['JA_rs1','JA_rs10','JA_rs100']    
+    folder_names = ['Friction','Mass','JA_rs100']
     overall_path = pathlib.Path(__file__).parent.resolve()
     run_path = overall_path.joinpath('demos/rl_demo/data/HPC_reward_scaling_search')
     final_path = run_path.joinpath(folder_names[run_id-1])
