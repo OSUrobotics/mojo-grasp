@@ -193,8 +193,9 @@ def make_pybullet(arg_dict, pybullet_instance, rank, hand_info, viz=False):
     plane_id = pybullet_instance.loadURDF("plane.urdf", flags=pybullet_instance.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
     hand_id = pybullet_instance.loadURDF(args['hand_path'] + '/' + this_hand, useFixedBase=True,
                          basePosition=[0.0, 0.0, 0.05], flags=pybullet_instance.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
+    print('object path',object_path)
     obj_id = pybullet_instance.loadURDF(object_path, basePosition=[0.0, 0.10, .05], flags=pybullet_instance.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
-    # print(f'OBJECT ID:{obj_id}')
+    print(f'OBJECT ID:{obj_id}')
 
     # Create TwoFingerGripper Object and set the initial joint positions
     hand = TwoFingerGripper(hand_id, path=args['hand_path'] + '/' + this_hand,hand_params=hand_param_dict)
@@ -507,3 +508,4 @@ if __name__ == '__main__':
     # evaluate("./data/JA_fullstate_A_rand/experiment_config.json","B")
     # replay("./data/HPC_DR_testing/Start Position/experiment_config.json","./data/HPC_DR_testing/Start Position/Eval_A/Episode_58927.pkl")
     # main("./data/Full_task_hyperparameter_search/JA_1-3/experiment_config.json",'run')
+
