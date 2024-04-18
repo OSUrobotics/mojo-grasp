@@ -137,6 +137,8 @@ class MultiprocessGymWrapper(gym.Env):
                 self.build_reward = rf.scaled
             elif (self.REWARD_TYPE == 'ScaledDistance+ScaledFinger') and (self.TASK != 'multi'):
                 self.build_reward = rf.double_scaled
+            elif 'wall' in self.TASK:
+                self.build_reward = rf.double_scaled
             elif self.REWARD_TYPE == 'TripleScaled':
                 self.build_reward = rf.triple_scaled_slide
             elif self.REWARD_TYPE == 'SFS':
@@ -170,6 +172,7 @@ class MultiprocessGymWrapper(gym.Env):
         self.timestep=0
         self.first = False
         self.env.apply_domain_randomization(self.DOMAIN_RANDOMIZATION_FINGER,self.DOMAIN_RANDOMIZATION_FLOOR,self.DOMAIN_RANDOMIZATION_MASS)
+        
         if self.eval:
             # print('evaluating at eval run', self.eval_run)
             # print('fack',self.manipulation_phase.state.objects[-1].run_num)
@@ -189,6 +192,8 @@ class MultiprocessGymWrapper(gym.Env):
             x = (1-random_start[0]**2) * np.sin(random_start[1]*2*np.pi) * 0.05
             y = (1-random_start[0]**2) * np.cos(random_start[1]*2*np.pi) * 0.05
             self.env.reset([x,y])
+        elif 'wall' in self.TASK:
+            self.env.reset([0.0463644396618753, 0.012423314164921])
         else:
             self.env.reset()
         self.manipulation_phase.setup()
@@ -310,6 +315,9 @@ class MultiprocessGymWrapper(gym.Env):
                         state.append(state_container['previous_state'][i]['goal_pose']['goal_orientation'])
                     elif key == 'gf':
                         state.extend(state_container['previous_state'][i]['goal_pose']['goal_finger'])
+                    elif key == 'wall':
+                        state.extend(state_container['previous_state'][i]['wall']['pose'][0][0:2])
+                        state.extend(state_container['previous_state'][i]['wall']['pose'][1][0:4])
                     else:
                         raise Exception('key does not match list of known keys')
 
@@ -351,6 +359,9 @@ class MultiprocessGymWrapper(gym.Env):
                 state.append(state_container['goal_pose']['goal_orientation'])
             elif key == 'gf':
                 state.extend(state_container['goal_pose']['goal_finger'])
+            elif key == 'wall':
+                state.extend(state_container['wall']['pose'][0][0:2])
+                state.extend(state_container['wall']['pose'][1][0:4])
             else:
                 raise Exception('key does not match list of known keys')
         return state
