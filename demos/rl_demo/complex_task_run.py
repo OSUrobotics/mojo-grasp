@@ -174,10 +174,10 @@ def fancy_interpolatinator(base_path):
     return turn_points
 
 
-import pybullet_tools.utils as pp
+# import pybullet_tools.utils as pp
 
-filepath = './data/Domain_randomization_test/experiment_config.json'
-filename = './data/Domain_randomization_test'
+filepath = './data/region_rotation_JA/experiment_config.json'
+filename = './data/region_rotation_JA'
 with open(filepath, 'r') as argfile:
     args = json.load(argfile)
 import pybullet as p
@@ -205,7 +205,7 @@ tihng = {'goal_position':[-0.05,0.0]}
 state =env.reset(tihng)
 
 goal_pose = (0.05,0.1,0)
-
+input('LOOK AT IT')
 obj_limits = ((-0.06, 0.06), (0.06,0.14))
 obj_path = pp.plan_base_motion(obj_id, goal_pose, obj_limits, obstacles=[wall_id])
 print('Original path length: ', len(obj_path))
