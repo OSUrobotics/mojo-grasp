@@ -271,8 +271,8 @@ class RNNGui():
             state_len += 2
             state_list.append('gp')
         if values['-go']:
-            state_mins.append(-np.pi/2)
-            state_maxes.append(np.pi/2)
+            state_mins.append(-50/180*np.pi)
+            state_maxes.append(50/180*np.pi)
             state_len += 1
             state_list.append('go')
         if values['-gf']:
