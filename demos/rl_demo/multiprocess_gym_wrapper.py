@@ -184,6 +184,7 @@ class MultiprocessGymWrapper(gym.Env):
         elif (self.TASK == 'Rotation_region')|('contact' in self.TASK):
             self.env.reset(new_goal['goal_position'],fingerys=fingerys)
             # print(new_goal)
+            # print('we are where we should be')
         elif self.OBJECT_POSE_RANDOMIZATION:
             # print('WE ARE RANDOMIZING THE START POSE')
             random_start = np.random.uniform(0,1,2)

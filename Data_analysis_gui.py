@@ -73,7 +73,7 @@ def main():
 
     scatter_plot_tab = [[sg.Button('End Dist', size=(8, 2)), sg.Button('End Poses', size=(8, 2)), sg.Button('Contact Dist', size=(8, 2)), sg.Button('Average Goals', key='Average Goals',size=(8, 2)), sg.Button('Orientation Multi', key='Orientation Multi',size=(8, 2))],
                         [sg.Button('Average Actor Values', size=(8,2)),sg.Button('Explored Region', size=(8,2)),sg.Button('End Region', size=(8,2)), sg.Button('Reward Comparison', size=(8,2)), sg.Button('Ending Distances', size=(8,2))],
-                        [sg.Button('Goal Wizard', size=(8,2)), sg.Button('Goal Spell', size=(8,2)), sg.Button('Path Spell', size=(8,2))],
+                        [sg.Button('Goal Wizard', size=(8,2)), sg.Button('Goal Spell', size=(8,2)), sg.Button('Path Spell', size=(8,2)), sg.Button('Rotation Sliding Error', size=(8,2))],
                         [sg.Text('Colormap'),sg.Input('plasma_r',key='-cmap',size=(8, 1))]]
 
     plot_buttons = [[sg.Button('Object Path', size=(8, 2)), sg.Button('Finger Angles', size=(8, 2)),sg.Button('Rewards', size=(8, 2), key='FullRewards'), sg.Button('Contact Rewards', key='ContactRewards',size=(8, 2)), sg.Button('Distance/Slope Rewards', key='SimpleRewards',size=(8, 2))],
@@ -395,6 +395,9 @@ def main():
                 print(filename)
                 window['-LISTBOX-'].update(set_to_index=filenum, scroll_to_index=filenum)
                 episode_data = load_data(filename)
+        elif event == 'Rotation Sliding Error':
+            backend.draw_rotation_sliding_error(folder,values['-cmap'])
+            figure_canvas_agg.draw()
         elif event == '-SAVE-':
             if '.png' in values['save_name']:
                 filename = './figs/'+values['save_name']

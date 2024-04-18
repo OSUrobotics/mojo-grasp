@@ -134,10 +134,12 @@ def make_pybullet(arg_dict, pybullet_instance, rank, hand_info, viz=False):
     # print(type(finger_starts), np.shape(np.array(finger_starts[0:2])))
     # set up goal holders based on task and points given
     if finger_contacts is not None:
+        print('we are shuffling the angle and fingertip for the training set WITH A FINGER GOAL')
         eval_finger_contacts = np.array(eval_finger_contacts[int(num_eval*rank[0]/rank[1]):int(num_eval*(rank[0]+1)/rank[1])])
-        goal_poses = GoalHolder(pose_list, np.array(finger_starts[0:2]),orientations,finger_contacts)
+        goal_poses = GoalHolder(pose_list, np.array(finger_starts[0:2]),orientations,finger_contacts, mix_orientation=True, mix_finger=True)
         eval_goal_poses = GoalHolder(eval_pose_list, np.array(eval_finger_starts),eval_orientations,eval_finger_contacts)
     elif orientations is not None:
+        print('we are shuffling the angle and fingertip for the training set with no finger goal')
         goal_poses = GoalHolder(pose_list, np.array(finger_starts[0:2]), orientations,mix_orientation=True, mix_finger=True)
         eval_goal_poses = GoalHolder(eval_pose_list, np.array(eval_finger_starts), eval_orientations)
     elif args['task'] == 'unplanned_random':
@@ -492,7 +494,7 @@ def main(filepath = None,learn_type='run'):
 
 if __name__ == '__main__':
 
-    main('./data/HPC_slide_all_randomizations/FTP_S1/experiment_config.json','run')
+    main('./data/HPC_Rotation_all_randomizations/FTP_S1/experiment_config.json','run')
     # main("./data/region_rotation_JA_finger/experiment_config.json",'run')
     # main("./data/JA_full_task_20_1/experiment_config.json",'run')
     # main("./data/DR_R+T/experiment_config.json",'run')
