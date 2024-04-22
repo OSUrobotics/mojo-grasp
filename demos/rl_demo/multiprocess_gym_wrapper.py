@@ -67,6 +67,8 @@ class MultiprocessGymWrapper(gym.Env):
         self.timestep = 0
         self.past_time = time.time()
         self.thing = []
+        self.eval_point = None
+        self.hand_type = None
         self.first = True
         self.small_enough = args['epochs'] <= 100000
         self.OBJECT_POSE_RANDOMIZATION = args['object_random_start']
@@ -150,10 +152,23 @@ class MultiprocessGymWrapper(gym.Env):
             else:
                 raise Exception('reward type does not match list of known reward types')
 
+    def seed(self,seed):
+        '''
+        set individual random seed
+        currently unused
+        '''
+        self._seed = seed
+
+    def set_reset_point(self,point):
+        '''
+        Function to set a reset start point for all subsequent resets
+        Intended to speed up evaluation of trained policy by allowing
+        multiprocessing'''
+        print('SETTING RESET POINT', point)
+        self.eval_point = point
 
     def reset(self,special=None):
-        # if self.thing%1000 == 0:
-        # print(self.thing)
+
         if not self.first:
             self.thing.append(time.time()-self.past_time)
             self.past_time = time.time()
@@ -170,10 +185,14 @@ class MultiprocessGymWrapper(gym.Env):
         self.timestep=0
         self.first = False
         self.env.apply_domain_randomization(self.DOMAIN_RANDOMIZATION_FINGER,self.DOMAIN_RANDOMIZATION_FLOOR,self.DOMAIN_RANDOMIZATION_MASS)
+        
         if self.eval:
-            # print('evaluating at eval run', self.eval_run)
-            # print('fack',self.manipulation_phase.state.objects[-1].run_num)
             self.eval_run +=1
+        if self.eval_point is not None:
+            # print('eval point and goal', self.eval_point, new_goal)
+            self.env.reset(self.eval_point)
+        
+        
         if type(special) is list:
             self.env.reset_to_pos(special[0],special[1])
         elif type(special) is dict:
@@ -183,12 +202,11 @@ class MultiprocessGymWrapper(gym.Env):
                 self.env.reset(special['goal_position'])
         elif (self.TASK == 'Rotation_region')|('contact' in self.TASK):
             self.env.reset(new_goal['goal_position'],fingerys=fingerys)
-            # print(new_goal)
         elif self.OBJECT_POSE_RANDOMIZATION:
-            # print('WE ARE RANDOMIZING THE START POSE')
             random_start = np.random.uniform(0,1,2)
             x = (1-random_start[0]**2) * np.sin(random_start[1]*2*np.pi) * 0.06
             y = (1-random_start[0]**2) * np.cos(random_start[1]*2*np.pi) * 0.04
+            # print('x and y',x,y)
             self.env.reset([x,y])
         else:
             self.env.reset()
@@ -197,9 +215,7 @@ class MultiprocessGymWrapper(gym.Env):
         state, _ = self.manipulation_phase.get_episode_info()
         if state['goal_pose']['goal_finger'] is not None:
             self.env.set_finger_contact_goal(state['goal_pose']['goal_finger'])
-        # print('state and prev states')
-        # print(state['goal_pose']['goal_pose'])
-        # print('after episode info',state['f1_pos'],state['f2_pos'])
+
         state = self.build_state(state)
         return state
 
@@ -229,8 +245,7 @@ class MultiprocessGymWrapper(gym.Env):
             self.record.record_timestep()
         # print('recorded timesteps')
         state, reward_container = self.manipulation_phase.get_episode_info()
-        # print(f'finger poses in gym wrapper, {state["f1_pos"]}, {state["f2_pos"]}')
-        # print(f"joint angles in gym wrapper, {state['two_finger_gripper']['joint_angles']}")
+
         info = {}
         if mirror:
             state = self.build_mirror_state(state)
@@ -254,7 +269,10 @@ class MultiprocessGymWrapper(gym.Env):
             if self.eval or self.small_enough:
                 self.record.record_episode(self.episode_type)
                 if self.eval:
-                    self.record.save_episode(self.episode_type, hand_type=hand_type)
+                    if self.hand_type is None:
+                        self.record.save_episode(self.episode_type, hand_type=hand_type)
+                    else:
+                        self.record.save_episode(self.episode_type, hand_type=self.hand_type)
                 else:
                     self.record.save_episode(self.episode_type)
 
@@ -436,8 +454,8 @@ class MultiprocessGymWrapper(gym.Env):
     def close(self):
         self.p.disconnect()
         
-    def evaluate(self):
-        print('EVALUATE TRIGGERED')
+    def evaluate(self, ht=None):
+        # print('EVALUATE TRIGGERED')
         self.eval = True
         self.eval_run = 0
         self.manipulation_phase.state.evaluate()
@@ -446,6 +464,7 @@ class MultiprocessGymWrapper(gym.Env):
         self.manipulation_phase.eval = True
         self.record.clear()
         self.episode_type = 'test'
+        self.hand_type = ht
         
     def train(self):
         self.eval = False
@@ -454,6 +473,7 @@ class MultiprocessGymWrapper(gym.Env):
         self.manipulation_phase.state.reset()
         self.reset()
         self.episode_type = 'train'
+        self.hand_type = None
 
     def set_goal(self,goal):
         self.env.set_goal(goal)
