@@ -244,9 +244,34 @@ def make_pybullet(arg_dict, pybullet_instance, rank, hand_info, viz=False):
     gym_env = multiprocess_gym_wrapper.MultiprocessGymWrapper(env, manipulation, record_data, args)
     return gym_env, args, [pose_list,eval_pose_list]
 
+def multiprocess_evaluate(model, vec_env):
+    # vec_env.evaluate()
+    tech_start = time.time()
+    thetas = np.linspace(0,8*np.pi,64)
+    rs = np.linspace(0,0.05,64)
+    xs = rs*np.sin(thetas)
+    ys = rs*np.cos(thetas)
+    vec_env.env_method('evaluate', 'A')
+    for x,y in zip(xs, ys):
+        tihng = {'goal_position':[x,y]}
+        print('THING', tihng)
+        vec_env.env_method('set_reset_point', tihng['goal_position'])
+        for _ in range(int(1200/16)):
+            # print('about to reset')
+            obs = vec_env.reset()
+            # obs = 
+            # vec_env.env_method()
+            done = [False, False]
+            while not all(done):
+                action, _ = model.predict(obs,deterministic=True)
+                vec_env.step_async(action)
+                obs, _, done, _ = vec_env.step_wait()
+                # print(obs,done)
+    end = time.time()
+
 def evaluate(filepath=None,aorb = 'A'):
     # load a trained model and test it on its test set
-    print('Evaluating on hands A and B')
+    print('Evaluating on hands A or B')
     print('Hand A: 2v2_50.50_50.50_53')
     print('Hand B: 2v2_65.35_65.35_53')
 
@@ -486,15 +511,14 @@ def main(filepath = None,learn_type='run'):
         filename = os.path.dirname(filepath)
         model.save(filename+'/last_model')
 
-        evaluate(filepath, "A")
-        evaluate(filepath, "B")
+        multiprocess_evaluate(model,vec_env)
     except KeyboardInterrupt:
         filename = os.path.dirname(filepath)
         model.save(filename+'/canceled_model')
 
 if __name__ == '__main__':
 
-    main('./data/HPC_Rotation_all_randomizations/FTP_S1/experiment_config.json','run')
+    main('./data/HPC_slide_all_randomizations/JA_S3/experiment_config.json')
     # main("./data/region_rotation_JA_finger/experiment_config.json",'run')
     # main("./data/JA_full_task_20_1/experiment_config.json",'run')
     # main("./data/DR_R+T/experiment_config.json",'run')

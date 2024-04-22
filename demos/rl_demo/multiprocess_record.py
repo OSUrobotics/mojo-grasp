@@ -30,7 +30,7 @@ class MultiprocessRecordData(RecordDataRLPKL):
                 else:
                     file_path = self.data_path + "Eval_"+hand_type+"/Episode_"+ str(int(self.eval_num*self.num_threads+self.my_thread)) + '.pkl'
                 self.eval_num +=1
-                print('save episode evaluated', self.eval_num*self.num_threads+self.my_thread)
+                print('save episode evaluated', self.eval_num*self.num_threads+self.my_thread, hand_type)
             else:
                 if hand_type is None:
                     file_path = self.data_path + 'Train/' + \
