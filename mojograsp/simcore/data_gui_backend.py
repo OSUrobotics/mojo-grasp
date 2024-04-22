@@ -1723,9 +1723,10 @@ class PlotBackend():
 
             data = tempdata['timestep_list']
             # end_position = data[-1]['state']['obj_2']['pose'][0]
-            goals.append(data[0]['state']['goal_pose']['goal_position'][0:2])
-            end_dists.append(data[-1]['reward']['distance_to_goal'])
-            end_poses.append(data[-1]['state']['obj_2']['pose'][0])
+            if abs(data[0]['state']['goal_pose']['goal_orientation']) < 0.8726646259971648: 
+                goals.append(data[0]['state']['goal_pose']['goal_position'][0:2])
+                end_dists.append(data[-1]['reward']['distance_to_goal'])
+                end_poses.append(data[-1]['state']['obj_2']['pose'][0])
 
         bins = np.linspace(0,0.05,100) + 0.05/100
         num_things = np.zeros(100)
@@ -1781,14 +1782,7 @@ class PlotBackend():
         ax1.set_ylim([-7,7])
         ax1.set_title('Distance to Goals')
         ax1.grid(False)
-        # linea = np.array([[0.0,0.06],[0.0,-0.06]])*100
-        # lineb = np.array([[0.0424,-0.0424],[-0.0424,0.0424]])*100
-        # linec = np.array([[0.0424,0.0424],[-0.0424,-0.0424]])*100
-        # lined = np.array([[0.06,0.0],[-0.06,0.0]])*100
-        # ax1.plot(linea[:,0],linea[:,1])
-        # ax1.plot(lineb[:,0],lineb[:,1])
-        # ax1.plot(linec[:,0],linec[:,1])
-        # ax1.plot(lined[:,0],lined[:,1])
+
         ax1.legend(self.legend)
         self.ax.set_aspect('equal',adjustable='box')
         self.curr_graph = 'scatter'
@@ -2528,3 +2522,53 @@ class PlotBackend():
         # print(data[0]['state']['direction'])
         filename = datapath.split('/')[-1]
         return filename
+    
+    def draw_rotation_sliding_error(self,folder,cmap):
+        self.clear_axes()
+
+        episode_files = [os.path.join(folder, f) for f in os.listdir(folder) if f.lower().endswith('.pkl')]
+        filenames_only = [f for f in os.listdir(folder) if f.lower().endswith('.pkl')]
+        
+        filenums = [re.findall('\d+',f) for f in filenames_only]
+        final_filenums = []
+        for i in filenums:
+            if len(i) > 0 :
+                final_filenums.append(int(i[0]))
+        
+        sorted_inds = np.argsort(final_filenums)
+        final_filenums = np.array(final_filenums)
+        episode_files = np.array(episode_files)
+        filenames_only = np.array(filenames_only)
+
+        episode_files = episode_files[sorted_inds].tolist()
+        rewards = []
+        rotation = []  
+        goal_dist = []
+        count = 0
+        for episode_file in episode_files:
+            with open(episode_file, 'rb') as ef:
+                tempdata = pkl.load(ef)
+            data = tempdata['timestep_list']
+
+            # if data[-1]['reward']['distance_to_goal'] < success_range:
+            # print(episode_file)
+            obj_rotation = data[-1]['reward']['object_orientation'][2]
+            obj_rotation = (obj_rotation + np.pi)%(np.pi*2)
+            obj_rotation = (obj_rotation - np.pi)*180/np.pi
+            goal_rotation = data[-1]['state']['goal_pose']['goal_orientation']*180/np.pi
+
+            rewards.append(goal_rotation-obj_rotation)
+            rotation.append(goal_rotation)
+            goal_dist.append(data[-1]['reward']['distance_to_goal'])
+        # print(rewards,rotation)
+        goal_dist = np.array(goal_dist)
+        a=self.ax.scatter(rotation,goal_dist,c = np.abs(rewards), cmap=cmap)
+        # self.ax.plot(range(len(goals)), goals)
+        # self.ax.plot([-360,360],[-360,360],color='orange')
+        self.ax.set_xlabel('Goal Orientation')
+        self.ax.set_ylabel('Ending Slide Error')
+        self.colorbar = self.fig.colorbar(a, ax=self.ax)
+        # self.ax.set_ylim(-95,95)
+        # self.ax.set_xlim(-95,95)
+        # self.ax.set_aspect('equal',adjustable='box')
+        # self.ax.legend(['Achieved Angles','No Movement Line'])
