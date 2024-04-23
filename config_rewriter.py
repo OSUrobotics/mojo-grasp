@@ -9,7 +9,7 @@ import json
 import os
 import pathlib
 
-folder_path = './demos/rl_demo/data/HPC_Rotation_all_randomizations'
+folder_path = './demos/rl_demo/data/HPC_slide_randomization_from_HPC'
 
 overall_path = pathlib.Path(__file__).parent.resolve()
 resource_path = overall_path.joinpath('demos/rl_demo/resources')

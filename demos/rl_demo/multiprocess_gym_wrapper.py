@@ -188,19 +188,18 @@ class MultiprocessGymWrapper(gym.Env):
         
         if self.eval:
             self.eval_run +=1
+
         if self.eval_point is not None:
-            # print('eval point and goal', self.eval_point, new_goal)
+            # print('eval point and goal ', self.eval_point, new_goal)
             self.env.reset(self.eval_point)
-        
-        
-        if type(special) is list:
+        elif type(special) is list:
             self.env.reset_to_pos(special[0],special[1])
         elif type(special) is dict:
             if 'fingers' in special.keys():
                 self.env.reset(special['goal_position'], special['fingers'])
             else:
                 self.env.reset(special['goal_position'])
-        elif (self.TASK == 'Rotation_region')|('contact' in self.TASK):
+        elif (self.TASK == 'Rotation_region') | ('contact' in self.TASK):
             self.env.reset(new_goal['goal_position'],fingerys=fingerys)
         elif self.OBJECT_POSE_RANDOMIZATION:
             random_start = np.random.uniform(0,1,2)

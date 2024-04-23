@@ -168,19 +168,28 @@ def make_pybullet(arg_dict, pybullet_instance, rank, hand_info, viz=False):
     elif rank[1] % len(args['hand_file_list']) != 0:
         print('WARNING: number of hands does not evenly divide into number of pybullet instances. Hands will have uneven number of samples')
     
-    if type(args['object_path']) == str:
-        object_path = args['object_path']
-        object_key = "small"
-        print('older version of object loading, no object domain randomization used')
-    else:
-        object_path = args['object_path'][rank[0]%len(args['object_path'])]
-        if 'add10' in object_path:
-            object_key = 'add10'
-        elif 'sub10' in object_path:
-            object_key = 'sub10'
+    if args['domain_randomization_object_size']:
+        if type(args['object_path']) == str:
+            object_path = args['object_path']
+            object_key = "small"
+            print('older version of object loading, no object domain randomization used')
         else:
-            object_key = 'small'
-        
+            object_path = args['object_path'][rank[0]%len(args['object_path'])]
+            if 'add10' in object_path:
+                object_key = 'add10'
+            elif 'sub10' in object_path:
+                object_key = 'sub10'
+            else:
+                object_key = 'small'
+    else:
+        if type(args['object_path']) == str:
+            object_path = args['object_path']
+            object_key = "small"
+            print('older version of object loading, no object domain randomization used')
+        else:
+            print('normally would get object DR but not this time')
+            object_path = args['object_path'][0]
+            object_key = 'small'   
     this_hand = args['hand_file_list'][rank[0]%len(args['hand_file_list'])]
     hand_type = this_hand.split('/')[0]
     hand_keys = hand_type.split('_')
@@ -244,9 +253,55 @@ def make_pybullet(arg_dict, pybullet_instance, rank, hand_info, viz=False):
     gym_env = multiprocess_gym_wrapper.MultiprocessGymWrapper(env, manipulation, record_data, args)
     return gym_env, args, [pose_list,eval_pose_list]
 
-def multiprocess_evaluate(model, vec_env):
-    # vec_env.evaluate()
-    tech_start = time.time()
+
+
+def multiprocess_evaluate_loaded(filepath, aorb):
+    # load a trained model and test it on its test set
+    print('Evaluating on hands A or B')
+    print('Hand A: 2v2_50.50_50.50_53')
+    print('Hand B: 2v2_65.35_65.35_53')
+    num_cpu =16
+
+    with open(filepath, 'r') as argfile:
+        args = json.load(argfile)
+    args['eval-tsteps'] = 30
+    high_level_folder = os.path.abspath(filepath)
+    high_level_folder = os.path.dirname(high_level_folder)
+    print(high_level_folder)
+    key_file = os.path.abspath(__file__)
+    key_file = os.path.dirname(key_file)
+    key_file = os.path.join(key_file,'resources','hand_bank','hand_params.json')
+    args['domain_randomization_object_size'] = False
+    with open(key_file,'r') as hand_file:
+        hand_params = json.load(hand_file)
+    if args['model'] == 'PPO':
+        model_type = PPO
+    elif 'DDPG' in args['model']:
+        model_type = DDPG
+    elif 'TD3' in args['model']:
+        model_type = TD3
+    print('LOADING A MODEL')
+
+    if aorb =='A':
+        args['hand_file_list'] = ["2v2_50.50_50.50_1.1_53/hand/2v2_50.50_50.50_1.1_53.urdf"]
+        ht = aorb
+    elif aorb =='B':
+        args['hand_file_list'] = ["2v2_65.35_65.35_1.1_53/hand/2v2_65.35_65.35_1.1_53.urdf"]
+        ht = aorb
+    elif aorb.endswith('.urdf'):
+        args['hand_file_list'] = [aorb]
+        ht = aorb.split('/')[0]
+        try:
+            folder_to_save = os.path.join(high_level_folder,'Eval_'+ht)
+            os.mkdir(folder_to_save)
+        except FileExistsError:
+            pass
+    else:
+        print('not going to evaluate, aorb is wrong')
+        return
+    import pybullet as p2
+    vec_env = SubprocVecEnv([make_env(args,[i,num_cpu],hand_info=hand_params) for i in range(num_cpu)])
+    model = model_type("MlpPolicy", vec_env, tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-2.3}).load(args['save_path']+'best_model', env=vec_env)
     thetas = np.linspace(0,8*np.pi,64)
     rs = np.linspace(0,0.05,64)
     xs = rs*np.sin(thetas)
@@ -259,7 +314,28 @@ def multiprocess_evaluate(model, vec_env):
         for _ in range(int(1200/16)):
             # print('about to reset')
             obs = vec_env.reset()
-            # obs = 
+            # vec_env.env_method()
+            done = [False, False]
+            while not all(done):
+                action, _ = model.predict(obs,deterministic=True)
+                vec_env.step_async(action)
+                obs, _, done, _ = vec_env.step_wait()
+
+def multiprocess_evaluate(model, vec_env):
+    # vec_env.evaluate()
+    # tech_start = time.time()
+    thetas = np.linspace(0,8*np.pi,64)
+    rs = np.linspace(0,0.05,64)
+    xs = rs*np.sin(thetas)
+    ys = rs*np.cos(thetas)
+    vec_env.env_method('evaluate', 'A')
+    for x,y in zip(xs, ys):
+        tihng = {'goal_position':[x,y]}
+        print('THING', tihng)
+        vec_env.env_method('set_reset_point', tihng['goal_position'])
+        for _ in range(int(1200/16)):
+            # print('about to reset')
+            obs = vec_env.reset()
             # vec_env.env_method()
             done = [False, False]
             while not all(done):
@@ -267,7 +343,7 @@ def multiprocess_evaluate(model, vec_env):
                 vec_env.step_async(action)
                 obs, _, done, _ = vec_env.step_wait()
                 # print(obs,done)
-    end = time.time()
+    # end = time.time()
 
 def evaluate(filepath=None,aorb = 'A'):
     # load a trained model and test it on its test set
@@ -518,7 +594,7 @@ def main(filepath = None,learn_type='run'):
 
 if __name__ == '__main__':
 
-    main('./data/HPC_slide_all_randomizations/JA_S3/experiment_config.json')
+    # main('./data/HPC_slide_all_randomizations/FTP_S3/experiment_config.json')
     # main("./data/region_rotation_JA_finger/experiment_config.json",'run')
     # main("./data/JA_full_task_20_1/experiment_config.json",'run')
     # main("./data/DR_R+T/experiment_config.json",'run')
@@ -534,4 +610,7 @@ if __name__ == '__main__':
     # evaluate("./data/JA_fullstate_A_rand/experiment_config.json","B")
     # replay("./data/HPC_DR_testing/Start Position/experiment_config.json","./data/HPC_DR_testing/Start Position/Eval_A/Episode_58927.pkl")
     # main("./data/Full_task_hyperparameter_search/JA_1-3/experiment_config.json",'run')
-
+    multiprocess_evaluate_loaded("./data/HPC_slide_all_randomizations/JA_S1/experiment_config.json","A")
+    multiprocess_evaluate_loaded("./data/HPC_slide_all_randomizations/JA_S2/experiment_config.json","A")
+    multiprocess_evaluate_loaded("./data/HPC_slide_all_randomizations/JA_S3/experiment_config.json","A")
+    multiprocess_evaluate_loaded("./data/HPC_slide_all_randomizations/FTP_S1/experiment_config.json","A")
