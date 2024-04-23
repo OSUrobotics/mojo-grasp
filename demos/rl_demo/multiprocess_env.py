@@ -236,8 +236,10 @@ class MultiprocessSingleShapeEnv(Environment):
     def reset(self, start_pos=None,finger=None,fingerys=None):
         # reset the simulator
         if start_pos is not None:
+            
             obj_change = start_pos
         else:
+            # print('start pos was none')
             #no noise
             obj_change = np.array([0,0])
         # print('starting object pose', obj_change, self.obj.path)
