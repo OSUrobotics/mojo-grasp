@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH -J PPORotateFullRandom1                        # name of job
+#SBATCH -J PPOSlideFullRandom3                        # name of job
 #SBATCH -p preempt                                  # name of partition or queue
 #SBATCH --array=1-6                     # how many tasks in the array
 #SBATCH -o log/LOG-%a.out                 # name of error file for this submission script
