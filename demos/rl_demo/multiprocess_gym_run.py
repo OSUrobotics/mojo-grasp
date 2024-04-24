@@ -288,29 +288,13 @@ def multiprocess_evaluate_loaded(filepath, aorb):
     elif aorb =='B':
         args['hand_file_list'] = ["2v2_65.35_65.35_1.1_53/hand/2v2_65.35_65.35_1.1_53.urdf"]
         ht = aorb
-    elif aorb.endswith('.urdf'):
-        args['hand_file_list'] = [aorb]
-        ht = aorb.split('/')[0]
-        try:
-            folder_to_save = os.path.join(high_level_folder,'Eval_'+ht)
-            os.mkdir(folder_to_save)
-        except FileExistsError:
-            pass
     else:
         print('not going to evaluate, aorb is wrong')
         return
-    import pybullet as p2
     vec_env = SubprocVecEnv([make_env(args,[i,num_cpu],hand_info=hand_params) for i in range(num_cpu)])
     model = model_type("MlpPolicy", vec_env, tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-2.3}).load(args['save_path']+'best_model', env=vec_env)
-    thetas = np.linspace(0,8*np.pi,64)
-    rs = np.linspace(0,0.05,64)
-    xs = rs*np.sin(thetas)
-    ys = rs*np.cos(thetas)
-    vec_env.env_method('evaluate', 'A')
-    for x,y in zip(xs, ys):
-        tihng = {'goal_position':[x,y]}
-        print('THING', tihng)
-        vec_env.env_method('set_reset_point', tihng['goal_position'])
+    
+    if 'Rotation' in args['task']:
         for _ in range(int(1200/16)):
             # print('about to reset')
             obs = vec_env.reset()
@@ -320,19 +304,29 @@ def multiprocess_evaluate_loaded(filepath, aorb):
                 action, _ = model.predict(obs,deterministic=True)
                 vec_env.step_async(action)
                 obs, _, done, _ = vec_env.step_wait()
+    else:
+        df = pd.read_csv('./resources/start_points.csv', index_col=False)
+        x_start = df['x']
+        y_start = df['y']
+        vec_env.env_method('evaluate', aorb)
+        for x,y in zip(x_start, y_start):
+            tihng = {'goal_position':[x,y]}
+            print('THING', tihng)
+            vec_env.env_method('set_reset_point', tihng['goal_position'])
+            for _ in range(int(1200/16)):
+                # print('about to reset')
+                obs = vec_env.reset()
+                # vec_env.env_method()
+                done = [False, False]
+                while not all(done):
+                    action, _ = model.predict(obs,deterministic=True)
+                    vec_env.step_async(action)
+                    obs, _, done, _ = vec_env.step_wait()
 
-def multiprocess_evaluate(model, vec_env):
+def multiprocess_evaluate(model, vec_env, rotate=False):
     # vec_env.evaluate()
     # tech_start = time.time()
-    thetas = np.linspace(0,8*np.pi,64)
-    rs = np.linspace(0,0.05,64)
-    xs = rs*np.sin(thetas)
-    ys = rs*np.cos(thetas)
-    vec_env.env_method('evaluate', 'A')
-    for x,y in zip(xs, ys):
-        tihng = {'goal_position':[x,y]}
-        print('THING', tihng)
-        vec_env.env_method('set_reset_point', tihng['goal_position'])
+    if rotate:
         for _ in range(int(1200/16)):
             # print('about to reset')
             obs = vec_env.reset()
@@ -342,6 +336,24 @@ def multiprocess_evaluate(model, vec_env):
                 action, _ = model.predict(obs,deterministic=True)
                 vec_env.step_async(action)
                 obs, _, done, _ = vec_env.step_wait()
+    else:
+        df = pd.read_csv('./resources/start_points.csv', index_col=False)
+        x_start = df['x']
+        y_start = df['y']
+        vec_env.env_method('evaluate', 'A')
+        for x,y in zip(x_start, y_start):
+            tihng = {'goal_position':[x,y]}
+            print('THING', tihng)
+            vec_env.env_method('set_reset_point', tihng['goal_position'])
+            for _ in range(int(1200/16)):
+                # print('about to reset')
+                obs = vec_env.reset()
+                # vec_env.env_method()
+                done = [False, False]
+                while not all(done):
+                    action, _ = model.predict(obs,deterministic=True)
+                    vec_env.step_async(action)
+                    obs, _, done, _ = vec_env.step_wait()
                 # print(obs,done)
     # end = time.time()
 
@@ -350,7 +362,6 @@ def evaluate(filepath=None,aorb = 'A'):
     print('Evaluating on hands A or B')
     print('Hand A: 2v2_50.50_50.50_53')
     print('Hand B: 2v2_65.35_65.35_53')
-
     with open(filepath, 'r') as argfile:
         args = json.load(argfile)
     args['eval-tsteps'] = 30
@@ -391,21 +402,15 @@ def evaluate(filepath=None,aorb = 'A'):
     eval_env , _, poses= make_pybullet(args,p2, [0,1], hand_params, viz=False)
     eval_env.evaluate()
     model = model_type("MlpPolicy", eval_env, tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-2.3}).load(args['save_path']+'best_model', env=eval_env)
-    thetas = np.linspace(0,8*np.pi,64)
-    rs = np.linspace(0,0.05,64)
-    xs = rs*np.sin(thetas)
-    ys = rs*np.cos(thetas)
-    for x,y in zip(xs, ys):
-        tihng = {'goal_position':[x,y]}
-        for _ in range(1200):
-            
-            obs = eval_env.reset(tihng)
-            done = False
-            # time.sleep(1)
-            while not done:
-                action, _ = model.predict(obs,deterministic=True)
-                obs, _, done, _ = eval_env.step(action,hand_type=ht)
-                # time.sleep(0.05)
+
+    for _ in range(1200):
+        obs = eval_env.reset()
+        done = False
+        # time.sleep(1)
+        while not done:
+            action, _ = model.predict(obs,deterministic=True)
+            obs, _, done, _ = eval_env.step(action,hand_type=ht)
+            # time.sleep(0.05)
 
 def mirror_action(filename):
     with open(filename,'rb') as file:
@@ -587,14 +592,16 @@ def main(filepath = None,learn_type='run'):
         filename = os.path.dirname(filepath)
         model.save(filename+'/last_model')
 
-        multiprocess_evaluate(model,vec_env)
+        # multiprocess_evaluate(model,vec_env)
     except KeyboardInterrupt:
         filename = os.path.dirname(filepath)
         model.save(filename+'/canceled_model')
 
 if __name__ == '__main__':
 
-    # main('./data/HPC_slide_all_randomizations/FTP_S3/experiment_config.json')
+    # main('./data/HPC_slide_all_randomizations/FTP_S1/experiment_config.json')
+    # main('./data/Full_task_15/experiment_config.json')
+    # main('./data/Full_task_50/experiment_config.json')
     # main("./data/region_rotation_JA_finger/experiment_config.json",'run')
     # main("./data/JA_full_task_20_1/experiment_config.json",'run')
     # main("./data/DR_R+T/experiment_config.json",'run')
@@ -610,7 +617,7 @@ if __name__ == '__main__':
     # evaluate("./data/JA_fullstate_A_rand/experiment_config.json","B")
     # replay("./data/HPC_DR_testing/Start Position/experiment_config.json","./data/HPC_DR_testing/Start Position/Eval_A/Episode_58927.pkl")
     # main("./data/Full_task_hyperparameter_search/JA_1-3/experiment_config.json",'run')
-    multiprocess_evaluate_loaded("./data/HPC_slide_all_randomizations/JA_S1/experiment_config.json","A")
-    multiprocess_evaluate_loaded("./data/HPC_slide_all_randomizations/JA_S2/experiment_config.json","A")
-    multiprocess_evaluate_loaded("./data/HPC_slide_all_randomizations/JA_S3/experiment_config.json","A")
-    multiprocess_evaluate_loaded("./data/HPC_slide_all_randomizations/FTP_S1/experiment_config.json","A")
+    multiprocess_evaluate_loaded("./data/Mothra_Slide/JA_S1/experiment_config.json","A")
+    multiprocess_evaluate_loaded("./data/Mothra_Slide/JA_S1/experiment_config.json","B")
+    # multiprocess_evaluate_loaded("./data/HPC_slide_all_randomizations/JA_S3/experiment_config.json","A")
+    # multiprocess_evaluate_loaded("./data/HPC_slide_all_randomizations/FTP_S1/experiment_config.json","A")
