@@ -574,7 +574,7 @@ def main(filepath = None,learn_type='run'):
     # TEMPORARY, REMOVE AT START OF JUNE 2024
     if not('contact_start' in args.keys()):
         args['contact_start'] = True
-        print('WE DIDNT HAVE A CONTACT START FLAG')
+        print('WE DIDNT HAVE A CONTACT START FLAG, setting contact start to true')
 
     if num_cpu%len(args['hand_file_list'])!= 0:
         num_cpu = int(int(num_cpu/len(args['hand_file_list']))*len(args['hand_file_list']))
@@ -617,7 +617,7 @@ def main(filepath = None,learn_type='run'):
 if __name__ == '__main__':
 
     # main('./data/HPC_slide_all_randomizations/FTP_S1/experiment_config.json')
-    main('./data/Planned_1/experiment_config.json')
+    main('./data/Mothra_Rotation/JA_S1/experiment_config.json')
     # main('./data/Full_task_50/experiment_config.json')
     # main("./data/region_rotation_JA_finger/experiment_config.json",'run')
     # main("./data/JA_full_task_20_1/experiment_config.json",'run')
