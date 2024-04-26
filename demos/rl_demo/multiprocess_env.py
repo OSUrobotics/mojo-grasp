@@ -250,6 +250,7 @@ class MultiprocessSingleShapeEnv(Environment):
         self.p.resetJointState(self.hand.id, 3, self.hand.starting_angles[2])
         self.p.resetJointState(self.hand.id, 4, self.hand.starting_angles[3])
         
+        print('starting angs', self.hand.starting_angles)
         self.p.resetBasePositionAndOrientation(self.obj_id, posObj=[0.0+obj_change[0], 0.10+obj_change[1], .05], ornObj=[0,0,0,1])
         self.p.resetBaseVelocity(self.obj_id, [0,0,0], [0,0,0])
 
@@ -259,6 +260,7 @@ class MultiprocessSingleShapeEnv(Environment):
             y_change = fingerys* self.rand_finger_position
         
         if finger is not None:
+            print('in the first')
             self.p.resetJointState(self.hand_id, 0, -np.pi/2)
             self.p.resetJointState(self.hand_id, 1, np.pi/4)
             self.p.resetJointState(self.hand_id, 3, np.pi/2)
@@ -274,11 +276,14 @@ class MultiprocessSingleShapeEnv(Environment):
                 self.step()
             
         elif self.rand_finger_all_open and (np.random.rand() < self.finger_open_fraction):
+            print(' in the second')
             self.p.resetJointState(self.hand_id, 0, -np.pi/2)
             self.p.resetJointState(self.hand_id, 1, np.pi/4)
             self.p.resetJointState(self.hand_id, 3, np.pi/2)
             self.p.resetJointState(self.hand_id, 4, -np.pi/4)
         else:
+            print('in the else')
+            # input('paus')
             link1_pose = self.p.getLinkState(self.hand_id, 2)[0]
             link2_pose = self.p.getLinkState(self.hand_id, 5)[0]
             f1_pos = [link1_pose[0]+obj_change[0], link1_pose[1] + obj_change[1] + y_change[0], 0.05]
@@ -300,8 +305,9 @@ class MultiprocessSingleShapeEnv(Environment):
                                             positionGains=[0.8,0.8,0.8,0.8], forces=[0.4,0.4,0.4,0.4])
                 self.step()
             # thing = self.p.getBaseVelocity(self.obj_id)
-
-        # print(self.p.getContactPoints(self.obj_id))
+        f1_dist = self.p.getClosestPoints(self.obj.id, self.hand.id, 10, -1, 1, -1)
+        f2_dist = self.p.getClosestPoints(self.obj.id, self.hand.id, 10, -1, 4, -1)
+        print(f1_dist[0][8],f2_dist[0][8])
         # print('joint info', self.p.getJointInfo(self.hand_id,0))
         # print('object info', self.p.getDynamicsInfo(self.obj.id,-1))
 
