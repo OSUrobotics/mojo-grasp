@@ -34,6 +34,14 @@ def pool_process(episode_file):
 
     return point_list
 
+def goal_dist_process(episode_file, tstep):
+    # print(tstep)
+    with open(episode_file, 'rb') as ef:
+        tempdata = pkl.load(ef)
+    data = tempdata['timestep_list']
+    t = [data[i]['reward']['distance_to_goal'] for i in range(tstep)]
+    return min(t)
+
 def moving_average(a, n) :
     ret = np.cumsum(a, dtype=float)
     ret[n:] = ret[n:] - ret[:-n]
@@ -2572,3 +2580,48 @@ class PlotBackend():
         # self.ax.set_xlim(-95,95)
         # self.ax.set_aspect('equal',adjustable='box')
         # self.ax.legend(['Achieved Angles','No Movement Line'])
+
+
+    def draw_timestep_goal_dist(self, folder, tstep):
+        # get list of pkl files in folder
+        episode_files = [os.path.join(folder, f) for f in os.listdir(folder) if f.lower().endswith('.pkl')]
+        filenames_only = [f for f in os.listdir(folder) if f.lower().endswith('.pkl')]
+        
+        filenums = [re.findall('\d+',f) for f in filenames_only]
+        final_filenums = []
+        for i in filenums:
+            if len(i) > 0 :
+                final_filenums.append(int(i[0]))
+        
+        sorted_inds = np.argsort(final_filenums)
+        final_filenums = np.array(final_filenums)
+        temp = final_filenums[sorted_inds]
+        episode_files = np.array(episode_files)
+        filenames_only = np.array(filenames_only)
+
+        episode_files = episode_files[sorted_inds].tolist()
+        thing = [[i,tstep] for i in episode_files]
+        print('applying async', tstep, len(episode_files))
+        pool = multiprocessing.Pool()
+        min_dists = pool.starmap(goal_dist_process,thing)
+        pool.close()
+        pool.join()
+
+
+        return_mins = min_dists.copy()
+        if self.moving_avg != 1:
+            min_dists = moving_average(min_dists,self.moving_avg)
+        if self.clear_plots | (self.curr_graph != 'goal_dist'):
+            self.clear_axes()
+             
+        self.ax.plot(range(len(min_dists)),min_dists)
+        self.legend.extend([f'Goal Distance at step {tstep}'])
+        self.ax.legend(self.legend)
+        self.ax.set_ylabel('Goal Distance')
+        self.ax.set_xlabel('Episode')
+        self.ax.grid(True)
+        self.ax.set_title('Distance to Goal Per Episode')
+        self.ax.set_aspect('auto',adjustable='box')
+        self.curr_graph = 'goal_dist'
+        print('average and std dev of positions', np.average(return_mins), np.std(return_mins))
+        return return_mins
