@@ -1,7 +1,7 @@
 #!/bin/bash
-#SBATCH -J PPOSlideFullRandom3                        # name of job
+#SBATCH -J PPOSlideTimeTest                        # name of job
 #SBATCH -p preempt                                  # name of partition or queue
-#SBATCH --array=1-6                     # how many tasks in the array
+#SBATCH --array=1-2                     # how many tasks in the array
 #SBATCH -o log/LOG-%a.out                 # name of error file for this submission script
 #SBATCH -e log/ERROR-%a.err                 # name of error file for this submission script
 #SBATCH --mem=10G
