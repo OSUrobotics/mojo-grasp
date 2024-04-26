@@ -90,7 +90,8 @@ class RNNGui():
                          [sg.Text('Timesteps per Episode'), sg.Input(15,key='-tsteps',size=(8, 2)), sg.Text('Timesteps in Evaluation'), sg.Input(15,key='-eval-tsteps',size=(8, 2))],
                          [sg.Text('State Training Noise'), sg.Input(0.0, key='-snoise',size=(8, 2)),sg.Text('Start Pos Range (mm)'), sg.Input(0, key='-start-noise',size=(8, 2))],
                          [sg.Text('Timestep Frequency'), sg.Input(3,key='-freq',size=(8, 2)), sg.Text('Entropy'), sg.Input(0.0,key='-entropy',size=(8, 2))],
-                         [sg.Text('Finger off object frequency'), sg.Input(0.0, key='-fobfreq', size=(8,2))]]
+                         [sg.Text('Finger off object frequency'), sg.Input(0.0, key='-fobfreq', size=(8,2))],
+                         [sg.Checkbox('Fingers Start in Contact', default=False, key='-contact_start')]]
         
         plotting_layout = [[sg.Text('Model Title')],
                        [sg.Input('test1',key='-title')],
@@ -167,7 +168,8 @@ class RNNGui():
                      'domain_randomization_finger_friction':bool(values['-DRFI']),
                      'domain_randomization_floor_friction':bool(values['-DRFL']),
                      'domain_randomization_object_size':bool(values['-DROS']),
-                     'domain_randomization_object_mass':bool(values['-DROM'])}
+                     'domain_randomization_object_mass':bool(values['-DROM']),
+                     'contact_start':bool('-contact_start')}
         state_len = 0
         state_mins = []
         state_maxes = []

@@ -195,10 +195,16 @@ def make_pybullet(arg_dict, pybullet_instance, rank, hand_info, viz=False):
     hand_keys = hand_type.split('_')
     info_1 = hand_info[hand_keys[-1]][hand_keys[1]]
     info_2 = hand_info[hand_keys[-1]][hand_keys[2]]
-    hand_param_dict = {"link_lengths":[info_1['link_lengths'],info_2['link_lengths']],
-                       "starting_angles":[info_1['start_angles'][object_key][0],info_1['start_angles'][object_key][1],-info_2['start_angles'][object_key][0],-info_2['start_angles'][object_key][1]],
-                       "palm_width":info_1['palm_width'],
-                       "hand_name":hand_type}
+    if args['contact_start']:
+        hand_param_dict = {"link_lengths":[info_1['link_lengths'],info_2['link_lengths']],
+                        "starting_angles":[info_1['contact_start_angles'][object_key][0],info_1['contact_start_angles'][object_key][1],-info_2['contact_start_angles'][object_key][0],-info_2['contact_start_angles'][object_key][1]],
+                        "palm_width":info_1['palm_width'],
+                        "hand_name":hand_type}
+    else:
+        hand_param_dict = {"link_lengths":[info_1['link_lengths'],info_2['link_lengths']],
+                        "starting_angles":[info_1['near_start_angles'][object_key][0],info_1['near_start_angles'][object_key][1],-info_2['near_start_angles'][object_key][0],-info_2['near_start_angles'][object_key][1]],
+                        "palm_width":info_1['palm_width'],
+                        "hand_name":hand_type}
 
     # load objects into pybullet
     plane_id = pybullet_instance.loadURDF("plane.urdf", flags=pybullet_instance.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
@@ -264,7 +270,7 @@ def multiprocess_evaluate_loaded(filepath, aorb):
 
     with open(filepath, 'r') as argfile:
         args = json.load(argfile)
-    args['eval-tsteps'] = 30
+    args['eval-tsteps'] = 20
     high_level_folder = os.path.abspath(filepath)
     high_level_folder = os.path.dirname(high_level_folder)
     print(high_level_folder)
@@ -305,9 +311,10 @@ def multiprocess_evaluate_loaded(filepath, aorb):
                 vec_env.step_async(action)
                 obs, _, done, _ = vec_env.step_wait()
     else:
-        df = pd.read_csv('./resources/start_points.csv', index_col=False)
+        df = pd.read_csv('./resources/start_poses.csv', index_col=False)
         x_start = df['x']
         y_start = df['y']
+        # input(len(x_start))
         vec_env.env_method('evaluate', aorb)
         for x,y in zip(x_start, y_start):
             tihng = {'goal_position':[x,y]}
@@ -337,7 +344,7 @@ def multiprocess_evaluate(model, vec_env, rotate=False):
                 vec_env.step_async(action)
                 obs, _, done, _ = vec_env.step_wait()
     else:
-        df = pd.read_csv('./resources/start_points.csv', index_col=False)
+        df = pd.read_csv('./resources/start_poses.csv', index_col=False)
         x_start = df['x']
         y_start = df['y']
         vec_env.env_method('evaluate', 'A')
@@ -424,9 +431,13 @@ def replay(argpath, episode_path):
     # replays the exact behavior contained in a pkl file without any learning agent running
     # images are saved in videos folder associated with the argfile
     # get parameters from argpath such as action type/size
+
+
     with open(argpath, 'r') as argfile:
         args = json.load(argfile)
-    
+    if not('contact_start' in args.keys()):
+        args['contact_start'] = False
+        print('WE DIDNT HAVE A CONTACT START FLAG')
     # load hand parameters (starting angles, link lengths etc)
     key_file = os.path.abspath(__file__)
     key_file = os.path.dirname(key_file)
@@ -444,7 +455,7 @@ def replay(argpath, episode_path):
     f2_poses = [s['state']['f2_pos'] for s in data['timestep_list']]
     joint_angles = [s['state']['two_finger_gripper']['joint_angles'] for s in data['timestep_list']]
     import pybullet as p2
-    eval_env , _, poses= make_pybullet(args,p2, [0,1], hand_params,viz=True)
+    eval_env , _, poses= make_pybullet(args,p2, [2,3], hand_params,viz=True)
     eval_env.evaluate()
     temp = [joint_angles[0]['finger0_segment0_joint'],joint_angles[0]['finger0_segment1_joint'],joint_angles[0]['finger1_segment0_joint'],joint_angles[0]['finger1_segment1_joint']]
     # temp = [-joint_angles[0]['finger1_segment0_joint'],-joint_angles[0]['finger1_segment1_joint'],-joint_angles[0]['finger0_segment0_joint'],-joint_angles[0]['finger0_segment1_joint']]
@@ -458,12 +469,12 @@ def replay(argpath, episode_path):
         _ = eval_env.reset(start_position)
 
     else:
-        start_position = {'goal_position':[obj_pose[0][0][0], obj_pose[0][0][1]-0.1], 'fingers':temp}
+        start_position = {'goal_position':[obj_pose[0][0][0], obj_pose[0][0][1]-0.1]}#, 'fingers':temp}
         _ = eval_env.reset(start_position)
     print(data['timestep_list'][0]['state']['goal_pose'])
     temp = data['timestep_list'][0]['state']['goal_pose']['goal_position']
     angle = data['timestep_list'][0]['state']['goal_pose']['goal_orientation']
-
+    input('look at it')
     # angle = -data['timestep_list'][0]['state']['goal_pose']['goal_orientation']
 
     t= R.from_euler('z',angle)
@@ -550,7 +561,7 @@ def replay(argpath, episode_path):
         # input('next step?')
 
 def main(filepath = None,learn_type='run'):
-    num_cpu = 16#multiprocessing.cpu_count() # Number of processes to use
+    num_cpu = 16 #multiprocessing.cpu_count() # Number of processes to use
     # Create the vectorized environment
     print('cuda y/n?', get_device())
     if filepath is None:
@@ -559,6 +570,12 @@ def main(filepath = None,learn_type='run'):
    
     with open(filepath, 'r') as argfile:
         args = json.load(argfile)
+
+    # TEMPORARY, REMOVE AT START OF JUNE 2024
+    if not('contact_start' in args.keys()):
+        args['contact_start'] = True
+        print('WE DIDNT HAVE A CONTACT START FLAG')
+
     if num_cpu%len(args['hand_file_list'])!= 0:
         num_cpu = int(int(num_cpu/len(args['hand_file_list']))*len(args['hand_file_list']))
     
@@ -600,7 +617,7 @@ def main(filepath = None,learn_type='run'):
 if __name__ == '__main__':
 
     # main('./data/HPC_slide_all_randomizations/FTP_S1/experiment_config.json')
-    # main('./data/Full_task_15/experiment_config.json')
+    # main('./data/Planned_1/experiment_config.json')
     # main('./data/Full_task_50/experiment_config.json')
     # main("./data/region_rotation_JA_finger/experiment_config.json",'run')
     # main("./data/JA_full_task_20_1/experiment_config.json",'run')
@@ -617,7 +634,15 @@ if __name__ == '__main__':
     # evaluate("./data/JA_fullstate_A_rand/experiment_config.json","B")
     # replay("./data/HPC_DR_testing/Start Position/experiment_config.json","./data/HPC_DR_testing/Start Position/Eval_A/Episode_58927.pkl")
     # main("./data/Full_task_hyperparameter_search/JA_1-3/experiment_config.json",'run')
-    multiprocess_evaluate_loaded("./data/Mothra_Slide/JA_S1/experiment_config.json","A")
-    multiprocess_evaluate_loaded("./data/Mothra_Slide/JA_S1/experiment_config.json","B")
+    replay("./data/Mothra_Slide/JA_S2/experiment_config.json","./data/Mothra_Slide/JA_S2/Eval_A/Episode_2.pkl")
+    # multiprocess_evaluate_loaded("./data/Mothra_Slide/JA_S2/experiment_config.json","B")
+    # multiprocess_evaluate_loaded("./data/Mothra_Slide/JA_S3/experiment_config.json","A")
+    # multiprocess_evaluate_loaded("./data/Mothra_Slide/JA_S3/experiment_config.json","B")
+    # multiprocess_evaluate_loaded("./data/Mothra_Slide/FTP_S1/experiment_config.json","A")
+    # multiprocess_evaluate_loaded("./data/Mothra_Slide/FTP_S1/experiment_config.json","B")
+    # multiprocess_evaluate_loaded("./data/Mothra_Slide/FTP_S2/experiment_config.json","A")
+    # multiprocess_evaluate_loaded("./data/Mothra_Slide/FTP_S2/experiment_config.json","B")
+    # multiprocess_evaluate_loaded("./data/Mothra_Slide/FTP_S3/experiment_config.json","A")
+    # multiprocess_evaluate_loaded("./data/Mothra_Slide/FTP_S3/experiment_config.json","B")
     # multiprocess_evaluate_loaded("./data/HPC_slide_all_randomizations/JA_S3/experiment_config.json","A")
     # multiprocess_evaluate_loaded("./data/HPC_slide_all_randomizations/FTP_S1/experiment_config.json","A")
