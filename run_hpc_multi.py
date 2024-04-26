@@ -17,7 +17,7 @@ from demos.rl_demo import multiprocess_gym_run
 
 def main(run_id):
     print(run_id)
-    folder_names = ['FTP_S1','FTP_S2','FTP_S3','JA_S1','JA_S2','JA_S3']
+    folder_names = ['FTP_S1','FTP_S2','FTP_S3','JA_S2','JA_S3']
     overall_path = pathlib.Path(__file__).parent.resolve()
     run_path = overall_path.joinpath('demos/rl_demo/data/HPC_slide_round2')
     final_path = run_path.joinpath(folder_names[run_id-1])
