@@ -77,6 +77,7 @@ class RNNGui():
                           "Rotation_single", "Rotation_region", "full_task",'triple', 'multi', "contact point", "contact","direction", "wall", "wall_single"), k='-task', default_value='unplanned_random')],
                          [sg.Text("Reward"), sg.OptionMenu(values=('Sparse','Distance','Distance + Finger', 'Hinge Distance + Finger', 'Slope', 'Slope + Finger','SmartDistance + Finger','SmartDistance + SmartFinger','ScaledDistance + Finger','ScaledDistance+ScaledFinger', 'SFS','DFS'), k='-reward',default_value='ScaledDistance+ScaledFinger')],
                          [sg.Checkbox("Object Start Position", key='-rstart',default=False), sg.Checkbox("Relative Finger Position", key='-rfinger',default=False),sg.Checkbox("Object Orientation", key='-ror',default=False), sg.Checkbox("Finger Open", key='-rfo',default=False)],
+                         [sg.Text('Rotation limits, only used by Rotation and Full Tasks'), sg.Radio('50 degrees',group_id='rots',key='-50',default=True), sg.Radio('15 degrees',group_id='rots',key='-15',default=False)],
                          [sg.Text('Replay Buffer Sampling'), sg.OptionMenu(values=['priority', 'random','random+expert'], k='-sampling', default_value='priority')],
                          [sg.Text('Domain Randomization Options')],
                          [sg.Checkbox('Finger Friction', default=True, k='-DRFI'),sg.Checkbox('Floor Friction', default=True, k='-DRFL'),sg.Checkbox('Object Size', default=True, k='-DROS'), sg.Checkbox('Object Mass', default=True, k='-DROM')]]
@@ -90,7 +91,8 @@ class RNNGui():
                          [sg.Text('Timesteps per Episode'), sg.Input(15,key='-tsteps',size=(8, 2)), sg.Text('Timesteps in Evaluation'), sg.Input(15,key='-eval-tsteps',size=(8, 2))],
                          [sg.Text('State Training Noise'), sg.Input(0.0, key='-snoise',size=(8, 2)),sg.Text('Start Pos Range (mm)'), sg.Input(0, key='-start-noise',size=(8, 2))],
                          [sg.Text('Timestep Frequency'), sg.Input(3,key='-freq',size=(8, 2)), sg.Text('Entropy'), sg.Input(0.0,key='-entropy',size=(8, 2))],
-                         [sg.Text('Finger off object frequency'), sg.Input(0.0, key='-fobfreq', size=(8,2))]]
+                         [sg.Text('Finger off object frequency'), sg.Input(0.0, key='-fobfreq', size=(8,2))],
+                         [sg.Checkbox('Fingers Start in Contact', default=False, key='-contact_start')]]
         
         plotting_layout = [[sg.Text('Model Title')],
                        [sg.Input('test1',key='-title')],
@@ -168,7 +170,8 @@ class RNNGui():
                      'domain_randomization_finger_friction':bool(values['-DRFI']),
                      'domain_randomization_floor_friction':bool(values['-DRFL']),
                      'domain_randomization_object_size':bool(values['-DROS']),
-                     'domain_randomization_object_mass':bool(values['-DROM'])}
+                     'domain_randomization_object_mass':bool(values['-DROM']),
+                     'contact_start':bool(values['-contact_start'])}
         state_len = 0
         state_mins = []
         state_maxes = []
@@ -273,8 +276,12 @@ class RNNGui():
             state_len += 2
             state_list.append('gp')
         if values['-go']:
-            state_mins.append(-50/180*np.pi)
-            state_maxes.append(50/180*np.pi)
+            if values['-50']:
+                state_mins.append(-50/180*np.pi)
+                state_maxes.append(50/180*np.pi)
+            elif values['-15']:
+                state_mins.append(-15/180*np.pi)
+                state_maxes.append(15/180*np.pi)
             state_len += 1
             state_list.append('go')
         if values['-gf']:
@@ -358,14 +365,19 @@ class RNNGui():
             self.args['points_path'] = str(resource_path.joinpath('train_points_big.csv'))
             self.args['test_path'] = str(resource_path.joinpath('test_points_big.csv'))
         elif (values['-task'] =='Rotation_region')|(values['-task'] =='full_task'):
-            self.args['points_path'] = str(resource_path.joinpath('rotation_only_train.csv'))
-            self.args['test_path'] = str(resource_path.joinpath('rotation_only_test.csv'))
+            if values['-50']:
+                self.args['points_path'] = str(resource_path.joinpath('rotation_only_train.csv'))
+                self.args['test_path'] = str(resource_path.joinpath('rotation_only_test.csv'))
+            elif values['-15']:
+                self.args['points_path'] = str(resource_path.joinpath('rotation_only_train_15.csv'))
+                self.args['test_path'] = str(resource_path.joinpath('rotation_only_test_15.csv'))
         elif values['-task'] =='wall':
             self.args['points_path'] = str(resource_path.joinpath('train_wall_poses.csv'))
             self.args['test_path'] = str(resource_path.joinpath('test_wall_poses.csv'))
         elif values['-task'] =='wall_single':
             self.args['points_path'] = str(resource_path.joinpath('single_wall.csv'))
             self.args['test_path'] = str(resource_path.joinpath('single_wall.csv'))
+
         else:
             self.args['points_path'] = ''
             

@@ -59,6 +59,36 @@ dirs = [[x_e,y_e],[x_ne, y_ne],[x_n,y_n],[x_nw,y_nw],[x_w,y_w],[x_sw,y_sw],[x_s,
 #         name[0].append(x)
 #         name[1].append(y)
 x_pts,y_pts, angs = [], [], []
+points = [[0,0]]
+n = 6
+rx = 60/1000
+ry = 40/1000
+num_layers = 3
+
+# for i in range(1,num_layers+1):
+#     print('starting i')
+#     for j in range(n*i):
+#         theta = np.pi*2*(j/(n*i))
+#         r = np.sqrt((i/num_layers*rx*np.cos(theta))**2 + (i/num_layers*ry*np.sin(theta))**2)
+#         print('theta and r', theta, r)
+#         points.append([r*np.cos(theta),r*np.sin(theta)])
+    
+# points = np.array(points)
+# print(len(points))
+# x = points[:,0]
+# y = points[:,1]
+# plt.scatter(points[:,0],points[:,1])
+# plt.axis('square')
+# plt.xlabel('X pos (m)')
+# plt.ylabel('Y pos (m)')
+# plt.show()
+# plt.scatter(range(len(angs)),angs)
+
+# df = pd.DataFrame(
+#     {'x': x,
+#       'y': y
+#       })
+# df.to_csv("resources/start_poses.csv", index=False)   
 for j in range(NUM_POINTS):
     theta = random.uniform(0, 2*np.pi)
     rand_r = 1-(random.uniform(0, 0.95))**2
@@ -69,7 +99,7 @@ for j in range(NUM_POINTS):
     y = ry * np.cos(theta)
     x_pts.append(x)
     y_pts.append(y)
-    orientation = np.random.uniform(-50/180*np.pi+0.1, 50/180*np.pi-0.1)
+    orientation = np.random.uniform(-15/180*np.pi+0.1, 15/180*np.pi-0.1)
     orientation = orientation + np.sign(orientation)*0.1
     angs.append(orientation)
 finger1 = np.random.uniform(-0.01,0.01,NUM_POINTS)
@@ -83,7 +113,7 @@ df = pd.DataFrame(
       'f1y':finger1,
       'f2y':finger2
       })
-df.to_csv("resources/rotation_only_train.csv", index=False)            
+df.to_csv("resources/rotation_only_test_15.csv", index=False)            
 # create dataframe from lists
 # df = pd.DataFrame(
 #     {'x': x_n,
@@ -140,7 +170,7 @@ df.to_csv("resources/rotation_only_train.csv", index=False)
 # y_pts = rs*np.cos(thetas)
 plt.scatter(x_pts,y_pts)
 plt.show()
-plt.scatter(range(len(angs)),angs)
+# plt.scatter(range(len(angs)),angs)
 # create dataframe from lists
 # df2 = pd.DataFrame(
 #     {'x': x_test,

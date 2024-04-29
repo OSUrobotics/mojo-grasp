@@ -204,28 +204,44 @@ def make_pybullet(arg_dict, pybullet_instance, rank, hand_info, viz=False):
     elif rank[1] % len(args['hand_file_list']) != 0:
         print('WARNING: number of hands does not evenly divide into number of pybullet instances. Hands will have uneven number of samples')
     
-    if type(args['object_path']) == str:
-        object_path = args['object_path']
-        object_key = "small"
-        print('older version of object loading, no object domain randomization used')
-    else:
-        object_path = args['object_path'][rank[0]%len(args['object_path'])]
-        if 'add10' in object_path:
-            object_key = 'add10'
-        elif 'sub10' in object_path:
-            object_key = 'sub10'
+    if args['domain_randomization_object_size']:
+        if type(args['object_path']) == str:
+            object_path = args['object_path']
+            object_key = "small"
+            print('older version of object loading, no object domain randomization used')
         else:
-            object_key = 'small'
-        
+            object_path = args['object_path'][rank[0]%len(args['object_path'])]
+            if 'add10' in object_path:
+                object_key = 'add10'
+            elif 'sub10' in object_path:
+                object_key = 'sub10'
+            else:
+                object_key = 'small'
+    else:
+        if type(args['object_path']) == str:
+            object_path = args['object_path']
+            object_key = "small"
+            print('older version of object loading, no object domain randomization used')
+        else:
+            print('normally would get object DR but not this time')
+            object_path = args['object_path'][0]
+            object_key = 'small'   
     this_hand = args['hand_file_list'][rank[0]%len(args['hand_file_list'])]
     hand_type = this_hand.split('/')[0]
     hand_keys = hand_type.split('_')
     info_1 = hand_info[hand_keys[-1]][hand_keys[1]]
     info_2 = hand_info[hand_keys[-1]][hand_keys[2]]
-    hand_param_dict = {"link_lengths":[info_1['link_lengths'],info_2['link_lengths']],
-                       "starting_angles":[info_1['start_angles'][object_key][0],info_1['start_angles'][object_key][1],-info_2['start_angles'][object_key][0],-info_2['start_angles'][object_key][1]],
-                       "palm_width":info_1['palm_width'],
-                       "hand_name":hand_type}
+    if args['contact_start']:
+        hand_param_dict = {"link_lengths":[info_1['link_lengths'],info_2['link_lengths']],
+                        "starting_angles":[info_1['contact_start_angles'][object_key][0],info_1['contact_start_angles'][object_key][1],-info_2['contact_start_angles'][object_key][0],-info_2['contact_start_angles'][object_key][1]],
+                        "palm_width":info_1['palm_width'],
+                        "hand_name":hand_type}
+    else:
+        print('STARTING AWAY FROM THE OBJECT')
+        hand_param_dict = {"link_lengths":[info_1['link_lengths'],info_2['link_lengths']],
+                        "starting_angles":[info_1['near_start_angles'][object_key][0],info_1['near_start_angles'][object_key][1],-info_2['near_start_angles'][object_key][0],-info_2['near_start_angles'][object_key][1]],
+                        "palm_width":info_1['palm_width'],
+                        "hand_name":hand_type}
 
     # load objects into pybullet
     plane_id = pybullet_instance.loadURDF("plane.urdf", flags=pybullet_instance.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
@@ -292,12 +308,120 @@ def make_pybullet(arg_dict, pybullet_instance, rank, hand_info, viz=False):
     gym_env = multiprocess_gym_wrapper.MultiprocessGymWrapper(env, manipulation, record_data, args)
     return gym_env, args, [pose_list,eval_pose_list]
 
-def evaluate(filepath=None,aorb = 'A'):
+
+
+def multiprocess_evaluate_loaded(filepath, aorb):
     # load a trained model and test it on its test set
-    print('Evaluating on hands A and B')
+    print('Evaluating on hands A or B')
     print('Hand A: 2v2_50.50_50.50_53')
     print('Hand B: 2v2_65.35_65.35_53')
+    num_cpu =16
 
+    with open(filepath, 'r') as argfile:
+        args = json.load(argfile)
+    # args['eval-tsteps'] = 20
+    high_level_folder = os.path.abspath(filepath)
+    high_level_folder = os.path.dirname(high_level_folder)
+    print(high_level_folder)
+    key_file = os.path.abspath(__file__)
+    key_file = os.path.dirname(key_file)
+    key_file = os.path.join(key_file,'resources','hand_bank','hand_params.json')
+    args['domain_randomization_object_size'] = False
+    with open(key_file,'r') as hand_file:
+        hand_params = json.load(hand_file)
+    if args['model'] == 'PPO':
+        model_type = PPO
+    elif 'DDPG' in args['model']:
+        model_type = DDPG
+    elif 'TD3' in args['model']:
+        model_type = TD3
+    print('LOADING A MODEL')
+
+    if not('contact_start' in args.keys()):
+        args['contact_start'] = True
+        print('we didnt have a contact start so we set it to true')
+    if aorb =='A':
+        args['hand_file_list'] = ["2v2_50.50_50.50_1.1_53/hand/2v2_50.50_50.50_1.1_53.urdf"]
+        ht = aorb
+    elif aorb =='B':
+        args['hand_file_list'] = ["2v2_65.35_65.35_1.1_53/hand/2v2_65.35_65.35_1.1_53.urdf"]
+        ht = aorb
+    else:
+        print('not going to evaluate, aorb is wrong')
+        return
+    vec_env = SubprocVecEnv([make_env(args,[i,num_cpu],hand_info=hand_params) for i in range(num_cpu)])
+    model = model_type("MlpPolicy", vec_env, tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-2.3}).load(args['save_path']+'best_model', env=vec_env)
+    
+    if 'Rotation' in args['task']:
+        vec_env.env_method('evaluate', aorb)
+        for _ in range(int(1200/16)):
+            # print('about to reset')
+            obs = vec_env.reset()
+            # vec_env.env_method()
+            done = [False, False]
+            while not all(done):
+                action, _ = model.predict(obs,deterministic=True)
+                vec_env.step_async(action)
+                obs, _, done, _ = vec_env.step_wait()
+    else:
+        df = pd.read_csv('./resources/start_poses.csv', index_col=False)
+        x_start = df['x']
+        y_start = df['y']
+        # input(len(x_start))
+        vec_env.env_method('evaluate', aorb)
+        for x,y in zip(x_start, y_start):
+            tihng = {'goal_position':[x,y]}
+            print('THING', tihng)
+            vec_env.env_method('set_reset_point', tihng['goal_position'])
+            for _ in range(int(1200/16)):
+                # print('about to reset')
+                obs = vec_env.reset()
+                # vec_env.env_method()
+                done = [False, False]
+                while not all(done):
+                    action, _ = model.predict(obs,deterministic=True)
+                    vec_env.step_async(action)
+                    obs, _, done, _ = vec_env.step_wait()
+
+def multiprocess_evaluate(model, vec_env, rotate=False):
+    # vec_env.evaluate()
+    # tech_start = time.time()
+    if rotate:
+        for _ in range(int(1200/16)):
+            # print('about to reset')
+            obs = vec_env.reset()
+            # vec_env.env_method()
+            done = [False, False]
+            while not all(done):
+                action, _ = model.predict(obs,deterministic=True)
+                vec_env.step_async(action)
+                obs, _, done, _ = vec_env.step_wait()
+    else:
+        df = pd.read_csv('./resources/start_poses.csv', index_col=False)
+        x_start = df['x']
+        y_start = df['y']
+        vec_env.env_method('evaluate', 'A')
+        for x,y in zip(x_start, y_start):
+            tihng = {'goal_position':[x,y]}
+            print('THING', tihng)
+            vec_env.env_method('set_reset_point', tihng['goal_position'])
+            for _ in range(int(1200/16)):
+                # print('about to reset')
+                obs = vec_env.reset()
+                # vec_env.env_method()
+                done = [False, False]
+                while not all(done):
+                    action, _ = model.predict(obs,deterministic=True)
+                    vec_env.step_async(action)
+                    obs, _, done, _ = vec_env.step_wait()
+                # print(obs,done)
+    # end = time.time()
+
+def evaluate(filepath=None,aorb = 'A'):
+    # load a trained model and test it on its test set
+    print('Evaluating on hands A or B')
+    print('Hand A: 2v2_50.50_50.50_53')
+    print('Hand B: 2v2_65.35_65.35_53')
     with open(filepath, 'r') as argfile:
         args = json.load(argfile)
     args['eval-tsteps'] = 30
@@ -338,21 +462,15 @@ def evaluate(filepath=None,aorb = 'A'):
     eval_env , _, poses= make_pybullet(args,p2, [0,1], hand_params, viz=False)
     eval_env.evaluate()
     model = model_type("MlpPolicy", eval_env, tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-2.3}).load(args['save_path']+'best_model', env=eval_env)
-    thetas = np.linspace(0,8*np.pi,64)
-    rs = np.linspace(0,0.05,64)
-    xs = rs*np.sin(thetas)
-    ys = rs*np.cos(thetas)
-    for x,y in zip(xs, ys):
-        tihng = {'goal_position':[x,y]}
-        for _ in range(1200):
-            
-            obs = eval_env.reset(tihng)
-            done = False
-            # time.sleep(1)
-            while not done:
-                action, _ = model.predict(obs,deterministic=True)
-                obs, _, done, _ = eval_env.step(action,hand_type=ht)
-                # time.sleep(0.05)
+
+    for _ in range(1200):
+        obs = eval_env.reset()
+        done = False
+        # time.sleep(1)
+        while not done:
+            action, _ = model.predict(obs,deterministic=True)
+            obs, _, done, _ = eval_env.step(action,hand_type=ht)
+            # time.sleep(0.05)
 
 def mirror_action(filename):
     with open(filename,'rb') as file:
@@ -366,9 +484,13 @@ def replay(argpath, episode_path):
     # replays the exact behavior contained in a pkl file without any learning agent running
     # images are saved in videos folder associated with the argfile
     # get parameters from argpath such as action type/size
+
+
     with open(argpath, 'r') as argfile:
         args = json.load(argfile)
-    
+    if not('contact_start' in args.keys()):
+        args['contact_start'] = False
+        print('WE DIDNT HAVE A CONTACT START FLAG')
     # load hand parameters (starting angles, link lengths etc)
     key_file = os.path.abspath(__file__)
     key_file = os.path.dirname(key_file)
@@ -386,7 +508,7 @@ def replay(argpath, episode_path):
     f2_poses = [s['state']['f2_pos'] for s in data['timestep_list']]
     joint_angles = [s['state']['two_finger_gripper']['joint_angles'] for s in data['timestep_list']]
     import pybullet as p2
-    eval_env , _, poses= make_pybullet(args,p2, [0,1], hand_params,viz=True)
+    eval_env , _, poses= make_pybullet(args,p2, [2,3], hand_params,viz=True)
     eval_env.evaluate()
     temp = [joint_angles[0]['finger0_segment0_joint'],joint_angles[0]['finger0_segment1_joint'],joint_angles[0]['finger1_segment0_joint'],joint_angles[0]['finger1_segment1_joint']]
     # temp = [-joint_angles[0]['finger1_segment0_joint'],-joint_angles[0]['finger1_segment1_joint'],-joint_angles[0]['finger0_segment0_joint'],-joint_angles[0]['finger0_segment1_joint']]
@@ -400,12 +522,12 @@ def replay(argpath, episode_path):
         _ = eval_env.reset(start_position)
 
     else:
-        start_position = {'goal_position':[obj_pose[0][0][0], obj_pose[0][0][1]-0.1], 'fingers':temp}
+        start_position = {'goal_position':[obj_pose[0][0][0], obj_pose[0][0][1]-0.1]}#, 'fingers':temp}
         _ = eval_env.reset(start_position)
     print(data['timestep_list'][0]['state']['goal_pose'])
     temp = data['timestep_list'][0]['state']['goal_pose']['goal_position']
     angle = data['timestep_list'][0]['state']['goal_pose']['goal_orientation']
-
+    input('look at it')
     # angle = -data['timestep_list'][0]['state']['goal_pose']['goal_orientation']
 
     t= R.from_euler('z',angle)
@@ -501,6 +623,12 @@ def main(filepath = None,learn_type='run'):
    
     with open(filepath, 'r') as argfile:
         args = json.load(argfile)
+
+    # TEMPORARY, REMOVE AT START OF JUNE 2024
+    if not('contact_start' in args.keys()):
+        args['contact_start'] = True
+        print('WE DIDNT HAVE A CONTACT START FLAG, setting contact start to true')
+
     if num_cpu%len(args['hand_file_list'])!= 0:
         num_cpu = int(int(num_cpu/len(args['hand_file_list']))*len(args['hand_file_list']))
     
@@ -534,15 +662,21 @@ def main(filepath = None,learn_type='run'):
         filename = os.path.dirname(filepath)
         model.save(filename+'/last_model')
 
-        evaluate(filepath, "A")
-        evaluate(filepath, "B")
+        # multiprocess_evaluate(model,vec_env)
     except KeyboardInterrupt:
         filename = os.path.dirname(filepath)
         model.save(filename+'/canceled_model')
 
 if __name__ == '__main__':
 
+<<<<<<< HEAD
     main('./data/HPC_Rotation_all_randomizations/JA_S1/experiment_config.json','run')
+=======
+    # main('./data/HPC_slide_all_randomizations/FTP_S1/experiment_config.json')
+    # main('./data/HPC_slide_time_tests/25_no_contact/experiment_config.json')
+    main('./data/Mothra_Rotation/JA_S2_no_contact/experiment_config.json')
+    # main('./data/Full_task_50/experiment_config.json')
+>>>>>>> d070dfc55fec7d6d27b07fae5c5049c90d295605
     # main("./data/region_rotation_JA_finger/experiment_config.json",'run')
     # main("./data/JA_full_task_20_1/experiment_config.json",'run')
     # evaluate("./data/FTP_halfstate_A_rand/experiment_config.json","B")
@@ -553,4 +687,20 @@ if __name__ == '__main__':
     # evaluate("./data/JA_fullstate_A_rand/experiment_config.json","B")
     # replay("./data/HPC_DR_testing/Start Position/experiment_config.json","./data/HPC_DR_testing/Start Position/Eval_A/Episode_58927.pkl")
     # main("./data/Full_task_hyperparameter_search/JA_1-3/experiment_config.json",'run')
-
+    # replay("./data/Mothra_Slide/JA_S2/experiment_config.json","./data/Mothra_Slide/JA_S2/Eval_A/Episode_2.pkl")
+    # multiprocess_evaluate_loaded("./data/Mothra_Rotation/JA_S1/experiment_config.json","B")
+    # multiprocess_evaluate_loaded("./data/Mothra_Rotation/FTP_S1/experiment_config.json","A")
+    # multiprocess_evaluate_loaded("./data/Mothra_Rotation/FTP_S1/experiment_config.json","B")
+    # multiprocess_evaluate_loaded("./data/Rogue_1/experiment_config.json","A")
+    # multiprocess_evaluate_loaded("./data/Rogue_1/experiment_config.json","B")
+    # multiprocess_evaluate_loaded("./data/Mothra_Rotation/JA_S2_no_contact/experiment_config.json","A")
+    # multiprocess_evaluate_loaded("./data/Mothra_Slide/JA_S3/experiment_config.json","A")
+    # multiprocess_evaluate_loaded("./data/Mothra_Slide/JA_S3/experiment_config.json","B")
+    # multiprocess_evaluate_loaded("./data/Mothra_Slide/FTP_S1/experiment_config.json","A")
+    # multiprocess_evaluate_loaded("./data/Mothra_Slide/FTP_S1/experiment_config.json","B")
+    # multiprocess_evaluate_loaded("./data/Mothra_Slide/FTP_S2/experiment_config.json","A")
+    # multiprocess_evaluate_loaded("./data/Mothra_Slide/FTP_S2/experiment_config.json","B")
+    # multiprocess_evaluate_loaded("./data/Mothra_Slide/FTP_S3/experiment_config.json","A")
+    # multiprocess_evaluate_loaded("./data/Mothra_Slide/FTP_S3/experiment_config.json","B")
+    # multiprocess_evaluate_loaded("./data/HPC_slide_all_randomizations/JA_S3/experiment_config.json","A")
+    # multiprocess_evaluate_loaded("./data/HPC_slide_all_randomizations/FTP_S1/experiment_config.json","A")
