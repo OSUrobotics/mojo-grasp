@@ -15,15 +15,15 @@ class GoalHolder():
         if goal_finger is not None:
             self.finger = goal_finger
         else:
-            print('you guessz it')
+            # print('you guessz it')
             self.finger = np.array([None,None,None,None] * len(self.pose))
             
         self.finger_start = finger_start
-        print(np.shape(finger_start))
-        print(type(self.orientation), type(self.pose))
+        # print(np.shape(finger_start))
+        # print(type(self.orientation), type(self.pose))
         self.len = len(self.pose)
         self.goal_names = goal_names
-        print(f'orientation type: {type(self.orientation)}')
+        print(f'orientation type: {type(self.orientation[0])}')
         print(f'lengths: pos {len(self.pose)}, orientation {len(self.orientation)}, finger {len(self.finger)}')
         if len(np.shape(self.pose)) == 1:
             self.pose = [self.pose]

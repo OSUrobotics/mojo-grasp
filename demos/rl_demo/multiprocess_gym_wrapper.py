@@ -187,10 +187,12 @@ class MultiprocessGymWrapper(gym.Env):
         elif (self.TASK == 'Rotation_region')|('contact' in self.TASK):
             self.env.reset(new_goal['goal_position'],fingerys=fingerys)
             # print(new_goal)
+            # print('we are where we should be')
         elif self.OBJECT_POSE_RANDOMIZATION:
+            # print('WE ARE RANDOMIZING THE START POSE')
             random_start = np.random.uniform(0,1,2)
-            x = (1-random_start[0]**2) * np.sin(random_start[1]*2*np.pi) * 0.05
-            y = (1-random_start[0]**2) * np.cos(random_start[1]*2*np.pi) * 0.05
+            x = (1-random_start[0]**2) * np.sin(random_start[1]*2*np.pi) * 0.06
+            y = (1-random_start[0]**2) * np.cos(random_start[1]*2*np.pi) * 0.04
             self.env.reset([x,y])
         elif 'wall' in self.TASK:
             self.env.reset([0.0463644396618753, 0.012423314164921])
@@ -222,9 +224,11 @@ class MultiprocessGymWrapper(gym.Env):
         if self.discrete:
             action = action-1
             # print(action)
+        # print('going to manipulation_phase')
         self.manipulation_phase.gym_pre_step(action)
+        # print('executing action')
         self.manipulation_phase.execute_action(viz=viz)
-        done = self.manipulation_phase.exit_condition()
+        done = self.manipulation_phase.exit_condition(self.eval)
         self.manipulation_phase.post_step()
         
         if self.eval or self.small_enough:

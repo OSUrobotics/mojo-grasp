@@ -174,7 +174,7 @@ def fancy_interpolatinator(base_path):
     return turn_points
 
 
-# import pybullet_tools.utils as pp
+import pybullet_tools.utils as pp
 
 filepath = './data/region_rotation_JA/experiment_config.json'
 filename = './data/region_rotation_JA'

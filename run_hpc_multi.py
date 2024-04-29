@@ -12,9 +12,9 @@ from demos.rl_demo import multiprocess_gym_run
 
 def main(run_id):
     print(run_id)
-    folder_names = ['JA_rs1','JA_rs10','JA_rs100']    
+    folder_names = ['JA_R10_S1','JA_R10_S3'] #['JA_R0_S10','JA_R10_S1','JA_R10_S3','JA_R10_S10']
     overall_path = pathlib.Path(__file__).parent.resolve()
-    run_path = overall_path.joinpath('demos/rl_demo/data/HPC_reward_scaling_search')
+    run_path = overall_path.joinpath('demos/rl_demo/data/HPC_slide_testing')
     final_path = run_path.joinpath(folder_names[run_id-1])
     print(str(final_path))
     multiprocess_gym_run.main(str(final_path) + '/experiment_config.json')
