@@ -270,7 +270,7 @@ def multiprocess_evaluate_loaded(filepath, aorb):
 
     with open(filepath, 'r') as argfile:
         args = json.load(argfile)
-    args['eval-tsteps'] = 20
+    # args['eval-tsteps'] = 20
     high_level_folder = os.path.abspath(filepath)
     high_level_folder = os.path.dirname(high_level_folder)
     print(high_level_folder)
@@ -288,6 +288,9 @@ def multiprocess_evaluate_loaded(filepath, aorb):
         model_type = TD3
     print('LOADING A MODEL')
 
+    if not('contact_start' in args.keys()):
+        args['contact_start'] = True
+        print('we didnt have a contact start so we set it to true')
     if aorb =='A':
         args['hand_file_list'] = ["2v2_50.50_50.50_1.1_53/hand/2v2_50.50_50.50_1.1_53.urdf"]
         ht = aorb
@@ -301,6 +304,7 @@ def multiprocess_evaluate_loaded(filepath, aorb):
     model = model_type("MlpPolicy", vec_env, tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-2.3}).load(args['save_path']+'best_model', env=vec_env)
     
     if 'Rotation' in args['task']:
+        vec_env.env_method('evaluate', aorb)
         for _ in range(int(1200/16)):
             # print('about to reset')
             obs = vec_env.reset()
@@ -617,7 +621,7 @@ def main(filepath = None,learn_type='run'):
 if __name__ == '__main__':
 
     # main('./data/HPC_slide_all_randomizations/FTP_S1/experiment_config.json')
-    main('./data/Mothra_Rotation/JA_S1/experiment_config.json')
+    main('./data/Mothra_Rotation/JA_S2_15/experiment_config.json')
     # main('./data/Full_task_50/experiment_config.json')
     # main("./data/region_rotation_JA_finger/experiment_config.json",'run')
     # main("./data/JA_full_task_20_1/experiment_config.json",'run')
@@ -635,7 +639,12 @@ if __name__ == '__main__':
     # replay("./data/HPC_DR_testing/Start Position/experiment_config.json","./data/HPC_DR_testing/Start Position/Eval_A/Episode_58927.pkl")
     # main("./data/Full_task_hyperparameter_search/JA_1-3/experiment_config.json",'run')
     # replay("./data/Mothra_Slide/JA_S2/experiment_config.json","./data/Mothra_Slide/JA_S2/Eval_A/Episode_2.pkl")
-    # multiprocess_evaluate_loaded("./data/Mothra_Slide/JA_S2/experiment_config.json","B")
+    # multiprocess_evaluate_loaded("./data/Mothra_Rotation/JA_S1/experiment_config.json","B")
+    # multiprocess_evaluate_loaded("./data/Mothra_Rotation/FTP_S1/experiment_config.json","A")
+    # multiprocess_evaluate_loaded("./data/Mothra_Rotation/FTP_S1/experiment_config.json","B")
+    # multiprocess_evaluate_loaded("./data/Rogue_1/experiment_config.json","A")
+    # multiprocess_evaluate_loaded("./data/Rogue_1/experiment_config.json","B")
+    # multiprocess_evaluate_loaded("./data/Mothra_Rotation/JA_S2_no_contact/experiment_config.json","A")
     # multiprocess_evaluate_loaded("./data/Mothra_Slide/JA_S3/experiment_config.json","A")
     # multiprocess_evaluate_loaded("./data/Mothra_Slide/JA_S3/experiment_config.json","B")
     # multiprocess_evaluate_loaded("./data/Mothra_Slide/FTP_S1/experiment_config.json","A")
