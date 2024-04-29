@@ -201,6 +201,7 @@ def make_pybullet(arg_dict, pybullet_instance, rank, hand_info, viz=False):
                         "palm_width":info_1['palm_width'],
                         "hand_name":hand_type}
     else:
+        print('STARTING AWAY FROM THE OBJECT')
         hand_param_dict = {"link_lengths":[info_1['link_lengths'],info_2['link_lengths']],
                         "starting_angles":[info_1['near_start_angles'][object_key][0],info_1['near_start_angles'][object_key][1],-info_2['near_start_angles'][object_key][0],-info_2['near_start_angles'][object_key][1]],
                         "palm_width":info_1['palm_width'],
@@ -621,7 +622,8 @@ def main(filepath = None,learn_type='run'):
 if __name__ == '__main__':
 
     # main('./data/HPC_slide_all_randomizations/FTP_S1/experiment_config.json')
-    main('./data/HPC_slide_time_tests/25_no_contact/experiment_config.json')
+    # main('./data/HPC_slide_time_tests/25_no_contact/experiment_config.json')
+    main('./data/Mothra_Rotation/JA_S2_no_contact/experiment_config.json')
     # main('./data/Full_task_50/experiment_config.json')
     # main("./data/region_rotation_JA_finger/experiment_config.json",'run')
     # main("./data/JA_full_task_20_1/experiment_config.json",'run')
