@@ -8,13 +8,18 @@ Created on Thu Nov 30 12:35:23 2023
 
 import pathlib
 import sys
+print('path',sys.path)
+print('version',sys.version)
+
 from demos.rl_demo import multiprocess_gym_run
+#print('path',sys.path)
+#print('version',sys.version)
 
 def main(run_id):
     print(run_id)
-    folder_names = ['JA_R10_S1','JA_R10_S3'] #['JA_R0_S10','JA_R10_S1','JA_R10_S3','JA_R10_S10']
+    folder_names = ['20_contact','25_no_contact']#['FTP_S1','FTP_S2','FTP_S3','JA_S2','JA_S3']
     overall_path = pathlib.Path(__file__).parent.resolve()
-    run_path = overall_path.joinpath('demos/rl_demo/data/HPC_slide_testing')
+    run_path = overall_path.joinpath('demos/rl_demo/data/HPC_slide_time_tests')
     final_path = run_path.joinpath(folder_names[run_id-1])
     print(str(final_path))
     multiprocess_gym_run.main(str(final_path) + '/experiment_config.json')
