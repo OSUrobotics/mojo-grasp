@@ -61,14 +61,15 @@ dirs = [[x_e,y_e],[x_ne, y_ne],[x_n,y_n],[x_nw,y_nw],[x_w,y_w],[x_sw,y_sw],[x_s,
 x_pts,y_pts, angs = [], [], []
 for j in range(NUM_POINTS):
     theta = random.uniform(0, 2*np.pi)
-    r = (1-(random.uniform(0, 0.95))**2) * 70/1000
-    # We are sampling a rectangular area, we check to see if the point given is within the ellipse
-    # If it is we add it to the list, if not we retry
-    x = r * np.sin(theta)
-    y = r * np.cos(theta)
+    rand_r = 1-(random.uniform(0, 0.95))**2
+    rx = rand_r* 60/1000
+    ry = rand_r * 40/1000
+
+    x = rx * np.sin(theta)
+    y = ry * np.cos(theta)
     x_pts.append(x)
     y_pts.append(y)
-    orientation = np.random.uniform(-np.pi/2+0.1, np.pi/2-0.1)
+    orientation = np.random.uniform(-50/180*np.pi+0.1, 50/180*np.pi-0.1)
     orientation = orientation + np.sign(orientation)*0.1
     angs.append(orientation)
 finger1 = np.random.uniform(-0.01,0.01,NUM_POINTS)
@@ -133,6 +134,10 @@ df.to_csv("resources/rotation_only_train.csv", index=False)
 # df.to_csv("resources/NW_points.csv", index=False)
 
 # for things in dirs:
+# thetas = np.linspace(0,8*np.pi,64)
+# rs = np.linspace(0,0.05,64)
+# x_pts = rs*np.sin(thetas)
+# y_pts = rs*np.cos(thetas)
 plt.scatter(x_pts,y_pts)
 plt.show()
 plt.scatter(range(len(angs)),angs)

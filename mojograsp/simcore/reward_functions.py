@@ -148,7 +148,7 @@ def triple_scaled_slide(reward_container, tholds):
     thing2 = (reward_container['goal_orientation']-obj_rotation)%(np.pi*2)
     rotation_temp = min(thing1,thing2)
     ftemp,temp = max(ftemp,-2), max(temp, -2)
-    tstep_reward = temp*tholds['DISTANCE_SCALING'] + ftemp*tholds['CONTACT_SCALING'] + rotation_temp*tholds['ROTATION_SCALING']
+    tstep_reward = temp*tholds['DISTANCE_SCALING'] + ftemp*tholds['CONTACT_SCALING'] - rotation_temp/np.pi*tholds['ROTATION_SCALING']
     return float(tstep_reward), False
 
 

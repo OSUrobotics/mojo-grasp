@@ -241,6 +241,8 @@ class MultiprocessSingleShapeEnv(Environment):
             #no noise
             obj_change = np.array([0,0])
         # print('starting object pose', obj_change, self.obj.path)
+
+
         self.p.resetJointState(self.hand.id, 0, self.hand.starting_angles[0])
         self.p.resetJointState(self.hand.id, 1, self.hand.starting_angles[1])
         self.p.resetJointState(self.hand.id, 3, self.hand.starting_angles[2])
@@ -385,7 +387,7 @@ class MultiprocessSingleShapeEnv(Environment):
 class MultiprocessMazeEnv(MultiprocessSingleShapeEnv):
     def __init__(self, pybulletInstance, hand: TwoFingerGripper, obj: ObjectBase, wall: ObjectBase, goal_block, hand_type, args=None, finger_points=None):
         super().__init__(pybulletInstance, hand, obj, hand_type, args, finger_points)
-        print(self.p.getBaseVelocity(self.obj_id))
+        # print(self.p.getBaseVelocity(self.obj_id))
         # print('checking something')
         self.wall = wall
         self.goals = goal_block
