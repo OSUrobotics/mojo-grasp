@@ -621,7 +621,7 @@ def main(filepath = None,learn_type='run'):
 if __name__ == '__main__':
 
     # main('./data/HPC_slide_all_randomizations/FTP_S1/experiment_config.json')
-    main('./data/Mothra_Rotation/JA_S2_15/experiment_config.json')
+    main('./data/HPC_slide_time_tests/25_no_contact/experiment_config.json')
     # main('./data/Full_task_50/experiment_config.json')
     # main("./data/region_rotation_JA_finger/experiment_config.json",'run')
     # main("./data/JA_full_task_20_1/experiment_config.json",'run')

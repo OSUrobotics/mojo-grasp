@@ -169,7 +169,7 @@ class RNNGui():
                      'domain_randomization_floor_friction':bool(values['-DRFL']),
                      'domain_randomization_object_size':bool(values['-DROS']),
                      'domain_randomization_object_mass':bool(values['-DROM']),
-                     'contact_start':bool('-contact_start')}
+                     'contact_start':bool(values['-contact_start'])}
         state_len = 0
         state_mins = []
         state_maxes = []
