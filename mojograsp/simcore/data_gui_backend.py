@@ -415,7 +415,7 @@ class PlotBackend():
         # xlim = [min(xlim[0],-0.07), max(xlim[1],0.07)]
         # ylim = [min(ylim[0],0.1), max(ylim[1],0.22)]
         xlim = [-0.1, 0.1]
-        ylim = [0.06, 0.26]
+        ylim = [-0.1, 0.1]
         xi, yi = np.mgrid[xlim[0]:xlim[1]:nbins*1j, ylim[0]:ylim[1]:nbins*1j]
         print('did the mgrid')
         zi = k(np.vstack([xi.flatten(), yi.flatten()]))
@@ -481,7 +481,7 @@ class PlotBackend():
         xlim = [np.min(datapoints[:,0]), np.max(datapoints[:,0])]
         ylim = [np.min(datapoints[:,1]), np.max(datapoints[:,1])]
         xlim = [-0.1, 0.1]
-        ylim = [0.06, 0.26]
+        ylim = [0.0, 0.2]
         xi, yi = np.mgrid[xlim[0]:xlim[1]:nbins*1j, ylim[0]:ylim[1]:nbins*1j]
         print('did the mgrid')
         zi = k(np.vstack([xi.flatten(), yi.flatten()]))
