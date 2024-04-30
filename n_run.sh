@@ -11,10 +11,7 @@
 
 # load any software environment module required for app (e.g. matlab, gcc, cuda)
 #module load software/version
-module load python3/3.8
-source /nfs/hpc/share/swensoni/virtual_mojo/bin/activate
-python3 --version
-which python3 -a
+source /nfs/hpc/share/swensoni/virtual-mojo/bin/activate
 
 # run my job (e.g. matlab, python)
 srun --export=ALL python3 run_hpc_multi.py $SLURM_ARRAY_TASK_ID 

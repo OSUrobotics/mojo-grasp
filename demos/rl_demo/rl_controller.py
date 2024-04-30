@@ -37,7 +37,6 @@ def clip_angs(angles):
         period = np.floor((np.pi+angle)/(2*np.pi))
         if period != 0:
             # print('clipping ang1',angle)
-            
             angles[i] = angles[i] - period*2*np.pi
             # print('new angle', angles[i])
     return angles

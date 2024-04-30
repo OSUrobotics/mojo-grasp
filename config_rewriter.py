@@ -18,10 +18,13 @@ batch_run_folder = overall_path.joinpath(folder_path)
 
 subfolders = os.listdir(batch_run_folder)
 
-# subfolders = ['FTP_euler_3','FTP_euler_5',
-#                     'FTP_quat_3','FTP_quat_5',
-#                     'JA_euler_3','JA_euler_5',
-#                     'JA_quat_3','JA_quat_5']
+# subfolders = ['JA_S2_25_contact']
+
+''' ['FTP_euler_3','FTP_euler_5',
+                    'FTP_quat_3','FTP_quat_5',
+JA_S2_25_contact                    'JA_euler_3','JA_euler_5',
+                    'JA_quat_3','JA_quat_5']
+'''
 
 for folder in subfolders:
     curr_folder = str(batch_run_folder.joinpath(folder))
@@ -45,8 +48,8 @@ for folder in subfolders:
 
     with open(curr_folder+'/experiment_config.json', 'w') as file:
         json.dump(config,file)
-'''
 
+'''
 curr_folder = str(batch_run_folder)
 with open(curr_folder+'/experiment_config.json', 'r') as file:
     config = json.load(file)
@@ -68,4 +71,5 @@ for k in config.keys():
                 print('new',k,config[k][i])
 with open(curr_folder+'/experiment_config.json', 'w') as file:
     json.dump(config,file)
+
 '''
