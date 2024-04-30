@@ -11,14 +11,15 @@ import pathlib
 
 folder_path = './demos/rl_demo/data/full_15_contact'
 
+
 overall_path = pathlib.Path(__file__).parent.resolve()
 resource_path = overall_path.joinpath('demos/rl_demo/resources')
 run_path = overall_path.joinpath('demos/rl_demo/runs')
 batch_run_folder = overall_path.joinpath(folder_path)
 
-#subfolders = os.listdir(batch_run_folder)
+subfolders = os.listdir(batch_run_folder)
 
-subfolders = ['JA_S2_25_contact']
+# subfolders = ['JA_S2_25_contact']
 
 ''' ['FTP_euler_3','FTP_euler_5',
                     'FTP_quat_3','FTP_quat_5',
