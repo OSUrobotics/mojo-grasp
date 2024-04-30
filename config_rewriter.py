@@ -9,7 +9,7 @@ import json
 import os
 import pathlib
 
-folder_path = './demos/rl_demo/data/Rogue_1'
+folder_path = './demos/rl_demo/data/Mothra_Rotation'
 
 overall_path = pathlib.Path(__file__).parent.resolve()
 resource_path = overall_path.joinpath('demos/rl_demo/resources')
@@ -22,7 +22,7 @@ subfolders = os.listdir(batch_run_folder)
 #                     'FTP_quat_3','FTP_quat_5',
 #                     'JA_euler_3','JA_euler_5',
 #                     'JA_quat_3','JA_quat_5']
-'''
+
 for folder in subfolders:
     curr_folder = str(batch_run_folder.joinpath(folder))
     with open(curr_folder+'/experiment_config.json', 'r') as file:
@@ -68,3 +68,4 @@ for k in config.keys():
                 print('new',k,config[k][i])
 with open(curr_folder+'/experiment_config.json', 'w') as file:
     json.dump(config,file)
+'''
