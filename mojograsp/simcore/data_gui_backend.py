@@ -1533,6 +1533,7 @@ class PlotBackend():
         goals = np.array(goals)
         # print(goals)
         end_dists = np.array(end_dists)
+        mean, std = np.average(end_dists), np.std(end_dists)
         end_dists = np.clip(end_dists, 0, 0.025)
 
         num_success = end_dists < 0.005
@@ -1546,7 +1547,7 @@ class PlotBackend():
         # self.ax.plot(lineb[:,0],lineb[:,1])
         # self.ax.plot(linec[:,0],linec[:,1])
         # self.ax.plot(lined[:,0],lined[:,1])
-        mean, std = np.average(end_dists), np.std(end_dists)
+        
 
         self.ax.set_ylabel('Y position (cm)')
         self.ax.set_xlabel('X position (cm)')
@@ -2471,6 +2472,7 @@ class PlotBackend():
             end_dists.append(dist)
             goals.append(pt)
         end_dists = np.array(end_dists)
+        mean, std = np.average(end_dists), np.std(end_dists)
         end_dists = np.clip(end_dists, 0, 0.025)
         
         goals = np.array(goals)
@@ -2479,7 +2481,7 @@ class PlotBackend():
         except:
             a = self.ax.scatter(goals[:,0]*100, goals[:,1]*100, c = end_dists*100, cmap='plasma')
 
-        mean, std = np.average(end_dists), np.std(end_dists)
+        
 
         self.ax.set_ylabel('Y position (cm)')
         self.ax.set_xlabel('X position (cm)')
@@ -2706,6 +2708,7 @@ class PlotBackend():
             thing = np.array(orientation) - np.array(goal_or)
             orienatation_errors.append(np.average(np.abs(thing)))
         orienatation_errors = np.array(orienatation_errors)*180/np.pi
+        mean, std = np.average(orienatation_errors), np.std(orienatation_errors)
         orienatation_errors = np.clip(orienatation_errors,0,15)
         goals = np.array(goals)
         try:
@@ -2713,7 +2716,7 @@ class PlotBackend():
         except:
             a = self.ax.scatter(goals[:,0]*100, goals[:,1]*100, c = orienatation_errors, cmap='plasma')
 
-        mean, std = np.average(orienatation_errors), np.std(orienatation_errors)
+        
 
         self.ax.set_ylabel('Y position (cm)')
         self.ax.set_xlabel('X position (cm)')
