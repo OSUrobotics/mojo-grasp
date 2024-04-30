@@ -11,7 +11,7 @@ from demos.rl_demo import multiprocess_env
 from demos.rl_demo import multiprocess_manipulation_phase
 # import rl_env
 from demos.rl_demo.multiprocess_state import MultiprocessState
-from mojograsp.simcore.goal_holder import  GoalHolder, RandomGoalHolder
+from mojograsp.simcore.goal_holder import  GoalHolder, RandomGoalHolder, SingleGoalHolder
 from demos.rl_demo import rl_action
 from demos.rl_demo import multiprocess_reward
 from demos.rl_demo import multiprocess_gym_wrapper
@@ -20,6 +20,7 @@ import pandas as pd
 from demos.rl_demo.multiprocess_record import MultiprocessRecordData
 from mojograsp.simobjects.two_finger_gripper import TwoFingerGripper
 from mojograsp.simobjects.object_with_velocity import ObjectWithVelocity
+from mojograsp.simobjects.multiprocess_object import MultiprocessFixedObject
 import pickle as pkl
 import json
 from stable_baselines3 import TD3, PPO, DDPG, HerReplayBuffer
@@ -114,6 +115,32 @@ def load_set(args):
     # print(f1y)
     return pose_list, eval_pose_list, orientations, eval_orientations, finger_contacts, eval_finger_contacts, [f1y,f2y,ef1y,ef2y]
 
+def load_wall(args):
+    df = pd.read_csv(args['points_path'], index_col=False)
+    x = df['goal_x']/100
+    y = df['goal_y']/100
+    wall_x = df['x_wall']
+    wall_y = df['y_wall']
+    wall_angle = df['ang_wall']
+    start_x = df['x_start']
+    start_y = df['y_start']
+    orientations = [None] * len(x)
+    eval_orientations = [None] * len(x)
+    f1y = np.random.uniform(-0.01,0.01, len(x))
+    f2y = np.random.uniform(-0.01,0.01, len(y))
+    ef1y = np.random.uniform(-0.01,0.01, len(x))
+    ef2y = np.random.uniform(-0.01,0.01, len(y))
+    pose_list = np.array([[i,j] for i,j in zip(x,y)])
+    eval_pose_list = [[i,j] for i,j in zip(x,y)]
+    orientations = None
+    eval_orientations = [None] * len(x)
+    f1y = [ i for i in f1y]
+    f2y = [i for i in f2y]
+    ef1y = [ i for i in ef1y]
+    ef2y = [i for i in ef2y]
+    finger_contacts = None
+    eval_finger_contacts = None 
+    return pose_list, eval_pose_list, orientations, eval_orientations, finger_contacts, eval_finger_contacts, [f1y,f2y,ef1y,ef2y]
     
 def make_pybullet(arg_dict, pybullet_instance, rank, hand_info, viz=False):
     # resource paths
@@ -123,8 +150,11 @@ def make_pybullet(arg_dict, pybullet_instance, rank, hand_info, viz=False):
     # print(args['task'])
 
     # load the desired test set based on the task
-    pose_list, eval_pose_list, orientations, eval_orientations, finger_contacts, eval_finger_contacts, finger_starts = load_set(args)
-
+    try:
+        pose_list, eval_pose_list, orientations, eval_orientations, finger_contacts, eval_finger_contacts, finger_starts = load_set(args)
+    except: 
+        pose_list, eval_pose_list, orientations, eval_orientations, finger_contacts, eval_finger_contacts, finger_starts = load_wall(args)
+    
     # Break test sets into pieces for multithreading
     num_eval = len(eval_pose_list)
     eval_pose_list = np.array(eval_pose_list[int(num_eval*rank[0]/rank[1]):int(num_eval*(rank[0]+1)/rank[1])])
@@ -145,7 +175,13 @@ def make_pybullet(arg_dict, pybullet_instance, rank, hand_info, viz=False):
     elif args['task'] == 'unplanned_random':
         goal_poses = RandomGoalHolder([0.02,0.065])
         eval_goal_poses = GoalHolder(eval_pose_list)
-    else:    
+    elif args['task'] == 'wall':
+        goal_poses = GoalHolder(pose_list, np.array(finger_starts[0:2]))
+        eval_goal_poses = GoalHolder(eval_pose_list, np.array(finger_starts[2:4]))
+    elif args['task'] == 'wall_single':
+        goal_poses = SingleGoalHolder(pose_list)
+        eval_goal_poses = SingleGoalHolder(eval_pose_list)
+    else:
         goal_poses = GoalHolder(pose_list, finger_starts[0:2])
         eval_goal_poses = GoalHolder(eval_pose_list, finger_starts[2:4])
     
@@ -201,6 +237,7 @@ def make_pybullet(arg_dict, pybullet_instance, rank, hand_info, viz=False):
                         "palm_width":info_1['palm_width'],
                         "hand_name":hand_type}
     else:
+        print('STARTING AWAY FROM THE OBJECT')
         hand_param_dict = {"link_lengths":[info_1['link_lengths'],info_2['link_lengths']],
                         "starting_angles":[info_1['near_start_angles'][object_key][0],info_1['near_start_angles'][object_key][1],-info_2['near_start_angles'][object_key][0],-info_2['near_start_angles'][object_key][1]],
                         "palm_width":info_1['palm_width'],
@@ -225,8 +262,16 @@ def make_pybullet(arg_dict, pybullet_instance, rank, hand_info, viz=False):
     pybullet_instance.changeVisualShape(hand_id, 4, rgbaColor=[0.3, 0.3, 0.3, 1])
     obj = ObjectWithVelocity(obj_id, path=object_path,name='obj_2')
 
-    # state, action and reward
-    state = MultiprocessState(pybullet_instance, objects=[hand, obj, goal_poses], prev_len=args['pv'],eval_goals = eval_goal_poses)
+
+    if 'wall' in args['task']:
+        print('LOADING WALL')
+        wall_id = pybullet_instance.loadURDF("./resources/object_models/wallthing/vertical_wall.urdf",basePosition=[0.0, 0.10, .05])
+        cid = pybullet_instance.createConstraint(wall_id, -1, -1, -1, pybullet_instance.JOINT_FIXED, [0, 0, 0], [0, 0, 0], [0, 0.09, 0.02], childFrameOrientation=[ 0, 0, 0.0, 1 ])
+        wall = MultiprocessFixedObject(pybullet_instance,wall_id,"./resources/object_models/wallthing/vertical_wall.urdf",'wall')
+        state = MultiprocessState(pybullet_instance, objects=[hand, obj, wall, goal_poses], prev_len=args['pv'],eval_goals = eval_goal_poses)
+    else:
+        # state, action and reward
+        state = MultiprocessState(pybullet_instance, objects=[hand, obj, goal_poses], prev_len=args['pv'],eval_goals = eval_goal_poses)
     if args['freq'] ==240:
         action = rl_action.ExpertAction()
     else:
@@ -244,9 +289,13 @@ def make_pybullet(arg_dict, pybullet_instance, rank, hand_info, viz=False):
     else:
         arg_dict['ik_flag'] = True
     
-    # pybullet environment
-    env = multiprocess_env.MultiprocessSingleShapeEnv(pybullet_instance, hand=hand, obj=obj, hand_type=hand_type, args=args)
-
+    if 'wall' in args['task']:
+        # maze pybullet enviroment
+        env = multiprocess_env.MultiprocessMazeEnv(pybullet_instance, hand, obj, wall, goal_poses, hand_type, args=args)
+    else:
+        # classic pybullet environment
+        env = multiprocess_env.MultiprocessSingleShapeEnv(pybullet_instance, hand=hand, obj=obj, hand_type=hand_type, args=args)
+    
     # Create phase
     manipulation = multiprocess_manipulation_phase.MultiprocessManipulation(
         hand, obj, state, action, reward, env, args=arg_dict, hand_type=hand_type)
@@ -270,7 +319,7 @@ def multiprocess_evaluate_loaded(filepath, aorb):
 
     with open(filepath, 'r') as argfile:
         args = json.load(argfile)
-    args['eval-tsteps'] = 20
+    # args['eval-tsteps'] = 20
     high_level_folder = os.path.abspath(filepath)
     high_level_folder = os.path.dirname(high_level_folder)
     print(high_level_folder)
@@ -288,6 +337,9 @@ def multiprocess_evaluate_loaded(filepath, aorb):
         model_type = TD3
     print('LOADING A MODEL')
 
+    if not('contact_start' in args.keys()):
+        args['contact_start'] = True
+        print('we didnt have a contact start so we set it to true')
     if aorb =='A':
         args['hand_file_list'] = ["2v2_50.50_50.50_1.1_53/hand/2v2_50.50_50.50_1.1_53.urdf"]
         ht = aorb
@@ -301,6 +353,7 @@ def multiprocess_evaluate_loaded(filepath, aorb):
     model = model_type("MlpPolicy", vec_env, tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-2.3}).load(args['save_path']+'best_model', env=vec_env)
     
     if 'Rotation' in args['task']:
+        vec_env.env_method('evaluate', aorb)
         for _ in range(int(1200/16)):
             # print('about to reset')
             obs = vec_env.reset()
@@ -615,17 +668,12 @@ def main(filepath = None,learn_type='run'):
         model.save(filename+'/canceled_model')
 
 if __name__ == '__main__':
-
     # main('./data/HPC_slide_all_randomizations/FTP_S1/experiment_config.json')
-    main('./data/Mothra_Rotation/JA_S1/experiment_config.json')
+    # main('./data/HPC_slide_time_tests/25_no_contact/experiment_config.json')
+    # main('./data/Mothra_Rotation/JA_S2_no_contact/experiment_config.json')
     # main('./data/Full_task_50/experiment_config.json')
     # main("./data/region_rotation_JA_finger/experiment_config.json",'run')
     # main("./data/JA_full_task_20_1/experiment_config.json",'run')
-    # main("./data/DR_R+T/experiment_config.json",'run')
-    # evaluate("./data/HPC_DR_testing/Size/experiment_config.json")
-    # evaluate("./data/HPC_DR_testing/Mass/experiment_config.json")
-    # evaluate("./data/HPC_DR_testing/Friction/experiment_config.json")
-    # evaluate("./data/HPC_DR_testing/Start Position/experiment_config.json")
     # evaluate("./data/FTP_halfstate_A_rand/experiment_config.json","B")
     # evaluate("./data/FTP_fullstate_A_rand/experiment_config.json")
     # evaluate("./data/FTP_fullstate_A_rand/experiment_config.json","B")
@@ -635,7 +683,12 @@ if __name__ == '__main__':
     # replay("./data/HPC_DR_testing/Start Position/experiment_config.json","./data/HPC_DR_testing/Start Position/Eval_A/Episode_58927.pkl")
     # main("./data/Full_task_hyperparameter_search/JA_1-3/experiment_config.json",'run')
     # replay("./data/Mothra_Slide/JA_S2/experiment_config.json","./data/Mothra_Slide/JA_S2/Eval_A/Episode_2.pkl")
-    # multiprocess_evaluate_loaded("./data/Mothra_Slide/JA_S2/experiment_config.json","B")
+    # multiprocess_evaluate_loaded("./data/Mothra_Rotation/JA_S2_25_contact/experiment_config.json","A")
+    # multiprocess_evaluate_loaded("./data/Mothra_Rotation/FTP_S1/experiment_config.json","A")
+    # multiprocess_evaluate_loaded("./data/Mothra_Rotation/FTP_S1/experiment_config.json","B")
+    # multiprocess_evaluate_loaded("./data/HPC_slide_time_tests/25_no_contact/experiment_config.json","A")
+    multiprocess_evaluate_loaded("./data/full_15_contact/experiment_config.json","A")
+    # multiprocess_evaluate_loaded("./data/Mothra_Rotation/JA_S2_no_contact/experiment_config.json","A")
     # multiprocess_evaluate_loaded("./data/Mothra_Slide/JA_S3/experiment_config.json","A")
     # multiprocess_evaluate_loaded("./data/Mothra_Slide/JA_S3/experiment_config.json","B")
     # multiprocess_evaluate_loaded("./data/Mothra_Slide/FTP_S1/experiment_config.json","A")
