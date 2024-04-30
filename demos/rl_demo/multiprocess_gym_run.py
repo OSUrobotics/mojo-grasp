@@ -669,14 +669,10 @@ def main(filepath = None,learn_type='run'):
 
 if __name__ == '__main__':
 
-<<<<<<< HEAD
-    main('./data/HPC_Rotation_all_randomizations/JA_S1/experiment_config.json','run')
-=======
     # main('./data/HPC_slide_all_randomizations/FTP_S1/experiment_config.json')
     # main('./data/HPC_slide_time_tests/25_no_contact/experiment_config.json')
     main('./data/Mothra_Rotation/JA_S2_no_contact/experiment_config.json')
     # main('./data/Full_task_50/experiment_config.json')
->>>>>>> d070dfc55fec7d6d27b07fae5c5049c90d295605
     # main("./data/region_rotation_JA_finger/experiment_config.json",'run')
     # main("./data/JA_full_task_20_1/experiment_config.json",'run')
     # evaluate("./data/FTP_halfstate_A_rand/experiment_config.json","B")
