@@ -71,7 +71,7 @@ def make_pybullet(args, pybullet_instance, viz=True):
     info_1 = hand_info[hand_keys[-1]][hand_keys[1]]
     info_2 = hand_info[hand_keys[-1]][hand_keys[2]]
     hand_param_dict = {"link_lengths":[info_1['link_lengths'],info_2['link_lengths']],
-                       "starting_angles":[info_1['start_angles'][object_key][0],info_1['start_angles'][object_key][1],-info_2['start_angles'][object_key][0],-info_2['start_angles'][object_key][1]],
+                       "starting_angles":[info_1['contact_start_angles'][object_key][0],info_1['contact_start_angles'][object_key][1],-info_2['contact_start_angles'][object_key][0],-info_2['contact_start_angles'][object_key][1]],
                        "palm_width":info_1['palm_width'],
                        "hand_name":hand_type}
     # load objects into pybullet
@@ -93,9 +93,9 @@ def make_pybullet(args, pybullet_instance, viz=True):
     obj = ObjectWithVelocity(obj_id, path=object_path,name='obj_2')
     
     # For standard loaded goal poses
-    pose_list = [0.05,0]
+    pose_list =[ [0.05,0]]
     orientations = [[0,0,0,0],[0,0,0,0]]
-    eval_pose_list = [0.05,0]
+    eval_pose_list = [[0.05,0]]
     eval_orientations = [[0,0,0,0],[0,0,0,0]]
     goal_poses = SingleGoalHolder(pose_list)
     eval_goal_poses = SingleGoalHolder(eval_pose_list)
@@ -121,6 +121,7 @@ def make_pybullet(args, pybullet_instance, viz=True):
         arg_dict['ik_flag'] = False
     else:
         arg_dict['ik_flag'] = True
+    args['object_random_start'] = False
 
     # replay buffer
     replay_buffer = ReplayBufferPriority(buffer_size=4080000)
@@ -173,11 +174,13 @@ def fancy_interpolatinator(base_path):
     turn_points.append(base_path[-1])
     return turn_points
 
-
+import sys
+print(sys.path)
+sys.path.append('/home/orochi/mojo/pybullet-planning')
 import pybullet_tools.utils as pp
 
-filepath = './data/region_rotation_JA/experiment_config.json'
-filename = './data/region_rotation_JA'
+filepath = './data/HPC_slide_time_tests/20_contact/experiment_config.json'
+filename = './data/HPC_slide_time_tests/20_contact'
 with open(filepath, 'r') as argfile:
     args = json.load(argfile)
 import pybullet as p

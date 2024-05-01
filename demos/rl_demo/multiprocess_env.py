@@ -399,7 +399,7 @@ class MultiprocessMazeEnv(MultiprocessSingleShapeEnv):
         # print('checking something')
         self.wall = wall
         self.goals = goal_block
-        self.wall_id = self.p.loadURDF(self.wall.path, basePosition=[0,0.18,0.02],
+        self.wall_id = self.p.loadURDF(self.wall.path, basePosition=[0,0.02,0.02],
                                  flags=self.p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
 
         self.p.setCollisionFilterPair(self.wall_id, self.hand_id,-1,0,0)
@@ -408,9 +408,10 @@ class MultiprocessMazeEnv(MultiprocessSingleShapeEnv):
         self.p.setCollisionFilterPair(self.wall_id, self.hand_id,-1,3,0)
         self.p.setCollisionFilterPair(self.wall_id, self.hand_id,-1,4,0)
         self.p.setCollisionFilterPair(self.wall_id, self.hand_id,-1,5,0)
+        self.p.setCollisionFilterPair(self.wall_id,self.obj_id, -1, -1, 0)
         self.p.changeVisualShape(self.wall_id, -1, rgbaColor=[0.2, 0.2, 1, 1])
         # print('total constraints',self.p.getNumConstraints())
-        self.wall.init_constraint([0,0.18,0.02],[0,0,0,1])
+        self.wall.init_constraint([0,0.02,0.02],[0,0,0,1])
 
     def set_goal(self,goal):
         self.goals.set_goal(goal)
