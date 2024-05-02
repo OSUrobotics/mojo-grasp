@@ -17,9 +17,9 @@ from demos.rl_demo import multiprocess_gym_run
 
 def main(run_id):
     print(run_id)
-    folder_names = ['20_contact','25_no_contact','Planned_1','Rogue_1','JA_S2','JA_S2_no_contact']#['FTP_S1','FTP_S2','FTP_S3','JA_S2','JA_S3']
+    folder_names = ['FTP_S1','FTP_S2','FTP_S3','JA_S1','JA_S2','JA_S3']
     overall_path = pathlib.Path(__file__).parent.resolve()
-    run_path = overall_path.joinpath('demos/rl_demo/data/Mothra_Rotation')
+    run_path = overall_path.joinpath('demos/rl_demo/data/HPC_Slide')
     final_path = run_path.joinpath(folder_names[run_id-1])
     print(str(final_path))
     multiprocess_gym_run.main(str(final_path) + '/experiment_config.json')
