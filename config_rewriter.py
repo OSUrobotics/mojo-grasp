@@ -67,6 +67,3 @@ else:
 
         with open(curr_folder+'/experiment_config.json', 'w') as file:
             json.dump(config,file)
-
-
-
