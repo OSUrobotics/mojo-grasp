@@ -119,7 +119,8 @@ class SingleGoalHolder(GoalHolder):
         pass
 
     def get_data(self):
-        return {'goal_position': list(self.pose[0]), 'goal_orientation':0.0, 'goal_finger': None}
+        # print(self.pose)
+        return {'goal_position': self.pose[0], 'goal_orientation':0.0, 'goal_finger': None}
     
     def __len__(self):
         return 1
