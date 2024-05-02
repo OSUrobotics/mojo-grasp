@@ -176,7 +176,7 @@ class MultiprocessGymWrapper(gym.Env):
             self.past_time = time.time()
             if self.manipulation_phase.episode >= self.manipulation_phase.state.objects[-1].len:
                 self.manipulation_phase.reset()
-                print('average time of episode',np.average(self.thing))
+                # print('average time of episode',np.average(self.thing))
                 self.thing = []
             new_goal,fingerys = self.manipulation_phase.next_ep()
             # print('new goal from reset', new_goal)
@@ -374,6 +374,7 @@ class MultiprocessGymWrapper(gym.Env):
                 state.extend(state_container['hand_params'])
             elif key == 'gp':
                 state.extend(state_container['goal_pose']['goal_position'])
+                # print(state)
             elif key == 'go':
                 state.append(state_container['goal_pose']['goal_orientation'])
             elif key == 'gf':
@@ -383,6 +384,7 @@ class MultiprocessGymWrapper(gym.Env):
                 state.extend(state_container['wall']['pose'][1][0:4])
             else:
                 raise Exception('key does not match list of known keys')
+            
         return state
 
     def build_mirror_state(self, state_container: State):

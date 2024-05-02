@@ -3,9 +3,7 @@ import os
 import numpy as np
 import re
 import pathlib
-print('pre backend')
 from mojograsp.simcore.data_gui_backend import PlotBackend
-print('post backend')
 from PIL import ImageGrab
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import pickle as pkl
@@ -70,20 +68,16 @@ def main():
     # define menu layout
     menu = [['File', ['Open Folder', 'Exit']], ['Help', ['About', ]]]
 
+    scatter_plot_tab = [[sg.Button('Goal Wizard', size=(8,2)), sg.Button('Goal Spell', size=(8,2)), sg.Button('End Poses', size=(8, 2)), sg.Button('Ending Distances', size=(8,2)), sg.Button('Path Spell', size=(8,2))],
+                        [sg.Button('Orientation Wizard', size=(8,2)), sg.Button('Orientation Scatter Spell', size=(8,2)), sg.Button('Orientation Multi', key='Orientation Multi',size=(8, 2)), sg.Button('Rotation Sliding Error', size=(8,2)), sg.Button('Orientation Spell',size=(8,2))],
+                        [sg.Button('Contact Wizard', size=(8,2)), sg.Button('Contact Dist', size=(8, 2)), sg.Button('',size=(8,2)), sg.Button('',size=(8,2)), sg.Button('Contact Spell',size = (8,2))],
+                        [sg.Button('Explored Region', size=(8,2)), sg.Button('Reward Comparison', size=(8,2)), sg.Button('Timestep Best',size=(8,2)), sg.Button('Finger Object Avg', size=(8,2)),sg.Button('',size=(8,2))],
+                        [sg.Button('End Region', size=(8,2)), sg.Button('Max Percent', size=(8,2)),sg.Button('Timestep End',size=(8,2)), sg.Button('Finger Object Max', size=(8,2)), sg.Button('Success Rate', size=(8,2))]]
 
-    scatter_plot_tab = [[sg.Button('End Dist', size=(8, 2)), sg.Button('End Poses', size=(8, 2)), sg.Button('Contact Dist', size=(8, 2)), sg.Button('Average Goals', key='Average Goals',size=(8, 2)), sg.Button('Orientation Multi', key='Orientation Multi',size=(8, 2))],
-                        [sg.Button('Average Actor Values', size=(8,2)),sg.Button('Explored Region', size=(8,2)),sg.Button('End Region', size=(8,2)), sg.Button('Reward Comparison', size=(8,2)), sg.Button('Ending Distances', size=(8,2))],
-                        [sg.Button('Goal Wizard', size=(8,2)), sg.Button('Goal Spell', size=(8,2)), sg.Button('Path Spell', size=(8,2)), sg.Button('Rotation Sliding Error', size=(8,2))],
-                        [sg.Button('Orientation Wizard', size=(8,2)),sg.Button('Orientation Scatter Spell', size=(8,2)),sg.Button('Orientation Spell',size=(8,2))],
-                        [sg.Text('Colormap'),sg.Input('plasma_r',key='-cmap',size=(8, 1))]]
-
-    plot_buttons = [[sg.Button('Object Path', size=(8, 2)), sg.Button('Finger Angles', size=(8, 2)),sg.Button('Rewards', size=(8, 2), key='FullRewards'), sg.Button('Contact Rewards', key='ContactRewards',size=(8, 2)), sg.Button('Distance/Slope Rewards', key='SimpleRewards',size=(8, 2))],
-                    [sg.Button('Finger Goal Path',size=(8,2)), sg.Button('Actor Output', size=(8, 2)), sg.Button('Aout Comparison', size=(8, 2)), sg.Button('RewardSplit',size=(8, 2)), sg.Button('Max Percent', size=(8,2))],
-                    [sg.Button('Timestep Goal',size=(8,2)), sg.Button('Orientation', size=(8,2)), sg.Button('Episode Rewards', size=(8,2)), sg.Button('Finger Object Avg', size=(8,2)), sg.Button('Shortest Goal Dist', size=(8,2))],
-                    [sg.Button('Path + Action', size=(8,2)), sg.Button('Success Rate', size=(8,2)), sg.Button('Ending Velocity', size=(8,2)), sg.Button('Finger Object Max', size=(8,2)), sg.Button('Ending Goal Dist', size=(8,2))],
-                    [sg.Button('Fingertip Route', size=(8,2)), sg.Button('Average Finger Tip', size=(8,2)), sg.Button('Average Dist Reward', size=(8,2)), sg.Button('Draw Obj Contacts', size=(8,2)),sg.Button('Multireward', size=(8,2))],
-                    [sg.Text('Num Averaged'),sg.Input(10,key='moving_avg',size=(8,2)), sg.Text("Keep previous graph", size=(10, 3), key='-toggletext-'), sg.Button(image_data=toggle_btn_off, key='-TOGGLE-GRAPHIC-', button_color=(sg.theme_background_color(), sg.theme_background_color()), border_width=0, metadata=False)],
-                    [sg.Input(1,key='success_range', size=(8,1)),sg.Text("Distance Reward (toggled)/Slope Reward", size=(20, 3), key='-BEEG-'),  sg.Button(image_data=toggle_btn_off, key='-TOGGLE-REWARDS-', button_color=(sg.theme_background_color(), sg.theme_background_color()), border_width=0, metadata=False), sg.Button('Sampled Poses', size=(8,2)),]]
+    plot_buttons = [[sg.Button('Object Path', size=(8, 2)), sg.Button('Finger Angles', size=(8, 2)), sg.Button('Finger Contact Distance',size=(8, 2)), sg.Button('Rewards', size=(8, 2)),sg.Button('',size=(8,2))],
+                    [sg.Button('Fingertip Path', size=(8,2)), sg.Button('Actor Output', size=(8, 2)), sg.Button('Object Goal Distance',size=(8, 2)),sg.Button('',size=(8,2)),sg.Button('',size=(8,2))],
+                    [sg.Button('Obj Contacts', size=(8,2)), sg.Button('Aout Comparison', size=(8, 2)),sg.Button('Orientation', size=(8,2)), sg.Button('Multireward', size=(8,2)),sg.Button('',size=(8,2))],
+                    [sg.Button('Finger Goal Path',size=(8,2)),sg.Button('Sampled Poses', size=(8,2)),sg.Button('',size=(8,2)),sg.Button('',size=(8,2)),sg.Button('',size=(8,2))]]
     # define layout, show and read the window
     col = [[sg.Text(episode_files[0], size=(80, 3), key='-FILENAME-')],
            [sg.Canvas(size=(1280*2, 960*2), key='-CANVAS-')],
@@ -100,14 +94,15 @@ def main():
 
     col_files = [[sg.Text(overall_path, key='-print-path')],
                  [sg.Button('Switch Train/Test'),sg.Button('Select New Folder')],
-                [sg.Listbox(values=filenames_only, size=(60, 30), key='-LISTBOX-', enable_events=True)],
+                 [sg.Listbox(values=filenames_only, size=(60, 30), key='-LISTBOX-', enable_events=True)],
                  [sg.Text('Select an episode.  Use scrollwheel or arrow keys on keyboard to scroll through files one by one.')],
                  [sg.Text('Timestep for Completion'), sg.Input(15,size=(5,1),key='tstep')],
-                 [sg.Text('Primary Reward')],
-                 distance_radios,
-                 [sg.Text('Secondary Reward')],
-                 finger_radios,
-                 [sg.Text("Distance Scale"),  sg.Input(1,key='-distance_scale',size=(5, 1)), sg.Text('Contact Scale'),  sg.Input(0.2,key='-contact_scale',size=(5, 1)), sg.Text('Success Reward'), sg.Input(1,key='-success_reward',size=(5, 1)), sg.Text('Rotation Scaling'),sg.Input(1,key='-rotation_scale',size=(5, 1))]]
+                 [sg.Text('Reward Function'),sg.OptionMenu(values=('Sparse','Distance','Distance + Finger', 'Hinge Distance + Finger', 'Slope', 'Slope + Finger','SmartDistance + Finger','SmartDistance + SmartFinger','ScaledDistance + Finger','ScaledDistance+ScaledFinger', 'SFS','DFS','TripleScaled',"full", "full+finger","Rotation", "Rotation+Finger", "continuous_finger", "end_finger"), k='-rf',default_value='TripleScaled')],
+                 [sg.Text('Colormap'),sg.Input('plasma_r',key='-cmap',size=(8, 1))],
+                 [sg.Text('Num Averaged'),sg.Input(1200,key='moving_avg',size=(8,2)), sg.Text("Keep previous graph", key='-toggletext-'), sg.Button(image_data=toggle_btn_off, key='-TOGGLE-GRAPHIC-', button_color=(sg.theme_background_color(), sg.theme_background_color()), border_width=0, metadata=False)],
+                 [sg.Text('Success Range (multi orientation)'),sg.Input(1000,key='success_range', size=(8,1))],
+                 [sg.Text("Distance Scale"),  sg.Input(1,key='-distance_scale',size=(5, 1)), sg.Text('Contact Scale'), sg.Input(0.2,key='-contact_scale',size=(5, 1))],  
+                 [sg.Text('Rotation Scale'),sg.Input(1,key='-rotation_scale',size=(5, 1)), sg.Text('Success Reward'), sg.Input(1,key='-success_reward',size=(5, 1))]]
 
 
     layout = [[sg.Menu(menu)], [sg.Col(col_files), sg.Col(col)]]
@@ -160,16 +155,7 @@ def main():
         event, values = window.read()
         # print('values', values)
         # print('event', event)
-        if not(values['d1']|values['d2']|values['d3']|values['d4']):
-            rf_key = 'contact point'
-        elif values['d1']:
-            rf_key = 'single_scaled'
-        elif values['d2']:
-            rf_key = 'solo_rotation'
-        elif values['d3']:
-            rf_key = 'Rotation'
-        elif values['d4']:
-            rf_key = 'slide_and_rotate'
+        rf_key = values['-rf']
         tholds = {'SUCCESS_THRESHOLD':float(values['success_range']),
                         'DISTANCE_SCALING':float(values['-distance_scale']),
                         'CONTACT_SCALING':float(values['-contact_scale']),
@@ -211,13 +197,13 @@ def main():
         elif event == 'Critic Output':
             backend.draw_critic_output(episode_data)
             figure_canvas_agg.draw()
-        elif event == 'SimpleRewards':
-            backend.draw_distance_rewards(episode_data)
+        elif event == 'Object Goal Distance':
+            backend.draw_object_distance(episode_data)
             figure_canvas_agg.draw()
-        elif event == 'ContactRewards':
-            backend.draw_contact_rewards(episode_data)
+        elif event == 'Finger Contact Distance':
+            backend.draw_contact_distance(episode_data)
             figure_canvas_agg.draw()
-        elif event == 'FullRewards':
+        elif event == 'Rewards':
             backend.draw_combined_rewards(episode_data)
             figure_canvas_agg.draw()
         elif event == 'Explored Region':
@@ -305,7 +291,7 @@ def main():
         elif event == 'Ending Distances':
             backend.draw_dist_relationship(folder,values['-cmap'])
             figure_canvas_agg.draw()
-        elif event == 'Fingertip Route':
+        elif event == 'Fingertip Path':
             backend.draw_fingertip_path(episode_data)
             figure_canvas_agg.draw()
         elif event == 'RewardSplit':
@@ -357,7 +343,7 @@ def main():
         elif event == 'Sampled Poses':
             backend.draw_sampled_region(episode_data)
             figure_canvas_agg.draw()
-        elif event == 'Draw Obj Contacts':
+        elif event == 'Obj Contacts':
             backend.draw_obj_contacts(episode_data)
             figure_canvas_agg.draw()
         elif event =='Average Goals':
@@ -373,7 +359,7 @@ def main():
             backend.draw_orientation(episode_data)
             figure_canvas_agg.draw()
         elif event =='Orientation Multi':
-            backend.draw_orientation_success_rate(folder,success_range)
+            backend.draw_orientation_success_rate(folder)
             figure_canvas_agg.draw()
         elif event == 'Reward Comparison':
             backend.draw_relative_reward_strength(folder,tholds)
