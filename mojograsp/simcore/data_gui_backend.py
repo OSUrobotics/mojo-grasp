@@ -18,6 +18,12 @@ from scipy.spatial.transform import Rotation as R
 import mojograsp.simcore.reward_functions as rf
 import multiprocessing
 
+
+def getitem_for(d, key):
+    for level in key:
+        d = d[level]
+    return d
+
 def pool_process(episode_file):
     with open(episode_file, 'rb') as ef:
         tempdata = pkl.load(ef)
@@ -35,6 +41,29 @@ def pool_process(episode_file):
         print(data[0]['state']['obj_2']['pose'][0][0])
 
     return point_list
+
+def pool_key_list(episode_file, tsteps, key_tuples):
+    '''
+    This takes a given episode file, tuple of timestep numbers and tuple of key tuples and returns
+    a list with each key at its desired timestep. Designed to be used with Pool.starmap on a folder 
+    full of data
+    '''
+    # print(tsteps,key_tuples)
+    with open(episode_file, 'rb') as ef:
+        tempdata = pkl.load(ef)
+    data = tempdata['timestep_list']
+    return [getitem_for(data[tstep],key) for tstep, key in zip(tsteps, key_tuples)]
+
+def pool_key_list_all(episode_file, key_tuples):
+    with open(episode_file, 'rb') as ef:
+        tempdata = pkl.load(ef)
+    data = tempdata['timestep_list']
+    desired = []
+    # print(key_tuples)
+    for tup in key_tuples:
+        # print(tup)
+        desired.append([getitem_for(d,tup) for d in data])
+    return desired
 
 def goal_dist_process(episode_file, tstep):
     # print(tstep)
@@ -107,6 +136,8 @@ class PlotBackend():
             self.build_reward = rf.sfs
         elif key == 'DFS':
             self.build_reward = rf.dfs
+        elif key == 'TripleScaled':
+            self.build_reward = rf.triple_scaled_slide
         elif key == 'SmartDistance + SmartFinger':
             self.build_reward = rf.double_smart
         elif key == 'multi_scaled':
@@ -243,7 +274,6 @@ class PlotBackend():
             errors += poses - desired_pos[i]
         print(errors)    
         
-        
     def draw_angles(self, data_dict):
         data = data_dict['timestep_list']
         episode_number = data_dict['number']
@@ -328,48 +358,47 @@ class PlotBackend():
         self.curr_graph = 'rewards'
         self.ax.set_aspect('auto',adjustable='box')
 
-    def draw_distance_rewards(self, data_dict):
+    def draw_object_distance(self, data_dict):
         episode_number = data_dict['number']
 
         data = data_dict['timestep_list']
-        current_reward_dict = [f['reward']['dist_reward'] for f in data]
+        current_reward_dict = [f['reward']['distance_to_goal']*100 for f in data]
 
         if self.clear_plots | (self.curr_graph != 'rewards'):
             self.clear_axes()
              
         self.ax.plot(range(len(current_reward_dict)),current_reward_dict)
-        self.legend.extend(['Distance Reward - episode ' + str( episode_number)])
+        self.legend.extend(['Distance to Goal - episode ' + str( episode_number)])
         self.ax.legend(self.legend)
         self.ax.grid(True)
-        self.ax.set_ylabel('Reward')
+        self.ax.set_ylabel('Distance (cm)')
         self.ax.set_xlabel('Timestep (1/30 s)')
         self.ax.set_title('Reward Plot')
          
         self.curr_graph = 'rewards'
         self.ax.set_aspect('auto',adjustable='box')
     
-    def draw_contact_rewards(self, data_dict):
+    def draw_contact_distance(self, data_dict):
         episode_number = data_dict['number']
 
         data = data_dict['timestep_list']
-        current_reward_dict1 = [-f['reward']['f1_dist'] for f in data]
-        current_reward_dict2 = [-f['reward']['f2_dist'] for f in data]
+        current_reward_dict1 = [f['reward']['f1_dist']*100 for f in data]
+        current_reward_dict2 = [f['reward']['f2_dist']*100 for f in data]
         if self.clear_plots | (self.curr_graph != 'rewards'):
             self.clear_axes()
              
         self.ax.plot(range(len(current_reward_dict1)),current_reward_dict1)
         self.ax.plot(range(len(current_reward_dict2)),current_reward_dict2)
-        self.legend.extend(['Right Finger Contact Reward - episode ' + str( episode_number),'Left Finger Contact Reward - episode ' + str( episode_number)])
+        self.legend.extend(['Right Finger Contact Distance - episode ' + str( episode_number),'Left Finger Contact Distance - episode ' + str( episode_number)])
         self.ax.legend(self.legend)
         self.ax.grid(True)
-        self.ax.set_ylabel('Reward')
+        self.ax.set_ylabel('Distance (cm)')
         self.ax.set_xlabel('Timestep (1/30 s)')
         self.ax.set_title('Contact Reward Plot')
         self.ax.set_aspect('auto',adjustable='box')
         self.curr_graph = 'rewards'
         
     def draw_combined_rewards(self, data_dict):
-        print('doin it live')
         episode_number = data_dict['number']
 
         data = data_dict['timestep_list']
@@ -389,19 +418,39 @@ class PlotBackend():
         self.legend.extend(['Reward - episode ' + str( episode_number)])
         self.ax.legend(self.legend)
         self.ax.set_ylabel('Reward')
-        # self.ax.set_ybound([-6,0.1])
         self.ax.set_xlabel('Timestep (1/30 s)')
         self.ax.set_title(title)
         self.ax.grid(True)
         self.ax.set_aspect('auto',adjustable='box')
         self.curr_graph = 'rewards'
          
-    def draw_explored_region(self, all_data_dict):
+    def draw_explored_region(self, folder):
+        episode_files = [os.path.join(folder, f) for f in os.listdir(folder) if f.lower().endswith('.pkl')]
+        filenames_only = [f for f in os.listdir(folder) if f.lower().endswith('.pkl')]
+        
+        filenums = [re.findall('\d+',f) for f in filenames_only]
+        final_filenums = []
+        for i in filenums:
+            if len(i) > 0 :
+                final_filenums.append(int(i[0]))
+
+        sorted_inds = np.argsort(final_filenums)
+        final_filenums = np.array(final_filenums)
+        episode_files = np.array(episode_files)
+        filenames_only = np.array(filenames_only)
+        episode_files = episode_files[sorted_inds].tolist()
+
+        pool = multiprocessing.Pool()
+        keys = (('state','obj_2','pose'),)
+        thing = [[ef, keys] for ef in episode_files]
+        print('applying async')
+        data_list = pool.starmap(pool_key_list_all,thing)
+        pool.close()
+        pool.join()
         datapoints = []
-        for episode in all_data_dict['episode_list']:
-            data = episode['timestep_list']
-            for timestep in data:
-                datapoints.append(timestep['state']['obj_2']['pose'][0][0:2])
+        for i in data_list:
+            datapoints.append(i[0][0:2])
+        
         datapoints = np.array(datapoints)
         print('num poses', np.shape(datapoints))
         nbins=100
@@ -438,38 +487,42 @@ class PlotBackend():
          
         self.curr_graph = 'explored'
 
-    def draw_end_region(self, folder_or_data_dict):
-        if type(folder_or_data_dict) is str:
-            episode_files = [os.path.join(folder_or_data_dict, f) for f in os.listdir(folder_or_data_dict) if f.lower().endswith('.pkl')]
-            filenames_only = [f for f in os.listdir(folder_or_data_dict) if f.lower().endswith('.pkl')]
-            
-            filenums = [re.findall('\d+',f) for f in filenames_only]
-            final_filenums = []
-            for i in filenums:
-                if len(i) > 0 :
-                    final_filenums.append(int(i[0]))
+    def draw_end_region(self, folder):
+        episode_files = [os.path.join(folder, f) for f in os.listdir(folder) if f.lower().endswith('.pkl')]
+        filenames_only = [f for f in os.listdir(folder) if f.lower().endswith('.pkl')]
+        
+        filenums = [re.findall('\d+',f) for f in filenames_only]
+        final_filenums = []
+        for i in filenums:
+            if len(i) > 0 :
+                final_filenums.append(int(i[0]))
 
-            sorted_inds = np.argsort(final_filenums)
-            final_filenums = np.array(final_filenums)
-            episode_files = np.array(episode_files)
-            filenames_only = np.array(filenames_only)
-            count = 0
-            episode_files = episode_files[sorted_inds].tolist()
-            datapoints = []
-            for episode_file in episode_files:
-                with open(episode_file, 'rb') as ef:
-                    tempdata = pkl.load(ef)
+        sorted_inds = np.argsort(final_filenums)
+        final_filenums = np.array(final_filenums)
+        episode_files = np.array(episode_files)
+        filenames_only = np.array(filenames_only)
+        episode_files = episode_files[sorted_inds].tolist()
 
-                data = tempdata['timestep_list']
-                datapoints.append(data[-1]['state']['obj_2']['pose'][0][0:2])
-                if count% 100 ==0:
-                    print('count = ', count)
-                count +=1
-        elif type(folder_or_data_dict) is dict:
-            datapoints = []
-            for episode in folder_or_data_dict['episode_list']:
-                data = episode['timestep_list']
-                datapoints.append(data[-1]['state']['obj_2']['pose'][0][0:2])
+        '''
+        datapoints = []
+        for episode_file in episode_files:
+            with open(episode_file, 'rb') as ef:
+                tempdata = pkl.load(ef)
+
+            data = tempdata['timestep_list']
+            datapoints.append(data[-1]['state']['obj_2']['pose'][0][0:2])
+        '''
+        datapoints = [] 
+        pool = multiprocessing.Pool()
+        tst = (-1)
+        keys = (('state','obj_2','pose'))
+        thing = [[ef, tst, keys] for ef in episode_files]
+        print('applying async')
+        data_list = pool.starmap(pool_key_list,thing)
+        pool.close()
+        pool.join()
+        for i in data_list:
+            datapoints.append(i[0][0:2])
         datapoints = np.array(datapoints)
         print('num poses', np.shape(datapoints))
         nbins=100
@@ -1213,18 +1266,20 @@ class PlotBackend():
 
         episode_files = episode_files[sorted_inds].tolist()
         
+        pool = multiprocessing.Pool()
+        keys = (('action','actor_output'),)
+        thing = [[ef, keys] for ef in episode_files]
+        print('applying async')
+        data_list = pool.starmap(pool_key_list_all,thing)
+        pool.close()
+        pool.join()
         actor_max = []
-        
-        for i, episode_file in enumerate(episode_files):
-            with open(episode_file, 'rb') as ef:
-                tempdata = pkl.load(ef)
-            data = tempdata['timestep_list']
-            actor_list = [abs(f['action']['actor_output'])>0.99 for f in data]
-            actor_list = np.array(actor_list)
+        for i in data_list:
+            actor_list = np.abs(np.array(i))>0.99
             end_actor = np.sum(actor_list,axis=0)/len(actor_list)
             actor_max.append(end_actor)
-            if i % 100 ==0:
-                print('count = ',i)
+
+
         actor_max = np.array(actor_max)
         if self.clear_plots | (self.curr_graph != 'angles'):
             self.clear_axes()
@@ -1818,7 +1873,7 @@ class PlotBackend():
         current_angle_list = np.array(current_angle_list)/0.1
         finger1_diff = np.array(finger1_diff)/0.01
         finger2_diff = np.array(finger2_diff)/0.01
-        print(finger1_diff,finger2_diff,current_angle_list)
+        # print(finger1_diff,finger2_diff,current_angle_list)
         
         if self.clear_plots | (self.curr_graph !='aout'):
             self.clear_axes()
@@ -1841,6 +1896,7 @@ class PlotBackend():
                             'Left Y - episode ' + str( episode_number)])
         self.curr_graph = 'aout'
         self.ax.legend(self.legend)
+        self.ax.grid(True)
         self.ax.set_aspect('auto',adjustable='box')
         
     def clear_axes(self):
@@ -2081,7 +2137,8 @@ class PlotBackend():
         self.ax.set_aspect('equal',adjustable='box')
         # self.ax.scatter(end_poses[:,0],end_poses[:,1])
 
-    def draw_orientation_success_rate(self,folder,success_range):
+    def draw_orientation_success_rate(self,folder):
+        starttime = time.time()
         self.clear_axes()
         rotations = []
         goals = []
@@ -2101,33 +2158,23 @@ class PlotBackend():
 
         episode_files = episode_files[sorted_inds].tolist()
         rewards = []
-        rotation = []   
-        count = 0
-        for episode_file in episode_files:
-            with open(episode_file, 'rb') as ef:
-                tempdata = pkl.load(ef)
-            data = tempdata['timestep_list']
-
-            if data[-1]['reward']['distance_to_goal'] < success_range:
-                # print(episode_file)
-                obj_rotation = data[-1]['reward']['object_orientation'][2]
-                obj_rotation = (obj_rotation + np.pi)%(np.pi*2)
-                obj_rotation = (obj_rotation - np.pi)*180/np.pi
-                goal_rotation = data[-1]['state']['goal_pose']['goal_orientation']*180/np.pi
-
-                rewards.append(goal_rotation-obj_rotation)
-                rotation.append(goal_rotation)
-                # for tstep in data:
-                #     obj_rotation = tstep['reward']['object_orientation'][2]
-                #     obj_rotation = (obj_rotation + np.pi)%(np.pi*2)
-                #     obj_rotation = obj_rotation - np.pi
-                #     rotations.append(obj_rotation)
-                #     goals.append(tstep['reward']['goal_orientation'])
-                # rewards.append(sum(individual_rewards))
-                # if count% 100 ==0:
-                #     print('count = ', count)
-                count +=1
+        rotation = [] 
+        count = 0 
+        pool = multiprocessing.Pool()
+        tst = (-1, -1)
+        keys = (('state','obj_2','z_angle'),('state','goal_pose','goal_orientation'))
+        thing = [[ef, tst, keys] for ef in episode_files]
+        print('applying async')
+        data_list = pool.starmap(pool_key_list,thing)
+        pool.close()
+        pool.join()
+        for i in data_list:
+            rewards.append(i[1]-i[0])
+            rotation.append(i[1])
+        
         # print(rewards,rotation)
+        rewards = np.array(rewards)*180/np.pi
+        rotation = np.array(rotation) *180/np.pi
         a = np.abs(rewards)
         b = np.average(a)
         c = np.std(a)
@@ -2163,63 +2210,62 @@ class PlotBackend():
         self.ax.legend(['Object Angle','Goal Angle'])
         
     def draw_finger_goal_path(self, data_dict):
-        self.clear_axes()
-        data = data_dict['timestep_list']
-        episode_number = data_dict['number']
-        trajectory_points = [f['state']['obj_2']['pose'][0] for f in data]
-        fingertip1_points = [f['state']['f1_pos'] for f in data]
-        fingertip2_points = [f['state']['f2_pos'] for f in data]
-        goal_pose = data[1]['reward']['goal_position']
-        trajectory_points = np.array(trajectory_points)
-        fingertip1_points = np.array(fingertip1_points)
-        fingertip2_points = np.array(fingertip2_points)
-        arrow_len = max(int(len(trajectory_points)/25),1)
-        arrow_points = np.linspace(0,len(trajectory_points)-arrow_len-1,10,dtype=int)
-        next_points = arrow_points + arrow_len
-        goal_points = data[0]['reward']['goal_finger']
-        self.clear_axes()
-         
-        self.ax.plot(trajectory_points[:,0], trajectory_points[:,1])
-        self.ax.plot(fingertip1_points[:,0], fingertip1_points[:,1])
-        self.ax.plot(fingertip2_points[:,0], fingertip2_points[:,1])
-        self.ax.plot([trajectory_points[0,0], goal_pose[0]],[trajectory_points[0,1],goal_pose[1]])
-        self.ax.plot(fingertip1_points[0,0], fingertip1_points[0,1], marker='o',
-                     markersize=5,markerfacecolor='orange',markeredgecolor='orange')
-        self.ax.plot(fingertip2_points[0,0], fingertip2_points[0,1], marker='o',
-                     markersize=5,markerfacecolor='green',markeredgecolor='green')
-        self.ax.plot(goal_points[0], goal_points[1], marker='o',
-                     markersize=5,markerfacecolor='orange',markeredgecolor='orange')
-        self.ax.plot(goal_points[2], goal_points[3], marker='o',
-                     markersize=5,markerfacecolor='green',markeredgecolor='green')
-        # self.ax.plot(finger_contact1[0], finger_contact1[1], marker='s', markersize=5,
-        #              markerfacecolor='darkorange',markeredgecolor='darkorange')
-        # self.ax.plot(finger_contact2[0], finger_contact2[1], marker='s', markersize=5,
-        #              markerfacecolor='darkgreen',markeredgecolor='darkgreen')
-        self.ax.set_xlim([-0.08,0.08])
-        self.ax.set_ylim([0.02,0.18])
-        self.ax.set_xlabel('X pos (m)')
-        self.ax.set_ylabel('Y pos (m)')
-        for i,j in zip(arrow_points,next_points):
-            self.ax.arrow(trajectory_points[i,0],trajectory_points[i,1], 
-                          trajectory_points[j,0]-trajectory_points[i,0],
-                          trajectory_points[j,1]-trajectory_points[i,1], 
-                          color='blue', width=0.001, head_width = 0.002, length_includes_head=True)
-            self.ax.arrow(fingertip1_points[i,0],fingertip1_points[i,1], 
-                          fingertip1_points[j,0]-fingertip1_points[i,0],
-                          fingertip1_points[j,1]-fingertip1_points[i,1],
-                          color='orange', width=0.001, head_width = 0.002, length_includes_head=True)
-            self.ax.arrow(fingertip2_points[i,0],fingertip2_points[i,1], 
-                          fingertip2_points[j,0]-fingertip2_points[i,0],
-                          fingertip2_points[j,1]-fingertip2_points[i,1],
-                          color='green', width=0.001, head_width = 0.002, length_includes_head=True)
+        try:
+            data = data_dict['timestep_list']
+            episode_number = data_dict['number']
+            trajectory_points = [f['state']['obj_2']['pose'][0] for f in data]
+            fingertip1_points = [f['state']['f1_pos'] for f in data]
+            fingertip2_points = [f['state']['f2_pos'] for f in data]
+            goal_pose = data[1]['reward']['goal_position']
+            trajectory_points = np.array(trajectory_points)
+            fingertip1_points = np.array(fingertip1_points)
+            fingertip2_points = np.array(fingertip2_points)
+            arrow_len = max(int(len(trajectory_points)/25),1)
+            arrow_points = np.linspace(0,len(trajectory_points)-arrow_len-1,10,dtype=int)
+            next_points = arrow_points + arrow_len
+            goal_points = data[0]['reward']['goal_finger']
+            t = goal_points[0]
+            self.clear_axes()
             
-        # self.ax.add_patch(Rectangle((0-0.038/2, 0.1-0.038/2), 0.038, 0.038,edgecolor='black',facecolor='white',alpha=0.5))
-        self.legend.extend(['Object Trajectory','Right Finger Trajectory',
-                            'Left Finger Trajectory','Ideal Path to Goal'])
-        self.ax.legend(self.legend)
-        self.ax.set_title('Object and Finger Path - Episode: '+str(episode_number))
-         
-        self.curr_graph = 'path'
+            self.ax.plot(trajectory_points[:,0], trajectory_points[:,1])
+            self.ax.plot(fingertip1_points[:,0], fingertip1_points[:,1])
+            self.ax.plot(fingertip2_points[:,0], fingertip2_points[:,1])
+            self.ax.plot([trajectory_points[0,0], goal_pose[0]],[trajectory_points[0,1],goal_pose[1]])
+            self.ax.plot(fingertip1_points[0,0], fingertip1_points[0,1], marker='o',
+                        markersize=5,markerfacecolor='orange',markeredgecolor='orange')
+            self.ax.plot(fingertip2_points[0,0], fingertip2_points[0,1], marker='o',
+                        markersize=5,markerfacecolor='green',markeredgecolor='green')
+            self.ax.plot(goal_points[0], goal_points[1], marker='o',
+                        markersize=5,markerfacecolor='orange',markeredgecolor='orange')
+            self.ax.plot(goal_points[2], goal_points[3], marker='o',
+                        markersize=5,markerfacecolor='green',markeredgecolor='green')
+
+            self.ax.set_xlim([-0.08,0.08])
+            self.ax.set_ylim([0.02,0.18])
+            self.ax.set_xlabel('X pos (m)')
+            self.ax.set_ylabel('Y pos (m)')
+            for i,j in zip(arrow_points,next_points):
+                self.ax.arrow(trajectory_points[i,0],trajectory_points[i,1], 
+                            trajectory_points[j,0]-trajectory_points[i,0],
+                            trajectory_points[j,1]-trajectory_points[i,1], 
+                            color='blue', width=0.001, head_width = 0.002, length_includes_head=True)
+                self.ax.arrow(fingertip1_points[i,0],fingertip1_points[i,1], 
+                            fingertip1_points[j,0]-fingertip1_points[i,0],
+                            fingertip1_points[j,1]-fingertip1_points[i,1],
+                            color='orange', width=0.001, head_width = 0.002, length_includes_head=True)
+                self.ax.arrow(fingertip2_points[i,0],fingertip2_points[i,1], 
+                            fingertip2_points[j,0]-fingertip2_points[i,0],
+                            fingertip2_points[j,1]-fingertip2_points[i,1],
+                            color='green', width=0.001, head_width = 0.002, length_includes_head=True)
+                
+            self.legend.extend(['Object Trajectory','Right Finger Trajectory',
+                                'Left Finger Trajectory','Ideal Path to Goal'])
+            self.ax.legend(self.legend)
+            self.ax.set_title('Object and Finger Path - Episode: '+str(episode_number))
+            
+            self.curr_graph = 'path'
+        except TypeError:
+            print('Finger goals are None, this was not from a finger goal task.')
         
     def draw_relative_reward_strength(self,folder,tholds):        
         # get list of pkl files in folder
@@ -2240,38 +2286,36 @@ class PlotBackend():
         filenames_only = np.array(filenames_only)
 
         episode_files = episode_files[sorted_inds].tolist()
-        rewards = []
-        count = 0
-        ftemp = 0
-        rot_temp = 0
-        goal_dist = 0
-        # goal angle should be +/- pi
-        # make the current angle set between +/- pi then subtract the two
+
+        datapoints = [] 
+        pool = multiprocessing.Pool()
+        keys = (('reward','distance_to_goal'), ('reward', 'object_orientation'), ('reward','goal_orientation'), ('reward', 'f1_dist'), ('reward','f2_dist'))
+        thing = [[ef, keys] for ef in episode_files]
+        print('applying async')
+        data_list = pool.starmap(pool_key_list_all,thing)
+        pool.close()
+        pool.join()
+        sliding_rewards = []
         contact_rewards = []
         orientation_rewards = []
-        sliding_rewards = []
-        for episode_file in episode_files:
-            with open(episode_file, 'rb') as ef:
-                tempdata = pkl.load(ef)
-            data = tempdata['timestep_list']
-            for timestep in data:
-                goal_dist -= timestep['reward']['distance_to_goal']/0.01 *tholds['DISTANCE_SCALING']# divide to turn into cm
-                obj_rotation = timestep['reward']['object_orientation'][2]
-                thing1 = (obj_rotation-timestep['reward']['goal_orientation'])%(np.pi*2)
-                thing2 = (timestep['reward']['goal_orientation']-obj_rotation)%(np.pi*2)
-                rot_temp -= min(thing1,thing2)*tholds['ROTATION_SCALING']
-                ftemp -= max(timestep['reward']['f1_dist'], timestep['reward']['f2_dist']) * 100 *tholds['CONTACT_SCALING']
-            contact_rewards.append(ftemp)
-            orientation_rewards.append(rot_temp)
-            sliding_rewards.append(goal_dist)
-            rewards.append(ftemp+rot_temp+goal_dist)
-            ftemp = 0
-            rot_temp = 0
-            goal_dist = 0
-            
-            if count% 1000 ==0:
-                print('count = ', count)
-            count +=1
+        for i in data_list:
+            # print(i[0])
+            # print(i[1])
+            # print(i[2])
+            # print(i[3])
+            # print(i[4])
+            sliding_rewards.append(-np.sum(i[0])/0.01*tholds['DISTANCE_SCALING'])
+            contact_rewards.append(-np.sum(np.max([np.array(i[3]),np.array(i[4])],axis=0))*100*tholds['CONTACT_SCALING'])
+            orientation_rewards.append(-np.sum(np.abs(np.array(i[1])[:,2]-np.array(i[2])))*tholds['ROTATION_SCALING'])
+        
+        sliding_rewards = np.array(sliding_rewards)
+        contact_rewards = np.array(contact_rewards)
+        orientation_rewards = np.array(orientation_rewards)
+        rewards = sliding_rewards + contact_rewards + orientation_rewards
+
+        # print(len(sliding_rewards))
+
+        print(rewards)
         return_rewards = rewards.copy()
         if self.moving_avg != 1:
             contact_rewards = moving_average(contact_rewards,self.moving_avg)
@@ -2337,8 +2381,8 @@ class PlotBackend():
         a = self.ax.scatter(start_pos[:,0]*100, start_pos[:,1]*100, c = end_dists*100, cmap=cmap)
         self.ax.set_ylabel('Y position (cm)')
         self.ax.set_xlabel('X position (cm)')
-        self.ax.set_xlim([-7,7])
-        self.ax.set_ylim([-7,7])
+        self.ax.set_xlim([-8,8])
+        self.ax.set_ylim([-8,8])
         self.ax.set_title('Ending Distance Based on START Position')
         self.ax.grid(False)
         self.colorbar = self.fig.colorbar(a, ax=self.ax, extend='max')
@@ -2481,8 +2525,6 @@ class PlotBackend():
         except:
             a = self.ax.scatter(goals[:,0]*100, goals[:,1]*100, c = end_dists*100, cmap='plasma')
 
-        
-
         self.ax.set_ylabel('Y position (cm)')
         self.ax.set_xlabel('X position (cm)')
         self.ax.set_xlim([-8,8])
@@ -2581,16 +2623,18 @@ class PlotBackend():
             rotation.append(goal_rotation)
             goal_dist.append(data[-1]['reward']['distance_to_goal'])
         # print(rewards,rotation)
+        rewards = np.clip(np.abs(rewards),0,30)
         goal_dist = np.array(goal_dist)
         a=self.ax.scatter(rotation,goal_dist,c = np.abs(rewards), cmap=cmap)
         # self.ax.plot(range(len(goals)), goals)
         # self.ax.plot([-360,360],[-360,360],color='orange')
         self.ax.set_xlabel('Goal Orientation')
         self.ax.set_ylabel('Ending Slide Error')
-        self.colorbar = self.fig.colorbar(a, ax=self.ax)
-        # self.ax.set_ylim(-95,95)
+        self.colorbar = self.fig.colorbar(a, ax=self.ax, extend='max')
+        self.ax.set_title('Goal Orientation Error')
+        self.ax.set_ylim(-0.001,0.15)
         # self.ax.set_xlim(-95,95)
-        # self.ax.set_aspect('equal',adjustable='box')
+        self.ax.set_aspect('auto')
         # self.ax.legend(['Achieved Angles','No Movement Line'])
 
 
@@ -2715,8 +2759,6 @@ class PlotBackend():
             a = self.ax.scatter(goals[:,0]*100, goals[:,1]*100, c = orienatation_errors, cmap=cmap)
         except:
             a = self.ax.scatter(goals[:,0]*100, goals[:,1]*100, c = orienatation_errors, cmap='plasma')
-
-        
 
         self.ax.set_ylabel('Y position (cm)')
         self.ax.set_xlabel('X position (cm)')
