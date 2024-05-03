@@ -14,7 +14,7 @@ import json
 from PIL import ImageGrab
 # from itertools import islice
 import threading
-from mojograsp.simcore.run_from_file import run_pybullet
+# from mojograsp.simcore.run_from_file import run_pybullet
 import pathlib
 '''
     Data Plotter
@@ -429,8 +429,8 @@ class RNNGui():
         return True
         
     def train(self):
-        run_pybullet(self.args['save_path'] + 'experiment_config.json')
-        print('model finished, saving now')
+        # run_pybullet(self.args['save_path'] + 'experiment_config.json')
+        print('We dont do that here')
 
     def log_params(self):
         if self.built:
