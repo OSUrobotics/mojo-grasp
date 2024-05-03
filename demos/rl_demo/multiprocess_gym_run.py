@@ -671,7 +671,7 @@ if __name__ == '__main__':
     # main('./data/HPC_slide_all_randomizations/FTP_S1/experiment_config.json')
     # main('./data/HPC_slide_time_tests/25_no_contact/experiment_config.json')
     # main('./data/Mothra_Rotation/JA_S2_no_contact/experiment_config.json')
-    main('./data/Mothra_Slide/FTP_S3/experiment_config.json')
+    # main('./data/Mothra_Slide/FTP_S3/experiment_config.json')
     # main("./data/region_rotation_JA_finger/experiment_config.json",'run')
     # main("./data/JA_full_task_20_1/experiment_config.json",'run')
     # evaluate("./data/FTP_halfstate_A_rand/experiment_config.json","B")
@@ -691,10 +691,23 @@ if __name__ == '__main__':
     # multiprocess_evaluate_loaded("./data/Mothra_Rotation/JA_S2_no_contact/experiment_config.json","A")
     # multiprocess_evaluate_loaded("./data/Mothra_Slide/JA_S3/experiment_config.json","A")
     # multiprocess_evaluate_loaded("./data/Mothra_Slide/JA_S3/experiment_config.json","B")
-    # multiprocess_evaluate_loaded("./data/Mothra_Slide/FTP_S1/experiment_config.json","A")
-    # multiprocess_evaluate_loaded("./data/Mothra_Slide/FTP_S1/experiment_config.json","B")
-    # multiprocess_evaluate_loaded("./data/Mothra_Slide/FTP_S2/experiment_config.json","A")
-    # multiprocess_evaluate_loaded("./data/Mothra_Slide/FTP_S2/experiment_config.json","B")
+
+
+    # multiprocess_evaluate_loaded("./data/HPC_Slide/FTP_S1/experiment_config.json","A")
+    # multiprocess_evaluate_loaded("./data/HPC_Slide/FTP_S1/experiment_config.json","B")
+    multiprocess_evaluate_loaded("./data/HPC_Slide/FTP_S2/experiment_config.json","A")
+    multiprocess_evaluate_loaded("./data/HPC_Slide/FTP_S2/experiment_config.json","B")
+
+    # multiprocess_evaluate_loaded("./data/Mothra_Slide/FTP_S3/experiment_config.json","A")
+    # multiprocess_evaluate_loaded("./data/Mothra_Slide/FTP_S3/experiment_config.json","B")
+    # multiprocess_evaluate_loaded("./data/Mothra_Slide/JA_S1/experiment_config.json","A")
+    # multiprocess_evaluate_loaded("./data/Mothra_Slide/JA_S1/experiment_config.json","B")
+
+    # multiprocess_evaluate_loaded("./data/Mothra_Slide/JA_S2/experiment_config.json","A")
+    # multiprocess_evaluate_loaded("./data/Mothra_Slide/JA_S2/experiment_config.json","B")
+    # multiprocess_evaluate_loaded("./data/Mothra_Slide/JA_S3/experiment_config.json","A")
+    # multiprocess_evaluate_loaded("./data/Mothra_Slide/JA_S3/experiment_config.json","B")       
+
     # multiprocess_evaluate_loaded("./data/Mothra_Slide/FTP_S3/experiment_config.json","A")
     # multiprocess_evaluate_loaded("./data/Mothra_Slide/FTP_S3/experiment_config.json","B")
     # multiprocess_evaluate_loaded("./data/HPC_slide_all_randomizations/JA_S3/experiment_config.json","A")

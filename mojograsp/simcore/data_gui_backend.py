@@ -1090,15 +1090,17 @@ class PlotBackend():
             count = 0
             episode_files = episode_files[sorted_inds].tolist()
             ending_dists = []
-            for episode_file in episode_files:
-                with open(episode_file, 'rb') as ef:
-                    tempdata = pkl.load(ef)
-
-                data = tempdata['timestep_list']
-                ending_dists.append(data[-1]['reward']['distance_to_goal'])
-                if count% 100 ==0:
-                    print('count = ', count)
-                count +=1
+            pool = multiprocessing.Pool()
+            tst = (-1,)
+            keys = (('reward','distance_to_goal'),)
+            thing = [[ef, tst, keys] for ef in episode_files]
+            print('applying async')
+            data_list = pool.starmap(pool_key_list,thing)
+            pool.close()
+            pool.join()
+            for i in data_list:
+                ending_dists.append(i[0])
+            ending_dists = np.array(ending_dists)
         elif type(folder_or_data_dict) is dict:
             try:
                 ending_dists = [i['ending_dist'] for i in folder_or_data_dict['episode_list']]
@@ -2603,28 +2605,28 @@ class PlotBackend():
         filenames_only = np.array(filenames_only)
 
         episode_files = episode_files[sorted_inds].tolist()
+
+        pool = multiprocessing.Pool()
+        keys = (('state','goal_pose','goal_orientation'),('state','obj_2','z_angle'),('reward','distance_to_goal'))
+        tst = (-1,-1,-1)
+        thing = [[ef, tst, keys] for ef in episode_files]
+        print('applying async')
+        data_list = pool.starmap(pool_key_list,thing)
+        pool.close()
+        pool.join()
         rewards = []
         rotation = []  
         goal_dist = []
-        count = 0
-        for episode_file in episode_files:
-            with open(episode_file, 'rb') as ef:
-                tempdata = pkl.load(ef)
-            data = tempdata['timestep_list']
+        for i in data_list:
+            rewards.append(i[0]-i[1])
+            rotation.append(i[0])
+            goal_dist.append(i[2])
 
-            # if data[-1]['reward']['distance_to_goal'] < success_range:
-            # print(episode_file)
-            obj_rotation = data[-1]['reward']['object_orientation'][2]
-            obj_rotation = (obj_rotation + np.pi)%(np.pi*2)
-            obj_rotation = (obj_rotation - np.pi)*180/np.pi
-            goal_rotation = data[-1]['state']['goal_pose']['goal_orientation']*180/np.pi
-
-            rewards.append(goal_rotation-obj_rotation)
-            rotation.append(goal_rotation)
-            goal_dist.append(data[-1]['reward']['distance_to_goal'])
+        rewards = np.array(rewards) * 180/np.pi
+        rotation = np.array(rotation) * 180/np.pi
+        goal_dist = np.array(goal_dist)
         # print(rewards,rotation)
         rewards = np.clip(np.abs(rewards),0,30)
-        goal_dist = np.array(goal_dist)
         a=self.ax.scatter(rotation,goal_dist,c = np.abs(rewards), cmap=cmap)
         # self.ax.plot(range(len(goals)), goals)
         # self.ax.plot([-360,360],[-360,360],color='orange')

@@ -100,7 +100,7 @@ def main():
                  [sg.Text('Reward Function'),sg.OptionMenu(values=('Sparse','Distance','Distance + Finger', 'Hinge Distance + Finger', 'Slope', 'Slope + Finger','SmartDistance + Finger','SmartDistance + SmartFinger','ScaledDistance + Finger','ScaledDistance+ScaledFinger', 'SFS','DFS','TripleScaled',"full", "full+finger","Rotation", "Rotation+Finger", "continuous_finger", "end_finger"), k='-rf',default_value='TripleScaled')],
                  [sg.Text('Colormap'),sg.Input('plasma_r',key='-cmap',size=(8, 1))],
                  [sg.Text('Num Averaged'),sg.Input(1200,key='moving_avg',size=(8,2)), sg.Text("Keep previous graph", key='-toggletext-'), sg.Button(image_data=toggle_btn_off, key='-TOGGLE-GRAPHIC-', button_color=(sg.theme_background_color(), sg.theme_background_color()), border_width=0, metadata=False)],
-                 [sg.Text('Success Range (multi orientation)'),sg.Input(1000,key='success_range', size=(8,1))],
+                 [sg.Text('Success Threshold'),sg.Input(10,key='success_range', size=(8,1))],
                  [sg.Text("Distance Scale"),  sg.Input(1,key='-distance_scale',size=(5, 1)), sg.Text('Contact Scale'), sg.Input(0.2,key='-contact_scale',size=(5, 1))],  
                  [sg.Text('Rotation Scale'),sg.Input(1,key='-rotation_scale',size=(5, 1)), sg.Text('Success Reward'), sg.Input(1,key='-success_reward',size=(5, 1))]]
 
