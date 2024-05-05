@@ -492,6 +492,7 @@ def replay(argpath, episode_path):
         args['contact_start'] = False
         print('WE DIDNT HAVE A CONTACT START FLAG')
     # load hand parameters (starting angles, link lengths etc)
+    args['contact_start'] = False
     key_file = os.path.abspath(__file__)
     key_file = os.path.dirname(key_file)
     key_file = os.path.join(key_file,'resources','hand_bank','hand_params.json')
@@ -508,7 +509,7 @@ def replay(argpath, episode_path):
     f2_poses = [s['state']['f2_pos'] for s in data['timestep_list']]
     joint_angles = [s['state']['two_finger_gripper']['joint_angles'] for s in data['timestep_list']]
     import pybullet as p2
-    eval_env , _, poses= make_pybullet(args,p2, [2,3], hand_params,viz=True)
+    eval_env , _, poses= make_pybullet(args,p2, [1,3], hand_params,viz=True)
     eval_env.evaluate()
     temp = [joint_angles[0]['finger0_segment0_joint'],joint_angles[0]['finger0_segment1_joint'],joint_angles[0]['finger1_segment0_joint'],joint_angles[0]['finger1_segment1_joint']]
     # temp = [-joint_angles[0]['finger1_segment0_joint'],-joint_angles[0]['finger1_segment1_joint'],-joint_angles[0]['finger0_segment0_joint'],-joint_angles[0]['finger0_segment1_joint']]
@@ -524,7 +525,7 @@ def replay(argpath, episode_path):
     else:
         start_position = {'goal_position':[obj_pose[0][0][0], obj_pose[0][0][1]-0.1]}#, 'fingers':temp}
         _ = eval_env.reset(start_position)
-    print(data['timestep_list'][0]['state']['goal_pose'])
+    # print(data['timestep_list'][0]['state']['goal_pose'])
     temp = data['timestep_list'][0]['state']['goal_pose']['goal_position']
     angle = data['timestep_list'][0]['state']['goal_pose']['goal_orientation']
     input('look at it')
@@ -600,18 +601,21 @@ def replay(argpath, episode_path):
     step_num = 0
     print('starting position', f1_poses[0],f2_poses[0], joint_angles[0])
     # input('start')
+    joints = []
     for i,act in enumerate(actions):
         # print('action vs mirrored:', actions[i],act)
-        # print('joints in pkl file',joint_angles[i+1])
+        print('joints in pkl file',joint_angles[i])
         print(f'step {i}')
         print(act)
         eval_env.step(np.array(act),viz=True)
         step_num +=1
+        print('reward from pickle', data['timestep_list'][i]['reward'])
         # input('next step?')
         # time.sleep(0.5)
-        # print(f'finger poses in pkl file, {f1_poses[i+1]}, {f2_poses[i]}')
+        # print(f'finger poses in pkl file, {f1_poses[i]}, {f2_poses[i]}')
         # print(data['timestep_list'][i]['action'])
         # input('next step?')
+        # joints.append()
 
 def main(filepath = None,learn_type='run'):
     num_cpu = 16 #multiprocessing.cpu_count() # Number of processes to use
@@ -671,7 +675,7 @@ if __name__ == '__main__':
     # main('./data/HPC_slide_all_randomizations/FTP_S1/experiment_config.json')
     # main('./data/HPC_slide_time_tests/25_no_contact/experiment_config.json')
     # main('./data/Mothra_Rotation/JA_S2_no_contact/experiment_config.json')
-    # main('./data/Mothra_Slide/FTP_S3/experiment_config.json')
+    main('./data/Solo_rotation/experiment_config.json')
     # main("./data/region_rotation_JA_finger/experiment_config.json",'run')
     # main("./data/JA_full_task_20_1/experiment_config.json",'run')
     # evaluate("./data/FTP_halfstate_A_rand/experiment_config.json","B")
@@ -680,12 +684,13 @@ if __name__ == '__main__':
     # evaluate("./data/Domain_randomization_test/experiment_config.json")
     # evaluate("./data/JA_halfstate_A_rand/experiment_config.json", "B")
     # evaluate("./data/JA_fullstate_A_rand/experiment_config.json","B")
-    # replay("./data/HPC_DR_testing/Start Position/experiment_config.json","./data/HPC_DR_testing/Start Position/Eval_A/Episode_58927.pkl")
+    # replay("./data/Mothra_Rotation/JA_S2_no_contact/experiment_config.json","./data/Mothra_Rotation/JA_S2_no_contact/Eval_A/Episode_124.pkl")
     # main("./data/Full_task_hyperparameter_search/JA_1-3/experiment_config.json",'run')
     # replay("./data/Mothra_Slide/JA_S2/experiment_config.json","./data/Mothra_Slide/JA_S2/Eval_A/Episode_2.pkl")
     # multiprocess_evaluate_loaded("./data/Mothra_Rotation/JA_S2_25_contact/experiment_config.json","A")
     # multiprocess_evaluate_loaded("./data/Mothra_Rotation/FTP_S1/experiment_config.json","A")
-    # multiprocess_evaluate_loaded("./data/Mothra_Rotation/FTP_S1/experiment_config.json","B")
+    # multiprocess_evaluate_loaded("./data/Rotation_no_finger/experiment_config.json","A")
+    # multiprocess_evaluate_loaded("./data/Rotation_no_finger/experiment_config.json","B")
     # multiprocess_evaluate_loaded("./data/HPC_slide_time_tests/25_no_contact/experiment_config.json","A")
     # multiprocess_evaluate_loaded("./data/full_15_contact/experiment_config.json","A")
     # multiprocess_evaluate_loaded("./data/Mothra_Rotation/JA_S2_no_contact/experiment_config.json","A")
@@ -693,10 +698,10 @@ if __name__ == '__main__':
     # multiprocess_evaluate_loaded("./data/Mothra_Slide/JA_S3/experiment_config.json","B")
 
 
-    # multiprocess_evaluate_loaded("./data/HPC_Slide/FTP_S1/experiment_config.json","A")
-    # multiprocess_evaluate_loaded("./data/HPC_Slide/FTP_S1/experiment_config.json","B")
-    multiprocess_evaluate_loaded("./data/HPC_Slide/FTP_S2/experiment_config.json","A")
-    multiprocess_evaluate_loaded("./data/HPC_Slide/FTP_S2/experiment_config.json","B")
+    # multiprocess_evaluate_loaded("./data/HPC_Slide/JA_S1/experiment_config.json","A")
+    # multiprocess_evaluate_loaded("./data/HPC_Slide/JA_S1/experiment_config.json","B")
+    # multiprocess_evaluate_loaded("./data/HPC_Slide/JA_S2/experiment_config.json","A")
+    # multiprocess_evaluate_loaded("./data/HPC_Slide/JA_S2/experiment_config.json","B")
 
     # multiprocess_evaluate_loaded("./data/Mothra_Slide/FTP_S3/experiment_config.json","A")
     # multiprocess_evaluate_loaded("./data/Mothra_Slide/FTP_S3/experiment_config.json","B")
@@ -705,10 +710,11 @@ if __name__ == '__main__':
 
     # multiprocess_evaluate_loaded("./data/Mothra_Slide/JA_S2/experiment_config.json","A")
     # multiprocess_evaluate_loaded("./data/Mothra_Slide/JA_S2/experiment_config.json","B")
-    # multiprocess_evaluate_loaded("./data/Mothra_Slide/JA_S3/experiment_config.json","A")
-    # multiprocess_evaluate_loaded("./data/Mothra_Slide/JA_S3/experiment_config.json","B")       
 
-    # multiprocess_evaluate_loaded("./data/Mothra_Slide/FTP_S3/experiment_config.json","A")
-    # multiprocess_evaluate_loaded("./data/Mothra_Slide/FTP_S3/experiment_config.json","B")
+    # multiprocess_evaluate_loaded("./data/HPC_Slide/JA_S3/experiment_config.json","A")
+    # multiprocess_evaluate_loaded("./data/HPC_Slide/JA_S3/experiment_config.json","B")       
+    # multiprocess_evaluate_loaded("./data/HPC_Slide/FTP_S3/experiment_config.json","A")
+    # multiprocess_evaluate_loaded("./data/HPC_Slide/FTP_S3/experiment_config.json","B")
+
     # multiprocess_evaluate_loaded("./data/HPC_slide_all_randomizations/JA_S3/experiment_config.json","A")
     # multiprocess_evaluate_loaded("./data/HPC_slide_all_randomizations/FTP_S1/experiment_config.json","A")

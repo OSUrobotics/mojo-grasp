@@ -90,8 +90,6 @@ def main():
     #        scatter_plot_tab[0], [sg.Input('Temp',key='save_name'),sg.B('Save Image', key='-SAVE-')],
     #            [sg.Text('File 1 of {}'.format(len(episode_files)), size=(15, 1), key='-FILENUM-')]]
 
-
-
     col_files = [[sg.Text(overall_path, key='-print-path')],
                  [sg.Button('Switch Train/Test'),sg.Button('Select New Folder')],
                  [sg.Listbox(values=filenames_only, size=(60, 30), key='-LISTBOX-', enable_events=True)],
@@ -100,7 +98,7 @@ def main():
                  [sg.Text('Reward Function'),sg.OptionMenu(values=('Sparse','Distance','Distance + Finger', 'Hinge Distance + Finger', 'Slope', 'Slope + Finger','SmartDistance + Finger','SmartDistance + SmartFinger','ScaledDistance + Finger','ScaledDistance+ScaledFinger', 'SFS','DFS','TripleScaled',"full", "full+finger","Rotation", "Rotation+Finger", "continuous_finger", "end_finger"), k='-rf',default_value='TripleScaled')],
                  [sg.Text('Colormap'),sg.Input('plasma_r',key='-cmap',size=(8, 1))],
                  [sg.Text('Num Averaged'),sg.Input(1200,key='moving_avg',size=(8,2)), sg.Text("Keep previous graph", key='-toggletext-'), sg.Button(image_data=toggle_btn_off, key='-TOGGLE-GRAPHIC-', button_color=(sg.theme_background_color(), sg.theme_background_color()), border_width=0, metadata=False)],
-                 [sg.Text('Success Threshold'),sg.Input(10,key='success_range', size=(8,1))],
+                 [sg.Text('Success Threshold (mm)'),sg.Input(10,key='success_range', size=(8,1))],
                  [sg.Text("Distance Scale"),  sg.Input(1,key='-distance_scale',size=(5, 1)), sg.Text('Contact Scale'), sg.Input(0.2,key='-contact_scale',size=(5, 1))],  
                  [sg.Text('Rotation Scale'),sg.Input(1,key='-rotation_scale',size=(5, 1)), sg.Text('Success Reward'), sg.Input(1,key='-success_reward',size=(5, 1))]]
 
@@ -156,16 +154,22 @@ def main():
         # print('values', values)
         # print('event', event)
         rf_key = values['-rf']
-        tholds = {'SUCCESS_THRESHOLD':float(values['success_range']),
+        try:
+            success_range = float(values['success_range'])
+        except:
+            success_range = 0.0
+        tholds = {'SUCCESS_THRESHOLD':success_range,
                         'DISTANCE_SCALING':float(values['-distance_scale']),
                         'CONTACT_SCALING':float(values['-contact_scale']),
                         'SUCCESS_REWARD':float(values['-success_reward']),
                         'ROTATION_SCALING':float(values['-rotation_scale'])}
         backend.set_tholds(tholds)
         backend.set_reward_func(rf_key)
-        backend.moving_avg = int(values['moving_avg'])
-        success_range = int(values['success_range']) * 0.001
-        # print(type(episode_data))
+        try:
+            backend.moving_avg = int(values['moving_avg'])
+        except:
+            backend.moving_avg = 1
+                    # print(type(episode_data))
             # --------------------- Button & Keyboard ---------------------
         if event == sg.WIN_CLOSED:
             break

@@ -77,7 +77,7 @@ class RNNGui():
                           "Rotation_single", "Rotation_region", "full_task",'triple', 'multi', "contact point", "contact","direction", "wall", "wall_single"), k='-task', default_value='unplanned_random')],
                          [sg.Text("Reward"), sg.OptionMenu(values=('Sparse','Distance','Distance + Finger', 'Hinge Distance + Finger', 'Slope', 'Slope + Finger','SmartDistance + Finger','SmartDistance + SmartFinger','ScaledDistance + Finger','ScaledDistance+ScaledFinger', 'SFS','DFS'), k='-reward',default_value='ScaledDistance+ScaledFinger')],
                          [sg.Checkbox("Object Start Position", key='-rstart',default=False), sg.Checkbox("Relative Finger Position", key='-rfinger',default=False),sg.Checkbox("Object Orientation", key='-ror',default=False), sg.Checkbox("Finger Open", key='-rfo',default=False)],
-                         [sg.Text('Rotation limits, only used by Rotation and Full Tasks'), sg.Radio('50 degrees',group_id='rots',key='-50',default=True), sg.Radio('15 degrees',group_id='rots',key='-15',default=False)],
+                         [sg.Text('Rotation limits, only used by Rotation and Full Tasks'), sg.Radio('75 degrees',group_id='rots',key='-75',default=False), sg.Radio('50 degrees',group_id='rots',key='-50',default=True), sg.Radio('15 degrees',group_id='rots',key='-15',default=False)],
                          [sg.Text('Replay Buffer Sampling'), sg.OptionMenu(values=['priority', 'random','random+expert'], k='-sampling', default_value='priority')],
                          [sg.Text('Domain Randomization Options')],
                          [sg.Checkbox('Finger Friction', default=True, k='-DRFI'),sg.Checkbox('Floor Friction', default=True, k='-DRFL'),sg.Checkbox('Object Size', default=True, k='-DROS'), sg.Checkbox('Object Mass', default=True, k='-DROM')]]
@@ -118,8 +118,7 @@ class RNNGui():
                        [sg.Text("Distance Scale"),  sg.Input(1,key='-distance_scale',size=(8, 2)), sg.Text('Contact Scale'),  sg.Input(0.2,key='-contact_scale',size=(8, 2)), sg.Text('Success Reward'), sg.Input(1,key='-success_reward',size=(8, 2)), sg.Text('Rotation Scale'), sg.Input(1,key='-rotation_scale',size=(8, 2))],
                        [sg.Text("Action"), sg.OptionMenu(values=('Joint Velocity','Finger Tip Position'), k='-action',default_value='Finger Tip Position')],
                        [sg.Checkbox('Vizualize Simulation',default=False, k='-viz'), sg.Checkbox('Real World?',default=False, k='-rw'), sg.Checkbox('IK every sim step?', default=False, key='-ik-freq')],
-                       [sg.Button('Begin Training', key='-train', bind_return_key=True)],
-                       [sg.Button('Build Config File WITHOUT Training', key='-build')]]
+                       [sg.Button('Build Config File', key='-build')]]
 
         layout = [[sg.TabGroup([[sg.Tab('Task and General parameters', data_layout, key='-mykey-'),
                                 sg.Tab('Hyperparameters', model_layout),
@@ -276,7 +275,10 @@ class RNNGui():
             state_len += 2
             state_list.append('gp')
         if values['-go']:
-            if values['-50']:
+            if values['-75']:
+                state_mins.append(-75/180*np.pi)
+                state_maxes.append(75/180*np.pi)
+            elif values['-50']:
                 state_mins.append(-50/180*np.pi)
                 state_maxes.append(50/180*np.pi)
             elif values['-15']:
@@ -365,12 +367,25 @@ class RNNGui():
             self.args['points_path'] = str(resource_path.joinpath('train_points_big.csv'))
             self.args['test_path'] = str(resource_path.joinpath('test_points_big.csv'))
         elif (values['-task'] =='Rotation_region')|(values['-task'] =='full_task'):
+            if values['-75']:
+                self.args['points_path'] = str(resource_path.joinpath('rotation_only_train_75.csv'))
+                self.args['test_path'] = str(resource_path.joinpath('rotation_only_test_75.csv'))
             if values['-50']:
                 self.args['points_path'] = str(resource_path.joinpath('rotation_only_train.csv'))
                 self.args['test_path'] = str(resource_path.joinpath('rotation_only_test.csv'))
             elif values['-15']:
                 self.args['points_path'] = str(resource_path.joinpath('rotation_only_train_15.csv'))
                 self.args['test_path'] = str(resource_path.joinpath('rotation_only_test_15.csv'))
+        elif values['-task'] == 'Rotation_single':
+            if values['-75']:
+                self.args['points_path'] = str(resource_path.joinpath('solo_rotation_75.csv'))
+                self.args['test_path'] = str(resource_path.joinpath('solo_rotation_75.csv'))
+            if values['-50']:
+                self.args['points_path'] = str(resource_path.joinpath('solo_rotation_50.csv'))
+                self.args['test_path'] = str(resource_path.joinpath('solo_rotation_50.csv'))
+            elif values['-15']:
+                self.args['points_path'] = str(resource_path.joinpath('solo_rotation_15.csv'))
+                self.args['test_path'] = str(resource_path.joinpath('solo_rotation_15.csv'))
         elif values['-task'] =='wall':
             self.args['points_path'] = str(resource_path.joinpath('train_wall_poses.csv'))
             self.args['test_path'] = str(resource_path.joinpath('test_wall_poses.csv'))
@@ -427,10 +442,6 @@ class RNNGui():
             self.log_params()
         
         return True
-        
-    def train(self):
-        # run_pybullet(self.args['save_path'] + 'experiment_config.json')
-        print('We dont do that here')
 
     def log_params(self):
         if self.built:
@@ -528,14 +539,6 @@ class RNNGui():
                 self.load_path = folder
     
                 self.window.refresh()
-                
-            elif event == '-train':
-                ready = self.build_args(values)
-                if ready:
-                    thread = threading.Thread(target=self.train, daemon=True)
-                    thread.start()
-                else:
-                    print('Parameters incorrect, cant start training')
 
             elif event == '-build':
                 ready = self.build_args(values)        
@@ -567,8 +570,6 @@ class RNNGui():
         
 
 def main():
-
-
     backend = RNNGui()
     backend.run_gui()
 

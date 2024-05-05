@@ -1115,7 +1115,7 @@ class PlotBackend():
             raise TypeError('argument should be string pointing to folder containing episode pickles, dictionary containing all episode data, or list of ending dists')
         s_f = []
         for dist in ending_dists:
-            if dist < success_range:
+            if dist < success_range/1000:
                 s_f.append(100)
             else:
                 s_f.append(0)
@@ -1127,7 +1127,7 @@ class PlotBackend():
             self.clear_axes()
              
         self.ax.plot(range(len(s_f)),s_f)
-        self.legend.extend(['Success Rate (' + str(success_range*1000) + ' mm tolerance)'])
+        self.legend.extend(['Success Rate (' + str(success_range) + ' mm tolerance)'])
         self.ax.legend(self.legend)
         self.ax.set_ylabel('Success Percentage')
         self.ax.set_xlabel('Episode')
@@ -1364,7 +1364,7 @@ class PlotBackend():
         self.ax.plot(trajectory_points[:,0], trajectory_points[:,1])
         self.ax.plot(fingertip1_points[:,0], fingertip1_points[:,1])
         self.ax.plot(fingertip2_points[:,0], fingertip2_points[:,1])
-        self.ax.plot([trajectory_points[0,0], goal_pose[0]],[trajectory_points[0,1],goal_pose[1]])
+        self.ax.plot([trajectory_points[0,0], goal_pose[0]],[trajectory_points[0,1],goal_pose[1]],marker='o')
         self.ax.plot(fingertip1_points[0,0], fingertip1_points[0,1], marker='o',
                      markersize=5,markerfacecolor='orange',markeredgecolor='orange')
         self.ax.plot(fingertip2_points[0,0], fingertip2_points[0,1], marker='o',
