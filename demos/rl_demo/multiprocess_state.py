@@ -105,7 +105,7 @@ class MultiprocessState(StateDefault):
         self.current_state['f1_contact_pos'] = list(temp1[6])
         self.current_state['f2_contact_pos'] = list(temp2[6])
         self.current_state['hand_params'] = self.hand_params.copy()
-        # print(self.current_state['obj_2'])
+        # print('sim state', self.current_state['two_finger_gripper']['joint_angles'])
         # print('joint state', self.p.getJointState(self.objects[0].id,0))
         
     def init_state(self):

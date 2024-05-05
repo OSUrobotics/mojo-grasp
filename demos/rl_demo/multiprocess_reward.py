@@ -71,6 +71,7 @@ class MultiprocessReward(RewardDefault):
             self.current_reward["slope_to_goal"] = old_distance - distance
             self.prev_pos = deepcopy(current_cube_pose)
             # print('we are 10 meters away or more. f1 and f2 dists set to 10 since we are already well below minimum possible reward')
+        # print('reward in sim', self.current_reward)
             
 
     def get_reward(self) -> dict:

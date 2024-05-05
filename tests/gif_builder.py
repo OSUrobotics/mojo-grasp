@@ -55,7 +55,7 @@ def make_video(filepath):
     file_thing = 'eval'
     frame_list = []
     frames = []
-    for i in range(30):
+    for i in range(25):
         for j in range(8):
             print(video_path)
             frame_path = video_path+file_thing+'_frame_'+str(i)+'_'+str(j*10)+'.png'
@@ -65,4 +65,4 @@ def make_video(filepath):
     frame_one.save(filepath+"Episode.gif", format="GIF", append_images=frames,
                save_all=True, duration=13*8, loop=0)
 
-make_video('/home/mothra/mojo-grasp/demos/rl_demo/data/HPC_DR_testing/Start Position/')
+make_video('/home/mothra/mojo-grasp/demos/rl_demo/data/Mothra_Rotation/JA_S2_no_contact/')

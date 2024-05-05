@@ -97,8 +97,8 @@ for j in range(NUM_POINTS):
 
     x = rx * np.sin(theta)
     y = ry * np.cos(theta)
-    x_pts.append(x)
-    y_pts.append(y)
+    x_pts.append(0)
+    y_pts.append(0)
     orientation = np.random.uniform(-15/180*np.pi+0.1, 15/180*np.pi-0.1)
     orientation = orientation + np.sign(orientation)*0.1
     angs.append(orientation)
@@ -113,7 +113,7 @@ df = pd.DataFrame(
       'f1y':finger1,
       'f2y':finger2
       })
-df.to_csv("resources/rotation_only_test_15.csv", index=False)            
+df.to_csv("resources/solo_rotation_15.csv", index=False)            
 # create dataframe from lists
 # df = pd.DataFrame(
 #     {'x': x_n,
