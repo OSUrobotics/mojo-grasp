@@ -197,6 +197,7 @@ class MultiprocessGymWrapper(gym.Env):
         elif type(special) is list:
             self.env.reset_to_pos(special[0],special[1])
         elif type(special) is dict:
+            print('reseting with special dict', special)
             if 'fingers' in special.keys():
                 self.env.reset(special['goal_position'], special['fingers'])
             else:
@@ -212,6 +213,7 @@ class MultiprocessGymWrapper(gym.Env):
         elif 'wall' in self.TASK:
             self.env.reset([0.0463644396618753, 0.012423314164921])
         else:
+            # print('reseting with NO parameters')
             self.env.reset()
         self.manipulation_phase.setup()
         
