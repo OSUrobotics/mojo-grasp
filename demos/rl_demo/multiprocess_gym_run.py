@@ -337,6 +337,9 @@ def multiprocess_evaluate_loaded(filepath, aorb):
         model_type = TD3
     print('LOADING A MODEL')
 
+    # print('HARDCODING THE TEST PATH TO BE THE ROTATION TEST')
+    # args['test_path'] ="/home/mothra/mojo-grasp/demos/rl_demo/resources/Solo_rotation_test.csv"
+
     if not('contact_start' in args.keys()):
         args['contact_start'] = True
         print('we didnt have a contact start so we set it to true')
@@ -675,7 +678,7 @@ if __name__ == '__main__':
     # main('./data/HPC_slide_all_randomizations/FTP_S1/experiment_config.json')
     # main('./data/HPC_slide_time_tests/25_no_contact/experiment_config.json')
     # main('./data/Mothra_Rotation/JA_S2_no_contact/experiment_config.json')
-    main('./data/Solo_rotation/experiment_config.json')
+    # main('./data/Solo_rotation_no_pose_random/experiment_config.json')
     # main("./data/region_rotation_JA_finger/experiment_config.json",'run')
     # main("./data/JA_full_task_20_1/experiment_config.json",'run')
     # evaluate("./data/FTP_halfstate_A_rand/experiment_config.json","B")
@@ -687,7 +690,7 @@ if __name__ == '__main__':
     # replay("./data/Mothra_Rotation/JA_S2_no_contact/experiment_config.json","./data/Mothra_Rotation/JA_S2_no_contact/Eval_A/Episode_124.pkl")
     # main("./data/Full_task_hyperparameter_search/JA_1-3/experiment_config.json",'run')
     # replay("./data/Mothra_Slide/JA_S2/experiment_config.json","./data/Mothra_Slide/JA_S2/Eval_A/Episode_2.pkl")
-    # multiprocess_evaluate_loaded("./data/Mothra_Rotation/JA_S2_25_contact/experiment_config.json","A")
+    multiprocess_evaluate_loaded("./data/Mothra_Rotation/JA_S2_no_contact/experiment_config.json","A")
     # multiprocess_evaluate_loaded("./data/Mothra_Rotation/FTP_S1/experiment_config.json","A")
     # multiprocess_evaluate_loaded("./data/Rotation_no_finger/experiment_config.json","A")
     # multiprocess_evaluate_loaded("./data/Rotation_no_finger/experiment_config.json","B")
