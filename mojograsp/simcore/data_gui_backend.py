@@ -59,9 +59,7 @@ def pool_key_list_all(episode_file, key_tuples):
         tempdata = pkl.load(ef)
     data = tempdata['timestep_list']
     desired = []
-    # print(key_tuples)
     for tup in key_tuples:
-        # print(tup)
         desired.append([getitem_for(d,tup) for d in data])
     return desired
 
@@ -449,7 +447,8 @@ class PlotBackend():
         pool.join()
         datapoints = []
         for i in data_list:
-            datapoints.append(i[0][0:2])
+            # print(i)
+            datapoints.extend([j[0][0:2] for j in i[0]])
         
         datapoints = np.array(datapoints)
         print('num poses', np.shape(datapoints))
@@ -464,7 +463,7 @@ class PlotBackend():
         # xlim = [min(xlim[0],-0.07), max(xlim[1],0.07)]
         # ylim = [min(ylim[0],0.1), max(ylim[1],0.22)]
         xlim = [-0.1, 0.1]
-        ylim = [-0.1, 0.1]
+        ylim = [0, 0.2]
         xi, yi = np.mgrid[xlim[0]:xlim[1]:nbins*1j, ylim[0]:ylim[1]:nbins*1j]
         print('did the mgrid')
         zi = k(np.vstack([xi.flatten(), yi.flatten()]))
@@ -514,15 +513,17 @@ class PlotBackend():
         '''
         datapoints = [] 
         pool = multiprocessing.Pool()
-        tst = (-1)
-        keys = (('state','obj_2','pose'))
+        tst = (-1,)
+        keys = (('state','obj_2','pose'),)
         thing = [[ef, tst, keys] for ef in episode_files]
         print('applying async')
         data_list = pool.starmap(pool_key_list,thing)
         pool.close()
         pool.join()
         for i in data_list:
-            datapoints.append(i[0][0:2])
+            # print(i)
+            datapoints.append(i[0][0][0:2])
+        # print(datapoints)
         datapoints = np.array(datapoints)
         print('num poses', np.shape(datapoints))
         nbins=100
@@ -732,6 +733,7 @@ class PlotBackend():
         return return_rewards
 
     def draw_finger_obj_dist_avg(self, folder_or_data_dict):
+
         if type(folder_or_data_dict) is str:
             print('this will be slow, and we both know it')
             
@@ -745,7 +747,6 @@ class PlotBackend():
                 if len(i) > 0 :
                     final_filenums.append(int(i[0]))
             
-            
             sorted_inds = np.argsort(final_filenums)
             final_filenums = np.array(final_filenums)
             temp = final_filenums[sorted_inds]
@@ -753,31 +754,20 @@ class PlotBackend():
             filenames_only = np.array(filenames_only)
 
             episode_files = episode_files[sorted_inds].tolist()
+
+            pool = multiprocessing.Pool()
+            keys = (('reward','f1_dist'),('reward','f2_dist'))
+            thing = [[ef, keys] for ef in episode_files]
+            print('applying async')
+            data_list = pool.starmap(pool_key_list_all,thing)
+            pool.close()
+            pool.join()
             # filenames_only = filenames_only[sorted_inds].tolist()
-            rewards = []
-            temp = 0
-            count = 0
-            finger_obj_avgs= np.zeros((len(episode_files),2))
-            for i,episode_file in enumerate(episode_files):
-                with open(episode_file, 'rb') as ef:
-                    tempdata = pkl.load(ef)
-                data = tempdata['timestep_list']
-                finger_obj_dists = np.zeros((len(data),2))
-                for j, timestep in enumerate(data):
-                    finger_obj_dists[j,:]=[timestep['reward']['f1_dist'],timestep['reward']['f2_dist']]
-                finger_obj_avgs[i] = np.average(finger_obj_dists, axis=0)
-                temp = 0
-                if count% 100 ==0:
-                    print('count = ', count)
-                count +=1
-        elif type(folder_or_data_dict) is dict:
-            finger_obj_avgs = np.zeros((len(folder_or_data_dict['episode_list']),2))
-            for i, episode in enumerate(folder_or_data_dict['episode_list']):
-                data = episode['timestep_list']
-                finger_obj_dists = np.zeros((len(data),2))
-                for j, timestep in enumerate(data):
-                    finger_obj_dists[j,:]=[timestep['reward']['f1_dist'],timestep['reward']['f2_dist']]
-                finger_obj_avgs[i] = np.average(finger_obj_dists, axis=0)
+            finger_obj_avgs= []
+            for i in data_list:
+                finger_obj_avgs.append([np.average(i[0]),np.average(i[1])])
+            # print(finger_obj_avgs)
+            finger_obj_avgs = np.array(finger_obj_avgs)
         
         if self.moving_avg != 1:
             t1 = moving_average(finger_obj_avgs[:,0],self.moving_avg)
@@ -786,7 +776,6 @@ class PlotBackend():
         
         if self.clear_plots | (self.curr_graph != 'fing_obj_dist'):
             self.clear_axes()
-             
                 
         self.ax.plot(range(len(finger_obj_avgs)),finger_obj_avgs[:,0])
         self.ax.plot(range(len(finger_obj_avgs)),finger_obj_avgs[:,1])
@@ -813,7 +802,6 @@ class PlotBackend():
                 if len(i) > 0 :
                     final_filenums.append(int(i[0]))
             
-            
             sorted_inds = np.argsort(final_filenums)
             final_filenums = np.array(final_filenums)
             temp = final_filenums[sorted_inds]
@@ -821,31 +809,18 @@ class PlotBackend():
             filenames_only = np.array(filenames_only)
 
             episode_files = episode_files[sorted_inds].tolist()
-            # filenames_only = filenames_only[sorted_inds].tolist()
-            rewards = []
-            temp = 0
-            count = 0
-            finger_obj_maxs= np.zeros((len(episode_files),2))
-            for i,episode_file in enumerate(episode_files):
-                with open(episode_file, 'rb') as ef:
-                    tempdata = pkl.load(ef)
-                data = tempdata['timestep_list']
-                finger_obj_dists = np.zeros((len(data),2))
-                for j, timestep in enumerate(data):
-                    finger_obj_dists[j,:]=[timestep['reward']['f1_dist'],timestep['reward']['f2_dist']]
-                finger_obj_maxs[i] = np.max(finger_obj_dists, axis=0)
-                temp = 0
-                if count% 100 ==0:
-                    print('count = ', count)
-                count +=1
-        elif type(folder_or_data_dict) is dict:
-            finger_obj_maxs = np.zeros((len(folder_or_data_dict['episode_list']),2))
-            for i, episode in enumerate(folder_or_data_dict['episode_list']):
-                data = episode['timestep_list']
-                finger_obj_dists = np.zeros((len(data),2))
-                for j, timestep in enumerate(data):
-                    finger_obj_dists[j,:]=[timestep['reward']['f1_dist'],timestep['reward']['f2_dist']]
-                finger_obj_maxs[i] = np.max(finger_obj_dists, axis=0)
+
+            pool = multiprocessing.Pool()
+            keys = (('reward','f1_dist'),('reward','f2_dist'))
+            thing = [[ef, keys] for ef in episode_files]
+            print('applying async')
+            data_list = pool.starmap(pool_key_list_all,thing)
+            pool.close()
+            pool.join()
+            finger_obj_maxs= []
+            for i in data_list:
+                finger_obj_maxs.append([np.max(i[0]),np.max(i[1])])
+            finger_obj_maxs = np.array(finger_obj_maxs)
 
         if self.moving_avg != 1:
             t1 = moving_average(finger_obj_maxs[:,0],self.moving_avg)
@@ -853,8 +828,6 @@ class PlotBackend():
             finger_obj_maxs = np.transpose(np.array([t1,t2]))
         if self.clear_plots | (self.curr_graph != 'fing_obj_dist'):
             self.clear_axes()
-             
-                
         self.ax.plot(range(len(finger_obj_maxs)),finger_obj_maxs[:,0])
         self.ax.plot(range(len(finger_obj_maxs)),finger_obj_maxs[:,1])
         self.legend.extend(['Maximum Finger 1 Object Distance', 'Maximum Finger 2 Object Distance'])
@@ -2347,55 +2320,7 @@ class PlotBackend():
         self.curr_graph = 'Group_Reward'
         return return_rewards
         
-    def draw_dist_relationship(self,folder, cmap='plasma'):
-        # get list of pkl files in folder
-        episode_files = [os.path.join(folder, f) for f in os.listdir(folder) if f.lower().endswith('.pkl')]
-        filenames_only = [f for f in os.listdir(folder) if f.lower().endswith('.pkl')]
-        
-        filenums = [re.findall('\d+',f) for f in filenames_only]
-        final_filenums = []
-        for i in filenums:
-            if len(i) > 0 :
-                final_filenums.append(int(i[0]))
-        
-        
-        sorted_inds = np.argsort(final_filenums)
-        final_filenums = np.array(final_filenums)
-        temp = final_filenums[sorted_inds]
-        episode_files = np.array(episode_files)
-        filenames_only = np.array(filenames_only)
 
-        episode_files = episode_files[sorted_inds].tolist()
-
-        # goal angle should be +/- pi
-        # make the current angle set between +/- pi then subtract the two
-        start_pos = []
-        end_dist = []
-        start_dist = []
-        for episode_file in episode_files:
-            with open(episode_file, 'rb') as ef:
-                tempdata = pkl.load(ef)
-            data = tempdata['timestep_list']
-            # print(data[0]['reward'])
-            start_dist.append(data[0]['reward']['distance_to_goal'])
-            end_dist.append(data[-1]['reward']['distance_to_goal'])
-            start_pos.append([data[0]['state']['obj_2']['pose'][0][0],data[0]['state']['obj_2']['pose'][0][1]-0.1])
-        
-        self.clear_axes()
-        start_pos = np.array(start_pos)
-        end_dists = np.array(end_dist)
-        end_dists= np.clip(end_dist, 0, 0.025)
-        a = self.ax.scatter(start_pos[:,0]*100, start_pos[:,1]*100, c = end_dists*100, cmap=cmap)
-        self.ax.set_ylabel('Y position (cm)')
-        self.ax.set_xlabel('X position (cm)')
-        self.ax.set_xlim([-8,8])
-        self.ax.set_ylim([-8,8])
-        self.ax.set_title('Ending Distance Based on START Position')
-        self.ax.grid(False)
-        self.colorbar = self.fig.colorbar(a, ax=self.ax, extend='max')
-        self.ax.set_aspect('equal',adjustable='box')
-        
-        self.curr_graph = 'scatter'
 
     def build_scatter_magic(self,folder_path):
         self.point_dictionary = {}
@@ -2421,9 +2346,6 @@ class PlotBackend():
         episode_files = np.array(episode_files)
         filenames_only = np.array(filenames_only)
         episode_files = episode_files[sorted_inds].tolist()
-        goals, end_dists = [],[]
-        keys = {}
-        count = 0
 
         print('applying async')
         pool = multiprocessing.Pool()
@@ -2516,7 +2438,8 @@ class PlotBackend():
         
             min_spot = np.argmin(distances)
             self.click_spell = closest_point[min_spot]
-            print('drawing start graph', desired_point[min_spot])
+            # print('drawing start graph', desired_point[min_spot])
+            # print(self.click_spell)
         end_dists = []
         goals = []
         for pt,dist in zip(self.point_dictionary[self.click_spell]['goal_pos'],self.point_dictionary[self.click_spell]['dist']):
@@ -2539,11 +2462,55 @@ class PlotBackend():
         self.ax.set_title('Distance to Goals')
         self.ax.grid(False)
         self.colorbar = self.fig.colorbar(a, ax=self.ax, extend='max')
+        self.ax.scatter(self.point_dictionary[self.click_spell]['start_pos'][0][0]*100,self.point_dictionary[self.click_spell]['start_pos'][0][1]*100,marker='s')
         self.ax.set_aspect('equal',adjustable='box')
         self.curr_graph = 'scatter'
         print(f'average end distance {mean} +/- {std}')
         return [mean, std]
     
+    def draw_dist_relationship(self,clicks, cmap='plasma'):
+        # get list of pkl files in folder
+        if self.point_dictionary == {}:
+            print('cant do it, need to run wizard first')
+            return
+        if clicks[0] is None:
+            print('need to select a point first')
+            return
+
+        closest_point = []
+        distances = []
+        test_point = np.array(clicks)/100
+        desired_point = []
+        start_pos, end_dists, goal_points = [], [], []
+        # print(type(self.point_dictionary))
+        for k,v in self.point_dictionary.items():
+            if len(v['goal_pos']) > 0:
+                ind = np.argmin(np.linalg.norm(test_point-np.array(v['goal_pos']),axis=1))
+                # print(ind, len(v['start_pos']), len(v['dist']), len(v['goal_pos']))
+                start_pos.append(v['start_pos'][ind])
+                end_dists.append(v['dist'][ind])
+                goal_points.append(v['goal_pos'][ind])
+
+        end_dists = np.array(end_dists)
+        mean, std = np.average(end_dists), np.std(end_dists)
+        end_dists = np.clip(end_dists, 0, 0.025)
+        self.click_spell = None
+        self.clear_axes()
+        start_pos = np.array(start_pos)
+        end_dists = np.array(end_dists)
+        end_dists= np.clip(end_dists, 0, 0.025)
+        a = self.ax.scatter(start_pos[:,0]*100, start_pos[:,1]*100, c = end_dists*100, cmap=cmap)
+        self.ax.scatter(goal_points[0][0]*100,goal_points[0][1]*100,marker='s')
+        self.ax.set_ylabel('Y position (cm)')
+        self.ax.set_xlabel('X position (cm)')
+        self.ax.set_xlim([-8,8])
+        self.ax.set_ylim([-8,8])
+        self.ax.set_title('Ending Distance Based on START Position')
+        self.ax.grid(False)
+        self.colorbar = self.fig.colorbar(a, ax=self.ax, extend='max')
+        self.ax.set_aspect('equal',adjustable='box')
+        
+        self.curr_graph = 'scatter'
 
     def draw_path_spell(self, clicks):
         if self.point_dictionary == {}:
@@ -2645,7 +2612,7 @@ class PlotBackend():
         # self.ax.legend(['Achieved Angles','No Movement Line'])
 
 
-    def draw_timestep_goal_dist(self, folder, tstep):
+    def draw_timestep_goal_best(self, folder, tstep):
         # get list of pkl files in folder
         episode_files = [os.path.join(folder, f) for f in os.listdir(folder) if f.lower().endswith('.pkl')]
         filenames_only = [f for f in os.listdir(folder) if f.lower().endswith('.pkl')]
@@ -2671,13 +2638,60 @@ class PlotBackend():
         pool.join()
 
 
-        return_mins = min_dists.copy()
+        return_mins = min_dists.copy() 
         if self.moving_avg != 1:
             min_dists = moving_average(min_dists,self.moving_avg)
         if self.clear_plots | (self.curr_graph != 'goal_dist'):
             self.clear_axes()
              
         self.ax.plot(range(len(min_dists)),min_dists)
+        self.legend.extend([f'Best Goal Distance at step {tstep}'])
+        self.ax.legend(self.legend)
+        self.ax.set_ylabel('Goal Distance')
+        self.ax.set_xlabel('Episode')
+        self.ax.grid(True)
+        self.ax.set_title('Distance to Goal Per Episode')
+        self.ax.set_aspect('auto',adjustable='box')
+        self.curr_graph = 'goal_dist'
+        print('average and std dev of positions', np.average(return_mins), np.std(return_mins))
+        return return_mins
+    
+    def draw_timestep_goal_end(self, folder, tstep):
+        # get list of pkl files in folder
+        episode_files = [os.path.join(folder, f) for f in os.listdir(folder) if f.lower().endswith('.pkl')]
+        filenames_only = [f for f in os.listdir(folder) if f.lower().endswith('.pkl')]
+        
+        filenums = [re.findall('\d+',f) for f in filenames_only]
+        final_filenums = []
+        for i in filenums:
+            if len(i) > 0 :
+                final_filenums.append(int(i[0]))
+        
+        sorted_inds = np.argsort(final_filenums)
+        final_filenums = np.array(final_filenums)
+        temp = final_filenums[sorted_inds]
+        episode_files = np.array(episode_files)
+        filenames_only = np.array(filenames_only)
+
+        episode_files = episode_files[sorted_inds].tolist()
+        tst = (tstep,)
+        keys = (('reward','distance_to_goal'),)
+        thing = [[ef, tst, keys] for ef in episode_files]
+        print('applying async')
+
+        pool = multiprocessing.Pool()
+        data_list = pool.starmap(pool_key_list,thing)
+        pool.close()
+        pool.join()
+
+
+        return_mins = data_list.copy()
+        if self.moving_avg != 1:
+            data_list = moving_average(data_list,self.moving_avg)
+        if self.clear_plots | (self.curr_graph != 'goal_dist'):
+            self.clear_axes()
+             
+        self.ax.plot(range(len(data_list)),data_list)
         self.legend.extend([f'Goal Distance at step {tstep}'])
         self.ax.legend(self.legend)
         self.ax.set_ylabel('Goal Distance')
@@ -2689,7 +2703,6 @@ class PlotBackend():
         print('average and std dev of positions', np.average(return_mins), np.std(return_mins))
         return return_mins
     
-
     def draw_orientation_end_magic(self, folder_path, cmap='plasma'):
         if self.point_dictionary == {}:
             self.build_scatter_magic(folder_path)
@@ -2778,7 +2791,6 @@ class PlotBackend():
         self.curr_graph = 'scatter'
         print(f'average orientation error {mean} +/- {std}')
         return [mean, std]
-    
 
     def draw_orientation_spell(self, clicks):
         if self.point_dictionary == {}:
@@ -2818,3 +2830,55 @@ class PlotBackend():
         filename = datapath.split('/')[-1]
         return filename
     
+    def draw_success_scatter(self, clicks, success_range, rot_success):
+        if self.point_dictionary == {}:
+            print('cant do it, need to run wizard first')
+            return False
+        
+        self.clear_axes()
+
+        if self.click_spell is None:
+            closest_point = []
+            distances = []
+            test_point = np.array(clicks)/100
+            desired_point = []
+            for k,v in self.point_dictionary.items():
+                if len(v['start_pos']) > 0:
+                    distances.append(np.linalg.norm(test_point - np.array(v['start_pos'])))
+                    closest_point.append(k)
+                    desired_point.append(v['start_pos'][0])
+        
+            min_spot = np.argmin(distances)
+            self.click_spell = closest_point[min_spot]
+
+        goals = []
+        s_f = []
+        for pt,dist,goal_or,end_or in zip(self.point_dictionary[self.click_spell]['goal_pos'],self.point_dictionary[self.click_spell]['dist'],self.point_dictionary[self.click_spell]['goal_orientation'],self.point_dictionary[self.click_spell]['end_orientation']):
+            goals.append(pt)
+            orientation = np.abs(goal_or - end_or)*180/np.pi
+            if (dist*1000 < success_range) and (orientation < rot_success):
+                s_f.append(100)
+            else:
+                s_f.append(0)
+        # mean, std = np.average(end_dists), np.std(end_dists)
+        
+        goals = np.array(goals)
+        s_f = np.array(s_f)
+        # try:
+        a = self.ax.scatter(goals[:,0]*100, goals[:,1]*100, c = s_f)
+        # except:
+        #     a = self.ax.scatter(goals[:,0]*100, goals[:,1]*100, c = s_f)
+
+        self.ax.set_ylabel('Y position (cm)')
+        self.ax.set_xlabel('X position (cm)')
+        self.ax.set_xlim([-8,8])
+        self.ax.set_ylim([-8,8])
+        self.ax.set_title('Distance to Goals')
+        self.ax.grid(False)
+        self.colorbar = self.fig.colorbar(a, ax=self.ax, extend='max')
+        self.ax.scatter(self.point_dictionary[self.click_spell]['start_pos'][0][0]*100,self.point_dictionary[self.click_spell]['start_pos'][0][1]*100,marker='s')
+        self.ax.set_aspect('equal',adjustable='box')
+        self.curr_graph = 'scatter'
+        # print(f'average end distance {mean} +/- {std}')
+        # return [mean, std]
+ 

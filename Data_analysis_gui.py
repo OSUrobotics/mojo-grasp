@@ -63,14 +63,12 @@ def main():
     filenames_only = filenames_only[sorted_inds].tolist()
     folder_location = os.path.abspath(episode_files[0])
     overall_path = pathlib.Path(folder_location).parent.resolve()
-    finger_radios = [sg.Radio('Finger','fr',key='f1'),sg.Radio('Smart Finger','fr',key='f2')]
-    distance_radios = [sg.Radio('Scaled Distance','dr',key='d1'),sg.Radio('Rotation Only','dr',key='d2'),sg.Radio('Rotation Stationary','dr',key='d3'),sg.Radio('Rotation and Sliding','dr',key='d4')]
     # define menu layout
     menu = [['File', ['Open Folder', 'Exit']], ['Help', ['About', ]]]
 
     scatter_plot_tab = [[sg.Button('Goal Wizard', size=(8,2)), sg.Button('Goal Spell', size=(8,2)), sg.Button('End Poses', size=(8, 2)), sg.Button('Ending Distances', size=(8,2)), sg.Button('Path Spell', size=(8,2))],
                         [sg.Button('Orientation Wizard', size=(8,2)), sg.Button('Orientation Scatter Spell', size=(8,2)), sg.Button('Orientation Multi', key='Orientation Multi',size=(8, 2)), sg.Button('Rotation Sliding Error', size=(8,2)), sg.Button('Orientation Spell',size=(8,2))],
-                        [sg.Button('Contact Wizard', size=(8,2)), sg.Button('Contact Dist', size=(8, 2)), sg.Button('',size=(8,2)), sg.Button('',size=(8,2)), sg.Button('Contact Spell',size = (8,2))],
+                        [sg.Button('Contact Wizard', size=(8,2)), sg.Button('Contact Dist', size=(8, 2)), sg.Button('Success Scatter',size=(8,2)), sg.Button('',size=(8,2)), sg.Button('Contact Spell',size = (8,2))],
                         [sg.Button('Explored Region', size=(8,2)), sg.Button('Reward Comparison', size=(8,2)), sg.Button('Timestep Best',size=(8,2)), sg.Button('Finger Object Avg', size=(8,2)),sg.Button('',size=(8,2))],
                         [sg.Button('End Region', size=(8,2)), sg.Button('Max Percent', size=(8,2)),sg.Button('Timestep End',size=(8,2)), sg.Button('Finger Object Max', size=(8,2)), sg.Button('Success Rate', size=(8,2))]]
 
@@ -78,6 +76,7 @@ def main():
                     [sg.Button('Fingertip Path', size=(8,2)), sg.Button('Actor Output', size=(8, 2)), sg.Button('Object Goal Distance',size=(8, 2)),sg.Button('',size=(8,2)),sg.Button('',size=(8,2))],
                     [sg.Button('Obj Contacts', size=(8,2)), sg.Button('Aout Comparison', size=(8, 2)),sg.Button('Orientation', size=(8,2)), sg.Button('Multireward', size=(8,2)),sg.Button('',size=(8,2))],
                     [sg.Button('Finger Goal Path',size=(8,2)),sg.Button('Sampled Poses', size=(8,2)),sg.Button('',size=(8,2)),sg.Button('',size=(8,2)),sg.Button('',size=(8,2))]]
+
     # define layout, show and read the window
     col = [[sg.Text(episode_files[0], size=(80, 3), key='-FILENAME-')],
            [sg.Canvas(size=(1280*2, 960*2), key='-CANVAS-')],
@@ -216,7 +215,8 @@ def main():
                 backend.draw_explored_region(episode_data)
                 figure_canvas_agg.draw()
             else:
-                print('episode all not selected, cant do it')
+                backend.draw_explored_region(folder)
+                figure_canvas_agg.draw()
         elif event == 'Aout Comparison':
             backend.draw_aout_comparison(episode_data)
             figure_canvas_agg.draw()
@@ -295,7 +295,7 @@ def main():
             backend.draw_end_pos_no_color(folder)
             figure_canvas_agg.draw()
         elif event == 'Ending Distances':
-            backend.draw_dist_relationship(folder,values['-cmap'])
+            backend.draw_dist_relationship([clicks.x, clicks.y],values['-cmap'])
             figure_canvas_agg.draw()
         elif event == 'Fingertip Path':
             backend.draw_fingertip_path(episode_data)
@@ -382,6 +382,10 @@ def main():
         elif event == 'Orientation Scatter Spell':
             backend.draw_scatter_orientation_spell([clicks.x, clicks.y], values['-cmap'])
             figure_canvas_agg.draw()
+        elif event == "Success Scatter":
+            rot_success = float(values['rot_success_range'])
+            backend.draw_success_scatter([clicks.x, clicks.y], success_range, rot_success)
+            figure_canvas_agg.draw()
         elif event == 'Orientation Spell':
             spellname = backend.draw_orientation_spell([clicks.x, clicks.y])
             if spellname:
@@ -408,8 +412,11 @@ def main():
                 print(filename)
                 window['-LISTBOX-'].update(set_to_index=filenum, scroll_to_index=filenum)
                 episode_data = load_data(filename)
-        elif event == 'Timestep Goal':
-            backend.draw_timestep_goal_dist(folder,int(values['tstep']))
+        elif event == 'Timestep Best':
+            backend.draw_timestep_goal_best(folder,int(values['tstep']))
+            figure_canvas_agg.draw()
+        elif event == 'Timestep End':
+            backend.draw_timestep_goal_end(folder,int(values['tstep']))
             figure_canvas_agg.draw()
         elif event == 'Rotation Sliding Error':
             backend.draw_rotation_sliding_error(folder,values['-cmap'])
