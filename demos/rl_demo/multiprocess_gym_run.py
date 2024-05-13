@@ -680,7 +680,7 @@ def main(filepath = None,learn_type='run'):
 if __name__ == '__main__':
     # main('./data/HPC_slide_all_randomizations/FTP_S1/experiment_config.json')
     # main('./data/HPC_slide_time_tests/25_no_contact/experiment_config.json')
-    # main('./data/Mothra_Rotation/FTP_S3/experiment_config.json')
+    # main('./data/Full_long_test/experiment_config.json')
     # main('./data/Solo_rotation_no_pose_random/experiment_config.json')
     # main("./data/region_rotation_JA_finger/experiment_config.json",'run')
     # main("./data/JA_full_task_20_1/experiment_config.json",'run')
@@ -705,15 +705,13 @@ if __name__ == '__main__':
 
     # multiprocess_evaluate_loaded("./data/Full_length_test/full_finger_long_train/experiment_config.json","A")
     # multiprocess_evaluate_loaded("./data/Full_length_test/full_finger_long_train/experiment_config.json","B")
- 
- 
-    multiprocess_evaluate_loaded("./data/Rotation_length_tests/Long_finger/experiment_config.json","A")
-    multiprocess_evaluate_loaded("./data/Rotation_length_tests/Long_finger/experiment_config.json","B")
-    # multiprocess_evaluate_loaded("./data/Mothra_Rotation/JA_S2/experiment_config.json","A")
-    # multiprocess_evaluate_loaded("./data/Mothra_Rotation/JA_S2/experiment_config.json","B")
-    # multiprocess_evaluate_loaded("./data/Mothra_Rotation/JA_S3/experiment_config.json","A")
-    # multiprocess_evaluate_loaded("./data/Mothra_Rotation/JA_S3/experiment_config.json","B")
-
+  
+    # multiprocess_evaluate_loaded("./data/WhateverI want/experiment_config.json","A")
+    # multiprocess_evaluate_loaded("./data/Rotation_length_tests/Long_finger/experiment_config.json","B")
+    # multiprocess_evaluate_loaded("./data/Mothra_Rotation/FTP_S3/experiment_config.json","A")
+    # multiprocess_evaluate_loaded("./data/Mothra_Rotation/FTP_S3/experiment_config.json","B")
+    # multiprocess_evaluate_loaded("./data/Mothra_Rotation/FTP_S2/experiment_config.json","A")
+    # multiprocess_evaluate_loaded("./data/Mothra_Rotation/FTP_S2/experiment_config.json","B")
 
     # multiprocess_evaluate_loaded("./data/Misc_Slide/JA_S1/experiment_config.json","A")
     # multiprocess_evaluate_loaded("./data/Misc_Slide/JA_S1/experiment_config.json","B")
@@ -725,13 +723,10 @@ if __name__ == '__main__':
     # multiprocess_evaluate_loaded("./data/Misc_Slide/FTP_S3/experiment_config.json","A")
     # multiprocess_evaluate_loaded("./data/Misc_Slide/FTP_S3/experiment_config.json","B")
 
-
     # multiprocess_evaluate_loaded("./data/Misc_Slide/FTP_S1/experiment_config.json","A")
     # multiprocess_evaluate_loaded("./data/Misc_Slide/FTP_S1/experiment_config.json","B")
     # multiprocess_evaluate_loaded("./data/Misc_Slide/FTP_S2/experiment_config.json","A")
     # multiprocess_evaluate_loaded("./data/Misc_Slide/FTP_S2/experiment_config.json","B")
-
-
 
     # multiprocess_evaluate_loaded("./data/Mothra_Slide/FTP_S3/experiment_config.json","A")
     # multiprocess_evaluate_loaded("./data/Mothra_Slide/FTP_S3/experiment_config.json","B")
@@ -741,10 +736,11 @@ if __name__ == '__main__':
     # multiprocess_evaluate_loaded("./data/Mothra_Slide/JA_S2/experiment_config.json","A")
     # multiprocess_evaluate_loaded("./data/Mothra_Slide/JA_S2/experiment_config.json","B")
 
-    # multiprocess_evaluate_loaded("./data/HPC_Slide/JA_S3/experiment_config.json","A")
-    # multiprocess_evaluate_loaded("./data/HPC_Slide/JA_S3/experiment_config.json","B")       
-    # multiprocess_evaluate_loaded("./data/HPC_Slide/FTP_S3/experiment_config.json","A")
-    # multiprocess_evaluate_loaded("./data/HPC_Slide/FTP_S3/experiment_config.json","B")
-
+    multiprocess_evaluate_loaded("./data/Jeremiah_Rotation/FTP_S1/experiment_config.json","A")
+    multiprocess_evaluate_loaded("./data/Jeremiah_Rotation/FTP_S1/experiment_config.json","B")
+    multiprocess_evaluate_loaded("./data/Jeremiah_Rotation/FTP_S2/experiment_config.json","A")
+    multiprocess_evaluate_loaded("./data/Jeremiah_Rotation/FTP_S2/experiment_config.json","B")
+    multiprocess_evaluate_loaded("./data/Jeremiah_Rotation/FTP_S3/experiment_config.json","A")
+    multiprocess_evaluate_loaded("./data/Jeremiah_Rotation/FTP_S3/experiment_config.json","B")
     # multiprocess_evaluate_loaded("./data/HPC_slide_all_randomizations/JA_S3/experiment_config.json","A")
     # multiprocess_evaluate_loaded("./data/HPC_slide_all_randomizations/FTP_S1/experiment_config.json","A")

@@ -53,6 +53,8 @@ def main():
         episode_files = [os.path.join(folder, f) for f in os.listdir(folder) if f.lower().endswith('.json')]
         filenames_only = [f for f in os.listdir(folder) if f.lower().endswith('.json')]
 
+
+    screen_width, screen_height = sg.Window.get_screen_size()
     sorted_inds = np.argsort(final_filenums)
     final_filenums = np.array(final_filenums)
     temp = final_filenums[sorted_inds]
@@ -68,18 +70,18 @@ def main():
 
     scatter_plot_tab = [[sg.Button('Goal Wizard', size=(8,2)), sg.Button('Goal Spell', size=(8,2)), sg.Button('End Poses', size=(8, 2)), sg.Button('Ending Distances', size=(8,2)), sg.Button('Path Spell', size=(8,2))],
                         [sg.Button('Orientation Wizard', size=(8,2)), sg.Button('Orientation Scatter Spell', size=(8,2)), sg.Button('Orientation Multi', key='Orientation Multi',size=(8, 2)), sg.Button('Rotation Sliding Error', size=(8,2)), sg.Button('Orientation Spell',size=(8,2))],
-                        [sg.Button('Contact Wizard', size=(8,2)), sg.Button('Contact Dist', size=(8, 2)), sg.Button('Success Scatter',size=(8,2)), sg.Button('',size=(8,2)), sg.Button('Contact Spell',size = (8,2))],
-                        [sg.Button('Explored Region', size=(8,2)), sg.Button('Reward Comparison', size=(8,2)), sg.Button('Timestep Best',size=(8,2)), sg.Button('Finger Object Avg', size=(8,2)),sg.Button('',size=(8,2))],
+                        [sg.Button('Contact Wizard', size=(8,2)), sg.Button('Contact Dist', size=(8, 2)), sg.Button('Success Scatter',size=(8,2)), sg.Button('Shenanigans',size=(8,2)), sg.Button('Contact Spell',size = (8,2))],
+                        [sg.Button('Explored Region', size=(8,2)), sg.Button('Reward Comparison', size=(8,2)), sg.Button('Timestep Best',size=(8,2)), sg.Button('Finger Object Avg', size=(8,2)),sg.Button('Scatter Scaled',size=(8,2))],
                         [sg.Button('End Region', size=(8,2)), sg.Button('Max Percent', size=(8,2)),sg.Button('Timestep End',size=(8,2)), sg.Button('Finger Object Max', size=(8,2)), sg.Button('Success Rate', size=(8,2))]]
 
     plot_buttons = [[sg.Button('Object Path', size=(8, 2)), sg.Button('Finger Angles', size=(8, 2)), sg.Button('Finger Contact Distance',size=(8, 2)), sg.Button('Rewards', size=(8, 2)),sg.Button('',size=(8,2))],
                     [sg.Button('Fingertip Path', size=(8,2)), sg.Button('Actor Output', size=(8, 2)), sg.Button('Object Goal Distance',size=(8, 2)),sg.Button('',size=(8,2)),sg.Button('',size=(8,2))],
                     [sg.Button('Obj Contacts', size=(8,2)), sg.Button('Aout Comparison', size=(8, 2)),sg.Button('Orientation', size=(8,2)), sg.Button('Multireward', size=(8,2)),sg.Button('',size=(8,2))],
-                    [sg.Button('Finger Goal Path',size=(8,2)),sg.Button('Sampled Poses', size=(8,2)),sg.Button('',size=(8,2)),sg.Button('',size=(8,2)),sg.Button('',size=(8,2))]]
+                    [sg.Button('Finger Goal Path',size=(8,2)),sg.Button('Sampled Poses', size=(8,2)),sg.Button('',size=(8,2)),sg.Button('',size=(8,2)),sg.Button('draw_newshit',size=(8,2))]]
 
     # define layout, show and read the window
     col = [[sg.Text(episode_files[0], size=(80, 3), key='-FILENAME-')],
-           [sg.Canvas(size=(1280*2, 960*2), key='-CANVAS-')],
+           [sg.Canvas(size=(1280, 960), key='-CANVAS-')],
            [sg.TabGroup([[sg.Tab('Standard Plotting', plot_buttons)],
                         [sg.Tab('Scatter Plotting', scatter_plot_tab)]],key='-group1-', tab_location='top', selected_title_color='purple')], [sg.Input('Temp',key='save_name'),sg.B('Save Image', key='-SAVE-')],
                [sg.Text('File 1 of {}'.format(len(episode_files)), size=(15, 1), key='-FILENUM-')]]
@@ -102,14 +104,12 @@ def main():
                  [sg.Text("Distance Scale"),  sg.Input(1,key='-distance_scale',size=(5, 1)), sg.Text('Contact Scale'), sg.Input(0.2,key='-contact_scale',size=(5, 1))],  
                  [sg.Text('Rotation Scale'),sg.Input(1,key='-rotation_scale',size=(5, 1)), sg.Text('Success Reward'), sg.Input(1,key='-success_reward',size=(5, 1))]]
 
-
     layout = [[sg.Menu(menu)], [sg.Col(col_files), sg.Col(col)]]
     # layout = [[sg.Menu(menu)], [sg.TabGroup([[sg.Tab('Single Plotting', [[sg.Col(col_files), sg.Col(col)]]),
     #                         sg.Tab('Scatter Plotting', [[sg.Col(col_files), sg.Col(scatter_col)]])]], key='-group1-', tab_location='top', selected_title_color='purple')]]
 
-
     window = sg.Window('Analysis Window', layout, return_keyboard_events=True, use_default_focus=False, finalize=True)
-
+    
     window.move(1000, 20)
     canvas = window['-CANVAS-'].TKCanvas
 
@@ -151,6 +151,7 @@ def main():
     # TODO: add in functionality to check which type of file it is and send in either the epidoe data OR the string to the folder
     while True:
         event, values = window.read()
+        # print()
         # print('values', values)
         # print('event', event)
         rf_key = values['-rf']
@@ -198,6 +199,9 @@ def main():
         elif event == 'Actor Output':
             backend.draw_actor_output(episode_data)
             figure_canvas_agg.draw()
+        elif event == 'draw_newshit':
+            backend.draw_newshit(folder)
+            figure_canvas_agg.draw()
         elif event == 'Critic Output':
             backend.draw_critic_output(episode_data)
             figure_canvas_agg.draw()
@@ -220,9 +224,11 @@ def main():
         elif event == 'Aout Comparison':
             backend.draw_aout_comparison(episode_data)
             figure_canvas_agg.draw()
+        elif event == 'Scatter Scaled':
+            backend.draw_scatter_scaled_dist(folder, values['-cmap'])
+            figure_canvas_agg.draw()
         elif event == 'Episode Rewards':
             if 'all' in filename and 'all' not in folder:
-                
                 backend.draw_net_reward(episode_data)
             else:
                 backend.draw_net_reward(folder)
@@ -296,6 +302,9 @@ def main():
             figure_canvas_agg.draw()
         elif event == 'Ending Distances':
             backend.draw_dist_relationship([clicks.x, clicks.y],values['-cmap'])
+            figure_canvas_agg.draw()
+        elif event == "Shenanigans":
+            backend.draw_end_pose_shenanigans(folder,values['-cmap'])
             figure_canvas_agg.draw()
         elif event == 'Fingertip Path':
             backend.draw_fingertip_path(episode_data)

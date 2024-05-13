@@ -36,6 +36,7 @@ def pool_process(episode_file):
         point_list.append(episode_file)
         point_list.append(data[-1]['reward']['object_orientation'][2]) # end orientation
         point_list.append(data[0]['state']['goal_pose']['goal_orientation']) # goal orientation
+        point_list.append(data[0]['reward']['distance_to_goal'])
     except KeyError:
         print('point that doesnt match the start is here. fuck')
         print(data[0]['state']['obj_2']['pose'][0][0])
@@ -80,7 +81,8 @@ class PlotBackend():
     def __init__(self, config_folder):
         self.fig, self.ax = plt.subplots()
         self.clear_plots = True
-         
+        self.aspect_ratio = 3/4
+        # self.fig.set_size_inches(12,9)4:3
         self.curr_graph = None
         self.moving_avg = 1 
         self.colorbar = None
@@ -95,6 +97,9 @@ class PlotBackend():
     def load_config(self, config_folder):
         with open(config_folder+'/experiment_config.json') as file:
             self.config = json.load(file)
+
+    def set_fig_size(self,width):
+        self.fig.set_size_inches(width,width*self.aspect_ratio)
 
     def reset(self):
         self.click_spell = None
@@ -287,7 +292,7 @@ class PlotBackend():
         angle_tweaks = current_angle_list
         if self.clear_plots | (self.curr_graph != 'angles'):
             self.clear_axes()
-             
+            
         self.ax.plot(range(len(angle_tweaks)),angle_tweaks[:,0])
         self.ax.plot(range(len(angle_tweaks)),angle_tweaks[:,1])
         self.ax.plot(range(len(angle_tweaks)),angle_tweaks[:,2])
@@ -2329,23 +2334,38 @@ class PlotBackend():
         the x values are unique for the pattern i chose so we can use those to 
         determine which point we are at
         '''
-        
-        episode_files = [os.path.join(folder_path, f) for f in os.listdir(folder_path) if f.lower().endswith('.pkl')]
-        filenames_only = [f for f in os.listdir(folder_path) if f.lower().endswith('.pkl')]
-        
-        filenums = [re.findall('\d+',f) for f in filenames_only]
-        final_filenums = []
-        for i in filenums:
-            if len(i) > 0 :
-                final_filenums.append(int(i[0]))
-        print('number of things', int(len(filenums)/1200))
-        for i in range(int(len(filenums)/1200)):
-            self.point_dictionary[i] = {'dist':[], 'goal_pos':[], 'start_pos':[], 'paths':[], 'end_orientation':[], 'goal_orientation':[]}
-        sorted_inds = np.argsort(final_filenums)
-        final_filenums = np.array(final_filenums)
-        episode_files = np.array(episode_files)
-        filenames_only = np.array(filenames_only)
-        episode_files = episode_files[sorted_inds].tolist()
+        print(folder_path, type(folder_path))
+        if type(folder_path) is str:
+            episode_files = [os.path.join(folder_path, f) for f in os.listdir(folder_path) if f.lower().endswith('.pkl')]
+            filenames_only = [f for f in os.listdir(folder_path) if f.lower().endswith('.pkl')]
+            filenums = [re.findall('\d+',f) for f in filenames_only]
+            final_filenums = []
+            for i in filenums:
+                if len(i) > 0 :
+                    final_filenums.append(int(i[0]))
+
+            sorted_inds = np.argsort(final_filenums)
+            episode_files = np.array(episode_files)
+            episode_files = episode_files[sorted_inds].tolist()
+        elif type(folder_path) is list:
+            episode_files = []
+            filenames_only = []
+            for path in folder_path:
+                ef = [os.path.join(path, f) for f in os.listdir(path) if f.lower().endswith('.pkl')]
+                fo = [f for f in os.listdir(path) if f.lower().endswith('.pkl')]
+                filenums = [re.findall('\d+',f) for f in fo]
+                final_filenums = []
+                for i in filenums:
+                    if len(i) > 0 :
+                        final_filenums.append(int(i[0]))
+                sorted_inds = np.argsort(final_filenums)
+                ef = np.array(ef)
+                ef = ef[sorted_inds].tolist()
+                episode_files.extend(ef)
+                # filenames_only.extend(fo)
+        print('number of things', int(len(episode_files)/1200))
+        for i in range(int(len(episode_files)/1200)):
+            self.point_dictionary[i] = {'dist':[], 'goal_pos':[], 'start_pos':[], 'paths':[], 'end_orientation':[], 'goal_orientation':[], "start_dist":[]}
 
         print('applying async')
         pool = multiprocessing.Pool()
@@ -2359,6 +2379,7 @@ class PlotBackend():
             self.point_dictionary[int(i/1200)]['paths'].append(p[3])
             self.point_dictionary[int(i/1200)]['end_orientation'].append(p[4])
             self.point_dictionary[int(i/1200)]['goal_orientation'].append(p[5])
+            self.point_dictionary[int(i/1200)]['start_dist'].append(p[6])
         # time.sleep(10)
         '''
         for episode_file in episode_files:
@@ -2882,3 +2903,136 @@ class PlotBackend():
         # print(f'average end distance {mean} +/- {std}')
         # return [mean, std]
  
+    def draw_end_pose_shenanigans(self,folder_path, cmap='plasma'):
+        if self.point_dictionary == {}:
+            self.build_scatter_magic(folder_path)
+
+        self.clear_axes()
+        end_poses = []
+        distances = []
+        points_for_std = []
+        if type(folder_path) is str:
+            cnum=1
+        else:
+            cnum = len(folder_path)
+        points = np.zeros((1200,37*cnum))
+        point_key = []
+        count=0
+        for _,v in self.point_dictionary.items():
+            if len(v['goal_pos']) > 0:
+                if len(point_key) == 0:
+                    point_key = v['goal_pos']
+                    point_key = np.array(point_key)
+                for point, dist in zip(v['goal_pos'], v['dist']):
+                    ind = np.argwhere(point_key==point)[0][0]
+                    points[ind,count] = dist
+            count +=1
+        end_dists = np.average(points,axis=1)
+        points_for_std = points.copy()
+        print(np.average(points))
+        print(points)
+        end_dists = np.clip(end_dists, 0, 0.025)
+        
+        goals = point_key
+        try:
+            a = self.ax.scatter(goals[:,0]*100, goals[:,1]*100, c = end_dists*100, cmap=cmap)
+        except:
+            a = self.ax.scatter(goals[:,0]*100, goals[:,1]*100, c = end_dists*100, cmap='plasma')
+
+        mean, std = np.average(points_for_std), np.std(points_for_std)
+
+        self.ax.set_ylabel('Y position (cm)')
+        self.ax.set_xlabel('X position (cm)')
+        self.ax.set_xlim([-8,8])
+        self.ax.set_ylim([-8,8])
+        self.ax.set_title('Distance to Goals')
+        self.ax.grid(False)
+        self.colorbar = self.fig.colorbar(a, ax=self.ax, extend='max')
+        self.colorbar.mappable.set_clim(0.3,2.5)
+        self.ax.set_aspect('equal',adjustable='box')
+        self.curr_graph = 'scatter'
+        print(f'average end distance {mean} +/- {std}')
+        self.click_spell = None
+        return [mean, std]
+    
+    def draw_scatter_scaled_dist(self, folder_path, cmap='plasma'):
+        if self.point_dictionary == {}:
+            self.build_scatter_magic(folder_path)
+
+        self.clear_axes()
+        end_poses = []
+        distances = []
+        points_for_std = []
+        points = np.zeros((1200,37))
+        point_key = []
+        count=0
+        for _,v in self.point_dictionary.items():
+            if len(v['goal_pos']) > 0:
+                if len(point_key) == 0:
+                    point_key = v['goal_pos']
+                    point_key = np.array(point_key)
+                for point, dist,start in zip(v['goal_pos'], v['dist'], v['start_dist']):
+                    ind = np.argwhere(point_key==point)[0][0]
+                    points[ind,count] = 1-dist/start
+            count +=1
+        end_dists = np.average(points,axis=1)
+        points_for_std = points.copy()
+        print(np.average(points))
+        print(points)
+        end_dists = np.clip(end_dists, 0, 1)
+        
+        goals = point_key
+        try:
+            a = self.ax.scatter(goals[:,0]*100, goals[:,1]*100, c = end_dists, cmap=cmap)
+        except:
+            a = self.ax.scatter(goals[:,0]*100, goals[:,1]*100, c = end_dists, cmap='plasma')
+
+        mean, std = np.average(points_for_std), np.std(points_for_std)
+
+        self.ax.set_ylabel('Y position (cm)')
+        self.ax.set_xlabel('X position (cm)')
+        self.ax.set_xlim([-8,8])
+        self.ax.set_ylim([-8,8])
+        self.ax.set_title('Average Percent of Point Reached')
+        self.ax.grid(False)
+        self.colorbar = self.fig.colorbar(a, ax=self.ax, extend='max')
+        self.ax.set_aspect('equal',adjustable='box')
+        self.curr_graph = 'scatter'
+        print(f'average end distance {mean} +/- {std}')
+        self.click_spell = None
+        return [mean, std]
+    
+    def draw_newshit(self,folder_path):
+        if self.point_dictionary == {}:
+            self.build_scatter_magic(folder_path)
+
+        self.clear_axes()
+        start_poses = []
+        dist_errors = []
+        orienatation_errors = []
+        orientation_start = []
+        for _,v in self.point_dictionary.items():
+            if len(v['start_pos']) > 0:
+                start_poses.extend(v['start_pos'])
+                thing = np.array(v['end_orientation']) - np.array(v['goal_orientation'])
+                orientation_start.extend(v['goal_orientation'])
+                dist_errors.extend(v['dist'])
+                orienatation_errors.extend(thing)
+
+        self.ax.hist()
+        a = self.ax.scatter(goals[:,0]*100, goals[:,1]*100, c = end_orientations, cmap='plasma')
+
+        mean, std = np.average(points_for_std), np.std(points_for_std)
+
+        self.ax.set_ylabel('Y position (cm)')
+        self.ax.set_xlabel('X position (cm)')
+        self.ax.set_xlim([-8,8])
+        self.ax.set_ylim([-8,8])
+        self.ax.set_title('Average Orientation Based on Start Pose (degrees)')
+        self.ax.grid(False)
+        self.colorbar = self.fig.colorbar(a, ax=self.ax, extend='max')
+        self.ax.set_aspect('equal',adjustable='box')
+        self.curr_graph = 'scatter'
+        print(f'average end orientation {mean} +/- {std}')
+        self.click_spell = None
+        return [mean, std]
