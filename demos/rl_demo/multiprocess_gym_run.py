@@ -337,6 +337,9 @@ def multiprocess_evaluate_loaded(filepath, aorb):
         model_type = TD3
     print('LOADING A MODEL')
 
+    # print('HARDCODING THE TEST PATH TO BE THE ROTATION TEST')
+    # args['test_path'] ="/home/mothra/mojo-grasp/demos/rl_demo/resources/Solo_rotation_test.csv"
+
     if not('contact_start' in args.keys()):
         args['contact_start'] = True
         print('we didnt have a contact start so we set it to true')
@@ -509,6 +512,7 @@ def replay(argpath, episode_path):
     f2_poses = [s['state']['f2_pos'] for s in data['timestep_list']]
     joint_angles = [s['state']['two_finger_gripper']['joint_angles'] for s in data['timestep_list']]
     import pybullet as p2
+    args['hand_file_list'] = ["2v2_65.35_65.35_1.1_53/hand/2v2_65.35_65.35_1.1_53.urdf"]
     eval_env , _, poses= make_pybullet(args,p2, [1,3], hand_params,viz=True)
     eval_env.evaluate()
     temp = [joint_angles[0]['finger0_segment0_joint'],joint_angles[0]['finger0_segment1_joint'],joint_angles[0]['finger1_segment0_joint'],joint_angles[0]['finger1_segment1_joint']]
@@ -518,7 +522,9 @@ def replay(argpath, episode_path):
     # initialize with obeject in desired position. 
     # TODO fix this so that I don't need to comment/uncomment this to get desired behavior
     if ('Rotation' in args['task']) | ('contact' in args['task']):
-        start_position = {'goal_position':obj_temp, 'fingers':temp}
+        start_position = {'goal_position':[-0.04,0.0]}
+        # uncomment this line
+        #start_position = {'goal_position':obj_temp, 'fingers':temp}
 
         _ = eval_env.reset(start_position)
 
@@ -674,8 +680,8 @@ def main(filepath = None,learn_type='run'):
 if __name__ == '__main__':
     # main('./data/HPC_slide_all_randomizations/FTP_S1/experiment_config.json')
     # main('./data/HPC_slide_time_tests/25_no_contact/experiment_config.json')
-    # main('./data/Mothra_Rotation/JA_S2_no_contact/experiment_config.json')
-    main('./data/Solo_rotation/experiment_config.json')
+    # main('./data/Full_long_test/experiment_config.json')
+    # main('./data/Solo_rotation_no_pose_random/experiment_config.json')
     # main("./data/region_rotation_JA_finger/experiment_config.json",'run')
     # main("./data/JA_full_task_20_1/experiment_config.json",'run')
     # evaluate("./data/FTP_halfstate_A_rand/experiment_config.json","B")
@@ -687,7 +693,7 @@ if __name__ == '__main__':
     # replay("./data/Mothra_Rotation/JA_S2_no_contact/experiment_config.json","./data/Mothra_Rotation/JA_S2_no_contact/Eval_A/Episode_124.pkl")
     # main("./data/Full_task_hyperparameter_search/JA_1-3/experiment_config.json",'run')
     # replay("./data/Mothra_Slide/JA_S2/experiment_config.json","./data/Mothra_Slide/JA_S2/Eval_A/Episode_2.pkl")
-    # multiprocess_evaluate_loaded("./data/Mothra_Rotation/JA_S2_25_contact/experiment_config.json","A")
+    # multiprocess_evaluate_loaded("./data/Mothra_Rotation/JA_S2_no_contact/experiment_config.json","A")
     # multiprocess_evaluate_loaded("./data/Mothra_Rotation/FTP_S1/experiment_config.json","A")
     # multiprocess_evaluate_loaded("./data/Rotation_no_finger/experiment_config.json","A")
     # multiprocess_evaluate_loaded("./data/Rotation_no_finger/experiment_config.json","B")
@@ -697,11 +703,30 @@ if __name__ == '__main__':
     # multiprocess_evaluate_loaded("./data/Mothra_Slide/JA_S3/experiment_config.json","A")
     # multiprocess_evaluate_loaded("./data/Mothra_Slide/JA_S3/experiment_config.json","B")
 
+    # multiprocess_evaluate_loaded("./data/Full_length_test/full_finger_long_train/experiment_config.json","A")
+    # multiprocess_evaluate_loaded("./data/Full_length_test/full_finger_long_train/experiment_config.json","B")
+  
+    # multiprocess_evaluate_loaded("./data/WhateverI want/experiment_config.json","A")
+    # multiprocess_evaluate_loaded("./data/Rotation_length_tests/Long_finger/experiment_config.json","B")
+    # multiprocess_evaluate_loaded("./data/Mothra_Rotation/FTP_S3/experiment_config.json","A")
+    # multiprocess_evaluate_loaded("./data/Mothra_Rotation/FTP_S3/experiment_config.json","B")
+    # multiprocess_evaluate_loaded("./data/Mothra_Rotation/FTP_S2/experiment_config.json","A")
+    # multiprocess_evaluate_loaded("./data/Mothra_Rotation/FTP_S2/experiment_config.json","B")
 
-    # multiprocess_evaluate_loaded("./data/HPC_Slide/JA_S1/experiment_config.json","A")
-    # multiprocess_evaluate_loaded("./data/HPC_Slide/JA_S1/experiment_config.json","B")
-    # multiprocess_evaluate_loaded("./data/HPC_Slide/JA_S2/experiment_config.json","A")
-    # multiprocess_evaluate_loaded("./data/HPC_Slide/JA_S2/experiment_config.json","B")
+    # multiprocess_evaluate_loaded("./data/Misc_Slide/JA_S1/experiment_config.json","A")
+    # multiprocess_evaluate_loaded("./data/Misc_Slide/JA_S1/experiment_config.json","B")
+    # multiprocess_evaluate_loaded("./data/Misc_Slide/JA_S2/experiment_config.json","A")
+    # multiprocess_evaluate_loaded("./data/Misc_Slide/JA_S2/experiment_config.json","B")
+
+    # multiprocess_evaluate_loaded("./data/Misc_Slide/JA_S3/experiment_config.json","A")
+    # multiprocess_evaluate_loaded("./data/Misc_Slide/JA_S3/experiment_config.json","B")
+    # multiprocess_evaluate_loaded("./data/Misc_Slide/FTP_S3/experiment_config.json","A")
+    # multiprocess_evaluate_loaded("./data/Misc_Slide/FTP_S3/experiment_config.json","B")
+
+    # multiprocess_evaluate_loaded("./data/Misc_Slide/FTP_S1/experiment_config.json","A")
+    # multiprocess_evaluate_loaded("./data/Misc_Slide/FTP_S1/experiment_config.json","B")
+    # multiprocess_evaluate_loaded("./data/Misc_Slide/FTP_S2/experiment_config.json","A")
+    # multiprocess_evaluate_loaded("./data/Misc_Slide/FTP_S2/experiment_config.json","B")
 
     # multiprocess_evaluate_loaded("./data/Mothra_Slide/FTP_S3/experiment_config.json","A")
     # multiprocess_evaluate_loaded("./data/Mothra_Slide/FTP_S3/experiment_config.json","B")
@@ -711,10 +736,11 @@ if __name__ == '__main__':
     # multiprocess_evaluate_loaded("./data/Mothra_Slide/JA_S2/experiment_config.json","A")
     # multiprocess_evaluate_loaded("./data/Mothra_Slide/JA_S2/experiment_config.json","B")
 
-    # multiprocess_evaluate_loaded("./data/HPC_Slide/JA_S3/experiment_config.json","A")
-    # multiprocess_evaluate_loaded("./data/HPC_Slide/JA_S3/experiment_config.json","B")       
-    # multiprocess_evaluate_loaded("./data/HPC_Slide/FTP_S3/experiment_config.json","A")
-    # multiprocess_evaluate_loaded("./data/HPC_Slide/FTP_S3/experiment_config.json","B")
-
+    multiprocess_evaluate_loaded("./data/Jeremiah_Rotation/FTP_S1/experiment_config.json","A")
+    multiprocess_evaluate_loaded("./data/Jeremiah_Rotation/FTP_S1/experiment_config.json","B")
+    multiprocess_evaluate_loaded("./data/Jeremiah_Rotation/FTP_S2/experiment_config.json","A")
+    multiprocess_evaluate_loaded("./data/Jeremiah_Rotation/FTP_S2/experiment_config.json","B")
+    multiprocess_evaluate_loaded("./data/Jeremiah_Rotation/FTP_S3/experiment_config.json","A")
+    multiprocess_evaluate_loaded("./data/Jeremiah_Rotation/FTP_S3/experiment_config.json","B")
     # multiprocess_evaluate_loaded("./data/HPC_slide_all_randomizations/JA_S3/experiment_config.json","A")
     # multiprocess_evaluate_loaded("./data/HPC_slide_all_randomizations/FTP_S1/experiment_config.json","A")

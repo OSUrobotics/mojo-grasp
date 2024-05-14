@@ -89,6 +89,8 @@ num_layers = 3
 #       'y': y
 #       })
 # df.to_csv("resources/start_poses.csv", index=False)   
+
+'''
 for j in range(NUM_POINTS):
     theta = random.uniform(0, 2*np.pi)
     rand_r = 1-(random.uniform(0, 0.95))**2
@@ -106,6 +108,18 @@ finger1 = np.random.uniform(-0.01,0.01,NUM_POINTS)
 finger1 = list(finger1)
 finger2 = np.random.uniform(-0.01,0.01,NUM_POINTS)
 finger2 = list(finger2)
+'''
+x_pts = np.zeros(1200)
+x_pts = list(x_pts)
+y_pts = np.zeros(1200)
+y_pts = list(y_pts)
+angs = np.linspace(-90/180*np.pi,90/180*np.pi,1200)
+angs = list(angs)
+finger1 = np.zeros(1200)
+finger1 = list(finger1)
+finger2 = np.zeros(1200)
+finger2 = list(finger2)
+print(angs)
 df = pd.DataFrame(
     {'x': x_pts,
       'y': y_pts,
@@ -113,7 +127,7 @@ df = pd.DataFrame(
       'f1y':finger1,
       'f2y':finger2
       })
-df.to_csv("resources/solo_rotation_15.csv", index=False)            
+df.to_csv("resources/Solo_rotation_test.csv", index=False)            
 # create dataframe from lists
 # df = pd.DataFrame(
 #     {'x': x_n,
