@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH -J PPOSlide                        # name of job
+#SBATCH -J PPORotate                        # name of job
 #SBATCH -p dgx2                                  # name of partition or queue
 #SBATCH --array=1-6                     # how many tasks in the array
 #SBATCH -o log/LOG-%a.out                 # name of error file for this submission script
