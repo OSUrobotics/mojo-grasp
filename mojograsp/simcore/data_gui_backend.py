@@ -2172,7 +2172,7 @@ class PlotBackend():
         self.ax.set_ylim(-95,95)
         self.ax.set_xlim(-95,95)
         self.ax.set_aspect('equal',adjustable='box')
-        self.ax.legend(['Achieved Angles','No Movement Line'])
+        self.ax.legend(['Achieved Angles','No Rotation Line'])
 
     def draw_orientation(self,data_dict):
         self.clear_axes()
@@ -2334,6 +2334,9 @@ class PlotBackend():
         the x values are unique for the pattern i chose so we can use those to 
         determine which point we are at
         '''
+
+        num_per_group = 128
+        # num_per_group = 1200
         print(folder_path, type(folder_path))
         if type(folder_path) is str:
             episode_files = [os.path.join(folder_path, f) for f in os.listdir(folder_path) if f.lower().endswith('.pkl')]
@@ -2363,8 +2366,8 @@ class PlotBackend():
                 ef = ef[sorted_inds].tolist()
                 episode_files.extend(ef)
                 # filenames_only.extend(fo)
-        print('number of things', int(len(episode_files)/1200))
-        for i in range(int(len(episode_files)/1200)):
+        print('number of things', int(len(episode_files)/num_per_group))
+        for i in range(int(len(episode_files)/num_per_group)):
             self.point_dictionary[i] = {'dist':[], 'goal_pos':[], 'start_pos':[], 'paths':[], 'end_orientation':[], 'goal_orientation':[], "start_dist":[]}
 
         print('applying async')
@@ -2373,13 +2376,13 @@ class PlotBackend():
         pool.close()
         pool.join()
         for i,p in enumerate(data_list):
-            self.point_dictionary[int(i/1200)]['start_pos'].append(p[0])
-            self.point_dictionary[int(i/1200)]['dist'].append(p[1])
-            self.point_dictionary[int(i/1200)]['goal_pos'].append(p[2])
-            self.point_dictionary[int(i/1200)]['paths'].append(p[3])
-            self.point_dictionary[int(i/1200)]['end_orientation'].append(p[4])
-            self.point_dictionary[int(i/1200)]['goal_orientation'].append(p[5])
-            self.point_dictionary[int(i/1200)]['start_dist'].append(p[6])
+            self.point_dictionary[int(i/num_per_group)]['start_pos'].append(p[0])
+            self.point_dictionary[int(i/num_per_group)]['dist'].append(p[1])
+            self.point_dictionary[int(i/num_per_group)]['goal_pos'].append(p[2])
+            self.point_dictionary[int(i/num_per_group)]['paths'].append(p[3])
+            self.point_dictionary[int(i/num_per_group)]['end_orientation'].append(p[4])
+            self.point_dictionary[int(i/num_per_group)]['goal_orientation'].append(p[5])
+            self.point_dictionary[int(i/num_per_group)]['start_dist'].append(p[6])
         # time.sleep(10)
         '''
         for episode_file in episode_files:
@@ -3002,37 +3005,49 @@ class PlotBackend():
         self.click_spell = None
         return [mean, std]
     
-    def draw_newshit(self,folder_path):
+    def draw_newshit(self,clicks):
         if self.point_dictionary == {}:
-            self.build_scatter_magic(folder_path)
-
+            print('cant do it, need to run wizard first')
+            return False
+        if clicks[0] is None:
+            print('need to select a point first')
+            return
         self.clear_axes()
-        start_poses = []
-        dist_errors = []
-        orienatation_errors = []
-        orientation_start = []
-        for _,v in self.point_dictionary.items():
-            if len(v['start_pos']) > 0:
-                start_poses.extend(v['start_pos'])
-                thing = np.array(v['end_orientation']) - np.array(v['goal_orientation'])
-                orientation_start.extend(v['goal_orientation'])
-                dist_errors.extend(v['dist'])
-                orienatation_errors.extend(thing)
 
-        self.ax.hist()
-        a = self.ax.scatter(goals[:,0]*100, goals[:,1]*100, c = end_orientations, cmap='plasma')
+        if self.click_spell is None:
+            closest_point = []
+            distances = []
+            test_point = np.array(clicks)/100
+            desired_point = []
+            for k,v in self.point_dictionary.items():
+                if len(v['start_pos']) > 0:
+                    distances.append(np.linalg.norm(test_point - np.array(v['start_pos'])))
+                    closest_point.append(k)
+                    desired_point.append(v['start_pos'][0])
+        
+            min_spot = np.argmin(distances)
+            self.click_spell = closest_point[min_spot]
+            print('drawing start graph', desired_point[min_spot])
+        orientation_goal = []
+        orientation_end = []
+        for orientation,goal_or in zip(self.point_dictionary[self.click_spell]['end_orientation'],self.point_dictionary[self.click_spell]['goal_orientation']):
+            orientation_goal.append(goal_or)
+            orientation_end.append(orientation)
+        
+        # a = self.ax.scatter(goals[:,0]*100, goals[:,1]*100, c = end_orientations, cmap='plasma')
 
-        mean, std = np.average(points_for_std), np.std(points_for_std)
+        # mean, std = np.average(points_for_std), np.std(points_for_std)
 
-        self.ax.set_ylabel('Y position (cm)')
-        self.ax.set_xlabel('X position (cm)')
-        self.ax.set_xlim([-8,8])
-        self.ax.set_ylim([-8,8])
-        self.ax.set_title('Average Orientation Based on Start Pose (degrees)')
-        self.ax.grid(False)
-        self.colorbar = self.fig.colorbar(a, ax=self.ax, extend='max')
+        # print(rewards,rotation)
+        orientation_goal = np.array(orientation_goal)*180/np.pi
+        orientation_end = np.array(orientation_end) *180/np.pi
+
+        self.ax.scatter(orientation_goal,orientation_end)
+        # self.ax.plot(range(len(goals)), goals)
+        self.ax.plot([-360,360],[-360,360],color='orange')
+        self.ax.set_xlabel('Goal Orientation')
+        self.ax.set_ylabel('Ending Orientation Error')
+        self.ax.set_ylim(-75,75)
+        self.ax.set_xlim(-75,75)
         self.ax.set_aspect('equal',adjustable='box')
-        self.curr_graph = 'scatter'
-        print(f'average end orientation {mean} +/- {std}')
-        self.click_spell = None
-        return [mean, std]
+        self.ax.legend(['Achieved Angles','Ideal Behavior'])
