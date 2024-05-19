@@ -490,3 +490,9 @@ class MultiprocessGymWrapper(gym.Env):
 
     def set_goal(self,goal):
         self.env.set_goal(goal)
+
+    def set_goal_holder_pos(self, pos):
+        '''
+        more backdoor shenanigans
+        '''
+        self.manipulation_phase.state.objects[-1].set_all_pose(pos)

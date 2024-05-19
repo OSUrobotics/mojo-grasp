@@ -200,7 +200,7 @@ def main():
             backend.draw_actor_output(episode_data)
             figure_canvas_agg.draw()
         elif event == 'draw_newshit':
-            backend.draw_newshit(folder)
+            backend.draw_newshit([clicks.x, clicks.y])
             figure_canvas_agg.draw()
         elif event == 'Critic Output':
             backend.draw_critic_output(episode_data)

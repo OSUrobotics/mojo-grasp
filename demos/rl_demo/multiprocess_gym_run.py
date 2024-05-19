@@ -326,7 +326,12 @@ def multiprocess_evaluate_loaded(filepath, aorb):
     key_file = os.path.abspath(__file__)
     key_file = os.path.dirname(key_file)
     key_file = os.path.join(key_file,'resources','hand_bank','hand_params.json')
+    args['domain_randomization_finger_friction'] = False
+    args['domain_randomization_floor_friction'] = False
+    args['domain_randomization_object_mass'] = False
     args['domain_randomization_object_size'] = False
+    args['finger_random_start'] = False
+
     with open(key_file,'r') as hand_file:
         hand_params = json.load(hand_file)
     if args['model'] == 'PPO':
@@ -352,20 +357,30 @@ def multiprocess_evaluate_loaded(filepath, aorb):
     else:
         print('not going to evaluate, aorb is wrong')
         return
+
+    if 'Rotation' in args['task']:
+        # only for testing purposes, this needs to be updated to work on any pc
+        args['test_path'] = "./resources/Solo_rotation_test.csv"
     vec_env = SubprocVecEnv([make_env(args,[i,num_cpu],hand_info=hand_params) for i in range(num_cpu)])
     model = model_type("MlpPolicy", vec_env, tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-2.3}).load(args['save_path']+'best_model', env=vec_env)
     
     if 'Rotation' in args['task']:
+        df = pd.read_csv('./resources/start_poses.csv', index_col=False)
+        x_start = df['x']
+        y_start = df['y']
+
         vec_env.env_method('evaluate', aorb)
-        for _ in range(int(1200/16)):
-            # print('about to reset')
-            obs = vec_env.reset()
-            # vec_env.env_method()
-            done = [False, False]
-            while not all(done):
-                action, _ = model.predict(obs,deterministic=True)
-                vec_env.step_async(action)
-                obs, _, done, _ = vec_env.step_wait()
+        for x,y in zip(x_start,y_start):
+            vec_env.env_method('set_goal_holder_pos',[x,y])
+            for _ in range(int(128/16)):
+                # print('about to reset')
+                obs = vec_env.reset()
+                
+                done = [False, False]
+                while not all(done):
+                    action, _ = model.predict(obs,deterministic=True)
+                    vec_env.step_async(action)
+                    obs, _, done, _ = vec_env.step_wait()
     else:
         df = pd.read_csv('./resources/start_poses.csv', index_col=False)
         x_start = df['x']
@@ -678,7 +693,6 @@ def main(filepath = None,learn_type='run'):
         model.save(filename+'/canceled_model')
 
 if __name__ == '__main__':
-
 
     multiprocess_evaluate_loaded("./data/Jeremiah_Rotation/FTP_S1/experiment_config.json","A")
     multiprocess_evaluate_loaded("./data/Jeremiah_Rotation/FTP_S1/experiment_config.json","B")
