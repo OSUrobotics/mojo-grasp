@@ -2482,7 +2482,7 @@ class PlotBackend():
 
         # num_per_group = 128
         # num_per_group = 1200
-        print(folder_path, type(folder_path))
+        # print(folder_path, type(folder_path))
         if type(folder_path) is str:
             episode_files = [os.path.join(folder_path, f) for f in os.listdir(folder_path) if f.lower().endswith('.pkl')]
             filenames_only = [f for f in os.listdir(folder_path) if f.lower().endswith('.pkl')]
@@ -2510,9 +2510,6 @@ class PlotBackend():
                 ef = np.array(ef)
                 ef = ef[sorted_inds].tolist()
                 episode_files.extend(ef)
-                # filenames_only.extend(fo)
-        print('number of things', int(len(episode_files)))
-
 
         print('applying async')
         pool = multiprocessing.Pool()
@@ -2539,8 +2536,7 @@ class PlotBackend():
         start_x = sorted['Start X'].apply(np.average)
         start_y = sorted['Start Y'].apply(np.average)
         # end_dists = np.clip(end_dists, 0, 0.025)
-        
-        print('end distances', end_dists)
+
         try:
             a = self.ax.scatter(start_x.to_numpy()*100, start_y.to_numpy()*100, c = end_dists*100, cmap=cmap)
         except:
@@ -2580,7 +2576,6 @@ class PlotBackend():
         goal_x = self.point_dictionary[self.click_spell]['Goal X']
         goal_y = self.point_dictionary[self.click_spell]['Goal Y']
 
-        # end_dists = np.array(end_dists)
         mean, std = np.average(end_dists), np.std(end_dists)
         end_dists = np.clip(end_dists, 0, 0.025)
         
@@ -2650,17 +2645,14 @@ class PlotBackend():
         if self.point_dictionary is None:
             print('cant do it, need to run wizard first')
             return False
-        if self.click_spell == None:
+        if self.click_spell is None:
             print('cant do it, need to run scatter spell first')
             return False
         
-        test_point = np.array(clicks)/100
-        distances = []
-        filenames = []
-        for point in self.point_dictionary[self.click_spell]['goal_pos']:
-            distances.append(np.linalg.norm(point - test_point))
-        min_spot = np.argmin(distances)
-        datapath = self.point_dictionary[self.click_spell]['paths'][min_spot]
+        point_dist = np.sqrt((clicks[0]/100 - self.point_dictionary[self.click_spell]['Goal X'])**2 + (clicks[1]/100 - self.point_dictionary[self.click_spell]['Goal Y'])**2)
+        specific_value = np.argmin(point_dist)
+        point = self.point_dictionary[self.click_spell].loc[self.point_dictionary[self.click_spell]['Path'].keys()[specific_value]]
+        datapath = point['Path']
         with open(datapath, 'rb') as file:
             data_dict = pkl.load(file)
         data = data_dict['timestep_list']
@@ -2780,14 +2772,10 @@ class PlotBackend():
             print('cant do it, need to run scatter spell first')
             return False
         
-        distances = []
-        filenames = []
         # Rounded Start X      Rounded Start Y
         point_dist = np.sqrt((clicks[0]/100 - self.point_dictionary[self.click_spell]['Goal X'])**2 + (clicks[1]/100 - self.point_dictionary[self.click_spell]['Goal Y'])**2)
         specific_value = np.argmin(point_dist)
-        print(specific_value)
-        point = self.point_dictionary[self.click_spell][specific_value]
-
+        point = self.point_dictionary[self.click_spell].loc[self.point_dictionary[self.click_spell]['Path'].keys()[specific_value]]
         datapath = point['Path']
         with open(datapath, 'rb') as file:
             data_dict = pkl.load(file)
@@ -2801,8 +2789,7 @@ class PlotBackend():
             obj_rotation = (obj_rotation - np.pi)*180/np.pi
             rotations.append(obj_rotation)
             goals.append(tstep['reward']['goal_orientation']*180/np.pi)
-        print(data[0]['reward'])
-        print(data[0]['state'])
+
         self.ax.plot(range(len(rotations)), rotations)
         self.ax.plot(range(len(goals)), goals)
         self.ax.set_xlabel('timestep')
@@ -2869,38 +2856,22 @@ class PlotBackend():
             self.build_scatter_magic(folder_path)
 
         self.clear_axes()
-        end_poses = []
-        distances = []
-        points_for_std = []
-        if type(folder_path) is str:
-            cnum=1
-        else:
-            cnum = len(folder_path)
-        points = np.zeros((1200,37*cnum))
-        point_key = []
-        count=0
-        for _,v in self.point_dictionary.items():
-            if len(v['goal_pos']) > 0:
-                if len(point_key) == 0:
-                    point_key = v['goal_pos']
-                    point_key = np.array(point_key)
-                for point, dist in zip(v['goal_pos'], v['dist']):
-                    ind = np.argwhere(point_key==point)[0][0]
-                    points[ind,count] = dist
-            count +=1
-        end_dists = np.average(points,axis=1)
-        points_for_std = points.copy()
-        print(np.average(points))
-        print(points)
-        end_dists = np.clip(end_dists, 0, 0.025)
-        
-        goals = point_key
-        try:
-            a = self.ax.scatter(goals[:,0]*100, goals[:,1]*100, c = end_dists*100, cmap=cmap)
-        except:
-            a = self.ax.scatter(goals[:,0]*100, goals[:,1]*100, c = end_dists*100, cmap='plasma')
 
-        mean, std = np.average(points_for_std), np.std(points_for_std)
+
+        mean=np.average(self.point_dictionary['End Distance'])
+        std = np.std(self.point_dictionary['End Distance'])
+        sorted = self.point_dictionary.groupby(['Rounded Start X','Rounded Start Y'])
+
+        end_dists = sorted['End Distance'].apply(np.average)
+        start_x = sorted['Start X'].apply(np.average)
+        start_y = sorted['Start Y'].apply(np.average)
+        # end_dists = np.clip(end_dists, 0, 0.025)
+
+        try:
+            a = self.ax.scatter(start_x.to_numpy()*100, start_y.to_numpy()*100, c = end_dists*100, cmap=cmap)
+        except:
+            a = self.ax.scatter(start_x.to_numpy()*100, start_y.to_numpy()*100, c = end_dists*100, cmap='plasma')
+
 
         self.ax.set_ylabel('Y position (cm)')
         self.ax.set_xlabel('X position (cm)')
@@ -2909,12 +2880,13 @@ class PlotBackend():
         self.ax.set_title('Distance to Goals')
         self.ax.grid(False)
         self.colorbar = self.fig.colorbar(a, ax=self.ax, extend='max')
-        self.colorbar.mappable.set_clim(0.3,2.5)
         self.ax.set_aspect('equal',adjustable='box')
         self.curr_graph = 'scatter'
+        self.colorbar.mappable.set_clim(0.3,2.5)
         print(f'average end distance {mean} +/- {std}')
         self.click_spell = None
         return [mean, std]
+
     
     def draw_scatter_scaled_dist(self, folder_path, cmap='plasma'):
         if self.point_dictionary is None:

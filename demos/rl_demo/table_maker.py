@@ -4,7 +4,7 @@ import pandas as pd
 
 
 sub_names =['FTP_S1','FTP_S2','FTP_S3','JA_S1','JA_S2','JA_S3']
-top_names = ['Mothra_Rotation','HPC_Rotation_25','Jeremiah_Rotation']#,'Mothra_Slide','HPC_Slide','Misc_Slide']
+top_names = ['Mothra_Rotation','HPC_Rotation_25','Jeremiah_Rotation','Mothra_Slide','HPC_Slide','Misc_Slide']
 
 csv_dict = {'Action Space':[], 'State Space':[], 'Upper Folder':[], 'A Distance Mean':[], 'A Distance Std':[],
  'A Angle Mean':[],'A Angle Std':[],'A Success Rate':[],'B Distance Mean':[], 'B Distance Std':[],

@@ -695,12 +695,14 @@ def main(filepath = None,learn_type='run'):
 if __name__ == '__main__':
     import csv
 
-    sub_names = ['FTP_S3'] # ['FTP_S1','FTP_S2','FTP_S3','JA_S1','JA_S2','JA_S3']
-    top_names = ['Misc_Slide'] #['Mothra_Slide','HPC_Slide','Misc_Slide']
-    for uname in top_names:
-        for lname in sub_names:
-            multiprocess_evaluate_loaded('./data/'+uname+'/'+lname+"/experiment_config.json","A")
-            multiprocess_evaluate_loaded('./data/'+uname+'/'+lname+"/experiment_config.json","B")
-            with open('rerun_files.csv', 'a') as f:
-                writer = csv.writer(f)
-                writer.writerow([uname,lname])
+    main('./data/Mothra_Full/JA_S3/experiment_config.json')
+
+    # sub_names = ['FTP_S3'] # ['FTP_S1','FTP_S2','FTP_S3','JA_S1','JA_S2','JA_S3']
+    # top_names = ['Misc_Slide'] #['Mothra_Slide','HPC_Slide','Misc_Slide']
+    # for uname in top_names:
+    #     for lname in sub_names:
+    #         multiprocess_evaluate_loaded('./data/'+uname+'/'+lname+"/experiment_config.json","A")
+    #         multiprocess_evaluate_loaded('./data/'+uname+'/'+lname+"/experiment_config.json","B")
+    #         with open('rerun_files.csv', 'a') as f:
+    #             writer = csv.writer(f)
+    #             writer.writerow([uname,lname])
