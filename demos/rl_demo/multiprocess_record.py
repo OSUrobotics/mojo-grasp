@@ -22,22 +22,29 @@ class MultiprocessRecordData(RecordDataRLPKL):
         if self.save_episode_flag and self.data_path != None:
             if evaluated == 'test':
                 if hand_type is None:
-                    file_path = self.data_path + "Test/Episode_"+ str(int(self.eval_num*self.num_threads+self.my_thread)) + '.pkl'
+                    file_path = self.data_path + "Test/Episode_" + str(int(self.eval_num*self.num_threads+self.my_thread)) + '.pkl'
                 elif hand_type=='A':
-                    file_path = self.data_path + "Eval_A/Episode_"+ str(int(self.eval_num*self.num_threads+self.my_thread)) + '.pkl'
+                    file_path = self.data_path + "Eval_A/Episode_" + str(int(self.eval_num*self.num_threads+self.my_thread)) + '.pkl'
                 elif hand_type=='B':
-                    file_path = self.data_path + "Eval_B/Episode_"+ str(int(self.eval_num*self.num_threads+self.my_thread)) + '.pkl'
+                    file_path = self.data_path + "Eval_B/Episode_" + str(int(self.eval_num*self.num_threads+self.my_thread)) + '.pkl'
                 else:
-                    file_path = self.data_path + "Eval_"+hand_type+"/Episode_"+ str(int(self.eval_num*self.num_threads+self.my_thread)) + '.pkl'
+                    file_path = self.data_path + "Eval_" + hand_type+"/Episode_" + str(int(self.eval_num*self.num_threads+self.my_thread)) + '.pkl'
                 self.eval_num +=1
                 print('save episode evaluated', self.eval_num*self.num_threads+self.my_thread, hand_type)
+            elif evaluated == 'asterisk':
+                if hand_type is None:
+                    file_path = self.data_path + "Test/Episode_" + str(int(self.eval_num*self.num_threads+self.my_thread)) + '.pkl'
+                elif hand_type=='A':
+                    file_path = self.data_path + "Ast_A/Episode_" + str(int(self.eval_num*self.num_threads+self.my_thread)) + '.pkl'
+                elif hand_type=='B':
+                    file_path = self.data_path + "Ast_B/Episode_" + str(int(self.eval_num*self.num_threads+self.my_thread)) + '.pkl'
+                self.eval_num +=1
             else:
                 if hand_type is None:
                     file_path = self.data_path + 'Train/' + \
                         self.data_prefix + "_" + str(int(self.eval_num*self.num_threads+self.my_thread)) + ".pkl"
                 else:
                     file_path = self.data_path + 'Train/' + filename + ".pkl"
-            # print(file_path)
             
             with open(file_path, 'wb') as fout:
                 pkl.dump(self.current_episode, fout)

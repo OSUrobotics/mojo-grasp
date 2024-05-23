@@ -359,7 +359,6 @@ def multiprocess_evaluate_loaded(filepath, aorb):
         return
 
     if 'Rotation' in args['task']:
-        # only for testing purposes, this needs to be updated to work on any pc
         args['test_path'] = "./resources/Solo_rotation_test.csv"
     vec_env = SubprocVecEnv([make_env(args,[i,num_cpu],hand_info=hand_params) for i in range(num_cpu)])
     model = model_type("MlpPolicy", vec_env, tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-2.3}).load(args['save_path']+'best_model', env=vec_env)
@@ -400,6 +399,200 @@ def multiprocess_evaluate_loaded(filepath, aorb):
                     action, _ = model.predict(obs,deterministic=True)
                     vec_env.step_async(action)
                     obs, _, done, _ = vec_env.step_wait()
+
+def asterisk_test(filepath,hand_type):
+    # load a trained model and test it on its test set
+    print('Evaluating on hands A or B')
+    print('Hand A: 2v2_50.50_50.50_53')
+    print('Hand B: 2v2_65.35_65.35_53')
+    with open(filepath, 'r') as argfile:
+        args = json.load(argfile)
+    # args['eval-tsteps'] = 20
+    high_level_folder = os.path.abspath(filepath)
+    high_level_folder = os.path.dirname(high_level_folder)
+    print(high_level_folder)
+    key_file = os.path.abspath(__file__)
+    key_file = os.path.dirname(key_file)
+    key_file = os.path.join(key_file,'resources','hand_bank','hand_params.json')
+    args['domain_randomization_finger_friction'] = False
+    args['domain_randomization_floor_friction'] = False
+    args['domain_randomization_object_mass'] = False
+    args['domain_randomization_object_size'] = False
+    args['finger_random_start'] = False
+    args['object_random_start'] = False
+    with open(key_file,'r') as hand_file:
+        hand_params = json.load(hand_file)
+    if args['model'] == 'PPO':
+        model_type = PPO
+    elif 'DDPG' in args['model']:
+        model_type = DDPG
+    elif 'TD3' in args['model']:
+        model_type = TD3
+    print('LOADING A MODEL')
+
+    # print('HARDCODING THE TEST PATH TO BE THE ROTATION TEST')
+    # args['test_path'] ="/home/mothra/mojo-grasp/demos/rl_demo/resources/Solo_rotation_test.csv"
+
+    if not('contact_start' in args.keys()):
+        args['contact_start'] = True
+        print('we didnt have a contact start so we set it to true')
+    if hand_type =='A':
+        args['hand_file_list'] = ["2v2_50.50_50.50_1.1_53/hand/2v2_50.50_50.50_1.1_53.urdf"]
+    elif hand_type == 'B':
+        args['hand_file_list'] = ["2v2_65.35_65.35_1.1_53/hand/2v2_65.35_65.35_1.1_53.urdf"]    
+    else:
+        print('get fucked')
+        assert 1==0
+    asterisk_thing = [[0,0.07],[0.0495,0.0495],[0.07,0.0],[0.0495,-0.0495],[0.0,-0.07],[-0.0495,-0.0495],[-0.07,0.0],[-0.0495,0.0495]]
+
+    if 'Rotation' in args['task']:
+        print('get fucked')
+        assert 1==0
+
+    import pybullet as p2
+    eval_env , _, poses= make_pybullet(args,p2, [0,1], hand_params, viz=False)
+    eval_env.evaluate()
+    model = model_type("MlpPolicy", eval_env, tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-2.3}).load(args['save_path']+'best_model', env=eval_env)
+    eval_env.episode_type = 'asterisk'
+    for i in asterisk_thing:
+        eval_env.manipulation_phase.state.objects[-1].set_all_pose(i)
+        obs = eval_env.reset()
+        eval_env.manipulation_phase.state.objects[-1].set_all_pose(i)
+        done = False
+        while not done:
+            action, _ = model.predict(obs,deterministic=True)
+            obs, _, done, _ = eval_env.step(action,hand_type=hand_type)
+
+
+def rotation_test(filepath, hand_type):
+    # load a trained model and test it on its test set
+    print('Evaluating on hands A or B')
+    print('Hand A: 2v2_50.50_50.50_53')
+    print('Hand B: 2v2_65.35_65.35_53')
+    with open(filepath, 'r') as argfile:
+        args = json.load(argfile)
+    # args['eval-tsteps'] = 20
+    high_level_folder = os.path.abspath(filepath)
+    high_level_folder = os.path.dirname(high_level_folder)
+    print(high_level_folder)
+    key_file = os.path.abspath(__file__)
+    key_file = os.path.dirname(key_file)
+    key_file = os.path.join(key_file,'resources','hand_bank','hand_params.json')
+    args['domain_randomization_finger_friction'] = False
+    args['domain_randomization_floor_friction'] = False
+    args['domain_randomization_object_mass'] = False
+    args['domain_randomization_object_size'] = False
+    args['finger_random_start'] = False
+    args['object_random_start'] = False
+    with open(key_file,'r') as hand_file:
+        hand_params = json.load(hand_file)
+    if args['model'] == 'PPO':
+        model_type = PPO
+    elif 'DDPG' in args['model']:
+        model_type = DDPG
+    elif 'TD3' in args['model']:
+        model_type = TD3
+    print('LOADING A MODEL')
+
+    # print('HARDCODING THE TEST PATH TO BE THE ROTATION TEST')
+    # args['test_path'] ="/home/mothra/mojo-grasp/demos/rl_demo/resources/Solo_rotation_test.csv"
+
+    if not('contact_start' in args.keys()):
+        args['contact_start'] = True
+        print('we didnt have a contact start so we set it to true')
+    if hand_type =='A':
+        args['hand_file_list'] = ["2v2_50.50_50.50_1.1_53/hand/2v2_50.50_50.50_1.1_53.urdf"]
+    elif hand_type == 'B':
+        args['hand_file_list'] = ["2v2_65.35_65.35_1.1_53/hand/2v2_65.35_65.35_1.1_53.urdf"]    
+    else:
+        print('get fucked')
+        assert 1==0
+    asterisk_thing = [[0,0.07],[0.0495,0.0495],[0.07,0.0],[0.0495,-0.0495],[0.0,-0.07],[-0.0495,-0.0495],[-0.07,0.0],[-0.0495,0.0495]]
+
+    if 'Rotation' in args['task']:
+        print('get fucked')
+        assert 1==0
+
+    import pybullet as p2
+    eval_env , _, poses= make_pybullet(args,p2, [0,1], hand_params, viz=False)
+    eval_env.evaluate()
+    model = model_type("MlpPolicy", eval_env, tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-2.3}).load(args['save_path']+'best_model', env=eval_env)
+    eval_env.episode_type = 'asterisk'
+    for i in asterisk_thing:
+        eval_env.manipulation_phase.state.objects[-1].set_all_pose(i)
+        obs = eval_env.reset()
+        eval_env.manipulation_phase.state.objects[-1].set_all_pose(i)
+        done = False
+        while not done:
+            action, _ = model.predict(obs,deterministic=True)
+            obs, _, done, _ = eval_env.step(action,hand_type=hand_type)
+
+
+
+def full_test(filepath, hand_type):
+    # load a trained model and test it on its test set
+    print('Evaluating on hands A or B')
+    print('Hand A: 2v2_50.50_50.50_53')
+    print('Hand B: 2v2_65.35_65.35_53')
+    with open(filepath, 'r') as argfile:
+        args = json.load(argfile)
+    # args['eval-tsteps'] = 20
+    high_level_folder = os.path.abspath(filepath)
+    high_level_folder = os.path.dirname(high_level_folder)
+    print(high_level_folder)
+    key_file = os.path.abspath(__file__)
+    key_file = os.path.dirname(key_file)
+    key_file = os.path.join(key_file,'resources','hand_bank','hand_params.json')
+    args['domain_randomization_finger_friction'] = False
+    args['domain_randomization_floor_friction'] = False
+    args['domain_randomization_object_mass'] = False
+    args['domain_randomization_object_size'] = False
+    args['finger_random_start'] = False
+    args['object_random_start'] = False
+    with open(key_file,'r') as hand_file:
+        hand_params = json.load(hand_file)
+    if args['model'] == 'PPO':
+        model_type = PPO
+    elif 'DDPG' in args['model']:
+        model_type = DDPG
+    elif 'TD3' in args['model']:
+        model_type = TD3
+    print('LOADING A MODEL')
+
+    # print('HARDCODING THE TEST PATH TO BE THE ROTATION TEST')
+    # args['test_path'] ="/home/mothra/mojo-grasp/demos/rl_demo/resources/Solo_rotation_test.csv"
+
+    if not('contact_start' in args.keys()):
+        args['contact_start'] = True
+        print('we didnt have a contact start so we set it to true')
+    if hand_type =='A':
+        args['hand_file_list'] = ["2v2_50.50_50.50_1.1_53/hand/2v2_50.50_50.50_1.1_53.urdf"]
+    elif hand_type == 'B':
+        args['hand_file_list'] = ["2v2_65.35_65.35_1.1_53/hand/2v2_65.35_65.35_1.1_53.urdf"]    
+    else:
+        print('get fucked')
+        assert 1==0
+    asterisk_thing = [[0,0.07],[0.0495,0.0495],[0.07,0.0],[0.0495,-0.0495],[0.0,-0.07],[-0.0495,-0.0495],[-0.07,0.0],[-0.0495,0.0495]]
+
+    if 'Rotation' in args['task']:
+        print('get fucked')
+        assert 1==0
+
+    import pybullet as p2
+    eval_env , _, poses= make_pybullet(args,p2, [0,1], hand_params, viz=False)
+    eval_env.evaluate()
+    model = model_type("MlpPolicy", eval_env, tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-2.3}).load(args['save_path']+'best_model', env=eval_env)
+    eval_env.episode_type = 'asterisk'
+    for i in asterisk_thing:
+        eval_env.manipulation_phase.state.objects[-1].set_all_pose(i)
+        obs = eval_env.reset()
+        eval_env.manipulation_phase.state.objects[-1].set_all_pose(i)
+        done = False
+        while not done:
+            action, _ = model.predict(obs,deterministic=True)
+            obs, _, done, _ = eval_env.step(action,hand_type=hand_type)
+
+
 
 def multiprocess_evaluate(model, vec_env, rotate=False):
     # vec_env.evaluate()
@@ -694,15 +887,32 @@ def main(filepath = None,learn_type='run'):
 
 if __name__ == '__main__':
     import csv
+    # multiprocess_evaluate_loaded('./data/Mothra_Full/FTP_S1/experiment_config.json',"B")
 
-    main('./data/Mothra_Full/JA_S3/experiment_config.json')
+    # multiprocess_evaluate_loaded('./data/Mothra_Full/FTP_S2/experiment_config.json',"A")
+    # multiprocess_evaluate_loaded('./data/Mothra_Full/FTP_S2/experiment_config.json',"B")
 
-    # sub_names = ['FTP_S3'] # ['FTP_S1','FTP_S2','FTP_S3','JA_S1','JA_S2','JA_S3']
-    # top_names = ['Misc_Slide'] #['Mothra_Slide','HPC_Slide','Misc_Slide']
+    # multiprocess_evaluate_loaded('./data/Mothra_Full/FTP_S3/experiment_config.json',"A")
+    # multiprocess_evaluate_loaded('./data/Mothra_Full/FTP_S3/experiment_config.json',"B")
+
+    # multiprocess_evaluate_loaded('./data/Mothra_Full/JA_S1/experiment_config.json',"A")
+    # multiprocess_evaluate_loaded('./data/Mothra_Full/JA_S1/experiment_config.json',"B")
+
+    # multiprocess_evaluate_loaded('./data/Mothra_Full/JA_S2/experiment_config.json',"A")
+    # multiprocess_evaluate_loaded('./data/Mothra_Full/JA_S2/experiment_config.json',"B")
+
+    # multiprocess_evaluate_loaded('./data/Mothra_Full/JA_S3/experiment_config.json',"A")
+    # multiprocess_evaluate_loaded('./data/Mothra_Full/JA_S3/experiment_config.json',"B")
+
+    # asterisk_test('./data/Mothra_Slide/JA_S1/experiment_config.json','B')
+    # multiprocess_evaluate_loaded('./data/Mothra_Full/JA_S2/experiment_config.json',"A")
+    # multiprocess_evaluate_loaded('./data/Mothra_Full/JA_S3/experiment_config.json',"A")
+    main('./data/Rotation_Long/JA_S3/experiment_config.json')
+
+    # sub_names = ['FTP_S1','FTP_S2','FTP_S3','JA_S1','JA_S2','JA_S3']
+    # top_names = ['Mothra_Slide','HPC_Slide','Misc_Slide']
     # for uname in top_names:
     #     for lname in sub_names:
-    #         multiprocess_evaluate_loaded('./data/'+uname+'/'+lname+"/experiment_config.json","A")
-    #         multiprocess_evaluate_loaded('./data/'+uname+'/'+lname+"/experiment_config.json","B")
-    #         with open('rerun_files.csv', 'a') as f:
-    #             writer = csv.writer(f)
-    #             writer.writerow([uname,lname])
+    #         asterisk_test('./data/'+uname+'/'+lname+"/experiment_config.json","A")
+    #         asterisk_test('./data/'+uname+'/'+lname+"/experiment_config.json","B")
+    #         print(uname, lname)

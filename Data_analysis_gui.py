@@ -70,7 +70,7 @@ def main():
 
     scatter_plot_tab = [[sg.Button('Goal Wizard', size=(8,2)), sg.Button('Goal Spell', size=(8,2)), sg.Button('End Poses', size=(8, 2)), sg.Button('Ending Distances', size=(8,2)), sg.Button('Path Spell', size=(8,2))],
                         [sg.Button('Orientation Wizard', size=(8,2)), sg.Button('Orientation Scatter Spell', size=(8,2)), sg.Button('Orientation Multi', key='Orientation Multi',size=(8, 2)), sg.Button('Rotation Sliding Error', size=(8,2)), sg.Button('Orientation Spell',size=(8,2))],
-                        [sg.Button('Contact Wizard', size=(8,2)), sg.Button('Contact Dist', size=(8, 2)), sg.Button('Success Scatter',size=(8,2)), sg.Button('Shenanigans',size=(8,2)), sg.Button('Contact Spell',size = (8,2))],
+                        [sg.Button('OR bucket', size=(8,2)), sg.Button('Contact Dist', size=(8, 2)), sg.Button('Success Scatter',size=(8,2)), sg.Button('Shenanigans',size=(8,2)), sg.Button('Contact Spell',size = (8,2))],
                         [sg.Button('Explored Region', size=(8,2)), sg.Button('Reward Comparison', size=(8,2)), sg.Button('Timestep Best',size=(8,2)), sg.Button('Finger Object Avg', size=(8,2)),sg.Button('Scatter Scaled',size=(8,2))],
                         [sg.Button('End Region', size=(8,2)), sg.Button('Max Percent', size=(8,2)),sg.Button('Timestep End',size=(8,2)), sg.Button('Finger Object Max', size=(8,2)), sg.Button('Success Rate', size=(8,2))]]
 
@@ -200,7 +200,7 @@ def main():
             backend.draw_actor_output(episode_data)
             figure_canvas_agg.draw()
         elif event == 'draw_newshit':
-            backend.draw_newshit([clicks.x, clicks.y])
+            backend.draw_newshit([clicks.x, clicks.y], success_range)
             figure_canvas_agg.draw()
         elif event == 'Critic Output':
             backend.draw_critic_output(episode_data)
@@ -335,7 +335,7 @@ def main():
             figure_canvas_agg.draw()
         elif event == 'End Poses':
             cancan = sg.Window('Popup figure', [[sg.Canvas(size=(1280*2, 960*2),key='-CANVAS-')]], finalize=True)
-            fig2, _ = backend.draw_end_poses(folder)
+            fig2, _ = backend.draw_end_poses([clicks.x, clicks.y])
             figure_canvas_agg2 = FigureCanvasTkAgg(fig2, cancan['-CANVAS-'].TKCanvas)
             figure_canvas_agg2.draw()
             figure_canvas_agg2.get_tk_widget().pack(side='top', fill='both', expand=1)
@@ -421,6 +421,15 @@ def main():
                 print(filename)
                 window['-LISTBOX-'].update(set_to_index=filenum, scroll_to_index=filenum)
                 episode_data = load_data(filename)
+        elif event == "OR bucket":
+            
+            cancan = sg.Window('Popup figure', [[sg.Canvas(size=(1280*2, 960*2),key='-CANVAS-')]], finalize=True)
+            fig2, _ = backend.draw_end_orientaion_buckets(folder)
+            figure_canvas_agg2 = FigureCanvasTkAgg(fig2, cancan['-CANVAS-'].TKCanvas)
+            figure_canvas_agg2.draw()
+            figure_canvas_agg2.get_tk_widget().pack(side='top', fill='both', expand=1)
+            cancan.move(1000, 20)
+            figure_canvas_agg.draw()
         elif event == 'Timestep Best':
             backend.draw_timestep_goal_best(folder,int(values['tstep']))
             figure_canvas_agg.draw()
