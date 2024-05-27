@@ -256,8 +256,11 @@ class MultiprocessSingleShapeEnv(Environment):
 
         if fingerys is None:
             y_change = np.random.uniform(-0.0,0.0,2) * self.rand_finger_position
+            # print(y_change)
         else:
-            y_change = fingerys* self.rand_finger_position
+            
+            y_change = np.array(fingerys)* self.rand_finger_position
+            # input(y_change)
         
         if finger is not None:
             # print('in the first')
@@ -286,6 +289,7 @@ class MultiprocessSingleShapeEnv(Environment):
             # input('paus')
             link1_pose = self.p.getLinkState(self.hand_id, 2)[0]
             link2_pose = self.p.getLinkState(self.hand_id, 5)[0]
+            # print('all relevant things', link1_pose, obj_change,y_change)
             f1_pos = [link1_pose[0]+obj_change[0], link1_pose[1] + obj_change[1] + y_change[0], 0.05]
             f2_pos = [link2_pose[0]+obj_change[0], link2_pose[1] + obj_change[1] + y_change[1], 0.05]
             f1_angs = self.p.calculateInverseKinematics(self.hand_id, 2, f1_pos, maxNumIterations=3000)
