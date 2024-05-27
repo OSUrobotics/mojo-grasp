@@ -218,6 +218,10 @@ class MultiprocessGymWrapper(gym.Env):
         self.manipulation_phase.setup()
         
         state, _ = self.manipulation_phase.get_episode_info()
+
+        # print('goal pose in reset', state['goal_pose'])
+        # print('start object pos', state['obj_2']['pose'])
+        # print('joint angles', state['two_finger_gripper']['joint_angles'])
         if state['goal_pose']['goal_finger'] is not None:
             self.env.set_finger_contact_goal(state['goal_pose']['goal_finger'])
 
@@ -490,3 +494,9 @@ class MultiprocessGymWrapper(gym.Env):
 
     def set_goal(self,goal):
         self.env.set_goal(goal)
+
+    def set_goal_holder_pos(self, pos):
+        '''
+        more backdoor shenanigans
+        '''
+        self.manipulation_phase.state.objects[-1].set_all_pose(pos)
