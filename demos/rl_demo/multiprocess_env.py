@@ -419,6 +419,7 @@ class MultiprocessMazeEnv(MultiprocessSingleShapeEnv):
 
     def set_goal(self,goal):
         self.goals.set_goal(goal)
+        self.wall.set_curr_pose([0,0.01,0.02],[0,0,0,1])
         # self.p.setCollisionFilterPair(self.wall_id, self.obj_id,-1,-1,0)
 
     def set_wall_pose(self,pose):

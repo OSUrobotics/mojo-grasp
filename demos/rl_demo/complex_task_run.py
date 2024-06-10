@@ -179,8 +179,11 @@ print(sys.path)
 sys.path.append('/home/orochi/mojo/pybullet-planning')
 import pybullet_tools.utils as pp
 
-filepath = './data/HPC_slide_time_tests/20_contact/experiment_config.json'
-filename = './data/HPC_slide_time_tests/20_contact'
+# Mothra_Slide/FTP_S2
+# HPC_Slide/JA_S3
+
+filepath = './data/Mothra_Slide/FTP_S2/experiment_config.json'
+filename = './data/Mothra_Slide/FTP_S2'
 with open(filepath, 'r') as argfile:
     args = json.load(argfile)
 import pybullet as p
@@ -196,28 +199,33 @@ elif 'DDPG' in args['model']:
 elif 'TD3' in args['model']:
     model_type = TD3
 subpolicies = {}
-names = ['best_model']
+names = ['best_model.zip']
 for name in names:
+    print(filename+'/'+name)
+    print(len(args['state_maxes']))
     model = model_type("MlpPolicy", None, _init_setup_model=False).load(filename+'/'+name)
     subpolicies[name] = model
 env, args, ids = make_pybullet(args,p)
 wall_id = ids[1]
 obj_id = ids[0]
 # print(self.p.getBaseVelocity(self.obj_id))
-tihng = {'goal_position':[-0.05,0.0]}
+tihng = {'goal_position':[-0.05,-0.01]}
 state =env.reset(tihng)
 
 goal_pose = (0.05,0.1,0)
 input('LOOK AT IT')
 obj_limits = ((-0.06, 0.06), (0.06,0.14))
-obj_path = pp.plan_base_motion(obj_id, goal_pose, obj_limits, obstacles=[wall_id])
-print('Original path length: ', len(obj_path))
-# print(obj_path)
-import matplotlib.pyplot as plt
-xs = [o[0] for o in obj_path]
-ys = [o[1] for o in obj_path]
+# obj_path = pp.plan_base_motion(obj_id, goal_pose, obj_limits, obstacles=[wall_id])
+# print('Original path length: ', len(obj_path))
+# # print(obj_path)
+# import matplotlib.pyplot as plt
+# xs = [o[0] for o in obj_path]
+# ys = [o[1] for o in obj_path]
 
-reduced_obj_path = simple_interpolatinator(obj_path)
+# reduced_obj_path = simple_interpolatinator(obj_path)
+reduced_obj_path = np.random.uniform(-0.05,0.05,(5,3))
+reduced_obj_path = reduced_obj_path + np.array([0,0.1,0])
+# reduced_obj_path = [(-0.04,0.13,0.0),(0.04,0.13,0.0),(0.05,0.1,0.0)]
 print(reduced_obj_path)
 
 # state =env.reset(tihng)
@@ -232,8 +240,8 @@ for goal in reduced_obj_path:
                                     [goal[0]-0.0025,goal[1]-0.0025,0.11], childFrameOrientation=[0,0,0,1])
     p.setCollisionFilterPair(temp_id, obj_id,-1,-1,0)
     print(temp_id)
-plt.scatter(xs,ys)
-plt.show()
+# plt.scatter(xs,ys)
+# plt.show()
 # TODO get a policy that isnt shit working with this
 # TODO get a gif of the thing workign with the wall in the way
 # TODO maybe make a more diffcult environment for the thing
@@ -242,7 +250,7 @@ for obj_goal in reduced_obj_path:
     env.set_goal([obj_goal[0],obj_goal[1]-0.1])
     # p.changeConstraint(constraint_id, [obj_goal[0]-0.0025,obj_goal[1]-0.0025,0.11])
     for i in range(10):
-        action,_ = subpolicies['best_model'].predict(state,deterministic=True)
+        action,_ = subpolicies['best_model.zip'].predict(state,deterministic=True)
         print('dem actions', action)
         state, _, _, _ = env.step(np.array(action),viz=True)
         # time.sleep(0.4)
