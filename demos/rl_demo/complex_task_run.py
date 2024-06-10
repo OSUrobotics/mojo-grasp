@@ -177,10 +177,10 @@ def fancy_interpolatinator(base_path):
 import sys
 print(sys.path)
 sys.path.append('/home/orochi/mojo/pybullet-planning')
-import pybullet_tools.utils as pp
+# import pybullet_tools.utils as pp
 
-filepath = './data/HPC_slide_time_tests/20_contact/experiment_config.json'
-filename = './data/HPC_slide_time_tests/20_contact'
+filepath = './data/Full_long_test/experiment_config.json'
+filename = './data/Full_long_test'
 with open(filepath, 'r') as argfile:
     args = json.load(argfile)
 import pybullet as p
