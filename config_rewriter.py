@@ -11,6 +11,7 @@ import pathlib
 
 folder_path = './demos/rl_demo/data/Mothra_Slide/FTP_S2'
 
+
 overall_path = pathlib.Path(__file__).parent.resolve()
 resource_path = overall_path.joinpath('demos/rl_demo/resources')
 run_path = overall_path.joinpath('demos/rl_demo/runs')
