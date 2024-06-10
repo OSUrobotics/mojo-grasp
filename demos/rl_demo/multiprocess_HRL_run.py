@@ -10,6 +10,8 @@ Created on Tue Jul 13 10:53:58 2023
 import pybullet_data
 from demos.rl_demo import multiprocess_direction_env
 from demos.rl_demo import multiprocess_direction_phase
+from demos.rl_demo import multiprocess_manipulation_phase
+from demos.rl_demo import multiprocess_reward
 # import rl_env
 from demos.rl_demo.multiprocess_state import MultiprocessState
 from mojograsp.simcore.goal_holder import  GoalHolder, RandomGoalHolder, SimpleGoalHolder
@@ -36,6 +38,7 @@ import multiprocessing
 import json
 from scipy.spatial.transform import Rotation as R
 from model_holder import modelHolder
+import torch
 # from stable_baselines3.DQN import MlpPolicy
 
 def make_env(arg_dict=None,rank=0,hand_info=None, goal_dir=None):
@@ -155,14 +158,14 @@ def make_HRL_pybullet(arg_dict, pybullet_instance, rank, hand_info, sub_policies
     x = r * np.sin(theta)
     y = r * np.cos(theta)
     obj_pos = np.array([[i,j] for i,j in zip(x,y)])
-    theta = np.random.uniform(0, 2*np.pi,1000)
+    theta = np.zeros(1000)
     r = (1-(np.random.uniform(0, 0.95,1000))**2) * 50/1000
     x = r * np.sin(theta)
     y = r * np.cos(theta)
     obj_goal = np.array([[i,j] for i,j in zip(x,y)])
     fingers = np.random.uniform(0.01,0.01,(1000,2))
 
-    goals = GoalHolder(obj_goal, fingers)
+    goals = GoalHolder(obj_goal, fingers, theta)
 
     # setup pybullet client to either run with or without rendering
     if viz:
@@ -245,8 +248,11 @@ def make_HRL_pybullet(arg_dict, pybullet_instance, rank, hand_info, sub_policies
         action = rl_action.ExpertAction()
     else:
         action = rl_action.InterpAction(args['freq'])
-    reward = multiprocess_direction_reward.MultiprocessDirectionReward(pybullet_instance)
-
+        
+    if model_type=='option':
+        reward = multiprocess_direction_reward.MultiprocessDirectionReward(pybullet_instance)
+    elif model_type =='feudal':
+        reward = multiprocess_reward.MultiprocessReward(pybullet_instance)
     #change initial physics parameters
     pybullet_instance.changeDynamics(plane_id,-1,lateralFriction=0.05, spinningFriction=0.05, rollingFriction=0.05)
     pybullet_instance.changeDynamics(obj.id, -1, mass=.03, restitution=.95, lateralFriction=1)
@@ -262,7 +268,7 @@ def make_HRL_pybullet(arg_dict, pybullet_instance, rank, hand_info, sub_policies
     env = multiprocess_direction_env.MultiprocessDirectionSingleShapeEnv(pybullet_instance, hand=hand, obj=obj, args=args, obj_starts=obj_pos, finger_ys=fingers)
 
     # Create phase
-    manipulation = multiprocess_direction_phase.MultiprocessManipulation(
+    manipulation = multiprocess_manipulation_phase.MultiprocessManipulation(
         hand, obj, state, action, reward, env, args=arg_dict, hand_type=hand_type)
     
     # data recording
@@ -508,6 +514,9 @@ def main(filepath = None, train_type='pre'):
         model = model_type('MlpPolicy',env,  tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-2.3})
         try:
             print('starting the training using', get_device())
+            print(torch.cuda.is_available())
+            print(torch.version.cuda)
+            print(torch.cuda.get_device_capability(0))
             model.learn(total_timesteps=500000*(args['tsteps']+1))
             filename = os.path.dirname(filepath)
             model.save(filename+'/last_model_full')
