@@ -35,6 +35,8 @@ class modelHolder:
                     elif key == 'oa':
                         state.extend([np.sin(state_container['previous_state'][i]['obj_2']['z_angle']),np.cos(state_container['previous_state'][i]['obj_2']['z_angle'])])
                     elif key == 'ftp':
+                        
+                        # print(state_container)
                         state.extend(state_container['previous_state'][i]['f1_pos'][0:2])
                         state.extend(state_container['previous_state'][i]['f2_pos'][0:2])
                     elif key == 'fbp':

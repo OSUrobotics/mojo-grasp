@@ -24,6 +24,7 @@ class GoalHolder():
         self.run_num = 0
     
     def get_data(self):
+        # print('data stuff', self.orientation)
         return {'goal_position':self.pose[self.run_num%self.len],'goal_orientation':self.orientation[self.run_num%self.len], 'goal_finger':self.finger[self.run_num%self.len]}
     
     def get_name(self):

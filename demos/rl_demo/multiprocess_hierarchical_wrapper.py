@@ -573,6 +573,7 @@ class FeudalHRLWrapper(gym.Env):
         self.sub_policy = sub_policy
 
         self.p = self.env.p
+        # self.action_space = spaces.Box(low=args['action_mins'], high=args['action_maxes'])
         self.action_space = spaces.Box(low=np.array([-1,-1,-1]), high=np.array([1,1,1]))
         self.manipulation_phase = manipulation_phase
         self.observation_space = spaces.Box(np.array(args['state_mins']),np.array(args['state_maxes']))
@@ -627,11 +628,22 @@ class FeudalHRLWrapper(gym.Env):
         None.
 
         '''
-        print('got to step action')
+        # print('got to step action')
 
         # action is a weight vector which we multiply by the output of the sub-polcies
-        substate = self.manipulation_phase.get_built_sub_state(action)
-        final_action = self.sub_policy(substate)
+        # print(action)
+        self.manipulation_phase.set_goal(action)
+        prev_state = self.manipulation_phase.get_state()
+        # print('this one', prev_state['goal_pose'])
+        # print('last one', prev_state['previous_state'][0]['goal_pose'])
+        # print('further one', prev_state['previous_state'][1]['goal_pose'])
+        # print('even more one', prev_state['previous_state'][2]['goal_pose'])
+        # print('in step',type(prev_state))
+        # We need to change the goal in prev state to match what we have here
+        # prev_state = self.prep_substate(prev_state,action)
+        # substate = self.sub_policy.build_state(prev_state)
+        final_action,_ = self.sub_policy(prev_state)
+        # print(final_action)
         self.manipulation_phase.gym_pre_step(final_action)
         self.manipulation_phase.execute_action(viz=viz)
         done = self.manipulation_phase.exit_condition()
@@ -673,7 +685,7 @@ class FeudalHRLWrapper(gym.Env):
         state, _ = self.manipulation_phase.get_episode_info()
 
         state = self.build_state(state)
-        print(state)
+        # print(state)
         if self.count % 1000==0:
             print('thing')
         return state
@@ -683,8 +695,7 @@ class FeudalHRLWrapper(gym.Env):
     
     def close(self):
         self.p.disconnect()
-        
-    
+
     def build_state(self, state_container: State):
         """
         Method takes in a State object 
@@ -733,9 +744,7 @@ class FeudalHRLWrapper(gym.Env):
                     elif key == 'gp':
                         state.extend(state_container['previous_state'][i]['goal_pose']['goal_position'])
                     elif key == 'go':
-                        print('tell me its not you elmer fudd')
                         state.append(state_container['previous_state'][i]['goal_pose']['goal_orientation'])
-                        print(state)
                     elif key == 'gf':
                         state.extend(state_container['previous_state'][i]['goal_pose']['goal_finger'])
                     else:
