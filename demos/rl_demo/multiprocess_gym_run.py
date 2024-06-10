@@ -502,31 +502,43 @@ def rotation_test(filepath, hand_type):
         print('we didnt have a contact start so we set it to true')
     if hand_type =='A':
         args['hand_file_list'] = ["2v2_50.50_50.50_1.1_53/hand/2v2_50.50_50.50_1.1_53.urdf"]
+        start_angles = [[-0.67,1.45,0.67,-1.45],[-0.67,1.45,0.67,-1.45]
+                        ,[-0.4, 0.66, 0.4, -0.66],[-0.4, 0.66, 0.4, -0.66]
+                        ,[-1.12, 2.01, 1.12, -2.01],[-1.12, 2.01, 1.12, -2.01]
+                        ,[-1.05,1.24,0.41,-1.39],[-1.05,1.24,0.41,-1.39]
+                        ,[-0.41,1.39,1.05,-1.24],[-0.41,1.39,1.05,-1.24]]
     elif hand_type == 'B':
-        args['hand_file_list'] = ["2v2_65.35_65.35_1.1_53/hand/2v2_65.35_65.35_1.1_53.urdf"]    
+        args['hand_file_list'] = ["2v2_65.35_65.35_1.1_53/hand/2v2_65.35_65.35_1.1_53.urdf"]
+        start_angles = [[-0.4,1.5,0.4,-1.5],[-0.4,1.5,0.4,-1.5],[-0.19,0.59,0.20,-0.59],[-0.19,0.59,0.20,-0.59],
+                            [-0.51,2.09,0.51,-2.09],[-0.51,2.09,0.51,-2.09],
+                            [-0.76,1.37,0.03,-1.29],[-0.76,1.37,0.03,-1.29],[-0.03,1.29,0.76,-1.37],[-0.03,1.29,0.76,-1.37]]
     else:
         print('get fucked')
         assert 1==0
-    asterisk_thing = [[0,0.07],[0.0495,0.0495],[0.07,0.0],[0.0495,-0.0495],[0.0,-0.07],[-0.0495,-0.0495],[-0.07,0.0],[-0.0495,0.0495]]
-
-    if 'Rotation' in args['task']:
+    goal_poses = [[-0.0,0.0],[0.0,0.0],[0.0,0.03], [0.0,0.03],[0.0,-0.03],[0.0,-0.03],[0.04,0.0],[0.04,0.0],[-0.04,0.0],[-0.04,0.0]]
+            
+    if 'Rotation' not in args['task']:
         print('get fucked')
         assert 1==0
 
+    max_ang = 50/180*np.pi
+
+    goal_angs = [max_ang, -max_ang,max_ang, -max_ang,max_ang, -max_ang,max_ang, -max_ang,max_ang, -max_ang]
     import pybullet as p2
     eval_env , _, poses= make_pybullet(args,p2, [0,1], hand_params, viz=False)
     eval_env.evaluate()
     model = model_type("MlpPolicy", eval_env, tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-2.3}).load(args['save_path']+'best_model', env=eval_env)
     eval_env.episode_type = 'asterisk'
-    for i in asterisk_thing:
-        eval_env.manipulation_phase.state.objects[-1].set_all_pose(i)
-        obs = eval_env.reset()
-        eval_env.manipulation_phase.state.objects[-1].set_all_pose(i)
+    for start_angs,start_pos,goal_orientation in zip(start_angles,goal_poses,goal_angs):
+        eval_env.manipulation_phase.state.objects[-1].set_all_pose(start_pos,goal_orientation)
+        s_dict = {'goal_position':start_pos, 'fingers':start_angs}
+        obs = eval_env.reset(s_dict)
+        eval_env.manipulation_phase.state.objects[-1].set_all_pose(start_pos,goal_orientation)
         done = False
+        # input('next')
         while not done:
             action, _ = model.predict(obs,deterministic=True)
             obs, _, done, _ = eval_env.step(action,hand_type=hand_type)
-
 
 
 def full_test(filepath, hand_type):
@@ -720,7 +732,7 @@ def replay(argpath, episode_path):
     f2_poses = [s['state']['f2_pos'] for s in data['timestep_list']]
     joint_angles = [s['state']['two_finger_gripper']['joint_angles'] for s in data['timestep_list']]
     import pybullet as p2
-    args['hand_file_list'] = ["2v2_65.35_65.35_1.1_53/hand/2v2_65.35_65.35_1.1_53.urdf"]
+    # args['hand_file_list'] = ["2v2_65.35_65.35_1.1_53/hand/2v2_65.35_65.35_1.1_53.urdf"]
     eval_env , _, poses= make_pybullet(args,p2, [1,3], hand_params,viz=True)
     eval_env.evaluate()
     temp = [joint_angles[0]['finger0_segment0_joint'],joint_angles[0]['finger0_segment1_joint'],joint_angles[0]['finger1_segment0_joint'],joint_angles[0]['finger1_segment1_joint']]
@@ -732,7 +744,7 @@ def replay(argpath, episode_path):
     if ('Rotation' in args['task']) | ('contact' in args['task']):
         start_position = {'goal_position':[-0.04,0.0]}
         # uncomment this line
-        #start_position = {'goal_position':obj_temp, 'fingers':temp}
+        start_position = {'goal_position':obj_temp, 'fingers':temp}
 
         _ = eval_env.reset(start_position)
 
@@ -888,31 +900,42 @@ def main(filepath = None,learn_type='run'):
 if __name__ == '__main__':
     import csv
     # multiprocess_evaluate_loaded('./data/Mothra_Full/FTP_S1/experiment_config.json',"B")
-
+    # replay('./data/Mothra_Rotation/JA_S3/experiment_config.json', './data/Mothra_Rotation/JA_S3/Eval_A/Episode_3605.pkl')
     # multiprocess_evaluate_loaded('./data/Mothra_Full/FTP_S2/experiment_config.json',"A")
     # multiprocess_evaluate_loaded('./data/Mothra_Full/FTP_S2/experiment_config.json',"B")
 
     # multiprocess_evaluate_loaded('./data/Mothra_Full/FTP_S3/experiment_config.json',"A")
     # multiprocess_evaluate_loaded('./data/Mothra_Full/FTP_S3/experiment_config.json',"B")
 
-    # multiprocess_evaluate_loaded('./data/Mothra_Full/JA_S1/experiment_config.json',"A")
-    # multiprocess_evaluate_loaded('./data/Mothra_Full/JA_S1/experiment_config.json',"B")
+    # multiprocess_evaluate_loaded('./data/HPC_Full/JA_S3/experiment_config.json',"A")
+    # multiprocess_evaluate_loaded('./data/HPC_Full/JA_S3/experiment_config.json',"B")
 
-    # multiprocess_evaluate_loaded('./data/Mothra_Full/JA_S2/experiment_config.json',"A")
-    # multiprocess_evaluate_loaded('./data/Mothra_Full/JA_S2/experiment_config.json',"B")
+    multiprocess_evaluate_loaded('./data/Jeremiah_Full/FTP_S1/experiment_config.json',"A")
+    multiprocess_evaluate_loaded('./data/Jeremiah_Full/FTP_S1/experiment_config.json',"B")
+    multiprocess_evaluate_loaded('./data/Jeremiah_Full/FTP_S2/experiment_config.json',"A")
+    multiprocess_evaluate_loaded('./data/Jeremiah_Full/FTP_S2/experiment_config.json',"B")
+    multiprocess_evaluate_loaded('./data/Jeremiah_Full/FTP_S3/experiment_config.json',"A")
+    multiprocess_evaluate_loaded('./data/Jeremiah_Full/FTP_S3/experiment_config.json',"B")
 
-    # multiprocess_evaluate_loaded('./data/Mothra_Full/JA_S3/experiment_config.json',"A")
-    # multiprocess_evaluate_loaded('./data/Mothra_Full/JA_S3/experiment_config.json',"B")
+    # multiprocess_evaluate_loaded('./data/HPC_Rotation/FTP_S1/experiment_config.json',"A")
+    # multiprocess_evaluate_loaded('./data/HPC_Rotation/FTP_S1/experiment_config.json',"B")
+    # multiprocess_evaluate_loaded('./data/HPC_Rotation/FTP_S2/experiment_config.json',"A")
+    # multiprocess_evaluate_loaded('./data/HPC_Rotation/FTP_S2/experiment_config.json',"B")
+    # multiprocess_evaluate_loaded('./data/HPC_Rotation/FTP_S3/experiment_config.json',"A")
+    # multiprocess_evaluate_loaded('./data/HPC_Rotation/FTP_S3/experiment_config.json',"B")
+
+    # multiprocess_evaluate_loaded('./data/HPC_Full/FTP_S1/experiment_config.json',"A")
+    # multiprocess_evaluate_loaded('./data/HPC_Full/FTP_S1/experiment_config.json',"B")
 
     # asterisk_test('./data/Mothra_Slide/JA_S1/experiment_config.json','B')
-    # multiprocess_evaluate_loaded('./data/Mothra_Full/JA_S2/experiment_config.json',"A")
-    # multiprocess_evaluate_loaded('./data/Mothra_Full/JA_S3/experiment_config.json',"A")
-    main('./data/Rotation_Long/JA_S3/experiment_config.json')
+    # multiprocess_evaluate_loaded('./data/Rotation_Long/JA_S3/experiment_config.json',"A")
+    # multiprocess_evaluate_loaded('./data/Rotation_Long/JA_S3/experiment_config.json',"B")
+    # main('./data/Rotation_Long/JA_S3/experiment_config.json')
 
     # sub_names = ['FTP_S1','FTP_S2','FTP_S3','JA_S1','JA_S2','JA_S3']
-    # top_names = ['Mothra_Slide','HPC_Slide','Misc_Slide']
+    # top_names = ['Jeremiah_Rotation']#['Mothra_Rotation','HPC_Rotation',
     # for uname in top_names:
     #     for lname in sub_names:
-    #         asterisk_test('./data/'+uname+'/'+lname+"/experiment_config.json","A")
-    #         asterisk_test('./data/'+uname+'/'+lname+"/experiment_config.json","B")
+    #         rotation_test('./data/'+uname+'/'+lname+"/experiment_config.json","A")
+    #         rotation_test('./data/'+uname+'/'+lname+"/experiment_config.json","B")
     #         print(uname, lname)

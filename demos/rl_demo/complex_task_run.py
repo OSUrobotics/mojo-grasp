@@ -177,13 +177,14 @@ def fancy_interpolatinator(base_path):
 import sys
 print(sys.path)
 sys.path.append('/home/orochi/mojo/pybullet-planning')
-import pybullet_tools.utils as pp
+# import pybullet_tools.utils as pp
 
 # Mothra_Slide/FTP_S2
 # HPC_Slide/JA_S3
 
 filepath = './data/Mothra_Slide/FTP_S2/experiment_config.json'
 filename = './data/Mothra_Slide/FTP_S2'
+
 with open(filepath, 'r') as argfile:
     args = json.load(argfile)
 import pybullet as p
