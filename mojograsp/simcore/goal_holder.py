@@ -136,7 +136,7 @@ class SingleGoalHolder(GoalHolder):
         pass
 
     def set_goal(self,goal):
-        self.pose = goal
+        self.pose = [goal]
         
     def next_run(self):
         return [0.0,0.0]
