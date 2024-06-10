@@ -16,7 +16,9 @@ class FigureGui():
                          [sg.Checkbox('JA_Sim_S1_A_B',key='JA_Sim_S1_A_B', default=False),sg.Checkbox('JA_Sim_S2_A_B',key='JA_Sim_S2_A_B', default=False),sg.Checkbox('JA_Sim_S3_A_B',key='JA_Sim_S3_A_B', default=False)],
                          [sg.Checkbox('JA_Real_S1_A_A',key='JA_Real_S1_A_A', default=False),sg.Checkbox('JA_Real_S2_A_A',key='JA_Real_S2_A_A', default=False),sg.Checkbox('JA_Real_S3_A_A',key='JA_Real_S3_A_A', default=False)],
                          [sg.Button("Go Avanced")] ]
-        self.high_level_folders = ['Mothra_Slide/','Misc_Slide/','HPC_Slide/']
+        # self.high_level_folders = ['Mothra_Slide/','Misc_Slide/','HPC_Slide/']
+        self.high_level_folders = ['Mothra_Rotation/','Jeremiah_Rotation/','HPC_Rotation/']
+        
         self.mid_level = ['JA_S1', 'JA_S2', 'JA_S3','FTP_S1', 'FTP_S2', 'FTP_S3']
         self.low_level_folders = ['Ast_A','Ast_B','Real_A','Real_B']
 
@@ -58,7 +60,7 @@ class FigureGui():
                 lows = [[self.low_level_folders[0]],[self.low_level_folders[1]],[self.low_level_folders[2]],[self.low_level_folders[3]]]
             for pre in highs:
                 for post in lows:
-                    print(f"pre {pre}, post {post}")
+                    # print(f"pre {pre}, post {post}")
                     if (len(pre) == 1) and (len(post) == 1):
                         path_folders = [pre[0] + '/' + post[0]]
                     elif (len(pre) > 1) and (len(post) == 1):
@@ -68,8 +70,10 @@ class FigureGui():
                     elif (len(pre) > 1) and (len(post) > 1):
                         path_folders = [p + '/' + p2 for p in pre for p2 in post]
                     path_folders = [[self.base_path +self.high_level_folders[0]+folder_name,self.base_path +self.high_level_folders[1]+folder_name,self.base_path +self.high_level_folders[2]+folder_name] for folder_name in path_folders]
-                    print(path_folders)
-                    [self.backend.draw_radar(fold, [pre[i],post[0]]) for i,fold in enumerate(path_folders)] 
+                    # print(path_folders)
+                    # [self.backend.draw_radar(fold, [pre[i],post[0]]) for i,fold in enumerate(path_folders)]
+                    [self.backend.draw_rotation_asterisk(fold, [pre[i],post[0]]) for i,fold in enumerate(path_folders)] 
+
                     self.plot_to_png(pre)
 
                     self.backend.clear_axes()
