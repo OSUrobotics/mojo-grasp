@@ -175,6 +175,9 @@ class RNNGui():
         state_mins = []
         state_maxes = []
         state_list = []
+        if self.args['model'] == 'PPO_Feudal':
+            self.args['actor_mins'] = [-0.08,-0.08,-50/180*np.pi]
+            self.args['actor_maxes'] = [0.08,0.08,50/180*np.pi]
 
         if values['-ftp']:
             if not RW:

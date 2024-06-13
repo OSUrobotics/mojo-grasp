@@ -51,7 +51,7 @@ for uname in top_names:
 df = pd.DataFrame(csv_dict)
 df.to_csv("./simulation_test_data_3rd_round.csv", index=False)
 
-'''
+
 # Begin real world comparison table making
 sub_names =['FTP_S1','FTP_S2','FTP_S3','JA_S1','JA_S2','JA_S3']
 top_names_slide = ['Mothra_Slide','HPC_Slide','Misc_Slide']
@@ -105,12 +105,20 @@ for lname in sub_names:
 
 df = pd.DataFrame(csv_dict)
 df.to_csv("./sim_real_comparison_slide.csv", index=False)
-
+'''
 csv_dict = {'Action Space':[], 'State Space':[], 'Sim A Distance Error':[], 'Sim A Distance Std':[],
  'Sim A Orientation Error':[],'Sim A Orientation Std':[], 'Sim A Orientation Traveled':[], 'Sim A Traveled Std':[],'Real A Distance Error':[], 'Real A Distance Std':[],
  'Real A Orientation Error':[],'Real A Orientation Std':[], 'Real A Orientation Traveled':[], 'Real A Traveled Std':[],'Sim B Distance Error':[], 'Sim B Distance Std':[],
  'Sim B Orientation Error':[],'Sim B Orientation Std':[], 'Sim B Orientation Traveled':[], 'Sim B Traveled Std':[],'Real B Distance Error':[], 'Real B Distance Std':[],
  'Real B Orientation Error':[],'Real B Orientation Std':[], 'Real B Orientation Traveled':[], 'Real B Traveled Std':[]}
+
+
+
+# Begin real world comparison table making
+sub_names =['FTP_S1','FTP_S2','FTP_S3','JA_S1','JA_S2','JA_S3']
+top_names_slide = ['Mothra_Slide','HPC_Slide','Misc_Slide']
+top_names_rotate = ['Mothra_Rotation','HPC_Rotation','Jeremiah_Rotation']
+top_names_full = ['Mothra_Full','HPC_Full','Jeremiah_Full']
 
 backend = data_gui_backend.PlotBackend('./data/Mothra_Rotation/FTP_S1')
 for lname in sub_names:

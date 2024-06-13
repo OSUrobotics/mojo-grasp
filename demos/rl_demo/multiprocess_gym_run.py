@@ -244,7 +244,8 @@ def make_pybullet(arg_dict, pybullet_instance, rank, hand_info, viz=False):
                         "hand_name":hand_type}
 
     # load objects into pybullet
-    plane_id = pybullet_instance.loadURDF("plane.urdf", flags=pybullet_instance.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
+    plane_id = pybullet_instance.loadURDF("plane.urdf", flags=pybullet_instance.URDF_ENABLE_CACHED_GRAPHICS_SHAPES, basePosition=[0.50,0.50,0])
+    # other_id = pybullet_instance.loadURDF('./resources/object_models/wallthing/vertical_wall.urdf', basePosition=[0.0,0.0,-0.1],
     hand_id = pybullet_instance.loadURDF(args['hand_path'] + '/' + this_hand, useFixedBase=True,
                          basePosition=[0.0, 0.0, 0.05], flags=pybullet_instance.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
     print('object path',object_path)
@@ -260,9 +261,10 @@ def make_pybullet(arg_dict, pybullet_instance, rank, hand_info, viz=False):
     pybullet_instance.changeVisualShape(hand_id, 1, rgbaColor=[0.3, 0.3, 0.3, 1])
     pybullet_instance.changeVisualShape(hand_id, 3, rgbaColor=[1, 0.5, 0, 1])
     pybullet_instance.changeVisualShape(hand_id, 4, rgbaColor=[0.3, 0.3, 0.3, 1])
+    pybullet_instance.changeVisualShape(plane_id,-1,rgbaColor=[1,1,1,1])
     obj = ObjectWithVelocity(obj_id, path=object_path,name='obj_2')
 
-
+    # input('heh')
     if 'wall' in args['task']:
         print('LOADING WALL')
         wall_id = pybullet_instance.loadURDF("./resources/object_models/wallthing/vertical_wall.urdf",basePosition=[0.0, 0.10, .05])
@@ -751,9 +753,24 @@ def replay(argpath, episode_path):
     else:
         start_position = {'goal_position':[obj_pose[0][0][0], obj_pose[0][0][1]-0.1]}#, 'fingers':temp}
         _ = eval_env.reset(start_position)
-    # print(data['timestep_list'][0]['state']['goal_pose'])
+    print(data['timestep_list'][0]['state']['goal_pose'])
     temp = data['timestep_list'][0]['state']['goal_pose']['goal_position']
     angle = data['timestep_list'][0]['state']['goal_pose']['goal_orientation']
+
+
+    # df2 = pd.read_csv('./resources/start_poses.csv', index_col=False)
+    # x_start = df2['x']
+    # y_start = df2['y']
+
+    # for xi,yi in zip(x_start,y_start):
+    #     eval_env.env.make_viz_point([xi,yi+0.1,0.0005])
+    # df = pd.read_csv('./resources/test_points_big.csv', index_col=False)
+    # x = df['x']
+    # y = df['y']
+    # pts = [[xi,yi+0.1,0] for xi,yi in zip(x,y)]
+    # eval_env.env.make_viz_point(pts)
+
+
     input('look at it')
     # angle = -data['timestep_list'][0]['state']['goal_pose']['goal_orientation']
 
@@ -900,7 +917,7 @@ def main(filepath = None,learn_type='run'):
 if __name__ == '__main__':
     import csv
     # multiprocess_evaluate_loaded('./data/Mothra_Full/FTP_S1/experiment_config.json',"B")
-    # replay('./data/Mothra_Rotation/JA_S3/experiment_config.json', './data/Mothra_Rotation/JA_S3/Eval_A/Episode_3605.pkl')
+    replay('./data/Mothra_Slide/JA_S1/experiment_config.json', './data/Mothra_Slide/JA_S1/Ast_A/Episode_3.pkl')
     # multiprocess_evaluate_loaded('./data/Mothra_Full/FTP_S2/experiment_config.json',"A")
     # multiprocess_evaluate_loaded('./data/Mothra_Full/FTP_S2/experiment_config.json',"B")
 
@@ -910,12 +927,12 @@ if __name__ == '__main__':
     # multiprocess_evaluate_loaded('./data/HPC_Full/JA_S3/experiment_config.json',"A")
     # multiprocess_evaluate_loaded('./data/HPC_Full/JA_S3/experiment_config.json',"B")
 
-    multiprocess_evaluate_loaded('./data/Jeremiah_Full/FTP_S1/experiment_config.json',"A")
-    multiprocess_evaluate_loaded('./data/Jeremiah_Full/FTP_S1/experiment_config.json',"B")
-    multiprocess_evaluate_loaded('./data/Jeremiah_Full/FTP_S2/experiment_config.json',"A")
-    multiprocess_evaluate_loaded('./data/Jeremiah_Full/FTP_S2/experiment_config.json',"B")
-    multiprocess_evaluate_loaded('./data/Jeremiah_Full/FTP_S3/experiment_config.json',"A")
-    multiprocess_evaluate_loaded('./data/Jeremiah_Full/FTP_S3/experiment_config.json',"B")
+    # multiprocess_evaluate_loaded('./data/Jeremiah_Full/FTP_S1/experiment_config.json',"A")
+    # multiprocess_evaluate_loaded('./data/Jeremiah_Full/FTP_S1/experiment_config.json',"B")
+    # multiprocess_evaluate_loaded('./data/Jeremiah_Full/FTP_S2/experiment_config.json',"A")
+    # multiprocess_evaluate_loaded('./data/Jeremiah_Full/FTP_S2/experiment_config.json',"B")
+    # multiprocess_evaluate_loaded('./data/Jeremiah_Full/FTP_S3/experiment_config.json',"A")
+    # multiprocess_evaluate_loaded('./data/Jeremiah_Full/FTP_S3/experiment_config.json',"B")
 
     # multiprocess_evaluate_loaded('./data/HPC_Rotation/FTP_S1/experiment_config.json',"A")
     # multiprocess_evaluate_loaded('./data/HPC_Rotation/FTP_S1/experiment_config.json',"B")

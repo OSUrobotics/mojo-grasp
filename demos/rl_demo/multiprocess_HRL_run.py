@@ -548,4 +548,4 @@ def main(filepath = None, train_type='pre'):
             filename = os.path.dirname(filepath)
             model.save(filename+'/canceled_model_full')
 if __name__ == '__main__':
-    main('./data/HRL_Feudal/experiment_config.json', 'feudal')
+    main('./data/HRL_test_1/experiment_config.json', 'feudal')
