@@ -573,8 +573,8 @@ class FeudalHRLWrapper(gym.Env):
         self.sub_policy = sub_policy
 
         self.p = self.env.p
-        # self.action_space = spaces.Box(low=args['action_mins'], high=args['action_maxes'])
-        self.action_space = spaces.Box(low=np.array([-1,-1,-1]), high=np.array([1,1,1]))
+        self.action_space = spaces.Box(low=np.array(args['actor_mins']), high=np.array(args['actor_maxes']))
+        # self.action_space = spaces.Box(low=np.array([-1,-1,-1]), high=np.array([1,1,1]))
         self.manipulation_phase = manipulation_phase
         self.observation_space = spaces.Box(np.array(args['state_mins']),np.array(args['state_maxes']))
         self.STATE_NOISE = args['state_noise']

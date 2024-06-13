@@ -2175,8 +2175,8 @@ class PlotBackend():
         all_orientation_error=[]
         all_or_covered = []
         for g, gp, ep, go, eo in zip(names,goal_poses, end_poses, goal_orientations, end_orientations):
+            print(g)
             for i,name in enumerate(full_key):
-                # print(name,g, full_key)
                 if name in g:
                     # print('we in here')
                     dtemp = ep-gp
@@ -2189,11 +2189,11 @@ class PlotBackend():
                     # print('starting debugging')
                     # print(dtemp)
                     # print(go-eo)
-                    # print(np.sign(eo)*go)
+                    print(np.sign(go)*eo)
             for i, name in enumerate(sim_key):
                 # print(name,g)
                 if name in g:
-                    # print('we in here')
+                    print('we in here')
                     dtemp = ep-gp
                     pos_error[full_key[i]].append(abs(dtemp)*100)
                     orientation_error[full_key[i]].append(abs(go-eo)*180/np.pi)
@@ -2203,7 +2203,7 @@ class PlotBackend():
                     all_or_covered.append(np.sign(eo)*go*180/np.pi)
         # finals.append(finals[0])
         # finals = np.array(finals)
-        
+        print('net orientation covered', np.average(all_or_covered))
         # print(f'net position error: {np.average(all_pos_error)}, {np.std(all_pos_error)}')
         # print(f'net orientation error: {np.average(all_orientation_error)}, {np.std(all_orientation_error)}')
         # print(f'avereage orientation traveled: {np.average(all_or_covered)}, {np.std(all_or_covered)}')
@@ -2924,41 +2924,38 @@ class PlotBackend():
         # TODO fix this to work with new data structure
         if self.point_dictionary is None:
             print('cant do it, need to run wizard first')
-            return False
-        
+            return
+        if clicks[0] is None:
+            print('need to select a point first')
+            return
+
         self.clear_axes()
 
         if self.click_spell is None:
-            closest_point = []
-            distances = []
-            test_point = np.array(clicks)/100
-            desired_point = []
-            for k,v in self.point_dictionary.items():
-                if len(v['start_pos']) > 0:
-                    distances.append(np.linalg.norm(test_point - np.array(v['start_pos'])))
-                    closest_point.append(k)
-                    desired_point.append(v['start_pos'][0])
-        
-            min_spot = np.argmin(distances)
-            self.click_spell = closest_point[min_spot]
+            # Rounded Start X      Rounded Start Y
+            point_dist = np.sqrt((clicks[0]/100 - self.point_dictionary['Rounded Start X'])**2 + (clicks[1]/100 - self.point_dictionary['Rounded Start Y'])**2)
+            mask = np.isclose(point_dist,np.min(point_dist))
+            self.click_spell = mask
 
+        orienatation_errors = []
         goals = []
-        s_f = []
-        for pt,dist,goal_or,end_or in zip(self.point_dictionary[self.click_spell]['goal_pos'],self.point_dictionary[self.click_spell]['dist'],self.point_dictionary[self.click_spell]['goal_orientation'],self.point_dictionary[self.click_spell]['end_orientation']):
-            goals.append(pt)
-            orientation = np.abs(goal_or - end_or)*180/np.pi
-            if (dist*1000 < success_range) and (orientation < rot_success):
-                s_f.append(100)
-            else:
-                s_f.append(0)
-        # mean, std = np.average(end_dists), np.std(end_dists)
-        
+        position_errors = []
+        end_orientation = self.point_dictionary[self.click_spell]['End Orientation']
+        goal_orientation = self.point_dictionary[self.click_spell]['Goal Orientation']
+        goal_x = self.point_dictionary[self.click_spell]['Goal X']
+        goal_y = self.point_dictionary[self.click_spell]['Goal Y']
+        position_errors = self.point_dictionary[self.click_spell]['End Distance']
+        orienatation_errors = np.abs(end_orientation-goal_orientation)*180/np.pi
+        mean, std = np.average(orienatation_errors), np.std(orienatation_errors)
+        orienatation_errors = np.clip(orienatation_errors,0,15)
+        def s_f_func(pt):
+            return (abs(pt['Orientation Error'])*180/np.pi < rot_success) & (pt['End Distance'] < success_range/1000)
+        s_f = self.point_dictionary[self.click_spell].apply(s_f_func)
         goals = np.array(goals)
-        s_f = np.array(s_f)
-        # try:
-        a = self.ax.scatter(goals[:,0]*100, goals[:,1]*100, c = s_f)
-        # except:
-        #     a = self.ax.scatter(goals[:,0]*100, goals[:,1]*100, c = s_f)
+        try:
+            a = self.ax.scatter(goal_x*100, goal_y*100, c = s_f)
+        except:
+            a = self.ax.scatter(goal_x*100, goal_y*100, c = s_f)
 
         self.ax.set_ylabel('Y position (cm)')
         self.ax.set_xlabel('X position (cm)')
