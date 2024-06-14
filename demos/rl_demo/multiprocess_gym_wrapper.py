@@ -70,6 +70,7 @@ class MultiprocessGymWrapper(gym.Env):
         self.eval_point = None
         self.hand_type = None
         self.first = True
+        self.reduced_saving = True
         self.small_enough = args['epochs'] <= 100000
         self.OBJECT_POSE_RANDOMIZATION = args['object_random_start']
         try:
@@ -168,6 +169,9 @@ class MultiprocessGymWrapper(gym.Env):
         multiprocessing'''
         print('SETTING RESET POINT', point)
         self.eval_point = point
+
+    def set_reduced_save_type(self,ting):
+        self.reduced_saving = ting
 
     def reset(self,special=None):
 
@@ -276,7 +280,11 @@ class MultiprocessGymWrapper(gym.Env):
         if done:
             # print('done, recording stuff')
             if self.eval or self.small_enough:
-                self.record.record_episode(self.episode_type)
+                if self.reduced_saving:
+                    self.record.record_test_round()
+                else:
+                    self.record.record_episode(self.episode_type)
+
                 if self.eval:
                     if self.hand_type is None:
                         self.record.save_episode(self.episode_type, hand_type=hand_type)

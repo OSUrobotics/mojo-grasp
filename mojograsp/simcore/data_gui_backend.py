@@ -12,6 +12,7 @@ import numpy as np
 import json
 from scipy.stats import kde
 import re
+import sys
 import time
 from matplotlib.patches import Rectangle
 from scipy.spatial.transform import Rotation as R
@@ -2623,6 +2624,7 @@ class PlotBackend():
         self.point_dictionary['Rounded Start X'] = self.point_dictionary['Start X'].apply(lambda x:np.round(x,4))
         self.point_dictionary['Rounded Start Y'] = self.point_dictionary['Start Y'].apply(lambda x:np.round(x,4))
         self.point_dictionary['Orientation Error'] = self.point_dictionary['Goal Orientation'] - self.point_dictionary['End Orientation']
+        # print(sys.getsizeof(self.point_dictionary))
 
     def draw_scatter_end_magic(self, folder_path, cmap='plasma'):
         if self.point_dictionary is None:
@@ -2636,12 +2638,12 @@ class PlotBackend():
         end_dists = sorted['End Distance'].apply(np.average)
         start_x = sorted['Start X'].apply(np.average)
         start_y = sorted['Start Y'].apply(np.average)
-        # end_dists = np.clip(end_dists, 0, 0.025)
+        end_dists = np.clip(end_dists, 0, 0.025)
 
         try:
-            a = self.ax.scatter(start_x.to_numpy()*100, start_y.to_numpy()*100, c = end_dists*100, cmap=cmap)
+            a = self.ax.scatter(start_x.to_numpy()*100, start_y.to_numpy()*100, c = end_dists*100, cmap=cmap,vmin=0.0, vmax=2.5)
         except:
-            a = self.ax.scatter(start_x.to_numpy()*100, start_y.to_numpy()*100, c = end_dists*100, cmap='plasma')
+            a = self.ax.scatter(start_x.to_numpy()*100, start_y.to_numpy()*100, c = end_dists*100, cmap='plasma',vmin=0.0, vmax=2.5)
 
         self.ax.set_ylabel('Y position (cm)')
         self.ax.set_xlabel('X position (cm)')
@@ -2650,6 +2652,7 @@ class PlotBackend():
         self.ax.set_title('Distance to Goals')
         self.ax.grid(False)
         self.colorbar = self.fig.colorbar(a, ax=self.ax, extend='max')
+        # self.colorbar.set_clim(vmin=0.0, vmax=2.5)
         self.ax.set_aspect('equal',adjustable='box')
         self.curr_graph = 'scatter'
         print(f'average end distance {mean} +/- {std}')
@@ -2799,9 +2802,9 @@ class PlotBackend():
         start_y = sorted['Start Y'].apply(np.average)
 
         try:
-            a = self.ax.scatter(start_x.to_numpy()*100, start_y.to_numpy()*100, c = end_orientations*180/np.pi, cmap=cmap)
+            a = self.ax.scatter(start_x.to_numpy()*100, start_y.to_numpy()*100, c = end_orientations*180/np.pi, cmap=cmap,vmin=0.0, vmax=15)
         except:
-            a = self.ax.scatter(start_x.to_numpy()*100, start_y.to_numpy()*100, c = end_orientations*180/np.pi, cmap='plasma')
+            a = self.ax.scatter(start_x.to_numpy()*100, start_y.to_numpy()*100, c = end_orientations*180/np.pi, cmap='plasma',vmin=0.0, vmax=15)
 
         self.ax.set_ylabel('Y position (cm)')
         self.ax.set_xlabel('X position (cm)')
@@ -2810,6 +2813,7 @@ class PlotBackend():
         self.ax.set_title('Average Orientation Error (degrees) Based on Start Pose')
         self.ax.grid(False)
         self.colorbar = self.fig.colorbar(a, ax=self.ax, extend='max')
+        # self.colorbar.set_clim()
         self.ax.set_aspect('equal',adjustable='box')
         self.curr_graph = 'scatter'
         print(f'average end orientation {mean} +/- {std}')
@@ -2921,7 +2925,6 @@ class PlotBackend():
         self.click_spell = None
     
     def draw_success_scatter(self, clicks, success_range, rot_success):
-        # TODO fix this to work with new data structure
         if self.point_dictionary is None:
             print('cant do it, need to run wizard first')
             return
@@ -2936,22 +2939,12 @@ class PlotBackend():
             point_dist = np.sqrt((clicks[0]/100 - self.point_dictionary['Rounded Start X'])**2 + (clicks[1]/100 - self.point_dictionary['Rounded Start Y'])**2)
             mask = np.isclose(point_dist,np.min(point_dist))
             self.click_spell = mask
-
-        orienatation_errors = []
-        goals = []
-        position_errors = []
-        end_orientation = self.point_dictionary[self.click_spell]['End Orientation']
-        goal_orientation = self.point_dictionary[self.click_spell]['Goal Orientation']
         goal_x = self.point_dictionary[self.click_spell]['Goal X']
         goal_y = self.point_dictionary[self.click_spell]['Goal Y']
-        position_errors = self.point_dictionary[self.click_spell]['End Distance']
-        orienatation_errors = np.abs(end_orientation-goal_orientation)*180/np.pi
-        mean, std = np.average(orienatation_errors), np.std(orienatation_errors)
-        orienatation_errors = np.clip(orienatation_errors,0,15)
         def s_f_func(pt):
+            # print(pt.keys())
             return (abs(pt['Orientation Error'])*180/np.pi < rot_success) & (pt['End Distance'] < success_range/1000)
-        s_f = self.point_dictionary[self.click_spell].apply(s_f_func)
-        goals = np.array(goals)
+        s_f = self.point_dictionary[self.click_spell].apply(s_f_func, axis=1)
         try:
             a = self.ax.scatter(goal_x*100, goal_y*100, c = s_f)
         except:
@@ -2964,7 +2957,7 @@ class PlotBackend():
         self.ax.set_title('Distance to Goals')
         self.ax.grid(False)
         self.colorbar = self.fig.colorbar(a, ax=self.ax, extend='max')
-        self.ax.scatter(self.point_dictionary[self.click_spell]['start_pos'][0][0]*100,self.point_dictionary[self.click_spell]['start_pos'][0][1]*100,marker='s')
+        # self.ax.scatter(self.point_dictionary[self.click_spell]['start_pos'][0][0]*100,self.point_dictionary[self.click_spell]['start_pos'][0][1]*100,marker='s')
         self.ax.set_aspect('equal',adjustable='box')
         self.curr_graph = 'scatter'
         # print(f'average end distance {mean} +/- {std}')
@@ -3052,7 +3045,7 @@ class PlotBackend():
         self.click_spell = None
         return [mean, std]
     
-    def draw_orientation_region(self,clicks, slide_thold):
+    def draw_orientation_region(self,clicks, slide_thold, rotate_thold):
         if self.point_dictionary is None:
             print('cant do it, need to run wizard first')
             return False
@@ -3083,6 +3076,8 @@ class PlotBackend():
         self.ax.scatter(fail_goal_orientation,fail_end_orientation)
         # self.ax.plot(range(len(goals)), goals)
         self.ax.plot([-360,360],[-360,360],color='green')
+        self.ax.plot([-360,360],[-360+rotate_thold,360+rotate_thold],color='green',linestyle=':')
+        self.ax.plot([-360,360],[-360-rotate_thold,360-rotate_thold],color='green',linestyle=':')
         self.ax.set_xlabel('Goal Orientation')
         self.ax.set_ylabel('Ending Orientation Error')
         self.ax.set_ylim(-75,75)
