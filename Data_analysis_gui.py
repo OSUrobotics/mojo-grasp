@@ -200,7 +200,8 @@ def main():
             backend.draw_actor_output(episode_data)
             figure_canvas_agg.draw()
         elif event == 'Orientation Single Region':
-            backend.draw_orientation_region([clicks.x, clicks.y], success_range)
+            rot_success = float(values['rot_success_range'])
+            backend.draw_orientation_region([clicks.x, clicks.y], success_range, rot_success)
             figure_canvas_agg.draw()
         elif event == 'Critic Output':
             backend.draw_critic_output(episode_data)

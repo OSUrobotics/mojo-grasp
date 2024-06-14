@@ -363,6 +363,7 @@ def multiprocess_evaluate_loaded(filepath, aorb):
     if 'Rotation' in args['task']:
         args['test_path'] = "./resources/Solo_rotation_test.csv"
     vec_env = SubprocVecEnv([make_env(args,[i,num_cpu],hand_info=hand_params) for i in range(num_cpu)])
+    vec_env.env_method('set_reduced_save_type', False)
     model = model_type("MlpPolicy", vec_env, tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-2.3}).load(args['save_path']+'best_model', env=vec_env)
     
     if 'Rotation' in args['task']:
@@ -454,6 +455,7 @@ def asterisk_test(filepath,hand_type):
     import pybullet as p2
     eval_env , _, poses= make_pybullet(args,p2, [0,1], hand_params, viz=False)
     eval_env.evaluate()
+    eval_env.reduced_saving = False
     model = model_type("MlpPolicy", eval_env, tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-2.3}).load(args['save_path']+'best_model', env=eval_env)
     eval_env.episode_type = 'asterisk'
     for i in asterisk_thing:
@@ -529,6 +531,7 @@ def rotation_test(filepath, hand_type):
     import pybullet as p2
     eval_env , _, poses= make_pybullet(args,p2, [0,1], hand_params, viz=False)
     eval_env.evaluate()
+    eval_env.reduced_saving = False
     model = model_type("MlpPolicy", eval_env, tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-2.3}).load(args['save_path']+'best_model', env=eval_env)
     eval_env.episode_type = 'asterisk'
     for start_angs,start_pos,goal_orientation in zip(start_angles,goal_poses,goal_angs):
@@ -595,6 +598,7 @@ def full_test(filepath, hand_type):
     import pybullet as p2
     eval_env , _, poses= make_pybullet(args,p2, [0,1], hand_params, viz=False)
     eval_env.evaluate()
+    eval_env.reduced_saving = False
     model = model_type("MlpPolicy", eval_env, tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-2.3}).load(args['save_path']+'best_model', env=eval_env)
     eval_env.episode_type = 'asterisk'
     for i in asterisk_thing:
@@ -611,6 +615,7 @@ def full_test(filepath, hand_type):
 def multiprocess_evaluate(model, vec_env, rotate=False):
     # vec_env.evaluate()
     # tech_start = time.time()
+    vec_env.env_method('set_reduced_save_type', False)
     if rotate:
         for _ in range(int(1200/16)):
             # print('about to reset')
@@ -686,6 +691,7 @@ def evaluate(filepath=None,aorb = 'A'):
     import pybullet as p2
     eval_env , _, poses= make_pybullet(args,p2, [0,1], hand_params, viz=False)
     eval_env.evaluate()
+    eval_env.reduced_saving = False
     model = model_type("MlpPolicy", eval_env, tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-2.3}).load(args['save_path']+'best_model', env=eval_env)
 
     for _ in range(1200):
@@ -917,14 +923,14 @@ def main(filepath = None,learn_type='run'):
 if __name__ == '__main__':
     import csv
     # multiprocess_evaluate_loaded('./data/Mothra_Full/FTP_S1/experiment_config.json',"B")
-    replay('./data/Mothra_Slide/JA_S1/experiment_config.json', './data/Mothra_Slide/JA_S1/Ast_A/Episode_3.pkl')
+    # replay('./data/Mothra_Slide/JA_S1/experiment_config.json', './data/Mothra_Slide/JA_S1/Ast_A/Episode_3.pkl')
     # multiprocess_evaluate_loaded('./data/Mothra_Full/FTP_S2/experiment_config.json',"A")
     # multiprocess_evaluate_loaded('./data/Mothra_Full/FTP_S2/experiment_config.json',"B")
 
     # multiprocess_evaluate_loaded('./data/Mothra_Full/FTP_S3/experiment_config.json',"A")
     # multiprocess_evaluate_loaded('./data/Mothra_Full/FTP_S3/experiment_config.json',"B")
 
-    # multiprocess_evaluate_loaded('./data/HPC_Full/JA_S3/experiment_config.json',"A")
+    # multiprocess_evaluate_loaded('./data/Full_long_test/experiment_config.json',"B")
     # multiprocess_evaluate_loaded('./data/HPC_Full/JA_S3/experiment_config.json',"B")
 
     # multiprocess_evaluate_loaded('./data/Jeremiah_Full/FTP_S1/experiment_config.json',"A")
@@ -944,7 +950,8 @@ if __name__ == '__main__':
     # multiprocess_evaluate_loaded('./data/HPC_Full/FTP_S1/experiment_config.json',"A")
     # multiprocess_evaluate_loaded('./data/HPC_Full/FTP_S1/experiment_config.json',"B")
 
-    # asterisk_test('./data/Mothra_Slide/JA_S1/experiment_config.json','B')
+    asterisk_test('./data/Mothra_Slide/JA_S1/experiment_config.json','B')
+    print('finsihed test')
     # multiprocess_evaluate_loaded('./data/Rotation_Long/JA_S3/experiment_config.json',"A")
     # multiprocess_evaluate_loaded('./data/Rotation_Long/JA_S3/experiment_config.json',"B")
     # main('./data/Rotation_Long/JA_S3/experiment_config.json')
