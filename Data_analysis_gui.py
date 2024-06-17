@@ -70,14 +70,14 @@ def main():
 
     scatter_plot_tab = [[sg.Button('Goal Wizard', size=(8,2)), sg.Button('Goal Spell', size=(8,2)), sg.Button('End Poses', size=(8, 2)), sg.Button('Ending Distances', size=(8,2)), sg.Button('Path Spell', size=(8,2))],
                         [sg.Button('Orientation Wizard', size=(8,2)), sg.Button('Orientation Scatter Spell', size=(8,2)), sg.Button('Orientation Multi', key='Orientation Multi',size=(8, 2)), sg.Button('Rotation Sliding Error', size=(8,2)), sg.Button('Orientation Spell',size=(8,2))],
-                        [sg.Button('Contact Wizard', size=(8,2)), sg.Button('Contact Dist', size=(8, 2)), sg.Button('Success Scatter',size=(8,2)), sg.Button('Shenanigans',size=(8,2)), sg.Button('Contact Spell',size = (8,2))],
+                        [sg.Button('OR bucket', size=(8,2)), sg.Button('Orientation Single Region', size=(8, 2)), sg.Button('Success Scatter',size=(8,2)), sg.Button('Shenanigans',size=(8,2)), sg.Button('Contact Spell',size = (8,2))],
                         [sg.Button('Explored Region', size=(8,2)), sg.Button('Reward Comparison', size=(8,2)), sg.Button('Timestep Best',size=(8,2)), sg.Button('Finger Object Avg', size=(8,2)),sg.Button('Scatter Scaled',size=(8,2))],
                         [sg.Button('End Region', size=(8,2)), sg.Button('Max Percent', size=(8,2)),sg.Button('Timestep End',size=(8,2)), sg.Button('Finger Object Max', size=(8,2)), sg.Button('Success Rate', size=(8,2))]]
 
     plot_buttons = [[sg.Button('Object Path', size=(8, 2)), sg.Button('Finger Angles', size=(8, 2)), sg.Button('Finger Contact Distance',size=(8, 2)), sg.Button('Rewards', size=(8, 2)),sg.Button('',size=(8,2))],
-                    [sg.Button('Fingertip Path', size=(8,2)), sg.Button('Actor Output', size=(8, 2)), sg.Button('Object Goal Distance',size=(8, 2)),sg.Button('',size=(8,2)),sg.Button('',size=(8,2))],
+                    [sg.Button('Fingertip Path', size=(8,2)), sg.Button('Actor Output', size=(8, 2)), sg.Button('Object Goal Distance',size=(8, 2)),sg.Button('Big Success',size=(8,2)),sg.Button('',size=(8,2))],
                     [sg.Button('Obj Contacts', size=(8,2)), sg.Button('Aout Comparison', size=(8, 2)),sg.Button('Orientation', size=(8,2)), sg.Button('Multireward', size=(8,2)),sg.Button('',size=(8,2))],
-                    [sg.Button('Finger Goal Path',size=(8,2)),sg.Button('Sampled Poses', size=(8,2)),sg.Button('',size=(8,2)),sg.Button('',size=(8,2)),sg.Button('draw_newshit',size=(8,2))]]
+                    [sg.Button('Finger Goal Path',size=(8,2)),sg.Button('Sampled Poses', size=(8,2)),sg.Button('draw_scatter_max_end',size=(8,2)),sg.Button('Both Errors',size=(8,2)),sg.Button('draw_newshit',size=(8,2))]]
 
     # define layout, show and read the window
     col = [[sg.Text(episode_files[0], size=(80, 3), key='-FILENAME-')],
@@ -199,8 +199,9 @@ def main():
         elif event == 'Actor Output':
             backend.draw_actor_output(episode_data)
             figure_canvas_agg.draw()
-        elif event == 'draw_newshit':
-            backend.draw_newshit([clicks.x, clicks.y])
+        elif event == 'Orientation Single Region':
+            rot_success = float(values['rot_success_range'])
+            backend.draw_orientation_region([clicks.x, clicks.y], success_range, rot_success)
             figure_canvas_agg.draw()
         elif event == 'Critic Output':
             backend.draw_critic_output(episode_data)
@@ -335,7 +336,7 @@ def main():
             figure_canvas_agg.draw()
         elif event == 'End Poses':
             cancan = sg.Window('Popup figure', [[sg.Canvas(size=(1280*2, 960*2),key='-CANVAS-')]], finalize=True)
-            fig2, _ = backend.draw_end_poses(folder)
+            fig2, _ = backend.draw_end_poses([clicks.x, clicks.y])
             figure_canvas_agg2 = FigureCanvasTkAgg(fig2, cancan['-CANVAS-'].TKCanvas)
             figure_canvas_agg2.draw()
             figure_canvas_agg2.get_tk_widget().pack(side='top', fill='both', expand=1)
@@ -348,6 +349,10 @@ def main():
             figure_canvas_agg2.get_tk_widget().pack(side='top', fill='both', expand=1)
             cancan.read()
             cancan.move(1000, 20)
+        elif event == "Big Success":
+            rot_success = float(values['rot_success_range'])
+            backend.draw_success_high_level(folder,[success_range, rot_success])
+            figure_canvas_agg.draw()
         elif event == '-TOGGLE-GRAPHIC-':  # if the graphical button that changes images
             window['-TOGGLE-GRAPHIC-'].metadata = not window['-TOGGLE-GRAPHIC-'].metadata
             window['-TOGGLE-GRAPHIC-'].update(image_data=toggle_btn_on if window['-TOGGLE-GRAPHIC-'].metadata else toggle_btn_off)
@@ -395,6 +400,12 @@ def main():
             rot_success = float(values['rot_success_range'])
             backend.draw_success_scatter([clicks.x, clicks.y], success_range, rot_success)
             figure_canvas_agg.draw()
+        elif event == 'draw_newshit':
+            backend.draw_newshit([clicks.x, clicks.y],success_range)
+            figure_canvas_agg.draw()
+        elif event == 'Both Errors':
+            backend.draw_both_errors(folder)
+            figure_canvas_agg.draw()
         elif event == 'Orientation Spell':
             spellname = backend.draw_orientation_spell([clicks.x, clicks.y])
             if spellname:
@@ -421,6 +432,19 @@ def main():
                 print(filename)
                 window['-LISTBOX-'].update(set_to_index=filenum, scroll_to_index=filenum)
                 episode_data = load_data(filename)
+        elif event == "OR bucket":
+            
+            cancan = sg.Window('Popup figure', [[sg.Canvas(size=(1280*2, 960*2),key='-CANVAS-')]], finalize=True)
+            fig2, _ = backend.draw_end_orientaion_buckets(folder)
+            figure_canvas_agg2 = FigureCanvasTkAgg(fig2, cancan['-CANVAS-'].TKCanvas)
+            figure_canvas_agg2.draw()
+            figure_canvas_agg2.get_tk_widget().pack(side='top', fill='both', expand=1)
+            cancan.move(1000, 20)
+            figure_canvas_agg.draw()
+
+        elif event =='draw_scatter_max_end':
+            backend.draw_scatter_max_end(folder, values['-cmap'])
+            figure_canvas_agg.draw()
         elif event == 'Timestep Best':
             backend.draw_timestep_goal_best(folder,int(values['tstep']))
             figure_canvas_agg.draw()

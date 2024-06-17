@@ -65,4 +65,4 @@ def make_video(filepath):
     frame_one.save(filepath+"Episode.gif", format="GIF", append_images=frames,
                save_all=True, duration=13*8, loop=0)
 
-make_video('/home/mothra/mojo-grasp/demos/rl_demo/data/Mothra_Rotation/JA_S2_no_contact/')
+make_video('/home/mothra/mojo-grasp/demos/rl_demo/data/Mothra_Slide/JA_S1/')

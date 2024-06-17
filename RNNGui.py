@@ -56,7 +56,7 @@ class RNNGui():
         self.double_names = ['f-b', 'l-r', 'diag-up', 'diag-down']
         self.alt_double_names = ['l-r','f','b']
         # define layout, show and read the window
-        data_layout =  [ [sg.Text('Model Type'), sg.OptionMenu(values=('TD3', 'TD3+HER', 'DDPG','DDPG+HER', 'PPO'),  k='-model', default_value='PPO')],
+        data_layout =  [ [sg.Text('Model Type'), sg.OptionMenu(values=('TD3', 'TD3+HER', 'DDPG','DDPG+HER', 'PPO','PPO_Feudal'),  k='-model', default_value='PPO')],
                          [sg.Text('Path to Expert Data if using FD')],
                          [sg.Button("Browse",key='-browse-expert',button_color='DarkBlue'),sg.Text("/", key='-expert-path')],
                          [sg.Text('Path to Save Data')],
@@ -103,21 +103,21 @@ class RNNGui():
                        [sg.Checkbox('Joint Angle', default=False, k='-ja')],
                        [sg.Checkbox('Object Position', default=True, k='-op')],
                        [sg.Checkbox('Object Orientation', default=False, k='-oo')],
-                       [sg.Checkbox('Object Angle',default=False,k='-oa')],
+                       [sg.Checkbox('Object Angle', default=False,k='-oa')],
                        [sg.Checkbox('Finger Object Distance', default=False, k='-fod')],
-                       [sg.Checkbox('Finger Tip Angle',default=True, k='-fta')],
-                       [sg.Checkbox('Goal Position',default=True, k='-gp')],
+                       [sg.Checkbox('Finger Tip Angle', default=True, k='-fta')],
+                       [sg.Checkbox('Goal Position', default=True, k='-gp')],
                        [sg.Checkbox('Goal Orientation', default=True, k = '-go')],
                        [sg.Checkbox('Goal Finger Pos', default=True, k='-gf')],
-                       [sg.Checkbox('Eigenvalues',default=False,key='-eva')],
-                       [sg.Checkbox('Eigenvectors',default=False,key='-evc')],
-                       [sg.Checkbox('HandParameters',default=False,key='-params')],
-                       [sg.Checkbox('WallPose',default=False,key='-wall')],
-                       [sg.Checkbox('Eigenvectors Times Eigenvalues',default=False,key='-evv')],
-                       [sg.Text('Num Previous States'),sg.Input(4, k='-pv',size=(8, 2)), sg.Text('Success Radius (mm)'), sg.Input(2, key='-sr',size=(8, 2))],
+                       [sg.Checkbox('Eigenvalues', default=False,key='-eva')],
+                       [sg.Checkbox('Eigenvectors', default=False,key='-evc')],
+                       [sg.Checkbox('HandParameters', default=False,key='-params')],
+                       [sg.Checkbox('WallPose', default=False,key='-wall')],
+                       [sg.Checkbox('Eigenvectors Times Eigenvalues', default=False,key='-evv')],
+                       [sg.Text('Num Previous States'), sg.Input(4, k='-pv',size=(8, 2)), sg.Text('Success Radius (mm)'), sg.Input(2, key='-sr',size=(8, 2))],
                        [sg.Text("Distance Scale"),  sg.Input(1,key='-distance_scale',size=(8, 2)), sg.Text('Contact Scale'),  sg.Input(0.2,key='-contact_scale',size=(8, 2)), sg.Text('Success Reward'), sg.Input(1,key='-success_reward',size=(8, 2)), sg.Text('Rotation Scale'), sg.Input(1,key='-rotation_scale',size=(8, 2))],
-                       [sg.Text("Action"), sg.OptionMenu(values=('Joint Velocity','Finger Tip Position'), k='-action',default_value='Finger Tip Position')],
-                       [sg.Checkbox('Vizualize Simulation',default=False, k='-viz'), sg.Checkbox('Real World?',default=False, k='-rw'), sg.Checkbox('IK every sim step?', default=False, key='-ik-freq')],
+                       [sg.Text("Action"), sg.OptionMenu(values=('Joint Velocity','Finger Tip Position','Object Pose'), k='-action',default_value='Finger Tip Position')],
+                       [sg.Checkbox('Vizualize Simulation', default=False, k='-viz'), sg.Checkbox('Real World?',default=False, k='-rw'), sg.Checkbox('IK every sim step?', default=False, key='-ik-freq')],
                        [sg.Button('Build Config File', key='-build')]]
 
         layout = [[sg.TabGroup([[sg.Tab('Task and General parameters', data_layout, key='-mykey-'),
@@ -175,6 +175,9 @@ class RNNGui():
         state_mins = []
         state_maxes = []
         state_list = []
+        if self.args['model'] == 'PPO_Feudal':
+            self.args['actor_mins'] = [-0.08,-0.08,-50/180*np.pi]
+            self.args['actor_maxes'] = [0.08,0.08,50/180*np.pi]
 
         if values['-ftp']:
             if not RW:
@@ -317,6 +320,8 @@ class RNNGui():
 
         if self.args['action'] =='Joint Velocity' or self.args['action'] =='Finger Tip Position':
             self.args['action_dim'] = 4
+        elif self.args['action'] == 'Object Pose':
+            self.args['action_dim'] = 3
 
         if 'FD' in self.args['model']:
             exists = os.path.isfile(self.expert_path + 'episode_all.pkl')
@@ -360,6 +365,8 @@ class RNNGui():
             self.args['max_action'] = 1.57
         elif values['-action'] == 'Finger Tip Position':
             self.args['max_action'] = 0.01
+        elif values['-action'] == 'Object Pose':
+            self.args['max_action'] = [0.01,0.01,1.57]
         if (values['-task'] == 'full_random') | (values['-task'] == 'unplanned_random'):
             self.args['points_path'] = str(resource_path.joinpath('points.csv'))
             self.args['test_path'] = str(resource_path.joinpath('test_points.csv'))

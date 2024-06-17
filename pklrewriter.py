@@ -22,7 +22,7 @@ thedict = {'number':1,'timestep_list':
 directon_key = {'N':[0,0.06],'NE':[0.0424,0.0424],'E':[0.06,0],'SE':[0.0424,-0.0424],'S':[0,-0.06],'SW':[-0.0424,-0.0424],'W':[-0.06,0], 'NW':[-0.0424,0.0424],
                 'N2':[0,0.03],'NE2':[0.0424/2,0.0424/2],'E2':[0.03,0],'SE2':[0.0424/2,-0.0424/2],'S2':[0,-0.03],'SW2':[-0.0424/2,-0.0424/2],'W2':[-0.03,0], 'NW2':[-0.0424/2,0.0424/2]}
 direction_full_names = ['N','NE','E','SE','S','SW','W', 'NW']
-filepath = '/home/mothra/mojo-grasp/demos/rl_demo/data/hand_transfer_JA/2v2_50.50_50.50_1.1_63/'
+filepath = '/home/mothra/mojo-grasp/demos/rl_demo/data/Mothra_Slide/JA_S1/Real_A/'
 names = os.listdir(filepath)
 for ane in names:
     print('opening', ane)
@@ -50,5 +50,6 @@ for ane in names:
             'reward':{'goal_position':[directon_key[used_key][0],directon_key[used_key][1]+0.1],
                       'distance_to_goal':np.linalg.norm(np.array(directon_key[used_key])+np.array([0,0.1])-np.array(ts['obj_pos'][0:2]))}})
             print(new_data['timestep_list'][-1])
-    with open('/home/mothra/mojo-grasp/demos/rl_demo/data/hand_transfer_JA/RW_new_width/Asterisk'+ane,'wb') as file:
+    # input(new_data['timestep_list'])
+    with open('/home/mothra/mojo-grasp/demos/rl_demo/data/Mothra_Slide/JA_S1/Real_A/trimmed'+ane,'wb') as file:
         pkl.dump(new_data,file)

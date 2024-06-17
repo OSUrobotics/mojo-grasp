@@ -189,7 +189,7 @@ class MultiprocessSingleShapeEnv(Environment):
         
         self.p.resetSimulation()
 
-        self.plane_id = self.p.loadURDF("plane.urdf", flags=self.p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
+        self.plane_id = self.p.loadURDF("plane.urdf", flags=self.p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES, basePosition=[0.5,0.3,0])
         self.hand_id = self.p.loadURDF(self.hand.path, useFixedBase=True,
                              basePosition=[0.0, 0.0, 0.05], flags=self.p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
         self.obj_id = self.p.loadURDF(self.obj.path, basePosition=[0.0, 0.10, .05],
@@ -212,7 +212,9 @@ class MultiprocessSingleShapeEnv(Environment):
         self.p.changeVisualShape(self.hand_id, 1, rgbaColor=[0.3, 0.3, 0.3, 1])
         self.p.changeVisualShape(self.hand_id, 3, rgbaColor=[1, 0.5, 0, 1])
         self.p.changeVisualShape(self.hand_id, 4, rgbaColor=[0.3, 0.3, 0.3, 1])
-        self.p.changeVisualShape(self.obj_id, -1, rgbaColor=[0.1, 0.1, 0.1, 1])
+        self.p.changeVisualShape(self.obj_id, -1, rgbaColor=[0.1, 0.6, 0.1, 0.9])
+        # self.p.configureDebugVisualizer(self.p.COV_ENABLE_SHADOWS, 0)
+        self.p.configureDebugVisualizer(self.p.COV_ENABLE_GUI, 0)
         self.hand.id = self.hand_id
         self.obj.id = self.obj_id
         self.start_time = 0
@@ -232,6 +234,16 @@ class MultiprocessSingleShapeEnv(Environment):
         self.floor_spinning_friction_range = [0.01,0.0101]
         self.floor_rolling_friction_range = [0.05,0.0501]
         self.object_mass_range = [0.015, 0.045]
+
+    def make_viz_point(self,thing):
+        if type(thing[0]) == list:
+            for i in thing:
+                temp = self.p.loadURDF("sphere_1cm.urdf", basePosition=i, baseOrientation=[0, 0, 0, 1], globalScaling=0.25)
+                self.p.changeVisualShape(temp,-1,rgbaColor=[0,0,1,1])
+        else:
+            temp=self.p.loadURDF("sphere_1cm.urdf", basePosition=thing, baseOrientation=[0, 0, 0, 1], globalScaling=0.5)
+            self.p.changeVisualShape(temp,-1,rgbaColor=[1,0,0,1])
+
 
     def reset(self, start_pos=None,finger=None,fingerys=None):
         # reset the simulator
@@ -419,6 +431,7 @@ class MultiprocessMazeEnv(MultiprocessSingleShapeEnv):
 
     def set_goal(self,goal):
         self.goals.set_goal(goal)
+        self.wall.set_curr_pose([0,0.01,0.02],[0,0,0,1])
         # self.p.setCollisionFilterPair(self.wall_id, self.obj_id,-1,-1,0)
 
     def set_wall_pose(self,pose):
