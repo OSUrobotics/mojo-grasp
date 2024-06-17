@@ -30,6 +30,7 @@ import time
 import os
 import multiprocessing
 from scipy.spatial.transform import Rotation as R
+from stable_baselines3.common.noise import NormalActionNoise
 
 def make_env(arg_dict=None,rank=0,hand_info=None):
     def _init():
@@ -893,7 +894,7 @@ def main(filepath = None,learn_type='run'):
     if args['model'] == 'PPO':
         model_type = PPO
     elif 'DDPG' in args['model']:
-        model_type = DDPG
+        print('oh boy')
     elif 'TD3' in args['model']:
         model_type = TD3
 
@@ -906,7 +907,31 @@ def main(filepath = None,learn_type='run'):
         model = model_type("MlpPolicy", vec_env, tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-2.3}).load(args['load_path']+'best_model', env=vec_env)
         print('LOADING A MODEL')
     elif learn_type == 'run':
-        model = model_type("MlpPolicy", vec_env,tensorboard_log=args['tname'])
+        if 'DDPG' in args['model']:
+            n_actions = vec_env.action_space.shape[0]
+            noise_std = 0.2
+            action_noise = NormalActionNoise(
+                mean=np.zeros(n_actions), sigma=noise_std * np.ones(n_actions)
+            )
+
+            model = DDPG(
+                        "MultiInputPolicy",
+                        vec_env,
+                        replay_buffer_class=HerReplayBuffer,
+                        replay_buffer_kwargs=dict(
+                            n_sampled_goal=4,
+                            goal_selection_strategy="future",
+                        ),
+                        verbose=1,
+                        buffer_size=int(1e6),
+                        learning_rate=1e-3,
+                        action_noise=action_noise,
+                        gamma=0.95,
+                        batch_size=256,
+                        tensorboard_log=args['tname'])
+            print('DDPG MODEL INITIALIZED')
+        else:
+            model = model_type("MlpPolicy", vec_env,tensorboard_log=args['tname'])
 
     try:
         print('starting the training using', get_device())
@@ -923,7 +948,7 @@ def main(filepath = None,learn_type='run'):
 if __name__ == '__main__':
     import csv
     # multiprocess_evaluate_loaded('./data/Mothra_Full/FTP_S1/experiment_config.json',"B")
-    # replay('./data/Mothra_Slide/JA_S1/experiment_config.json', './data/Mothra_Slide/JA_S1/Ast_A/Episode_3.pkl')
+    replay('./data/Full_long_test/experiment_config.json', './data/Full_long_test/Eval_A/Episode_16873.pkl')
     # multiprocess_evaluate_loaded('./data/Mothra_Full/FTP_S2/experiment_config.json',"A")
     # multiprocess_evaluate_loaded('./data/Mothra_Full/FTP_S2/experiment_config.json',"B")
 
@@ -950,12 +975,11 @@ if __name__ == '__main__':
     # multiprocess_evaluate_loaded('./data/HPC_Full/FTP_S1/experiment_config.json',"A")
     # multiprocess_evaluate_loaded('./data/HPC_Full/FTP_S1/experiment_config.json',"B")
 
-    asterisk_test('./data/Mothra_Slide/JA_S1/experiment_config.json','B')
-    print('finsihed test')
+    # asterisk_test('./data/Mothra_Slide/JA_S1/experiment_config.json','B')
+    # print('finsihed test')
     # multiprocess_evaluate_loaded('./data/Rotation_Long/JA_S3/experiment_config.json',"A")
     # multiprocess_evaluate_loaded('./data/Rotation_Long/JA_S3/experiment_config.json',"B")
-    # main('/home/ubuntu/MojoWork/mojo-grasp/demos/rl_demo/data/experiment_config.json')
-    
+    # main('./data/Full_Long/JA_S2/experiment_config.json')
 
     # sub_names = ['FTP_S1','FTP_S2','FTP_S3','JA_S1','JA_S2','JA_S3']
     # top_names = ['Jeremiah_Rotation']#['Mothra_Rotation','HPC_Rotation',
