@@ -84,7 +84,10 @@ class MultiprocessState(StateDefault):
         # print('setting state')
         if self.pflag:
             self.previous_states[1:] = self.previous_states[0:-1]
-            self.previous_states[0] = self.current_state.copy()
+            self.previous_states[0] = deepcopy(self.current_state)
+            # TODO FIGURE OUT WHY THIS DAMN THING IS FUCKED
+            # SPECIFICALLY WHY THE ORIENTATION UPDATES CORRECTLY BUT THE POSITION DOES NOT
+            # AND MAKE SURE THE OTHER ONES ARENT FUCKED TOO
         super().set_state()
 
         temp1 = self.p.getClosestPoints(self.objects[1].id, self.objects[0].id, 10, -1, 1, -1)[0]
@@ -153,6 +156,11 @@ class MultiprocessState(StateDefault):
         for thing in self.objects:
             if (type(thing) == GoalHolder) | (type(thing) == RandomGoalHolder):
                 return thing.get_name()
+    
+    def set_goal(self,goal_list):
+        for thing in self.objects:
+            if (type(thing) == GoalHolder) | (type(thing) == RandomGoalHolder):
+                thing.set_all_pose(goal_list[0:2], goal_list[2])
     
     def get_goal(self):
         # print(self.current_state)
