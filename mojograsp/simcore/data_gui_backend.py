@@ -45,6 +45,12 @@ def pool_process(episode_file):
 
     return point_list
 
+def pool_reward(episode_file,tholds, reward_func):
+    with open(episode_file, 'rb') as ef:
+        tempdata = pkl.load(ef)
+    data = tempdata['timestep_list']
+    return sum([reward_func(i['reward'],tholds)[0] for i in data])
+
 def pool_key_list(episode_file, tsteps, key_tuples):
     '''
     This takes a given episode file, tuple of timestep numbers and tuple of key tuples and returns
@@ -111,6 +117,7 @@ class PlotBackend():
         print('we just reset')
 
     def set_reward_func(self,key):
+        print(key)
         if key == 'Sparse':
             self.build_reward = rf.sparse
         elif key == 'Distance':
@@ -149,6 +156,8 @@ class PlotBackend():
             self.build_reward = rf.multi_scaled
         elif key =='contact point':
             self.build_reward = rf.contact_point
+        elif key =='Rotation+Finger':
+            self.build_reward = rf.rotation_with_finger
         else:
             raise Exception('reward type does not match list of known reward types')
     
@@ -2390,15 +2399,12 @@ class PlotBackend():
         data_list = pool.starmap(pool_key_list_all,thing)
         pool.close()
         pool.join()
+
+
         sliding_rewards = []
         contact_rewards = []
         orientation_rewards = []
         for i in data_list:
-            # print(i[0])
-            # print(i[1])
-            # print(i[2])
-            # print(i[3])
-            # print(i[4])
             sliding_rewards.append(-np.sum(i[0])/0.01*tholds['DISTANCE_SCALING'])
             contact_rewards.append(-np.sum(np.max([np.array(i[3]),np.array(i[4])],axis=0))*100*tholds['CONTACT_SCALING'])
             orientation_rewards.append(-np.sum(np.abs(np.array(i[1])[:,2]-np.array(i[2])))*tholds['ROTATION_SCALING'])
@@ -2408,7 +2414,7 @@ class PlotBackend():
         orientation_rewards = np.array(orientation_rewards)
         rewards = sliding_rewards + contact_rewards + orientation_rewards
 
-        print(rewards)
+        # print(rewards)
         return_rewards = rewards.copy()
         if self.moving_avg != 1:
             contact_rewards = moving_average(contact_rewards,self.moving_avg)
