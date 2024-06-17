@@ -400,6 +400,9 @@ class MultiprocessGymWrapper(gym.Env):
                 raise Exception('key does not match list of known keys')
             
         return state
+    
+    def build_state_HER():
+        pass
 
     def build_mirror_state(self, state_container: State):
         """

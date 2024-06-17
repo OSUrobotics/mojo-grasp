@@ -954,7 +954,8 @@ if __name__ == '__main__':
     print('finsihed test')
     # multiprocess_evaluate_loaded('./data/Rotation_Long/JA_S3/experiment_config.json',"A")
     # multiprocess_evaluate_loaded('./data/Rotation_Long/JA_S3/experiment_config.json',"B")
-    # main('./data/Rotation_Long/JA_S3/experiment_config.json')
+    # main('/home/ubuntu/MojoWork/mojo-grasp/demos/rl_demo/data/experiment_config.json')
+    
 
     # sub_names = ['FTP_S1','FTP_S2','FTP_S3','JA_S1','JA_S2','JA_S3']
     # top_names = ['Jeremiah_Rotation']#['Mothra_Rotation','HPC_Rotation',
