@@ -4,6 +4,7 @@
 
 import gym
 from gym import spaces
+#from gym.envs.robotics import GoalEnv
 import numpy as np
 from mojograsp.simcore.state import State
 from mojograsp.simcore.reward import Reward
@@ -25,7 +26,7 @@ class MultiEvaluateCallback(EvalCallback):
         else:
             return True
 
-class MultiprocessGymWrapper(gym.GoalEnv):
+class MultiprocessGymWrapper(gym.Env): 
     '''
     Example environment that follows gym interface to allow us to use openai gym learning algorithms with mojograsp
     '''
@@ -42,8 +43,8 @@ class MultiprocessGymWrapper(gym.GoalEnv):
         self.manipulation_phase = manipulation_phase
         self.observation_space = spaces.Dict({
             'observation': spaces.Box(np.array(args['state_mins']),np.array(args['state_maxes'])),
-            'achieved_goal': spaces.Box(np.array(args['goal_mins']), np.array(args['goal_maxes'])),
-            'desired_goal': spaces.Box(np.array(args['goal_mins']), np.array(args['goal_maxes']))
+            'achieved_goal': spaces.Box(np.array([-1,-1]), np.array([1,1])),
+            'desired_goal': spaces.Box(np.array([-1,-1]), np.array([1,1]))
         })
         self.STATE_NOISE = args['state_noise']
         if self.STATE_NOISE > 0:
@@ -218,6 +219,7 @@ class MultiprocessGymWrapper(gym.GoalEnv):
         observation = state['observation']
         achieved_goal = state['achieved_goal']
         desired_goal = state['desired_goal']
+        #print(np.shape(observation))
         return {
             'observation': observation,
             'achieved_goal': achieved_goal,
@@ -269,6 +271,7 @@ class MultiprocessGymWrapper(gym.GoalEnv):
         observation = state['observation']
         achieved_goal = state['achieved_goal']
         desired_goal = state['desired_goal']
+        #print(np.shape(observation))
         return {
             'observation': observation,
             'achieved_goal': achieved_goal,
@@ -371,6 +374,7 @@ class MultiprocessGymWrapper(gym.GoalEnv):
         observation = state
         achieved_goal = state_container['obj_2']['pose'][0][0:2]  # Assuming achieved_goal is the object's position
         desired_goal = state_container['goal_pose']['goal_position']  # Assuming desired_goal is the goal position
+        #print(np.shape(observation))
 
         return {
             'observation': observation,
