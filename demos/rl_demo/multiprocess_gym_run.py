@@ -948,9 +948,9 @@ def main(filepath = None,learn_type='run'):
 if __name__ == '__main__':
     import csv
     # multiprocess_evaluate_loaded('./data/Mothra_Full/FTP_S1/experiment_config.json',"B")
-    replay('./data/Full_long_test/experiment_config.json', './data/Full_long_test/Eval_A/Episode_16873.pkl')
-    # multiprocess_evaluate_loaded('./data/Mothra_Full/FTP_S2/experiment_config.json',"A")
-    # multiprocess_evaluate_loaded('./data/Mothra_Full/FTP_S2/experiment_config.json',"B")
+    # replay('./data/Full_long_test/experiment_config.json', './data/Full_long_test/Eval_B/Episode_1.pkl')
+    multiprocess_evaluate_loaded('./data/Rotation_Long/FTP_S2/experiment_config.json',"A")
+    multiprocess_evaluate_loaded('./data/Rotation_Long/FTP_S2/experiment_config.json',"B")
 
     # multiprocess_evaluate_loaded('./data/Mothra_Full/FTP_S3/experiment_config.json',"A")
     # multiprocess_evaluate_loaded('./data/Mothra_Full/FTP_S3/experiment_config.json',"B")
