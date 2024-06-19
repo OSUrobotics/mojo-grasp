@@ -948,7 +948,7 @@ def main(filepath = None,learn_type='run'):
 if __name__ == '__main__':
     import csv
     # multiprocess_evaluate_loaded('./data/Mothra_Full/FTP_S1/experiment_config.json',"B")
-    replay('./data/Full_long_test/experiment_config.json', './data/Full_long_test/Eval_A/Episode_16873.pkl')
+    #replay('./data/Full_long_test/experiment_config.json', './data/Full_long_test/Eval_A/Episode_16873.pkl')
     # multiprocess_evaluate_loaded('./data/Mothra_Full/FTP_S2/experiment_config.json',"A")
     # multiprocess_evaluate_loaded('./data/Mothra_Full/FTP_S2/experiment_config.json',"B")
 
@@ -979,7 +979,7 @@ if __name__ == '__main__':
     # print('finsihed test')
     # multiprocess_evaluate_loaded('./data/Rotation_Long/JA_S3/experiment_config.json',"A")
     # multiprocess_evaluate_loaded('./data/Rotation_Long/JA_S3/experiment_config.json',"B")
-    # main('./data/Full_Long/JA_S2/experiment_config.json')
+    main('/home/ubuntu/MojoWork/mojo-grasp/demos/rl_demo/data/Trying/experiment_config.json')     
 
     # sub_names = ['FTP_S1','FTP_S2','FTP_S3','JA_S1','JA_S2','JA_S3']
     # top_names = ['Jeremiah_Rotation']#['Mothra_Rotation','HPC_Rotation',
