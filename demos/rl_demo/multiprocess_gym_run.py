@@ -14,7 +14,7 @@ from demos.rl_demo.multiprocess_state import MultiprocessState
 from mojograsp.simcore.goal_holder import  GoalHolder, RandomGoalHolder, SingleGoalHolder
 from demos.rl_demo import rl_action
 from demos.rl_demo import multiprocess_reward
-from demos.rl_demo import multiprocess_gym_wrapper
+from demos.rl_demo import multiproccess_gym_wrapper_her as multiprocess_gym_wrapper
 from stable_baselines3.common.vec_env import SubprocVecEnv
 import pandas as pd
 from demos.rl_demo.multiprocess_record import MultiprocessRecordData
@@ -925,6 +925,7 @@ def main(filepath = None,learn_type='run'):
                         verbose=1,
                         buffer_size=int(1e6),
                         learning_rate=1e-3,
+                        learning_starts=10000,
                         action_noise=action_noise,
                         gamma=0.95,
                         batch_size=256,
