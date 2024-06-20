@@ -86,7 +86,7 @@ def moving_average(a, n) :
     return ret[n - 1:] / n
 
 class PlotBackend():
-    def __init__(self, config_folder):
+    def __init__(self):
         self.fig, self.ax = plt.subplots()
         self.clear_plots = True
         self.aspect_ratio = 3/4
@@ -99,7 +99,7 @@ class PlotBackend():
         self.legend = []
         self.point_dictionary = None
         self.tholds = []
-        self.load_config(config_folder)
+        # self.load_config(config_folder)
         self.click_spell = None
         
     def load_config(self, config_folder):
@@ -117,7 +117,7 @@ class PlotBackend():
         print('we just reset')
 
     def set_reward_func(self,key):
-        print(key)
+        # print(key)
         if key == 'Sparse':
             self.build_reward = rf.sparse
         elif key == 'Distance':
@@ -320,7 +320,7 @@ class PlotBackend():
         self.curr_graph = 'angles'
         self.ax.set_aspect('auto',adjustable='box')
         
-    def draw_actor_output(self, data_dict):
+    def draw_actor_output(self, data_dict,action_type='FTP'):
         data = data_dict['timestep_list']
         episode_number = data_dict['number']
         actor_list = [f['action']['actor_output'] for f in data]
@@ -332,12 +332,12 @@ class PlotBackend():
         self.ax.plot(range(len(actor_list)),actor_list[:,1])
         self.ax.plot(range(len(actor_list)),actor_list[:,2])
         self.ax.plot(range(len(actor_list)),actor_list[:,3])
-        if self.config['action'] == 'Finger Tip Position':
+        if action_type == 'FTP':
             self.legend.extend(['Right X - episode ' + str( episode_number), 
                                 'Right Y - episode ' + str( episode_number), 
                                 'Left X - episode ' + str( episode_number), 
                                 'Left Y - episode ' + str( episode_number)])
-        elif self.config['action'] == 'Joint Velocity':            
+        elif action_type =='JA':
             self.legend.extend(['Right Proximal - episode '+str( episode_number), 
                                 'Right Distal - episode '+str( episode_number), 
                                 'Left Proximal - episode '+str( episode_number), 
@@ -882,7 +882,7 @@ class PlotBackend():
         self.ax.set_title('Number of Timesteps per Episode')
         self.ax.set_aspect('auto',adjustable='box')
          
-    def draw_avg_actor_output(self, folder_or_data_dict):
+    def draw_avg_actor_output(self, folder_or_data_dict, action_type='FTP'):
         if type(folder_or_data_dict) is str:
             episode_files = [os.path.join(folder_or_data_dict, f) for f in os.listdir(folder_or_data_dict) if (f.lower().endswith('.pkl') & ('all' not in f))]
             filenames_only = [f for f in os.listdir(folder_or_data_dict) if (f.lower().endswith('.pkl') & ('all' not in f))]
@@ -949,12 +949,12 @@ class PlotBackend():
         self.ax.errorbar(range(len(avg_actor_output)),avg_actor_output[:,1], avg_actor_std[:,1])
         self.ax.errorbar(range(len(avg_actor_output)),avg_actor_output[:,2], avg_actor_std[:,2])
         self.ax.errorbar(range(len(avg_actor_output)),avg_actor_output[:,3], avg_actor_std[:,3])
-        if self.config['action'] == 'Finger Tip Position':
+        if action_type == 'FTP':
             self.legend.extend(['Right X', 
                                 'Right Y', 
                                 'Left X', 
                                 'Left Y'])
-        elif self.config['action'] == 'Joint Velocity':            
+        elif action_type == 'JA':            
             self.legend.extend(['Right Proximal', 
                                 'Right Distal', 
                                 'Left Proximal', 
@@ -1243,7 +1243,7 @@ class PlotBackend():
         self.ax.set_aspect('auto',adjustable='box')
         self.curr_graph = 'direction_success_thing' 
 
-    def draw_actor_max_percent(self, folder_path):
+    def draw_actor_max_percent(self, folder_path, action_type='FTP'):
         # get list of pkl files in folder
         episode_files = [os.path.join(folder_path, f) for f in os.listdir(folder_path) if f.lower().endswith('.pkl')]
         filenames_only = [f for f in os.listdir(folder_path) if f.lower().endswith('.pkl')]
@@ -1284,12 +1284,12 @@ class PlotBackend():
         self.ax.plot(range(len(actor_max)),actor_max[:,1])
         self.ax.plot(range(len(actor_max)),actor_max[:,2])
         self.ax.plot(range(len(actor_max)),actor_max[:,3])
-        if self.config['action'] == 'Finger Tip Position':
+        if action_type =='FTP':
             self.legend.extend(['Right X Percent at Max', 
                                 'Right Y Percent at Max', 
                                 'Left X Percent at Max', 
                                 'Left Y Percent at Max'])
-        elif self.config['action'] == 'Joint Velocity':            
+        elif action_type=='JA':            
             self.legend.extend(['Right Proximal Percent at Max', 
                                 'Right Distal Percent at Max', 
                                 'Left Proximal Percent at Max', 
@@ -2631,6 +2631,19 @@ class PlotBackend():
         self.point_dictionary['Rounded Start Y'] = self.point_dictionary['Start Y'].apply(lambda x:np.round(x,4))
         self.point_dictionary['Orientation Error'] = self.point_dictionary['Goal Orientation'] - self.point_dictionary['End Orientation']
         # print(sys.getsizeof(self.point_dictionary))
+
+    def save_point_dictionary(self, filepath, filename=None):
+        if self.point_dictionary is None:
+            print('no point dictionary yet dingus')
+            return
+        else:
+            if filename is None:
+                self.point_dictionary.to_pickle(filepath+'/combined_data.pkl')
+            else:
+                self.point_dictionary.to_pickle(filepath+'/'+filename+'.pkl')
+
+    def load_point_dictionary(self,picklename):
+        self.point_dictionary = pd.read_pickle(picklename)
 
     def draw_scatter_end_magic(self, folder_path, cmap='plasma'):
         if self.point_dictionary is None:
