@@ -14,7 +14,7 @@ from demos.rl_demo.multiprocess_state import MultiprocessState
 from mojograsp.simcore.goal_holder import  GoalHolder, RandomGoalHolder, SingleGoalHolder
 from demos.rl_demo import rl_action
 from demos.rl_demo import multiprocess_reward
-from demos.rl_demo import multiproccess_gym_wrapper_her as multiprocess_gym_wrapper
+#from demos.rl_demo import multiproccess_gym_wrapper_her as multiprocess_gym_wrapper
 from stable_baselines3.common.vec_env import SubprocVecEnv
 import pandas as pd
 from demos.rl_demo.multiprocess_record import MultiprocessRecordData
@@ -877,6 +877,10 @@ def main(filepath = None,learn_type='run'):
    
     with open(filepath, 'r') as argfile:
         args = json.load(argfile)
+    if args['model'] == 'PPO':
+        from demos.rl_demo import multiprocess_gym_wrapper
+    elif 'DDPG' in args['model']:
+        from demos.rl_demo import multiproccess_gym_wrapper_her as multiprocess_gym_wrapper   
 
     # TEMPORARY, REMOVE AT START OF JUNE 2024
     if not('contact_start' in args.keys()):
