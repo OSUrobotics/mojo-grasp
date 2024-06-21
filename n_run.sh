@@ -4,9 +4,9 @@
 #SBATCH --array=1                     # how many tasks in the array
 #SBATCH -o log/LOG-%a.out                 # name of error file for this submission script
 #SBATCH -e log/ERROR-%a.err                 # name of error file for this submission script
-#SBATCH --mem=10G
+#SBATCH --mem=20G
 #SBATCH --gres=gpu:1
-#SBATCH --cpus-per-gpu 16
+#SBATCH --cpus-per-gpu 32
 #SBATCH -t 4-00:00:00
 
 # load any software environment module required for app (e.g. matlab, gcc, cuda)
