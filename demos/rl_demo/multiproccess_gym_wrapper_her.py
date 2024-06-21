@@ -1,16 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Created on Tue Jun 13 10:05:29 2023
 
-@author: orochi
-"""
 
-# import gymnasium as gym
-# from gymnasium import spaces
 import gym
 from gym import spaces
-# from environment import Environment
+#from gym.envs.robotics import GoalEnv
 import numpy as np
 from mojograsp.simcore.state import State
 from mojograsp.simcore.reward import Reward
@@ -32,7 +26,7 @@ class MultiEvaluateCallback(EvalCallback):
         else:
             return True
 
-class MultiprocessGymWrapper(gym.Env):
+class MultiprocessGymWrapper(gym.Env): 
     '''
     Example environment that follows gym interface to allow us to use openai gym learning algorithms with mojograsp
     '''
@@ -47,10 +41,14 @@ class MultiprocessGymWrapper(gym.Env):
         else:
             self.action_space = spaces.Box(low=np.array([-1,-1,-1,-1]), high=np.array([1,1,1,1]))
         self.manipulation_phase = manipulation_phase
-        self.observation_space = spaces.Box(np.array(args['state_mins']),np.array(args['state_maxes']))
+        self.observation_space = spaces.Dict({
+            'observation': spaces.Box(np.array(args['state_mins']),np.array(args['state_maxes'])),
+            'achieved_goal': spaces.Box(np.array([-1,-1]), np.array([1,1])),
+            'desired_goal': spaces.Box(np.array([-1,-1]), np.array([1,1]))
+        })
         self.STATE_NOISE = args['state_noise']
         if self.STATE_NOISE > 0:
-            print('WE ARE GETTING NOISEY. YOU SHOULD SEE THIUS. IF YOU DONT WE FYCKED UP')
+            print('we are getting noisey')
             self.noisey_boi = NoiseAdder(np.array(args['state_mins']), np.array(args['state_maxes']))
         self.PREV_VALS = args['pv']
         self.REWARD_TYPE = args['reward']
@@ -88,7 +86,6 @@ class MultiprocessGymWrapper(gym.Env):
             self.SUCCESS_REWARD = 1
         self.SUCCESS_THRESHOLD = args['sr']/1000
         self.camera_view_matrix = self.p.computeViewMatrix((0.0,0.1,0.5),(0.0,0.1,0.005), (0.0,1,0.0))
-        # self.camera_projection_matrix = self.p = self.env.pp.computeProjectionMatrix(-0.1,0.1,-0.1,0.1,-0.1,0.1)
         self.camera_projection_matrix = self.p.computeProjectionMatrixFOV(60,4/3,0.1,0.9)
 
         self.build_reward = []
@@ -108,7 +105,6 @@ class MultiprocessGymWrapper(gym.Env):
         :param state: :func:`~mojograsp.simcore.reward.Reward` object.
         :type state: :func:`~mojograsp.simcore.reward.Reward`
         """        
-        # print(self.TASK,self.REWARD_TYPE)
         if 'Rotation' in self.TASK:
             if self.TASK == 'Rotation+Finger':
                 print('rotation and finger')
@@ -174,16 +170,13 @@ class MultiprocessGymWrapper(gym.Env):
         self.reduced_saving = ting
 
     def reset(self,special=None):
-
         if not self.first:
             self.thing.append(time.time()-self.past_time)
             self.past_time = time.time()
             if self.manipulation_phase.episode >= self.manipulation_phase.state.objects[-1].len:
                 self.manipulation_phase.reset()
-                # print('average time of episode',np.average(self.thing))
                 self.thing = []
             new_goal,fingerys = self.manipulation_phase.next_ep()
-            # print('new goal from reset', new_goal)
         else:
             new_goal = {'goal_position':[0,0]}
             fingerys = [0,0]
@@ -196,7 +189,6 @@ class MultiprocessGymWrapper(gym.Env):
             self.eval_run +=1
 
         if self.eval_point is not None:
-            # print('eval point and goal ', self.eval_point, new_goal)
             self.env.reset(self.eval_point)
         elif type(special) is list:
             self.env.reset_to_pos(special[0],special[1])
@@ -212,54 +204,39 @@ class MultiprocessGymWrapper(gym.Env):
             random_start = np.random.uniform(0,1,2)
             x = (1-random_start[0]**2) * np.sin(random_start[1]*2*np.pi) * 0.06
             y = (1-random_start[0]**2) * np.cos(random_start[1]*2*np.pi) * 0.04
-            # print('x and y',x,y)
             self.env.reset([x,y])
         elif 'wall' in self.TASK:
             self.env.reset([0.0463644396618753, 0.012423314164921])
         else:
-            # print('reseting with NO parameters')
             self.env.reset()
         self.manipulation_phase.setup()
         
         state, _ = self.manipulation_phase.get_episode_info()
-
-        # print('goal pose in reset', state['goal_pose'])
-        # print('start object pos', state['obj_2']['pose'])
-        # print('joint angles', state['two_finger_gripper']['joint_angles'])
         if state['goal_pose']['goal_finger'] is not None:
             self.env.set_finger_contact_goal(state['goal_pose']['goal_finger'])
 
         state = self.build_state(state)
-        return state
+        observation = state['observation']
+        achieved_goal = state['achieved_goal']
+        desired_goal = state['desired_goal']
+        #print(np.shape(observation))
+        return {
+            'observation': observation,
+            'achieved_goal': achieved_goal,
+            'desired_goal': desired_goal
+        }
 
     def step(self, action, mirror=False, viz=False,hand_type=None):
-        '''
-        Parameters
-        ----------
-        action : TYPE
-            DESCRIPTION.
-
-        Returns
-        -------
-        None.
-
-        '''
         if self.discrete:
             action = action-1
-
-            # print(action)
-        # print('going to manipulation_phase')
         self.manipulation_phase.gym_pre_step(action)
-        # print('executing action')
         self.manipulation_phase.execute_action(viz=viz)
         done = self.manipulation_phase.exit_condition(self.eval)
         self.manipulation_phase.post_step()
         
         if self.eval or self.small_enough:
             self.record.record_timestep()
-        # print('recorded timesteps')
         state, reward_container = self.manipulation_phase.get_episode_info()
-
         info = {}
         if mirror:
             state = self.build_mirror_state(state)
@@ -271,15 +248,11 @@ class MultiprocessGymWrapper(gym.Env):
 
         if self.TASK == 'multi':
             if done2 and not done:
-                # print('doing next goal')
-                # print(reward)
                 self.manipulation_phase.next_goal()
         else:
             done = done | done2
 
-        
         if done:
-            # print('done, recording stuff')
             if self.eval or self.small_enough:
                 if self.reduced_saving:
                     self.record.record_test_round()
@@ -295,18 +268,17 @@ class MultiprocessGymWrapper(gym.Env):
                     self.record.save_episode(self.episode_type)
 
         self.timestep +=1
-        return state, reward, done, info
-        
-    
-    def build_state(self, state_container: State):
-        """
-        Method takes in a State object 
-        Extracts state information from state_container and returns it as a list based on
-        current used states contained in self.state_list
+        observation = state['observation']
+        achieved_goal = state['achieved_goal']
+        desired_goal = state['desired_goal']
+        #print(np.shape(observation))
+        return {
+            'observation': observation,
+            'achieved_goal': achieved_goal,
+            'desired_goal': desired_goal
+        }, reward, done, info
 
-        :param state: :func:`~mojograsp.simcore.phase.State` object.
-        :type state: :func:`~mojograsp.simcore.phase.State`
-        """
+    def build_state(self, state_container: State):
         angle_keys = ["finger0_segment0_joint","finger0_segment1_joint","finger1_segment0_joint","finger1_segment1_joint"]
         state = []
         if self.PREV_VALS > 0:
@@ -389,7 +361,6 @@ class MultiprocessGymWrapper(gym.Env):
                 state.extend(state_container['hand_params'])
             elif key == 'gp':
                 state.extend(state_container['goal_pose']['goal_position'])
-                # print(state)
             elif key == 'go':
                 state.append(state_container['goal_pose']['goal_orientation'])
             elif key == 'gf':
@@ -399,19 +370,19 @@ class MultiprocessGymWrapper(gym.Env):
                 state.extend(state_container['wall']['pose'][1][0:4])
             else:
                 raise Exception('key does not match list of known keys')
-            
-        return state
-    
+
+        observation = state
+        achieved_goal = state_container['obj_2']['pose'][0][0:2]  # Assuming achieved_goal is the object's position
+        desired_goal = state_container['goal_pose']['goal_position']  # Assuming desired_goal is the goal position
+        #print(np.shape(observation))
+
+        return {
+            'observation': observation,
+            'achieved_goal': achieved_goal,
+            'desired_goal': desired_goal
+        }
 
     def build_mirror_state(self, state_container: State):
-        """
-        Method takes in a State object 
-        Extracts state information from state_container and returns it as a list based on
-        current used states contained in self.state_list
-
-        :param state: :func:`~mojograsp.simcore.phase.State` object.
-        :type state: :func:`~mojograsp.simcore.phase.State`
-        """
         angle_keys = ["finger0_segment0_joint","finger0_segment1_joint","finger1_segment0_joint","finger1_segment1_joint"]
         state = []
         if self.PREV_VALS > 0:
@@ -473,7 +444,15 @@ class MultiprocessGymWrapper(gym.Env):
                 state.extend([-temp[0],temp[1]])
             else:
                 raise Exception('key does not match list of known keys')
-        return state
+
+        observation = state
+        achieved_goal = state_container['obj_2']['pose'][0][0:2]
+        desired_goal = state_container['goal_pose']['goal_position']
+        return {
+            'observation': observation,
+            'achieved_goal': achieved_goal,
+            'desired_goal': desired_goal
+        }
     
     def render(self):
         pass
@@ -482,7 +461,6 @@ class MultiprocessGymWrapper(gym.Env):
         self.p.disconnect()
         
     def evaluate(self, ht=None):
-        # print('EVALUATE TRIGGERED')
         self.eval = True
         self.eval_run = 0
         self.manipulation_phase.state.evaluate()
@@ -506,7 +484,8 @@ class MultiprocessGymWrapper(gym.Env):
         self.env.set_goal(goal)
 
     def set_goal_holder_pos(self, pos):
-        '''
-        more backdoor shenanigans
-        '''
         self.manipulation_phase.state.objects[-1].set_all_pose(pos)
+
+    def compute_reward(self, achieved_goal, desired_goal, info):
+        distance = np.linalg.norm(np.array(achieved_goal) - np.array(desired_goal), axis=-1)
+        return -(distance > self.SUCCESS_THRESHOLD).astype(np.float32)
