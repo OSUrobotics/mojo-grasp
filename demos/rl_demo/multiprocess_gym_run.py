@@ -913,7 +913,7 @@ def main(filepath = None,learn_type='run'):
     callback = multiprocess_gym_wrapper.MultiEvaluateCallback(vec_env,n_eval_episodes=int(1200), eval_freq=train_timesteps, best_model_save_path=args['save_path'])
 
     if learn_type == 'transfer':
-        model = model_type("MlpPolicy", vec_env, tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-2.3}).load(args['load_path']+'best_model', env=vec_env)
+        model = model_type("MlpPolicy", vec_env, tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-2.3}).load(args['load_path']+'best_model', env=vec_env,tensorboard_log=args['tname'])
         print('LOADING A MODEL')
     elif learn_type == 'run':
         if 'DDPG' in args['model']:
