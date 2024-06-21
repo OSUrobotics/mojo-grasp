@@ -48,3 +48,7 @@ backend.moving_avg = 1000
 for folder,plot_stuff in zip(folders,plot_args):
     backend.draw_net_reward(path+folder+'/Test/',plot_args=plot_stuff)
 plt.show()
+
+
+
+

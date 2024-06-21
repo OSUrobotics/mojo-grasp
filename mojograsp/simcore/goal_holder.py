@@ -24,6 +24,7 @@ class GoalHolder():
         self.run_num = 0
     
     def get_data(self):
+        # print('data stuff', self.orientation)
         return {'goal_position':self.pose[self.run_num%self.len],'goal_orientation':self.orientation[self.run_num%self.len], 'goal_finger':self.finger[self.run_num%self.len]}
     
     def get_name(self):
@@ -57,7 +58,7 @@ class GoalHolder():
     def check_data(self):
         assert (self.pose[self.run_num%self.len][0] < self.finger[self.run_num%self.len][0]) and (self.pose[self.run_num%self.len][0] > self.finger[self.run_num%self.len][2])
 
-    def set_all_pose(self, pos):
+    def set_all_pose(self, pos, orient=None):
         '''
         This is a sneaky backdoor to allow you to change the goal position of all the datapoints to the same thing.
         Mostly useful for rotation testing
@@ -68,7 +69,14 @@ class GoalHolder():
             self.pose = np.array(self.pose)
             self.pose[:] = pos
             self.pose = self.pose.tolist()
-    
+        if orient is not None:
+            if type(self.orientation) is np.ndarray:
+                self.orientation[:] = orient
+            else:
+                self.orientation = np.array(self.orientation)
+                self.orientation[:] = orient
+                self.orientation.tolist()
+        # print('hard set poses',self.pose,self.orientation)
     def __len__(self):
         return len(self.pose)
     
@@ -136,7 +144,7 @@ class SingleGoalHolder(GoalHolder):
         pass
 
     def set_goal(self,goal):
-        self.pose = goal
+        self.pose = [goal]
         
     def next_run(self):
         return [0.0,0.0]
