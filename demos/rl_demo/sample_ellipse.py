@@ -90,36 +90,35 @@ num_layers = 3
 #       })
 # df.to_csv("resources/start_poses.csv", index=False)   
 
-'''
+
 for j in range(NUM_POINTS):
     theta = random.uniform(0, 2*np.pi)
     rand_r = 1-(random.uniform(0, 0.95))**2
-    rx = rand_r* 60/1000
-    ry = rand_r * 40/1000
+    rx = rand_r* 70/1000
+    ry = rand_r * 70/1000
 
     x = rx * np.sin(theta)
     y = ry * np.cos(theta)
-    x_pts.append(0)
-    y_pts.append(0)
-    orientation = np.random.uniform(-15/180*np.pi+0.1, 15/180*np.pi-0.1)
+    x_pts.append(x)
+    y_pts.append(y)
+    orientation = np.random.uniform(-50/180*np.pi+0.1,50/180*np.pi-0.1)
     orientation = orientation + np.sign(orientation)*0.1
     angs.append(orientation)
 finger1 = np.random.uniform(-0.01,0.01,NUM_POINTS)
 finger1 = list(finger1)
 finger2 = np.random.uniform(-0.01,0.01,NUM_POINTS)
 finger2 = list(finger2)
-'''
-x_pts = np.zeros(128)
-x_pts = list(x_pts)
-y_pts = np.zeros(128)
-y_pts = list(y_pts)
-angs = np.linspace(-50/180*np.pi,50/180*np.pi,128)
-angs = list(angs)
-finger1 = np.zeros(128)
-finger1 = list(finger1)
-finger2 = np.zeros(128)
-finger2 = list(finger2)
-print(angs)
+# x_pts = np.zeros(128)
+# x_pts = list(x_pts)
+# y_pts = np.zeros(128)
+# y_pts = list(y_pts)
+# angs = np.linspace(-50/180*np.pi,50/180*np.pi,128)
+# angs = list(angs)
+# finger1 = np.zeros(128)
+# finger1 = list(finger1)
+# finger2 = np.zeros(128)
+# finger2 = list(finger2)
+# print(angs)
 df = pd.DataFrame(
     {'x': x_pts,
       'y': y_pts,
@@ -127,7 +126,7 @@ df = pd.DataFrame(
       'f1y':finger1,
       'f2y':finger2
       })
-df.to_csv("resources/Solo_rotation_test.csv", index=False)            
+df.to_csv("resources/Big_rotation_50_test.csv", index=False)            
 # create dataframe from lists
 # df = pd.DataFrame(
 #     {'x': x_n,

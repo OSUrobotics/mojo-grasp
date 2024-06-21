@@ -84,7 +84,7 @@ class MultiprocessManipulation(Phase):
     def gym_pre_step(self, gym_action):
         # Get the target action
         # print('prestepping by going into find angles in controller')
-
+        # print(gym_action)
         self.target, self.actor_portion =  self.controller.find_angles(gym_action)
 
         # Set the next action before the sim is stepped for Action (Done so that replay buffer and record data work)
@@ -188,7 +188,13 @@ class MultiprocessManipulation(Phase):
         return self.state.get_state(), self.reward.get_reward()
 
     def get_built_sub_state(self, statekeys):
-        pass
+        print('not implemented, use the build state in subpolicy holder or fix this')
+
+    def get_state(self):
+        return self.state.get_state()
+
+    def set_goal(self, goal_list):
+        self.state.set_goal(goal_list)
 
     def exit_condition(self, eval_exit=False) -> bool:
         # If we reach 400 steps or the controller exit condition finishes we exit the phase

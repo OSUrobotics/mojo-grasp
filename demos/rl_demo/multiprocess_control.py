@@ -146,6 +146,7 @@ class MultiprocessController():
             action_list = []
             # print('current finger angles', finger_angles)
             for i in range(self.num_tsteps):
+                # print(actor_output)
                 action = ((actor_output)*self.MAX_ANGLE_CHANGE + finger_angles).tolist()
                 # print('regular', action)
                 action = clip_angs(action)

@@ -14,6 +14,7 @@ from demos.rl_demo.multiprocess_state import MultiprocessState
 from mojograsp.simcore.goal_holder import  GoalHolder, RandomGoalHolder, SingleGoalHolder
 from demos.rl_demo import rl_action
 from demos.rl_demo import multiprocess_reward
+from demos.rl_demo import multiproccess_gym_wrapper_her
 from demos.rl_demo import multiprocess_gym_wrapper
 from stable_baselines3.common.vec_env import SubprocVecEnv
 import pandas as pd
@@ -29,7 +30,9 @@ import numpy as np
 import time
 import os
 import multiprocessing
+from pkl_merger import merge_from_folder
 from scipy.spatial.transform import Rotation as R
+from stable_baselines3.common.noise import NormalActionNoise
 
 def make_env(arg_dict=None,rank=0,hand_info=None):
     def _init():
@@ -221,9 +224,9 @@ def make_pybullet(arg_dict, pybullet_instance, rank, hand_info, viz=False):
         if type(args['object_path']) == str:
             object_path = args['object_path']
             object_key = "small"
-            print('older version of object loading, no object domain randomization used')
+            # print('older version of object loading, no object domain randomization used')
         else:
-            print('normally would get object DR but not this time')
+            # print('normally would get object DR but not this time')
             object_path = args['object_path'][0]
             object_key = 'small'   
     this_hand = args['hand_file_list'][rank[0]%len(args['hand_file_list'])]
@@ -237,19 +240,20 @@ def make_pybullet(arg_dict, pybullet_instance, rank, hand_info, viz=False):
                         "palm_width":info_1['palm_width'],
                         "hand_name":hand_type}
     else:
-        print('STARTING AWAY FROM THE OBJECT')
+        # print('STARTING AWAY FROM THE OBJECT')
         hand_param_dict = {"link_lengths":[info_1['link_lengths'],info_2['link_lengths']],
                         "starting_angles":[info_1['near_start_angles'][object_key][0],info_1['near_start_angles'][object_key][1],-info_2['near_start_angles'][object_key][0],-info_2['near_start_angles'][object_key][1]],
                         "palm_width":info_1['palm_width'],
                         "hand_name":hand_type}
 
     # load objects into pybullet
-    plane_id = pybullet_instance.loadURDF("plane.urdf", flags=pybullet_instance.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
+    plane_id = pybullet_instance.loadURDF("plane.urdf", flags=pybullet_instance.URDF_ENABLE_CACHED_GRAPHICS_SHAPES, basePosition=[0.50,0.50,0])
+    # other_id = pybullet_instance.loadURDF('./resources/object_models/wallthing/vertical_wall.urdf', basePosition=[0.0,0.0,-0.1],
     hand_id = pybullet_instance.loadURDF(args['hand_path'] + '/' + this_hand, useFixedBase=True,
                          basePosition=[0.0, 0.0, 0.05], flags=pybullet_instance.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
-    print('object path',object_path)
+    # print('object path',object_path)
     obj_id = pybullet_instance.loadURDF(object_path, basePosition=[0.0, 0.10, .05], flags=pybullet_instance.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
-    print(f'OBJECT ID:{obj_id}')
+    # print(f'OBJECT ID:{obj_id}')
 
     # Create TwoFingerGripper Object and set the initial joint positions
     hand = TwoFingerGripper(hand_id, path=args['hand_path'] + '/' + this_hand,hand_params=hand_param_dict)
@@ -260,9 +264,10 @@ def make_pybullet(arg_dict, pybullet_instance, rank, hand_info, viz=False):
     pybullet_instance.changeVisualShape(hand_id, 1, rgbaColor=[0.3, 0.3, 0.3, 1])
     pybullet_instance.changeVisualShape(hand_id, 3, rgbaColor=[1, 0.5, 0, 1])
     pybullet_instance.changeVisualShape(hand_id, 4, rgbaColor=[0.3, 0.3, 0.3, 1])
+    pybullet_instance.changeVisualShape(plane_id,-1,rgbaColor=[1,1,1,1])
     obj = ObjectWithVelocity(obj_id, path=object_path,name='obj_2')
 
-
+    # input('heh')
     if 'wall' in args['task']:
         print('LOADING WALL')
         wall_id = pybullet_instance.loadURDF("./resources/object_models/wallthing/vertical_wall.urdf",basePosition=[0.0, 0.10, .05])
@@ -305,7 +310,10 @@ def make_pybullet(arg_dict, pybullet_instance, rank, hand_info, viz=False):
         data_path=args['save_path'], state=state, action=action, reward=reward, save_all=False, controller=manipulation.controller)
     
     # gym wrapper around pybullet environment
-    gym_env = multiprocess_gym_wrapper.MultiprocessGymWrapper(env, manipulation, record_data, args)
+    if args['model'] == 'PPO':
+        gym_env = multiprocess_gym_wrapper.MultiprocessGymWrapper(env, manipulation, record_data, args)
+    elif 'DDPG' in args['model']:
+        gym_env = multiproccess_gym_wrapper_her.MultiprocessGymWrapper(env, manipulation, record_data, args)
     return gym_env, args, [pose_list,eval_pose_list]
 
 
@@ -341,7 +349,7 @@ def multiprocess_evaluate_loaded(filepath, aorb):
     elif 'TD3' in args['model']:
         model_type = TD3
     print('LOADING A MODEL')
-
+    args['state_noise']=0.0
     # print('HARDCODING THE TEST PATH TO BE THE ROTATION TEST')
     # args['test_path'] ="/home/mothra/mojo-grasp/demos/rl_demo/resources/Solo_rotation_test.csv"
 
@@ -361,6 +369,7 @@ def multiprocess_evaluate_loaded(filepath, aorb):
     if 'Rotation' in args['task']:
         args['test_path'] = "./resources/Solo_rotation_test.csv"
     vec_env = SubprocVecEnv([make_env(args,[i,num_cpu],hand_info=hand_params) for i in range(num_cpu)])
+    vec_env.env_method('set_reduced_save_type', False)
     model = model_type("MlpPolicy", vec_env, tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-2.3}).load(args['save_path']+'best_model', env=vec_env)
     
     if 'Rotation' in args['task']:
@@ -452,6 +461,7 @@ def asterisk_test(filepath,hand_type):
     import pybullet as p2
     eval_env , _, poses= make_pybullet(args,p2, [0,1], hand_params, viz=False)
     eval_env.evaluate()
+    eval_env.reduced_saving = False
     model = model_type("MlpPolicy", eval_env, tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-2.3}).load(args['save_path']+'best_model', env=eval_env)
     eval_env.episode_type = 'asterisk'
     for i in asterisk_thing:
@@ -502,31 +512,44 @@ def rotation_test(filepath, hand_type):
         print('we didnt have a contact start so we set it to true')
     if hand_type =='A':
         args['hand_file_list'] = ["2v2_50.50_50.50_1.1_53/hand/2v2_50.50_50.50_1.1_53.urdf"]
+        start_angles = [[-0.67,1.45,0.67,-1.45],[-0.67,1.45,0.67,-1.45]
+                        ,[-0.4, 0.66, 0.4, -0.66],[-0.4, 0.66, 0.4, -0.66]
+                        ,[-1.12, 2.01, 1.12, -2.01],[-1.12, 2.01, 1.12, -2.01]
+                        ,[-1.05,1.24,0.41,-1.39],[-1.05,1.24,0.41,-1.39]
+                        ,[-0.41,1.39,1.05,-1.24],[-0.41,1.39,1.05,-1.24]]
     elif hand_type == 'B':
-        args['hand_file_list'] = ["2v2_65.35_65.35_1.1_53/hand/2v2_65.35_65.35_1.1_53.urdf"]    
+        args['hand_file_list'] = ["2v2_65.35_65.35_1.1_53/hand/2v2_65.35_65.35_1.1_53.urdf"]
+        start_angles = [[-0.4,1.5,0.4,-1.5],[-0.4,1.5,0.4,-1.5],[-0.19,0.59,0.20,-0.59],[-0.19,0.59,0.20,-0.59],
+                            [-0.51,2.09,0.51,-2.09],[-0.51,2.09,0.51,-2.09],
+                            [-0.76,1.37,0.03,-1.29],[-0.76,1.37,0.03,-1.29],[-0.03,1.29,0.76,-1.37],[-0.03,1.29,0.76,-1.37]]
     else:
         print('get fucked')
         assert 1==0
-    asterisk_thing = [[0,0.07],[0.0495,0.0495],[0.07,0.0],[0.0495,-0.0495],[0.0,-0.07],[-0.0495,-0.0495],[-0.07,0.0],[-0.0495,0.0495]]
-
-    if 'Rotation' in args['task']:
+    goal_poses = [[-0.0,0.0],[0.0,0.0],[0.0,0.03], [0.0,0.03],[0.0,-0.03],[0.0,-0.03],[0.04,0.0],[0.04,0.0],[-0.04,0.0],[-0.04,0.0]]
+            
+    if 'Rotation' not in args['task']:
         print('get fucked')
         assert 1==0
 
+    max_ang = 50/180*np.pi
+
+    goal_angs = [max_ang, -max_ang,max_ang, -max_ang,max_ang, -max_ang,max_ang, -max_ang,max_ang, -max_ang]
     import pybullet as p2
     eval_env , _, poses= make_pybullet(args,p2, [0,1], hand_params, viz=False)
     eval_env.evaluate()
+    eval_env.reduced_saving = False
     model = model_type("MlpPolicy", eval_env, tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-2.3}).load(args['save_path']+'best_model', env=eval_env)
     eval_env.episode_type = 'asterisk'
-    for i in asterisk_thing:
-        eval_env.manipulation_phase.state.objects[-1].set_all_pose(i)
-        obs = eval_env.reset()
-        eval_env.manipulation_phase.state.objects[-1].set_all_pose(i)
+    for start_angs,start_pos,goal_orientation in zip(start_angles,goal_poses,goal_angs):
+        eval_env.manipulation_phase.state.objects[-1].set_all_pose(start_pos,goal_orientation)
+        s_dict = {'goal_position':start_pos, 'fingers':start_angs}
+        obs = eval_env.reset(s_dict)
+        eval_env.manipulation_phase.state.objects[-1].set_all_pose(start_pos,goal_orientation)
         done = False
+        # input('next')
         while not done:
             action, _ = model.predict(obs,deterministic=True)
             obs, _, done, _ = eval_env.step(action,hand_type=hand_type)
-
 
 
 def full_test(filepath, hand_type):
@@ -572,21 +595,25 @@ def full_test(filepath, hand_type):
     else:
         print('get fucked')
         assert 1==0
-    asterisk_thing = [[0,0.07],[0.0495,0.0495],[0.07,0.0],[0.0495,-0.0495],[0.0,-0.07],[-0.0495,-0.0495],[-0.07,0.0],[-0.0495,0.0495]]
-
+    asterisk_thing = np.array([[0,0.07],[0.0495,0.0495],[0.07,0.0],[0.0495,-0.0495],[0.0,-0.07],[-0.0495,-0.0495],[-0.07,0.0],[-0.0495,0.0495],
+                      [0,0.07],[0.0495,0.0495],[0.07,0.0],[0.0495,-0.0495],[0.0,-0.07],[-0.0495,-0.0495],[-0.07,0.0],[-0.0495,0.0495]]) *4/7
+    angles = [0.2618,0.2618,0.2618,0.2618,0.2618,0.2618,0.2618,0.2618,
+              -0.2618,-0.2618,-0.2618,-0.2618,-0.2618,-0.2618,-0.2618,-0.2618]
     if 'Rotation' in args['task']:
         print('get fucked')
         assert 1==0
 
     import pybullet as p2
+    # input(len(asterisk_thing))
     eval_env , _, poses= make_pybullet(args,p2, [0,1], hand_params, viz=False)
     eval_env.evaluate()
+    eval_env.reduced_saving = False
     model = model_type("MlpPolicy", eval_env, tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-2.3}).load(args['save_path']+'best_model', env=eval_env)
     eval_env.episode_type = 'asterisk'
-    for i in asterisk_thing:
-        eval_env.manipulation_phase.state.objects[-1].set_all_pose(i)
+    for i, ang in zip(asterisk_thing,angles):
+        eval_env.manipulation_phase.state.objects[-1].set_all_pose(i,ang)
         obs = eval_env.reset()
-        eval_env.manipulation_phase.state.objects[-1].set_all_pose(i)
+        eval_env.manipulation_phase.state.objects[-1].set_all_pose(i,ang)
         done = False
         while not done:
             action, _ = model.predict(obs,deterministic=True)
@@ -597,6 +624,7 @@ def full_test(filepath, hand_type):
 def multiprocess_evaluate(model, vec_env, rotate=False):
     # vec_env.evaluate()
     # tech_start = time.time()
+    vec_env.env_method('set_reduced_save_type', False)
     if rotate:
         for _ in range(int(1200/16)):
             # print('about to reset')
@@ -672,6 +700,7 @@ def evaluate(filepath=None,aorb = 'A'):
     import pybullet as p2
     eval_env , _, poses= make_pybullet(args,p2, [0,1], hand_params, viz=False)
     eval_env.evaluate()
+    eval_env.reduced_saving = False
     model = model_type("MlpPolicy", eval_env, tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-2.3}).load(args['save_path']+'best_model', env=eval_env)
 
     for _ in range(1200):
@@ -720,7 +749,7 @@ def replay(argpath, episode_path):
     f2_poses = [s['state']['f2_pos'] for s in data['timestep_list']]
     joint_angles = [s['state']['two_finger_gripper']['joint_angles'] for s in data['timestep_list']]
     import pybullet as p2
-    args['hand_file_list'] = ["2v2_65.35_65.35_1.1_53/hand/2v2_65.35_65.35_1.1_53.urdf"]
+    # args['hand_file_list'] = ["2v2_65.35_65.35_1.1_53/hand/2v2_65.35_65.35_1.1_53.urdf"]
     eval_env , _, poses= make_pybullet(args,p2, [1,3], hand_params,viz=True)
     eval_env.evaluate()
     temp = [joint_angles[0]['finger0_segment0_joint'],joint_angles[0]['finger0_segment1_joint'],joint_angles[0]['finger1_segment0_joint'],joint_angles[0]['finger1_segment1_joint']]
@@ -732,16 +761,31 @@ def replay(argpath, episode_path):
     if ('Rotation' in args['task']) | ('contact' in args['task']):
         start_position = {'goal_position':[-0.04,0.0]}
         # uncomment this line
-        #start_position = {'goal_position':obj_temp, 'fingers':temp}
+        start_position = {'goal_position':obj_temp, 'fingers':temp}
 
         _ = eval_env.reset(start_position)
 
     else:
         start_position = {'goal_position':[obj_pose[0][0][0], obj_pose[0][0][1]-0.1]}#, 'fingers':temp}
         _ = eval_env.reset(start_position)
-    # print(data['timestep_list'][0]['state']['goal_pose'])
+    print(data['timestep_list'][0]['state']['goal_pose'])
     temp = data['timestep_list'][0]['state']['goal_pose']['goal_position']
     angle = data['timestep_list'][0]['state']['goal_pose']['goal_orientation']
+
+
+    # df2 = pd.read_csv('./resources/start_poses.csv', index_col=False)
+    # x_start = df2['x']
+    # y_start = df2['y']
+
+    # for xi,yi in zip(x_start,y_start):
+    #     eval_env.env.make_viz_point([xi,yi+0.1,0.0005])
+    # df = pd.read_csv('./resources/test_points_big.csv', index_col=False)
+    # x = df['x']
+    # y = df['y']
+    # pts = [[xi,yi+0.1,0] for xi,yi in zip(x,y)]
+    # eval_env.env.make_viz_point(pts)
+
+
     input('look at it')
     # angle = -data['timestep_list'][0]['state']['goal_pose']['goal_orientation']
 
@@ -842,6 +886,7 @@ def main(filepath = None,learn_type='run'):
     with open(filepath, 'r') as argfile:
         args = json.load(argfile)
 
+
     # TEMPORARY, REMOVE AT START OF JUNE 2024
     if not('contact_start' in args.keys()):
         args['contact_start'] = True
@@ -858,7 +903,7 @@ def main(filepath = None,learn_type='run'):
     if args['model'] == 'PPO':
         model_type = PPO
     elif 'DDPG' in args['model']:
-        model_type = DDPG
+        print('oh boy')
     elif 'TD3' in args['model']:
         model_type = TD3
 
@@ -868,10 +913,35 @@ def main(filepath = None,learn_type='run'):
     callback = multiprocess_gym_wrapper.MultiEvaluateCallback(vec_env,n_eval_episodes=int(1200), eval_freq=train_timesteps, best_model_save_path=args['save_path'])
 
     if learn_type == 'transfer':
-        model = model_type("MlpPolicy", vec_env, tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-2.3}).load(args['load_path']+'best_model', env=vec_env)
+        model = model_type("MlpPolicy", vec_env, tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-2.3}).load(args['load_path']+'best_model', env=vec_env,tensorboard_log=args['tname'])
         print('LOADING A MODEL')
     elif learn_type == 'run':
-        model = model_type("MlpPolicy", vec_env,tensorboard_log=args['tname'])
+        if 'DDPG' in args['model']:
+            n_actions = vec_env.action_space.shape[0]
+            noise_std = 0.2
+            action_noise = NormalActionNoise(
+                mean=np.zeros(n_actions), sigma=noise_std * np.ones(n_actions)
+            )
+
+            model = DDPG(
+                        "MultiInputPolicy",
+                        vec_env,
+                        replay_buffer_class=HerReplayBuffer,
+                        replay_buffer_kwargs=dict(
+                            n_sampled_goal=4,
+                            goal_selection_strategy="future",
+                        ),
+                        verbose=1,
+                        buffer_size=int(1e6),
+                        learning_rate=1e-3,
+                        learning_starts=10000,
+                        action_noise=action_noise,
+                        gamma=0.95,
+                        batch_size=256,
+                        tensorboard_log=args['tname'])
+            print('DDPG MODEL INITIALIZED')
+        else:
+            model = model_type("MlpPolicy", vec_env,tensorboard_log=args['tname'])
 
     try:
         print('starting the training using', get_device())
@@ -879,6 +949,7 @@ def main(filepath = None,learn_type='run'):
         model.learn(total_timesteps=args['epochs']*(args['tsteps']+1), callback=callback)
         filename = os.path.dirname(filepath)
         model.save(filename+'/last_model')
+        merge_from_folder(args['save_path']+'Test/')
 
         # multiprocess_evaluate(model,vec_env)
     except KeyboardInterrupt:
@@ -888,29 +959,45 @@ def main(filepath = None,learn_type='run'):
 if __name__ == '__main__':
     import csv
     # multiprocess_evaluate_loaded('./data/Mothra_Full/FTP_S1/experiment_config.json',"B")
-
-    # multiprocess_evaluate_loaded('./data/Mothra_Full/FTP_S2/experiment_config.json',"A")
-    # multiprocess_evaluate_loaded('./data/Mothra_Full/FTP_S2/experiment_config.json',"B")
+    # replay('./data/Full_long_test/experiment_config.json', './data/Full_long_test/Eval_B/Episode_1.pkl')
+    # multiprocess_evaluate_loaded('./data/Mothra_Rotation/JA_S3/experiment_config.json',"A")
+    # multiprocess_evaluate_loaded('./data/Mothra_Rotation/JA_S3/experiment_config.json',"B")
 
     # multiprocess_evaluate_loaded('./data/Mothra_Full/FTP_S3/experiment_config.json',"A")
     # multiprocess_evaluate_loaded('./data/Mothra_Full/FTP_S3/experiment_config.json',"B")
 
-    # multiprocess_evaluate_loaded('./data/Mothra_Full/JA_S1/experiment_config.json',"A")
-    # multiprocess_evaluate_loaded('./data/Mothra_Full/JA_S1/experiment_config.json',"B")
+    # multiprocess_evaluate_loaded('./data/Full_long_test/experiment_config.json',"B")
+    # multiprocess_evaluate_loaded('./data/HPC_Full/JA_S3/experiment_config.json',"B")
 
-    # multiprocess_evaluate_loaded('./data/Mothra_Full/JA_S2/experiment_config.json',"A")
-    # multiprocess_evaluate_loaded('./data/Mothra_Full/JA_S2/experiment_config.json',"B")
+    # multiprocess_evaluate_loaded('./data/Jeremiah_Full/FTP_S1/experiment_config.json',"A")
+    # multiprocess_evaluate_loaded('./data/Jeremiah_Full/FTP_S1/experiment_config.json',"B")
+    # multiprocess_evaluate_loaded('./data/Jeremiah_Full/FTP_S2/experiment_config.json',"A")
+    # multiprocess_evaluate_loaded('./data/Jeremiah_Full/FTP_S2/experiment_config.json',"B")
+    # multiprocess_evaluate_loaded('./data/Jeremiah_Full/FTP_S3/experiment_config.json',"A")
+    # multiprocess_evaluate_loaded('./data/Jeremiah_Full/FTP_S3/experiment_config.json',"B")
+    # full_test('./data/Mothra_Full_Continue_New_weight/JA_S3/experiment_config.json','A')
+    # full_test('./data/Mothra_Full_Continue_New_weight/JA_S3/experiment_config.json','B')
 
-    # multiprocess_evaluate_loaded('./data/Mothra_Full/JA_S3/experiment_config.json',"A")
-    # multiprocess_evaluate_loaded('./data/Mothra_Full/JA_S3/experiment_config.json',"B")
+    # multiprocess_evaluate_loaded('./data/Mothra_Full_Continue_New_weight/JA_S3/experiment_config.json','A')
+    # multiprocess_evaluate_loaded('./data/Mothra_Full_Continue_New_weight/JA_S3/experiment_config.json','B')
+    # multiprocess_evaluate_loaded('./data/HPC_Rotation/FTP_S1/experiment_config.json',"A")
+    # multiprocess_evaluate_loaded('./data/HPC_Rotation/FTP_S1/experiment_config.json',"B")
+    # multiprocess_evaluate_loaded('./data/HPC_Rotation/FTP_S2/experiment_config.json',"A")
+    # multiprocess_evaluate_loaded('./data/HPC_Rotation/FTP_S2/experiment_config.json',"B")
+    # multiprocess_evaluate_loaded('./data/HPC_Rotation/FTP_S3/experiment_config.json',"A")
+    # multiprocess_evaluate_loaded('./data/HPC_Rotation/FTP_S3/experiment_config.json',"B")
+
+    # multiprocess_evaluate_loaded('./data/HPC_Full/FTP_S1/experiment_config.json',"A")
+    # multiprocess_evaluate_loaded('./data/HPC_Full/FTP_S1/experiment_config.json',"B")
 
     # asterisk_test('./data/Mothra_Slide/JA_S1/experiment_config.json','B')
-    # multiprocess_evaluate_loaded('./data/Mothra_Full/JA_S2/experiment_config.json',"A")
-    # multiprocess_evaluate_loaded('./data/Mothra_Full/JA_S3/experiment_config.json',"A")
-    main('./data/Rotation_Long/JA_S3/experiment_config.json')
+    # print('finsihed test')
+    # multiprocess_evaluate_loaded('./data/Rotation_Long/JA_S3/experiment_config.json',"A")
+    # multiprocess_evaluate_loaded('./data/Rotation_Long/JA_S3/experiment_config.json',"B")
+    main('./data/Rotation_continue/JA_S3_larger_space_new_weight/experiment_config.json', 'transfer')
 
     # sub_names = ['FTP_S1','FTP_S2','FTP_S3','JA_S1','JA_S2','JA_S3']
-    # top_names = ['Mothra_Slide','HPC_Slide','Misc_Slide']
+    # top_names = ['Jeremiah_Rotation']#['Mothra_Rotation','HPC_Rotation',
     # for uname in top_names:
     #     for lname in sub_names:
     #         asterisk_test('./data/'+uname+'/'+lname+"/experiment_config.json","A")

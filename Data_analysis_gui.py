@@ -70,14 +70,14 @@ def main():
 
     scatter_plot_tab = [[sg.Button('Goal Wizard', size=(8,2)), sg.Button('Goal Spell', size=(8,2)), sg.Button('End Poses', size=(8, 2)), sg.Button('Ending Distances', size=(8,2)), sg.Button('Path Spell', size=(8,2))],
                         [sg.Button('Orientation Wizard', size=(8,2)), sg.Button('Orientation Scatter Spell', size=(8,2)), sg.Button('Orientation Multi', key='Orientation Multi',size=(8, 2)), sg.Button('Rotation Sliding Error', size=(8,2)), sg.Button('Orientation Spell',size=(8,2))],
-                        [sg.Button('OR bucket', size=(8,2)), sg.Button('Contact Dist', size=(8, 2)), sg.Button('Success Scatter',size=(8,2)), sg.Button('Shenanigans',size=(8,2)), sg.Button('Contact Spell',size = (8,2))],
+                        [sg.Button('OR bucket', size=(8,2)), sg.Button('Orientation Single Region', size=(8, 2)), sg.Button('Success Scatter',size=(8,2)), sg.Button('Shenanigans',size=(8,2)), sg.Button('Contact Spell',size = (8,2))],
                         [sg.Button('Explored Region', size=(8,2)), sg.Button('Reward Comparison', size=(8,2)), sg.Button('Timestep Best',size=(8,2)), sg.Button('Finger Object Avg', size=(8,2)),sg.Button('Scatter Scaled',size=(8,2))],
                         [sg.Button('End Region', size=(8,2)), sg.Button('Max Percent', size=(8,2)),sg.Button('Timestep End',size=(8,2)), sg.Button('Finger Object Max', size=(8,2)), sg.Button('Success Rate', size=(8,2))]]
 
     plot_buttons = [[sg.Button('Object Path', size=(8, 2)), sg.Button('Finger Angles', size=(8, 2)), sg.Button('Finger Contact Distance',size=(8, 2)), sg.Button('Rewards', size=(8, 2)),sg.Button('',size=(8,2))],
-                    [sg.Button('Fingertip Path', size=(8,2)), sg.Button('Actor Output', size=(8, 2)), sg.Button('Object Goal Distance',size=(8, 2)),sg.Button('',size=(8,2)),sg.Button('',size=(8,2))],
-                    [sg.Button('Obj Contacts', size=(8,2)), sg.Button('Aout Comparison', size=(8, 2)),sg.Button('Orientation', size=(8,2)), sg.Button('Multireward', size=(8,2)),sg.Button('',size=(8,2))],
-                    [sg.Button('Finger Goal Path',size=(8,2)),sg.Button('Sampled Poses', size=(8,2)),sg.Button('',size=(8,2)),sg.Button('',size=(8,2)),sg.Button('draw_newshit',size=(8,2))]]
+                    [sg.Button('Fingertip Path', size=(8,2)), sg.Button('Actor Output', size=(8, 2)), sg.Button('Object Goal Distance',size=(8, 2)),sg.Button('Big Success',size=(8,2)),sg.Button('Load Dictionary',size=(8,2))],
+                    [sg.Button('Obj Contacts', size=(8,2)), sg.Button('Aout Comparison', size=(8, 2)),sg.Button('Orientation', size=(8,2)), sg.Button('Multireward', size=(8,2)),sg.Button('Save Dictionary',size=(8,2))],
+                    [sg.Button('Finger Goal Path',size=(8,2)),sg.Button('Sampled Poses', size=(8,2)),sg.Button('draw_scatter_max_end',size=(8,2)),sg.Button('Both Errors',size=(8,2)),sg.Button('draw_newshit',size=(8,2))]]
 
     # define layout, show and read the window
     col = [[sg.Text(episode_files[0], size=(80, 3), key='-FILENAME-')],
@@ -102,7 +102,8 @@ def main():
                  [sg.Text('Translational Success Threshold (mm)'),sg.Input(10,key='success_range', size=(8,1))],
                  [sg.Text('Rotational Success Threshold (deg)'), sg.Input(10, key='rot_success_range',size=(8,1))],
                  [sg.Text("Distance Scale"),  sg.Input(1,key='-distance_scale',size=(5, 1)), sg.Text('Contact Scale'), sg.Input(0.2,key='-contact_scale',size=(5, 1))],  
-                 [sg.Text('Rotation Scale'),sg.Input(1,key='-rotation_scale',size=(5, 1)), sg.Text('Success Reward'), sg.Input(1,key='-success_reward',size=(5, 1))]]
+                 [sg.Text('Rotation Scale'),sg.Input(1,key='-rotation_scale',size=(5, 1)), sg.Text('Success Reward'), sg.Input(1,key='-success_reward',size=(5, 1))],
+                 [sg.Text('Action Type'),sg.OptionMenu(values=('FTP','JA'), k='-atype',default_value='FTP')]]
 
     layout = [[sg.Menu(menu)], [sg.Col(col_files), sg.Col(col)]]
     # layout = [[sg.Menu(menu)], [sg.TabGroup([[sg.Tab('Single Plotting', [[sg.Col(col_files), sg.Col(col)]]),
@@ -114,7 +115,7 @@ def main():
     canvas = window['-CANVAS-'].TKCanvas
 
     temp = pathlib.Path(folder).parent.resolve()
-    backend = PlotBackend(str(temp))
+    backend = PlotBackend()
     fig, _ = backend.get_figure()
     figure_canvas_agg = FigureCanvasTkAgg(fig, canvas)
     figure_canvas_agg.draw()
@@ -197,10 +198,11 @@ def main():
             backend.draw_angles(episode_data)
             figure_canvas_agg.draw()
         elif event == 'Actor Output':
-            backend.draw_actor_output(episode_data)
+            backend.draw_actor_output(episode_data,values['-atype'])
             figure_canvas_agg.draw()
-        elif event == 'draw_newshit':
-            backend.draw_newshit([clicks.x, clicks.y], success_range)
+        elif event == 'Orientation Single Region':
+            rot_success = float(values['rot_success_range'])
+            backend.draw_orientation_region([clicks.x, clicks.y], success_range, rot_success)
             figure_canvas_agg.draw()
         elif event == 'Critic Output':
             backend.draw_critic_output(episode_data)
@@ -246,7 +248,7 @@ def main():
                 backend.draw_asterisk(folder)
             figure_canvas_agg.draw()
         elif event == 'Max Percent':
-            backend.draw_actor_max_percent(folder)
+            backend.draw_actor_max_percent(folder,values['-atype'])
             figure_canvas_agg.draw()
         elif event == 'Finger Goal Path':
             backend.draw_finger_goal_path(episode_data)
@@ -260,9 +262,9 @@ def main():
             figure_canvas_agg.draw()
         elif event == 'Average Actor Values':
             if 'all' in filename:
-                backend.draw_avg_actor_output(episode_data)
+                backend.draw_avg_actor_output(episode_data,values['-atype'])
             else:
-                backend.draw_avg_actor_output(folder)
+                backend.draw_avg_actor_output(folder,values['-atype'])
             figure_canvas_agg.draw()
         elif event == 'Ending Velocity':
             if 'all' in filename:
@@ -348,6 +350,10 @@ def main():
             figure_canvas_agg2.get_tk_widget().pack(side='top', fill='both', expand=1)
             cancan.read()
             cancan.move(1000, 20)
+        elif event == "Big Success":
+            rot_success = float(values['rot_success_range'])
+            backend.draw_success_high_level(folder,[success_range, rot_success])
+            figure_canvas_agg.draw()
         elif event == '-TOGGLE-GRAPHIC-':  # if the graphical button that changes images
             window['-TOGGLE-GRAPHIC-'].metadata = not window['-TOGGLE-GRAPHIC-'].metadata
             window['-TOGGLE-GRAPHIC-'].update(image_data=toggle_btn_on if window['-TOGGLE-GRAPHIC-'].metadata else toggle_btn_off)
@@ -395,30 +401,36 @@ def main():
             rot_success = float(values['rot_success_range'])
             backend.draw_success_scatter([clicks.x, clicks.y], success_range, rot_success)
             figure_canvas_agg.draw()
+        elif event == 'draw_newshit':
+            backend.draw_newshit([clicks.x, clicks.y],success_range)
+            figure_canvas_agg.draw()
+        elif event == 'Both Errors':
+            backend.draw_both_errors(folder)
+            figure_canvas_agg.draw()
         elif event == 'Orientation Spell':
             spellname = backend.draw_orientation_spell([clicks.x, clicks.y])
             if spellname:
                 figure_canvas_agg.draw()
-                print('spellname', spellname)
+                # print('spellname', spellname)
                 temps = np.where([i == spellname for i in filenames_only])
-                print(temps)
+                # print(temps)
                 filenum = temps[0][0]
-                print(filenum)
+                # print(filenum)
                 filename = os.path.join(folder, spellname)
-                print(filename)
+                # print(filename)
                 window['-LISTBOX-'].update(set_to_index=filenum, scroll_to_index=filenum)
                 episode_data = load_data(filename)
         elif event == 'Path Spell':
             spellname = backend.draw_path_spell([clicks.x, clicks.y])
             if spellname:
                 figure_canvas_agg.draw()
-                print('spellname', spellname)
+                # print('spellname', spellname)
                 temps = np.where([i == spellname for i in filenames_only])
-                print(temps)
+                # print(temps)
                 filenum = temps[0][0]
-                print(filenum)
+                # print(filenum)
                 filename = os.path.join(folder, spellname)
-                print(filename)
+                # print(filename)
                 window['-LISTBOX-'].update(set_to_index=filenum, scroll_to_index=filenum)
                 episode_data = load_data(filename)
         elif event == "OR bucket":
@@ -430,6 +442,14 @@ def main():
             figure_canvas_agg2.get_tk_widget().pack(side='top', fill='both', expand=1)
             cancan.move(1000, 20)
             figure_canvas_agg.draw()
+
+        elif event =='draw_scatter_max_end':
+            backend.draw_scatter_max_end(folder, values['-cmap'])
+            figure_canvas_agg.draw()
+        elif event =='Save Dictionary':
+            backend.save_point_dictionary(folder)
+        elif event =='Load Dictionary':
+            backend.load_point_dictionary(filename)
         elif event == 'Timestep Best':
             backend.draw_timestep_goal_best(folder,int(values['tstep']))
             figure_canvas_agg.draw()

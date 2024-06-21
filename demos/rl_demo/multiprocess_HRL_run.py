@@ -10,6 +10,8 @@ Created on Tue Jul 13 10:53:58 2023
 import pybullet_data
 from demos.rl_demo import multiprocess_direction_env
 from demos.rl_demo import multiprocess_direction_phase
+from demos.rl_demo import multiprocess_manipulation_phase
+from demos.rl_demo import multiprocess_reward
 # import rl_env
 from demos.rl_demo.multiprocess_state import MultiprocessState
 from mojograsp.simcore.goal_holder import  GoalHolder, RandomGoalHolder, SimpleGoalHolder
@@ -35,6 +37,8 @@ import os
 import multiprocessing
 import json
 from scipy.spatial.transform import Rotation as R
+from model_holder import modelHolder
+import torch
 # from stable_baselines3.DQN import MlpPolicy
 
 def make_env(arg_dict=None,rank=0,hand_info=None, goal_dir=None):
@@ -144,7 +148,7 @@ def make_pybullet(arg_dict, pybullet_instance, rank, hand_info, goal_dir, viz=Fa
     gym_env = multiprocess_hierarchical_wrapper.MultiprocessGymWrapper(env, manipulation, record_data, args)
     return gym_env, args
 
-def make_HRL_pybullet(arg_dict, pybullet_instance, rank, hand_info, sub_policies, viz=False):
+def make_HRL_pybullet(arg_dict, pybullet_instance, rank, hand_info, sub_policies, model_type='feudal', viz=False):
     # resource paths
     this_path = os.path.abspath(__file__)
     overall_path = os.path.dirname(os.path.dirname(os.path.dirname(this_path)))
@@ -154,14 +158,14 @@ def make_HRL_pybullet(arg_dict, pybullet_instance, rank, hand_info, sub_policies
     x = r * np.sin(theta)
     y = r * np.cos(theta)
     obj_pos = np.array([[i,j] for i,j in zip(x,y)])
-    theta = np.random.uniform(0, 2*np.pi,1000)
+    theta = np.zeros(1000)
     r = (1-(np.random.uniform(0, 0.95,1000))**2) * 50/1000
     x = r * np.sin(theta)
     y = r * np.cos(theta)
     obj_goal = np.array([[i,j] for i,j in zip(x,y)])
     fingers = np.random.uniform(0.01,0.01,(1000,2))
 
-    goals = GoalHolder(obj_goal, fingers)
+    goals = GoalHolder(obj_goal, fingers, theta)
 
     # setup pybullet client to either run with or without rendering
     if viz:
@@ -175,7 +179,29 @@ def make_HRL_pybullet(arg_dict, pybullet_instance, rank, hand_info, sub_policies
     pybullet_instance.setPhysicsEngineParameter(contactBreakingThreshold=.001)
     pybullet_instance.resetDebugVisualizerCamera(cameraDistance=.02, cameraYaw=0, cameraPitch=-89.9999,
                                  cameraTargetPosition=[0, 0.1, 0.5])
-    
+    if args['domain_randomization_object_size']:
+        if type(args['object_path']) == str:
+            object_path = args['object_path']
+            object_key = "small"
+            print('older version of object loading, no object domain randomization used')
+        else:
+            object_path = args['object_path'][rank[0]%len(args['object_path'])]
+            print(object_path)
+            if 'add10' in object_path:
+                object_key = 'add10'
+            elif 'sub10' in object_path:
+                object_key = 'sub10'
+            else:
+                object_key = 'small'
+    else:
+        if type(args['object_path']) == str:
+            object_path = args['object_path']
+            object_key = "small"
+            print('older version of object loading, no object domain randomization used')
+        else:
+            print('normally would get object DR but not this time')
+            object_path = args['object_path'][0]
+            object_key = 'small'   
     # load hand/hands 
     if rank[1] < len(args['hand_file_list']):
         raise IndexError('TOO MANY HANDS FOR NUMBER OF PROVIDED CORES')
@@ -186,16 +212,24 @@ def make_HRL_pybullet(arg_dict, pybullet_instance, rank, hand_info, sub_policies
     hand_keys = hand_type.split('_')
     info_1 = hand_info[hand_keys[-1]][hand_keys[1]]
     info_2 = hand_info[hand_keys[-1]][hand_keys[2]]
-    hand_param_dict = {"link_lengths":[info_1['link_lengths'],info_2['link_lengths']],
-                       "starting_angles":[info_1['start_angles'][0],info_1['start_angles'][1],-info_2['start_angles'][0],-info_2['start_angles'][1]],
-                       "palm_width":info_1['palm_width'],
-                       "hand_name":hand_type}
+    print(info_1)
+    if args['contact_start']:
+        hand_param_dict = {"link_lengths":[info_1['link_lengths'],info_2['link_lengths']],
+                        "starting_angles":[info_1['contact_start_angles'][object_key][0],info_1['contact_start_angles'][object_key][1],-info_2['contact_start_angles'][object_key][0],-info_2['contact_start_angles'][object_key][1]],
+                        "palm_width":info_1['palm_width'],
+                        "hand_name":hand_type}
+    else:
+        print('STARTING AWAY FROM THE OBJECT')
+        hand_param_dict = {"link_lengths":[info_1['link_lengths'],info_2['link_lengths']],
+                        "starting_angles":[info_1['near_start_angles'][object_key][0],info_1['near_start_angles'][object_key][1],-info_2['near_start_angles'][object_key][0],-info_2['near_start_angles'][object_key][1]],
+                        "palm_width":info_1['palm_width'],
+                        "hand_name":hand_type}
 
     # load objects into pybullet
     plane_id = pybullet_instance.loadURDF("plane.urdf", flags=pybullet_instance.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
     hand_id = pybullet_instance.loadURDF(args['hand_path'] + '/' + this_hand, useFixedBase=True,
                          basePosition=[0.0, 0.0, 0.05], flags=pybullet_instance.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
-    obj_id = pybullet_instance.loadURDF(args['object_path'], basePosition=[0.0, 0.10, .05], flags=pybullet_instance.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
+    obj_id = pybullet_instance.loadURDF(object_path, basePosition=[0.0, 0.10, .05], flags=pybullet_instance.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
     print(f'OBJECT ID:{obj_id}')
     # Create TwoFingerGripper Object and set the initial joint positions
     hand = TwoFingerGripper(hand_id, path=args['hand_path'] + '/' + this_hand,hand_params=hand_param_dict)
@@ -206,7 +240,7 @@ def make_HRL_pybullet(arg_dict, pybullet_instance, rank, hand_info, sub_policies
     pybullet_instance.changeVisualShape(hand_id, 1, rgbaColor=[0.3, 0.3, 0.3, 1])
     pybullet_instance.changeVisualShape(hand_id, 3, rgbaColor=[1, 0.5, 0, 1])
     pybullet_instance.changeVisualShape(hand_id, 4, rgbaColor=[0.3, 0.3, 0.3, 1])
-    obj = ObjectWithVelocity(obj_id, path=args['object_path'],name='obj_2')
+    obj = ObjectWithVelocity(obj_id, path=object_path,name='obj_2')
 
     # state, action and reward
     state = MultiprocessState(pybullet_instance, objects=[hand, obj, goals], prev_len=args['pv'])
@@ -214,8 +248,11 @@ def make_HRL_pybullet(arg_dict, pybullet_instance, rank, hand_info, sub_policies
         action = rl_action.ExpertAction()
     else:
         action = rl_action.InterpAction(args['freq'])
-    reward = multiprocess_direction_reward.MultiprocessDirectionReward(pybullet_instance)
-
+        
+    if model_type=='option':
+        reward = multiprocess_direction_reward.MultiprocessDirectionReward(pybullet_instance)
+    elif model_type =='feudal':
+        reward = multiprocess_reward.MultiprocessReward(pybullet_instance)
     #change initial physics parameters
     pybullet_instance.changeDynamics(plane_id,-1,lateralFriction=0.05, spinningFriction=0.05, rollingFriction=0.05)
     pybullet_instance.changeDynamics(obj.id, -1, mass=.03, restitution=.95, lateralFriction=1)
@@ -231,7 +268,7 @@ def make_HRL_pybullet(arg_dict, pybullet_instance, rank, hand_info, sub_policies
     env = multiprocess_direction_env.MultiprocessDirectionSingleShapeEnv(pybullet_instance, hand=hand, obj=obj, args=args, obj_starts=obj_pos, finger_ys=fingers)
 
     # Create phase
-    manipulation = multiprocess_direction_phase.MultiprocessManipulation(
+    manipulation = multiprocess_manipulation_phase.MultiprocessManipulation(
         hand, obj, state, action, reward, env, args=arg_dict, hand_type=hand_type)
     
     # data recording
@@ -239,9 +276,11 @@ def make_HRL_pybullet(arg_dict, pybullet_instance, rank, hand_info, sub_policies
         data_path=args['save_path'], state=state, action=action, reward=reward, save_all=False, controller=manipulation.controller)
     
     # gym wrapper around pybullet environment
-    gym_env = multiprocess_hierarchical_wrapper.SimpleHRLWrapper(env, manipulation, record_data, sub_policies, args)
+    if model_type == 'option':
+        gym_env = multiprocess_hierarchical_wrapper.SimpleHRLWrapper(env, manipulation, record_data, sub_policies, args)
+    elif model_type == 'feudal':
+        gym_env = multiprocess_hierarchical_wrapper.FeudalHRLWrapper(env, manipulation, record_data, sub_policies, args)
     return gym_env, args
-
 
 def evaluate(filepath=None,aorb = 'A'):
     # load a trained model and test it on its test set
@@ -294,7 +333,6 @@ def evaluate(filepath=None,aorb = 'A'):
         while not done:
             action, _ = model.predict(obs,deterministic=True)
             obs, _, done, _ = eval_env.step(action,hand_type=ht)
-
         
 def replay(argpath, episode_path):
     # replays the exact behavior contained in a pkl file without any learning agent running
@@ -427,6 +465,8 @@ def main(filepath = None, train_type='pre'):
    
     with open(filepath, 'r') as argfile:
         args = json.load(argfile)
+    
+    load_path = args['load_path']
     if num_cpu%len(args['hand_file_list'])!= 0:
         num_cpu = int(int(num_cpu/len(args['hand_file_list']))*len(args['hand_file_list']))
     
@@ -435,7 +475,7 @@ def main(filepath = None, train_type='pre'):
     key_file = os.path.join(key_file,'resources','hand_bank','hand_params.json')
     with open(key_file,'r') as hand_file:
         hand_params = json.load(hand_file)
-    if args['model'] == 'PPO':
+    if (args['model'] == 'PPO') |(args['model'] == 'PPO_Feudal'):
         model_type = PPO
     elif 'DDPG' in args['model']:
         model_type = DDPG
@@ -450,7 +490,6 @@ def main(filepath = None, train_type='pre'):
         for name, direction in zip(red_names, red_dir):
             vec_env = SubprocVecEnv([make_env(args,[i,num_cpu],hand_info=hand_params,goal_dir=direction) for i in range(num_cpu)])
 
-            # 
             model = model_type("MlpPolicy", vec_env,tensorboard_log=args['tname'])
 
             try:
@@ -462,6 +501,30 @@ def main(filepath = None, train_type='pre'):
             except KeyboardInterrupt:
                 filename = os.path.dirname(filepath)
                 model.save(filename+'/canceled_model_'+name)
+    elif train_type == 'feudal':
+        with open(load_path+'/experiment_config.json', 'r') as argfile:
+            args2 = json.load(argfile)
+        direction = [0,0]
+        import pybullet as p1
+        model = model_type("MlpPolicy", None, _init_setup_model=False).load(load_path + '/best_model.zip')
+        subpolicy = modelHolder(model, args2)
+
+        env, _ = make_HRL_pybullet(args, pybullet_instance=p1, rank=[0,1], hand_info=hand_params, sub_policies=subpolicy)
+        # callback = multiprocess_gym_wrapper.MultiEvaluateCallback(vec_env,n_eval_episodes=int(1200), eval_freq=train_timesteps, best_model_save_path=args['save_path'])
+        model = model_type('MlpPolicy',env,  tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-2.3})
+        try:
+            print('starting the training using', get_device())
+            print(torch.cuda.is_available())
+            print(torch.version.cuda)
+            print(torch.cuda.get_device_capability(0))
+            model.learn(total_timesteps=500000*(args['tsteps']+1))
+            filename = os.path.dirname(filepath)
+            model.save(filename+'/last_model_full')
+
+        except KeyboardInterrupt:
+            filename = os.path.dirname(filepath)
+            model.save(filename+'/canceled_model_full')
+
     else:
         filename = os.path.dirname(filepath)
         policy_folder = os.listdir(filename)
@@ -485,4 +548,4 @@ def main(filepath = None, train_type='pre'):
             filename = os.path.dirname(filepath)
             model.save(filename+'/canceled_model_full')
 if __name__ == '__main__':
-    main('./data/HRL_test_1/experiment_config.json', 'getfucked')
+    main('./data/HRL_test_1/experiment_config.json', 'feudal')
