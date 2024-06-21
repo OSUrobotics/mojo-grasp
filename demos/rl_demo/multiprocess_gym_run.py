@@ -14,6 +14,7 @@ from demos.rl_demo.multiprocess_state import MultiprocessState
 from mojograsp.simcore.goal_holder import  GoalHolder, RandomGoalHolder, SingleGoalHolder
 from demos.rl_demo import rl_action
 from demos.rl_demo import multiprocess_reward
+from demos.rl_demo import multiproccess_gym_wrapper_her
 from demos.rl_demo import multiprocess_gym_wrapper
 from stable_baselines3.common.vec_env import SubprocVecEnv
 import pandas as pd
@@ -309,7 +310,10 @@ def make_pybullet(arg_dict, pybullet_instance, rank, hand_info, viz=False):
         data_path=args['save_path'], state=state, action=action, reward=reward, save_all=False, controller=manipulation.controller)
     
     # gym wrapper around pybullet environment
-    gym_env = multiprocess_gym_wrapper.MultiprocessGymWrapper(env, manipulation, record_data, args)
+    if args['model'] == 'PPO':
+        gym_env = multiprocess_gym_wrapper.MultiprocessGymWrapper(env, manipulation, record_data, args)
+    elif 'DDPG' in args['model']:
+        gym_env = multiproccess_gym_wrapper_her.MultiprocessGymWrapper(env, manipulation, record_data, args)
     return gym_env, args, [pose_list,eval_pose_list]
 
 
@@ -882,6 +886,7 @@ def main(filepath = None,learn_type='run'):
     with open(filepath, 'r') as argfile:
         args = json.load(argfile)
 
+
     # TEMPORARY, REMOVE AT START OF JUNE 2024
     if not('contact_start' in args.keys()):
         args['contact_start'] = True
@@ -929,6 +934,7 @@ def main(filepath = None,learn_type='run'):
                         verbose=1,
                         buffer_size=int(1e6),
                         learning_rate=1e-3,
+                        learning_starts=10000,
                         action_noise=action_noise,
                         gamma=0.95,
                         batch_size=256,
