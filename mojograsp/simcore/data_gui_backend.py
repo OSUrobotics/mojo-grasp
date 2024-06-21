@@ -1060,78 +1060,6 @@ class PlotBackend():
         self.ax.set_aspect('auto',adjustable='box')
         self.curr_graph = 'vel'
 
-    def draw_success_rate(self, folder_or_data_dict, success_range, rot_success_range):
-        if type(folder_or_data_dict) is str:
-            episode_files = [os.path.join(folder_or_data_dict, f) for f in os.listdir(folder_or_data_dict) if f.lower().endswith('.pkl')]
-            filenames_only = [f for f in os.listdir(folder_or_data_dict) if f.lower().endswith('.pkl')]
-            
-            filenums = [re.findall('\d+',f) for f in filenames_only]
-            final_filenums = []
-            for i in filenums:
-                if len(i) > 0 :
-                    final_filenums.append(int(i[0]))
-            
-            
-            sorted_inds = np.argsort(final_filenums)
-            final_filenums = np.array(final_filenums)
-            episode_files = np.array(episode_files)
-            filenames_only = np.array(filenames_only)
-            count = 0
-            episode_files = episode_files[sorted_inds].tolist()
-            ending_dists = []
-            ending_orientation_errors = []
-            pool = multiprocessing.Pool()
-            tst = (-1,-1,-1)
-            keys = (('reward','distance_to_goal'),('state','obj_2','z_angle'),('state','goal_pose','goal_orientation'))
-            thing = [[ef, tst, keys] for ef in episode_files]
-            print('applying async')
-            data_list = pool.starmap(pool_key_list,thing)
-            pool.close()
-            pool.join()
-            for i in data_list:
-                ending_dists.append(i[0])
-                ending_orientation_errors.append(i[2]-i[1])
-            ending_dists = np.array(ending_dists)
-            ending_orientation_errors = np.array(ending_orientation_errors)
-            ending_orientation_errors = np.abs(ending_orientation_errors) *180 /np.pi
-        elif type(folder_or_data_dict) is dict:
-            try:
-                ending_dists = [i['ending_dist'] for i in folder_or_data_dict['episode_list']]
-            except:
-                ending_dists = np.zeros((len(folder_or_data_dict['episode_list']),1))
-                for i, episode in enumerate(folder_or_data_dict['episode_list']):
-                    data = episode['timestep_list']
-                    ending_dists[i] = np.max(data[-1]['reward']['distance_to_goal'], axis=0)
-        elif type(folder_or_data_dict) is list:
-            ending_dists = folder_or_data_dict
-        else:
-            raise TypeError('argument should be string pointing to folder containing episode pickles, dictionary containing all episode data, or list of ending dists')
-        s_f = []
-        for dist, orr in zip(ending_dists,ending_orientation_errors):
-            if (dist < success_range/1000) and (orr < rot_success_range):
-                s_f.append(100)
-            else:
-                s_f.append(0)
-        return_dists = ending_dists.copy()
-        print('total success rate', np.average(s_f))
-        if self.moving_avg != 1:
-            s_f = moving_average(s_f,self.moving_avg)
-        if self.clear_plots | (self.curr_graph != 's_f'):
-            self.clear_axes()
-             
-        self.ax.plot(range(len(s_f)),s_f)
-        self.legend.extend(['Success Rate (' + str(success_range) + ' mm tolerance)'])
-        self.ax.legend(self.legend)
-        self.ax.set_ylabel('Success Percentage')
-        self.ax.set_xlabel('Episode')
-        self.ax.set_ylim([-1,101])
-        titlething = 'Percent of Trials over ' + str(self.moving_avg)+' window that are successful'
-        self.ax.set_title(titlething)
-        self.ax.grid(True)
-        self.ax.set_aspect('auto',adjustable='box')
-        self.curr_graph = 's_f'
-        
-        return np.average(s_f)
 
     def draw_ending_goal_dist(self, folder_or_data_dict):
         if type(folder_or_data_dict) is str:
@@ -2644,6 +2572,36 @@ class PlotBackend():
 
     def load_point_dictionary(self,picklename):
         self.point_dictionary = pd.read_pickle(picklename)
+
+    def draw_success_rate(self, folder_path, success_range, rot_success_range):
+        if self.point_dictionary is None:
+            self.build_scatter_magic(folder_path)
+
+        s_f = []
+        for dist, orr in zip(self.point_dictionary['End Distance'],self.point_dictionary['Orientation Error']):
+            if (dist < success_range/1000) and (orr < rot_success_range):
+                s_f.append(100)
+            else:
+                s_f.append(0)
+        print('total success rate', np.average(s_f))
+        if self.moving_avg != 1:
+            s_f = moving_average(s_f,self.moving_avg)
+        if self.clear_plots | (self.curr_graph != 's_f'):
+            self.clear_axes()
+             
+        self.ax.plot(range(len(s_f)),s_f)
+        self.legend.extend(['Success Rate (' + str(success_range) + ' mm tolerance)'])
+        self.ax.legend(self.legend)
+        self.ax.set_ylabel('Success Percentage')
+        self.ax.set_xlabel('Episode')
+        self.ax.set_ylim([-1,101])
+        titlething = 'Percent of Trials over ' + str(self.moving_avg)+' window that are successful'
+        self.ax.set_title(titlething)
+        self.ax.grid(True)
+        self.ax.set_aspect('auto',adjustable='box')
+        self.curr_graph = 's_f'
+        
+        return np.average(s_f)
 
     def draw_scatter_end_magic(self, folder_path, cmap='plasma'):
         if self.point_dictionary is None:
