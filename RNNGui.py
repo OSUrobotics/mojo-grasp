@@ -74,7 +74,7 @@ class RNNGui():
                          [sg.Checkbox('2v2_70.30_70.30_43',key='2v2_70.30_70.30_1.1_43', default=False),sg.Checkbox('2v2_70.30_70.30_53',key='2v2_70.30_70.30_1.1_53', default=False),sg.Checkbox('2v2_70.30_70.30_63',key='2v2_70.30_70.30_1.1_63', default=False),sg.Checkbox('2v2_70.30_70.30_73',key='2v2_70.30_70.30_1.1_73', default=False)],
                          [sg.Checkbox('2v2_70.30_50.50_43',key='2v2_70.30_50.50_1.1_43', default=False),sg.Checkbox('2v2_70.30_50.50_53',key='2v2_70.30_50.50_1.1_53', default=False),sg.Checkbox('2v2_70.30_50.50_63',key='2v2_70.30_50.50_1.1_63', default=False),sg.Checkbox('2v2_70.30_50.50_73',key='2v2_70.30_50.50_1.1_73', default=False)],
                          [sg.Text("Task"), sg.OptionMenu(values=('asterisk','single',"big_random",
-                          "Rotation_single", "Rotation_region", "full_task",'triple', 'multi', "contact point", "contact","direction", "wall", "wall_single"), k='-task', default_value='unplanned_random')],
+                          "Rotation_single", "Rotation_region","big_Rotation", "full_task","big_full_task", 'multi', "direction", "wall", "wall_single"), k='-task', default_value='unplanned_random')],
                          [sg.Text("Reward"), sg.OptionMenu(values=('Sparse','Distance','Distance + Finger', 'Hinge Distance + Finger', 'Slope', 'Slope + Finger','SmartDistance + Finger','SmartDistance + SmartFinger','ScaledDistance + Finger','ScaledDistance+ScaledFinger', 'SFS','DFS'), k='-reward',default_value='ScaledDistance+ScaledFinger')],
                          [sg.Checkbox("Object Start Position", key='-rstart',default=False), sg.Checkbox("Relative Finger Position", key='-rfinger',default=False),sg.Checkbox("Object Orientation", key='-ror',default=False), sg.Checkbox("Finger Open", key='-rfo',default=False)],
                          [sg.Text('Rotation limits, only used by Rotation and Full Tasks'), sg.Radio('75 degrees',group_id='rots',key='-75',default=False), sg.Radio('50 degrees',group_id='rots',key='-50',default=True), sg.Radio('15 degrees',group_id='rots',key='-15',default=False)],
@@ -393,6 +393,13 @@ class RNNGui():
             elif values['-15']:
                 self.args['points_path'] = str(resource_path.joinpath('solo_rotation_15.csv'))
                 self.args['test_path'] = str(resource_path.joinpath('solo_rotation_15.csv'))
+        elif (values['-task'] =='big_Rotation') | (values['-task'] =='big_full_task'):
+            if values['-50']:
+                self.args['points_path'] = str(resource_path.joinpath('Big_rotation_50_train.csv'))
+                self.args['test_path'] = str(resource_path.joinpath('Big_rotation_50_test.csv'))
+            elif values['-15']:
+                self.args['points_path'] = str(resource_path.joinpath('Big_rotation_15_train.csv'))
+                self.args['test_path'] = str(resource_path.joinpath('Big_rotation_15_test.csv'))
         elif values['-task'] =='wall':
             self.args['points_path'] = str(resource_path.joinpath('train_wall_poses.csv'))
             self.args['test_path'] = str(resource_path.joinpath('test_wall_poses.csv'))

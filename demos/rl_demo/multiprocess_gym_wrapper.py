@@ -111,14 +111,13 @@ class MultiprocessGymWrapper(gym.Env):
         # print(self.TASK,self.REWARD_TYPE)
         if 'Rotation' in self.TASK:
             if self.TASK == 'Rotation+Finger':
-                print('rotation and finger')
                 self.build_reward = rf.rotation_with_finger
-            elif (self.TASK == 'Rotation_single')|(self.TASK =='Rotation_region'):
+            elif (self.TASK == 'Rotation_single')|(self.TASK =='Rotation_region')|(self.TASK =='big_Rotation'):
                 print('just rotation no sliding, stay in place dammit, added finger. make sure contact scaling is 0 if no finger desired')
                 self.build_reward = rf.rotation_with_finger
         elif 'contact' in self.TASK:
             self.build_reward = rf.contact_point 
-        elif self.TASK =='full_task':
+        elif (self.TASK =='full_task') | (self.TASK =='big_full_task'):
             print('All them rotation and sliding')
             self.build_reward = rf.slide_and_rotate 
         else:

@@ -224,9 +224,9 @@ def make_pybullet(arg_dict, pybullet_instance, rank, hand_info, viz=False):
         if type(args['object_path']) == str:
             object_path = args['object_path']
             object_key = "small"
-            print('older version of object loading, no object domain randomization used')
+            # print('older version of object loading, no object domain randomization used')
         else:
-            print('normally would get object DR but not this time')
+            # print('normally would get object DR but not this time')
             object_path = args['object_path'][0]
             object_key = 'small'   
     this_hand = args['hand_file_list'][rank[0]%len(args['hand_file_list'])]
@@ -240,7 +240,7 @@ def make_pybullet(arg_dict, pybullet_instance, rank, hand_info, viz=False):
                         "palm_width":info_1['palm_width'],
                         "hand_name":hand_type}
     else:
-        print('STARTING AWAY FROM THE OBJECT')
+        # print('STARTING AWAY FROM THE OBJECT')
         hand_param_dict = {"link_lengths":[info_1['link_lengths'],info_2['link_lengths']],
                         "starting_angles":[info_1['near_start_angles'][object_key][0],info_1['near_start_angles'][object_key][1],-info_2['near_start_angles'][object_key][0],-info_2['near_start_angles'][object_key][1]],
                         "palm_width":info_1['palm_width'],
@@ -251,9 +251,9 @@ def make_pybullet(arg_dict, pybullet_instance, rank, hand_info, viz=False):
     # other_id = pybullet_instance.loadURDF('./resources/object_models/wallthing/vertical_wall.urdf', basePosition=[0.0,0.0,-0.1],
     hand_id = pybullet_instance.loadURDF(args['hand_path'] + '/' + this_hand, useFixedBase=True,
                          basePosition=[0.0, 0.0, 0.05], flags=pybullet_instance.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
-    print('object path',object_path)
+    # print('object path',object_path)
     obj_id = pybullet_instance.loadURDF(object_path, basePosition=[0.0, 0.10, .05], flags=pybullet_instance.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
-    print(f'OBJECT ID:{obj_id}')
+    # print(f'OBJECT ID:{obj_id}')
 
     # Create TwoFingerGripper Object and set the initial joint positions
     hand = TwoFingerGripper(hand_id, path=args['hand_path'] + '/' + this_hand,hand_params=hand_param_dict)
@@ -975,8 +975,8 @@ if __name__ == '__main__':
     # multiprocess_evaluate_loaded('./data/Jeremiah_Full/FTP_S2/experiment_config.json',"B")
     # multiprocess_evaluate_loaded('./data/Jeremiah_Full/FTP_S3/experiment_config.json',"A")
     # multiprocess_evaluate_loaded('./data/Jeremiah_Full/FTP_S3/experiment_config.json',"B")
-    full_test('./data/Mothra_Full_Continue_New_weight/JA_S3/experiment_config.json','A')
-    full_test('./data/Mothra_Full_Continue_New_weight/JA_S3/experiment_config.json','B')
+    # full_test('./data/Mothra_Full_Continue_New_weight/JA_S3/experiment_config.json','A')
+    # full_test('./data/Mothra_Full_Continue_New_weight/JA_S3/experiment_config.json','B')
 
     # multiprocess_evaluate_loaded('./data/Mothra_Full_Continue_New_weight/JA_S3/experiment_config.json','A')
     # multiprocess_evaluate_loaded('./data/Mothra_Full_Continue_New_weight/JA_S3/experiment_config.json','B')
@@ -994,7 +994,7 @@ if __name__ == '__main__':
     # print('finsihed test')
     # multiprocess_evaluate_loaded('./data/Rotation_Long/JA_S3/experiment_config.json',"A")
     # multiprocess_evaluate_loaded('./data/Rotation_Long/JA_S3/experiment_config.json',"B")
-    # main('./data/Mothra_Full_Continue_New_weight/JA_S3/experiment_config.json', 'transfer')
+    main('./data/Rotation_continue/JA_S3_larger_space_new_weight/experiment_config.json', 'transfer')
 
     # sub_names = ['FTP_S1','FTP_S2','FTP_S3','JA_S1','JA_S2','JA_S3']
     # top_names = ['Jeremiah_Rotation']#['Mothra_Rotation','HPC_Rotation',
