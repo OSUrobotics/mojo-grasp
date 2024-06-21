@@ -17,10 +17,12 @@ from demos.rl_demo import multiprocess_gym_run
 
 def main(run_id):
     print(run_id)
-    folder_names = ['FTP_S1','FTP_S2','FTP_S3','JA_S1','JA_S2','JA_S3']
+    run_path_names = ['Full_continue','Rotation_continue']
+    folder_names = ['JA_S3_larger_space_new_weight_contact']
     overall_path = pathlib.Path(__file__).parent.resolve()
-    run_path = overall_path.joinpath('demos/rl_demo/data/HPC_Full')
-    final_path = run_path.joinpath(folder_names[run_id-1])
+    run_path = overall_path.joinpath('demos/rl_demo/data/')
+    final_path = run_path.joinpath(run_path_names[run_id-1])
+    final_path = final_path.joinpath(folder_names[0])
     print(str(final_path))
     multiprocess_gym_run.main(str(final_path) + '/experiment_config.json')
     

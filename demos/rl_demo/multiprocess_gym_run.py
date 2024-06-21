@@ -30,7 +30,7 @@ import numpy as np
 import time
 import os
 import multiprocessing
-from pkl_merger import merge_from_folder
+from demos.rl_demo.pkl_merger import merge_from_folder
 from scipy.spatial.transform import Rotation as R
 from stable_baselines3.common.noise import NormalActionNoise
 
