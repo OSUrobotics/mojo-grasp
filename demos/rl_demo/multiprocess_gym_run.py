@@ -29,6 +29,7 @@ import numpy as np
 import time
 import os
 import multiprocessing
+from pkl_merger import merge_from_folder
 from scipy.spatial.transform import Rotation as R
 from stable_baselines3.common.noise import NormalActionNoise
 
@@ -344,7 +345,7 @@ def multiprocess_evaluate_loaded(filepath, aorb):
     elif 'TD3' in args['model']:
         model_type = TD3
     print('LOADING A MODEL')
-
+    args['state_noise']=0.0
     # print('HARDCODING THE TEST PATH TO BE THE ROTATION TEST')
     # args['test_path'] ="/home/mothra/mojo-grasp/demos/rl_demo/resources/Solo_rotation_test.csv"
 
@@ -590,22 +591,25 @@ def full_test(filepath, hand_type):
     else:
         print('get fucked')
         assert 1==0
-    asterisk_thing = [[0,0.07],[0.0495,0.0495],[0.07,0.0],[0.0495,-0.0495],[0.0,-0.07],[-0.0495,-0.0495],[-0.07,0.0],[-0.0495,0.0495]]
-
+    asterisk_thing = np.array([[0,0.07],[0.0495,0.0495],[0.07,0.0],[0.0495,-0.0495],[0.0,-0.07],[-0.0495,-0.0495],[-0.07,0.0],[-0.0495,0.0495],
+                      [0,0.07],[0.0495,0.0495],[0.07,0.0],[0.0495,-0.0495],[0.0,-0.07],[-0.0495,-0.0495],[-0.07,0.0],[-0.0495,0.0495]]) *4/7
+    angles = [0.2618,0.2618,0.2618,0.2618,0.2618,0.2618,0.2618,0.2618,
+              -0.2618,-0.2618,-0.2618,-0.2618,-0.2618,-0.2618,-0.2618,-0.2618]
     if 'Rotation' in args['task']:
         print('get fucked')
         assert 1==0
 
     import pybullet as p2
+    # input(len(asterisk_thing))
     eval_env , _, poses= make_pybullet(args,p2, [0,1], hand_params, viz=False)
     eval_env.evaluate()
     eval_env.reduced_saving = False
     model = model_type("MlpPolicy", eval_env, tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-2.3}).load(args['save_path']+'best_model', env=eval_env)
     eval_env.episode_type = 'asterisk'
-    for i in asterisk_thing:
-        eval_env.manipulation_phase.state.objects[-1].set_all_pose(i)
+    for i, ang in zip(asterisk_thing,angles):
+        eval_env.manipulation_phase.state.objects[-1].set_all_pose(i,ang)
         obs = eval_env.reset()
-        eval_env.manipulation_phase.state.objects[-1].set_all_pose(i)
+        eval_env.manipulation_phase.state.objects[-1].set_all_pose(i,ang)
         done = False
         while not done:
             action, _ = model.predict(obs,deterministic=True)
@@ -939,6 +943,7 @@ def main(filepath = None,learn_type='run'):
         model.learn(total_timesteps=args['epochs']*(args['tsteps']+1), callback=callback)
         filename = os.path.dirname(filepath)
         model.save(filename+'/last_model')
+        merge_from_folder(args['save_path']+'Test/')
 
         # multiprocess_evaluate(model,vec_env)
     except KeyboardInterrupt:
@@ -949,8 +954,8 @@ if __name__ == '__main__':
     import csv
     # multiprocess_evaluate_loaded('./data/Mothra_Full/FTP_S1/experiment_config.json',"B")
     # replay('./data/Full_long_test/experiment_config.json', './data/Full_long_test/Eval_B/Episode_1.pkl')
-    multiprocess_evaluate_loaded('./data/Rotation_Long/FTP_S2/experiment_config.json',"A")
-    multiprocess_evaluate_loaded('./data/Rotation_Long/FTP_S2/experiment_config.json',"B")
+    # multiprocess_evaluate_loaded('./data/Mothra_Rotation/JA_S3/experiment_config.json',"A")
+    # multiprocess_evaluate_loaded('./data/Mothra_Rotation/JA_S3/experiment_config.json',"B")
 
     # multiprocess_evaluate_loaded('./data/Mothra_Full/FTP_S3/experiment_config.json',"A")
     # multiprocess_evaluate_loaded('./data/Mothra_Full/FTP_S3/experiment_config.json',"B")
@@ -964,7 +969,11 @@ if __name__ == '__main__':
     # multiprocess_evaluate_loaded('./data/Jeremiah_Full/FTP_S2/experiment_config.json',"B")
     # multiprocess_evaluate_loaded('./data/Jeremiah_Full/FTP_S3/experiment_config.json',"A")
     # multiprocess_evaluate_loaded('./data/Jeremiah_Full/FTP_S3/experiment_config.json',"B")
+    full_test('./data/Mothra_Full_Continue_New_weight/JA_S3/experiment_config.json','A')
+    full_test('./data/Mothra_Full_Continue_New_weight/JA_S3/experiment_config.json','B')
 
+    # multiprocess_evaluate_loaded('./data/Mothra_Full_Continue_New_weight/JA_S3/experiment_config.json','A')
+    # multiprocess_evaluate_loaded('./data/Mothra_Full_Continue_New_weight/JA_S3/experiment_config.json','B')
     # multiprocess_evaluate_loaded('./data/HPC_Rotation/FTP_S1/experiment_config.json',"A")
     # multiprocess_evaluate_loaded('./data/HPC_Rotation/FTP_S1/experiment_config.json',"B")
     # multiprocess_evaluate_loaded('./data/HPC_Rotation/FTP_S2/experiment_config.json',"A")
@@ -979,7 +988,7 @@ if __name__ == '__main__':
     # print('finsihed test')
     # multiprocess_evaluate_loaded('./data/Rotation_Long/JA_S3/experiment_config.json',"A")
     # multiprocess_evaluate_loaded('./data/Rotation_Long/JA_S3/experiment_config.json',"B")
-    # main('./data/Full_Long/JA_S2/experiment_config.json')
+    # main('./data/Mothra_Full_Continue_New_weight/JA_S3/experiment_config.json', 'transfer')
 
     # sub_names = ['FTP_S1','FTP_S2','FTP_S3','JA_S1','JA_S2','JA_S3']
     # top_names = ['Jeremiah_Rotation']#['Mothra_Rotation','HPC_Rotation',
