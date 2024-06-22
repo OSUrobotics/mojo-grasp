@@ -205,7 +205,7 @@ class MultiprocessGymWrapper(gym.Env):
                 self.env.reset(special['goal_position'], special['fingers'])
             else:
                 self.env.reset(special['goal_position'])
-        elif (self.TASK == 'Rotation_region') | ('contact' in self.TASK):
+        elif (self.TASK == 'Rotation_region') | ('contact' in self.TASK) | (self.TASK=='big_Rotation'):
             self.env.reset(new_goal['goal_position'],fingerys=fingerys)
         elif self.OBJECT_POSE_RANDOMIZATION:
             random_start = np.random.uniform(0,1,2)
