@@ -876,7 +876,7 @@ def replay(argpath, episode_path):
         # joints.append()
 
 def main(filepath = None,learn_type='run'):
-    num_cpu = 16 #multiprocessing.cpu_count() # Number of processes to use
+    num_cpu = 32 #multiprocessing.cpu_count() # Number of processes to use
     # Create the vectorized environment
     print('cuda y/n?', get_device())
     if filepath is None:
@@ -1000,6 +1000,6 @@ if __name__ == '__main__':
     # top_names = ['Jeremiah_Rotation']#['Mothra_Rotation','HPC_Rotation',
     # for uname in top_names:
     #     for lname in sub_names:
-    #         rotation_test('./data/'+uname+'/'+lname+"/experiment_config.json","A")
-    #         rotation_test('./data/'+uname+'/'+lname+"/experiment_config.json","B")
+    #         asterisk_test('./data/'+uname+'/'+lname+"/experiment_config.json","A")
+    #         asterisk_test('./data/'+uname+'/'+lname+"/experiment_config.json","B")
     #         print(uname, lname)
