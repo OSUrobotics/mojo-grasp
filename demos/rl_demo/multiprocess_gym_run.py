@@ -30,7 +30,7 @@ import numpy as np
 import time
 import os
 import multiprocessing
-from pkl_merger import merge_from_folder
+from demos.rl_demo.pkl_merger import merge_from_folder
 from scipy.spatial.transform import Rotation as R
 from stable_baselines3.common.noise import NormalActionNoise
 
@@ -875,8 +875,7 @@ def replay(argpath, episode_path):
         # input('next step?')
         # joints.append()
 
-def main(filepath = None,learn_type='run'):
-    num_cpu = 16 #multiprocessing.cpu_count() # Number of processes to use
+def main(filepath = None,learn_type='run', num_cpu=16):
     # Create the vectorized environment
     print('cuda y/n?', get_device())
     if filepath is None:
