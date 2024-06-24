@@ -351,7 +351,7 @@ def multiprocess_evaluate_loaded(filepath, aorb):
     print('LOADING A MODEL')
     args['state_noise']=0.0
     # print('HARDCODING THE TEST PATH TO BE THE ROTATION TEST')
-    # args['test_path'] ="/home/mothra/mojo-grasp/demos/rl_demo/resources/Solo_rotation_test.csv"
+    args['test_path'] ="/home/mothra/mojo-grasp/demos/rl_demo/resources/Big_rotation_15_test.csv"
 
     if not('contact_start' in args.keys()):
         args['contact_start'] = True
@@ -542,7 +542,7 @@ def rotation_test(filepath, hand_type):
     eval_env.episode_type = 'asterisk'
     for start_angs,start_pos,goal_orientation in zip(start_angles,goal_poses,goal_angs):
         eval_env.manipulation_phase.state.objects[-1].set_all_pose(start_pos,goal_orientation)
-        s_dict = {'goal_position':start_pos, 'fingers':start_angs}
+        s_dict = {'goal_position':start_pos}#, 'fingers':start_angs}
         obs = eval_env.reset(s_dict)
         eval_env.manipulation_phase.state.objects[-1].set_all_pose(start_pos,goal_orientation)
         done = False
@@ -991,10 +991,17 @@ if __name__ == '__main__':
 
     # asterisk_test('./data/Mothra_Slide/JA_S1/experiment_config.json','B')
     # print('finsihed test')
-    multiprocess_evaluate_loaded('./data/Full_continue/JA_S3_larger_space_new_weight_contact/experiment_config.json',"A")
+    # multiprocess_evaluate_loaded('./data/Full_continue/JA_S3_larger_space_new_weight/experiment_config.json',"A")
     # multiprocess_evaluate_loaded('./data/Full_continue/JA_S3_larger_space/experiment_config.json',"B")
-    # main('./data/Rotation_continue/JA_S3_larger_space_new_weight/experiment_config.json', 'transfer')
-
+    # main('./data/Rotation_continue/JA_S3_new_weight_same_space/experiment_config.json', 'transfer')
+    multiprocess_evaluate_loaded('./data/Mothra_Full/JA_S3/experiment_config.json',"A")
+    # multiprocess_evaluate_loaded('./data/Rotation_continue/JA_S3_larger_space/experiment_config.json',"A")
+    # rotation_test('./data/Mothra_Rotation/JA_S3/experiment_config.json',"A")
+    # rotation_test('./data/Rotation_continue/JA_S3_larger_space_new_weight/experiment_config.json',"A")
+    # rotation_test('./data/Rotation_continue/JA_S3_larger_space_new_weight_contact/experiment_config.json',"A")
+    # rotation_test('./data/Rotation_continue/JA_S3_larger_space/experiment_config.json',"B")
+    # rotation_test('./data/Rotation_continue/JA_S3_larger_space_new_weight/experiment_config.json',"B")
+    # rotation_test('./data/Rotation_continue/JA_S3_larger_space_new_weight_contact/experiment_config.json',"B")
     # sub_names = ['FTP_S1','FTP_S2','FTP_S3','JA_S1','JA_S2','JA_S3']
     # top_names = ['Jeremiah_Rotation']#['Mothra_Rotation','HPC_Rotation',
     # for uname in top_names:
