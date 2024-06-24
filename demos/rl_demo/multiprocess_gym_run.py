@@ -875,8 +875,7 @@ def replay(argpath, episode_path):
         # input('next step?')
         # joints.append()
 
-def main(filepath = None,learn_type='run'):
-    num_cpu = 32 #multiprocessing.cpu_count() # Number of processes to use
+def main(filepath = None,learn_type='run', num_cpu=16):
     # Create the vectorized environment
     print('cuda y/n?', get_device())
     if filepath is None:
