@@ -28,4 +28,4 @@ def main(run_id):
     
 if __name__ == '__main__':
     # print(sys.argv)
-    main(int(sys.argv[1]))
+    main(int(sys.argv[1]),num_cpu=int(sys.argv[2])
