@@ -2579,7 +2579,7 @@ class PlotBackend():
 
         s_f = []
         for dist, orr in zip(self.point_dictionary['End Distance'],self.point_dictionary['Orientation Error']):
-            if (dist < success_range/1000) and (orr < rot_success_range):
+            if (dist < success_range/1000) and (abs(orr) < rot_success_range/180*np.pi):
                 s_f.append(100)
             else:
                 s_f.append(0)

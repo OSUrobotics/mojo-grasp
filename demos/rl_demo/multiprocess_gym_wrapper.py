@@ -221,7 +221,7 @@ class MultiprocessGymWrapper(gym.Env):
         self.manipulation_phase.setup()
         
         state, _ = self.manipulation_phase.get_episode_info()
-
+        # print(state['two_finger_gripper']['joint_angles'])
         # print('goal pose in reset', state['goal_pose'])
         # print('start object pos', state['obj_2']['pose'])
         # print('joint angles', state['two_finger_gripper']['joint_angles'])
@@ -258,7 +258,7 @@ class MultiprocessGymWrapper(gym.Env):
             self.record.record_timestep()
         # print('recorded timesteps')
         state, reward_container = self.manipulation_phase.get_episode_info()
-
+        
         info = {}
         if mirror:
             state = self.build_mirror_state(state)
