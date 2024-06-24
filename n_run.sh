@@ -4,7 +4,7 @@
 #SBATCH --array=1-2                     # how many tasks in the array
 #SBATCH -o log/LOG-%a.out                 # name of error file for this submission script
 #SBATCH -e log/ERROR-%a.err                 # name of error file for this submission script
-#SBATCH --mem=20G
+#SBATCH --mem=10G
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-gpu 16
 #SBATCH -t 2-00:00:00
