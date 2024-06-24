@@ -876,7 +876,7 @@ def replay(argpath, episode_path):
         # joints.append()
 
 def main(filepath = None,learn_type='run'):
-    num_cpu = 32 #multiprocessing.cpu_count() # Number of processes to use
+    num_cpu = 16 #multiprocessing.cpu_count() # Number of processes to use
     # Create the vectorized environment
     print('cuda y/n?', get_device())
     if filepath is None:
@@ -992,9 +992,9 @@ if __name__ == '__main__':
 
     # asterisk_test('./data/Mothra_Slide/JA_S1/experiment_config.json','B')
     # print('finsihed test')
-    multiprocess_evaluate_loaded('./data/Full_continue/JA_S3_larger_space_new_weight_contact/experiment_config.json',"A")
+    # multiprocess_evaluate_loaded('./data/Full_continue/JA_S3_larger_space_new_weight/experiment_config.json',"A")
     # multiprocess_evaluate_loaded('./data/Full_continue/JA_S3_larger_space/experiment_config.json',"B")
-    # main('./data/Rotation_continue/JA_S3_larger_space_new_weight/experiment_config.json', 'transfer')
+    main('./data/Rotation_continue/JA_S3_larger_space_new_weight_contact/experiment_config.json', 'transfer')
 
     # sub_names = ['FTP_S1','FTP_S2','FTP_S3','JA_S1','JA_S2','JA_S3']
     # top_names = ['Jeremiah_Rotation']#['Mothra_Rotation','HPC_Rotation',
