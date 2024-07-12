@@ -1,0 +1,18 @@
+<?xml version="1.0" ?>
+<robot name="Jeremiah_45_10_slope_cone">
+
+    <link name="50x30_Teardrop">
+        <visual>
+            <origin rpy="1.5707963267948966 0 0" xyz="0 0 0"/>
+            <geometry>
+                <mesh filename="Shapes/45_10_slope_cone.stl" scale="1 1 1"/>
+            </geometry>
+        </visual>
+        <collision>
+            <geometry>
+                <mesh filename="Shapes/45_10_slope_cone.stl" scale="1 1 1"/>
+            </geometry>
+        </collision>
+    </link>
+
+</robot>
