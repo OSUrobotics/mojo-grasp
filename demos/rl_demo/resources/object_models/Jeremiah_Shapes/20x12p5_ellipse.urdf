@@ -1,16 +1,16 @@
 <?xml version="1.0" ?>
-<robot name="Jeremiah_20x12p5_ellipse">
+<robot name="20x12p5_ellipse">
 
     <link name="20x12p5_ellipse">
         <visual>
             <origin rpy="1.5707963267948966 0 0" xyz="0 0 0"/>
             <geometry>
-                <mesh filename="Shapes/20x12p5_ellipse.stl" scale="1 1 1"/>
+                <mesh filename="Shapes/20x12p5_ellipse.STL" scale="1 1 1"/>
             </geometry>
         </visual>
         <collision>
             <geometry>
-                <mesh filename="Shapes/20x12p5_ellipse.stl" scale="1 1 1"/>
+                <mesh filename="Shapes/20x12p5_ellipse.STL" scale="1 1 1"/>
             </geometry>
         </collision>
     </link>
