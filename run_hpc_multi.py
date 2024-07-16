@@ -15,7 +15,7 @@ from demos.rl_demo import multiprocess_gym_run
 #print('path',sys.path)
 #print('version',sys.version)
 
-def main(run_id):
+def main(run_id,num_cpu):
     print(run_id)
     run_path_names = ['Rotation_continue']
     folder_names = ['JA_S3_new_weight_same_space','JA_S3_large_space_long_train']

@@ -74,10 +74,11 @@ def main():
                         [sg.Button('Explored Region', size=(8,2)), sg.Button('Reward Comparison', size=(8,2)), sg.Button('Timestep Best',size=(8,2)), sg.Button('Finger Object Avg', size=(8,2)),sg.Button('Scatter Scaled',size=(8,2))],
                         [sg.Button('End Region', size=(8,2)), sg.Button('Max Percent', size=(8,2)),sg.Button('Timestep End',size=(8,2)), sg.Button('Finger Object Max', size=(8,2)), sg.Button('Success Rate', size=(8,2))]]
 
-    plot_buttons = [[sg.Button('Object Path', size=(8, 2)), sg.Button('Finger Angles', size=(8, 2)), sg.Button('Finger Contact Distance',size=(8, 2)), sg.Button('Rewards', size=(8, 2)),sg.Button('',size=(8,2))],
+    plot_buttons = [[sg.Button('Object Path', size=(8, 2)), sg.Button('Finger Angles', size=(8, 2)), sg.Button('Finger Contact Distance',size=(8, 2)), sg.Button('Rewards', size=(8, 2)),sg.Button('BINGO',size=(8,2))],
                     [sg.Button('Fingertip Path', size=(8,2)), sg.Button('Actor Output', size=(8, 2)), sg.Button('Object Goal Distance',size=(8, 2)),sg.Button('Big Success',size=(8,2)),sg.Button('Load Dictionary',size=(8,2))],
                     [sg.Button('Obj Contacts', size=(8,2)), sg.Button('Aout Comparison', size=(8, 2)),sg.Button('Orientation', size=(8,2)), sg.Button('Multireward', size=(8,2)),sg.Button('Save Dictionary',size=(8,2))],
-                    [sg.Button('Finger Goal Path',size=(8,2)),sg.Button('Sampled Poses', size=(8,2)),sg.Button('draw_scatter_max_end',size=(8,2)),sg.Button('Both Errors',size=(8,2)),sg.Button('draw_newshit',size=(8,2))]]
+                    [sg.Button('Finger Goal Path',size=(8,2)),sg.Button('Sampled Poses', size=(8,2)),sg.Button('draw_scatter_max_end',size=(8,2)),sg.Button('Both Errors',size=(8,2)),sg.Button('draw_newshit',size=(8,2))],
+                    [sg.Button('draw_fuckery'), sg.Button('draw_z'), sg.Button('draw_boxen'), sg.Button('b2')]]
 
     # define layout, show and read the window
     col = [[sg.Text(episode_files[0], size=(80, 3), key='-FILENAME-')],
@@ -103,7 +104,8 @@ def main():
                  [sg.Text('Rotational Success Threshold (deg)'), sg.Input(10, key='rot_success_range',size=(8,1))],
                  [sg.Text("Distance Scale"),  sg.Input(1,key='-distance_scale',size=(5, 1)), sg.Text('Contact Scale'), sg.Input(0.2,key='-contact_scale',size=(5, 1))],  
                  [sg.Text('Rotation Scale'),sg.Input(1,key='-rotation_scale',size=(5, 1)), sg.Text('Success Reward'), sg.Input(1,key='-success_reward',size=(5, 1))],
-                 [sg.Text('Action Type'),sg.OptionMenu(values=('FTP','JA'), k='-atype',default_value='FTP')]]
+                 [sg.Text('Action Type'),sg.OptionMenu(values=('FTP','JA'), k='-atype',default_value='FTP')],
+                 [sg.Text('Size'),sg.Input(30,key='markersize',size=(5,1)), sg.Text('Separation Distance'), sg.Input(0.2, key='sepdist',size=(5,1))]]
 
     layout = [[sg.Menu(menu)], [sg.Col(col_files), sg.Col(col)]]
     # layout = [[sg.Menu(menu)], [sg.TabGroup([[sg.Tab('Single Plotting', [[sg.Col(col_files), sg.Col(col)]]),
@@ -150,6 +152,7 @@ def main():
 
     # input('about to start loop')
     # TODO: add in functionality to check which type of file it is and send in either the epidoe data OR the string to the folder
+    counter = 0
     while True:
         event, values = window.read()
         # print()
@@ -317,6 +320,10 @@ def main():
             else:
                 print('Nope, needs to be episode all')
             figure_canvas_agg.draw()
+        elif event == 'BINGO':
+            rot_success = float(values['rot_success_range'])
+            backend.draw_orientation_success_region([clicks.x, clicks.y], success_range, rot_success)
+            figure_canvas_agg.draw()
         elif event =='Average Dist Reward':
             if 'all' in filename:
                 backend.draw_net_distance_reward(episode_data)
@@ -331,6 +338,10 @@ def main():
             figure_canvas_agg.draw()
         elif event == 'End Dist':
             backend.draw_scatter_end_dist(folder, values['-cmap'])
+            figure_canvas_agg.draw()
+        elif event =='draw_fuckery':
+            rot_success = float(values['rot_success_range'])
+            backend.draw_fuckery(folder,[success_range,rot_success,5])
             figure_canvas_agg.draw()
         elif event =='Contact Dist':
             backend.draw_scatter_contact_dist(folder)
@@ -354,6 +365,11 @@ def main():
             rot_success = float(values['rot_success_range'])
             backend.draw_success_high_level(folder,[success_range, rot_success])
             figure_canvas_agg.draw()
+        elif event =='b2':
+            backend.draw_boxen_2(5,26,counter)
+            figure_canvas_agg.draw()
+            counter +=1
+            counter = counter%5
         elif event == '-TOGGLE-GRAPHIC-':  # if the graphical button that changes images
             window['-TOGGLE-GRAPHIC-'].metadata = not window['-TOGGLE-GRAPHIC-'].metadata
             window['-TOGGLE-GRAPHIC-'].update(image_data=toggle_btn_on if window['-TOGGLE-GRAPHIC-'].metadata else toggle_btn_off)
@@ -380,7 +396,8 @@ def main():
             backend.draw_orientation(episode_data)
             figure_canvas_agg.draw()
         elif event =='Orientation Multi':
-            backend.draw_orientation_success_rate(folder)
+            rot_success = float(values['rot_success_range'])
+            backend.draw_orientation_success_rate(folder,success_range,rot_success)
             figure_canvas_agg.draw()
         elif event == 'Reward Comparison':
             backend.draw_relative_reward_strength(folder,tholds)
@@ -433,6 +450,11 @@ def main():
                 # print(filename)
                 window['-LISTBOX-'].update(set_to_index=filenum, scroll_to_index=filenum)
                 episode_data = load_data(filename)
+
+        elif event == 'draw_z':
+            rot_success = float(values['rot_success_range'])
+            backend.draw_z(folder,[success_range, rot_success], float(values['markersize']),float(values['sepdist']))
+            figure_canvas_agg.draw()
         elif event == "OR bucket":
             
             cancan = sg.Window('Popup figure', [[sg.Canvas(size=(1280*2, 960*2),key='-CANVAS-')]], finalize=True)
@@ -458,6 +480,10 @@ def main():
             figure_canvas_agg.draw()
         elif event == 'Rotation Sliding Error':
             backend.draw_rotation_sliding_error(folder,values['-cmap'])
+            figure_canvas_agg.draw()
+        elif event =='draw_boxen':
+            rot_success =  float(values['rot_success_range'])
+            backend.draw_boxen([clicks.x, clicks.y], rot_success, success_range)
             figure_canvas_agg.draw()
         elif event == '-SAVE-':
             if '.png' in values['save_name']:

@@ -17,7 +17,7 @@ class FigureGui():
                          [sg.Checkbox('JA_Real_S1_A_A',key='JA_Real_S1_A_A', default=False),sg.Checkbox('JA_Real_S2_A_A',key='JA_Real_S2_A_A', default=False),sg.Checkbox('JA_Real_S3_A_A',key='JA_Real_S3_A_A', default=False)],
                          [sg.Button("Go Avanced")] ]
         # self.high_level_folders = ['Mothra_Slide/','Misc_Slide/','HPC_Slide/']
-        self.high_level_folders = ['Mothra_Rotation/','Jeremiah_Rotation/','HPC_Rotation/']
+        self.high_level_folders =  ['Mothra_Rotation/','Jeremiah_Rotation/','HPC_Rotation/']
         
         self.mid_level = ['JA_S1', 'JA_S2', 'JA_S3','FTP_S1', 'FTP_S2', 'FTP_S3']
         self.low_level_folders = ['Ast_A','Ast_B','Real_A','Real_B']
@@ -28,7 +28,7 @@ class FigureGui():
                         [sg.Tab('Advanced Plotting', data_layout)]])]]
         self.window = sg.Window('Analysis Window', layout, return_keyboard_events=True, use_default_focus=False, finalize=True)
         self.window.move(1000, 20)
-        self.backend = PlotBackend('./demos/rl_demo/data/Mothra_Rotation/JA_S1')
+        self.backend = PlotBackend()
         self.fig,_ = self.backend.get_figure()
         self.base_path = '/home/mothra/mojo-grasp/demos/rl_demo/data/'
         self.count = 0

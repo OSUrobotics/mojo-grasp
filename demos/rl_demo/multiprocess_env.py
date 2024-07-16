@@ -196,23 +196,36 @@ class MultiprocessSingleShapeEnv(Environment):
                                  flags=self.p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
         # print('object path', self.obj.path)
         # assert 1==0
-
-        self.p.changeDynamics(self.hand_id, 1, lateralFriction=0.5, rollingFriction=0.04,
+        self.finger_lateral_friction_range = [0.25, 0.75]
+        self.finger_spinning_friction_range = [0.01,0.0101]
+        self.finger_rolling_friction_range = [0.04,0.0401]
+        self.floor_lateral_friction_range = [0.15,0.45]
+        self.floor_spinning_friction_range = [0.01,0.0101]
+        self.floor_rolling_friction_range = [0.05,0.0501]
+        self.object_mass_range = [0.015, 0.045]
+        start_finger_lateral = np.average(self.finger_lateral_friction_range)
+        start_finger_spin = np.average(self.finger_spinning_friction_range)
+        start_finger_roll = np.average(self.finger_rolling_friction_range)
+        start_floor_lateral = np.average(self.floor_lateral_friction_range)
+        start_floor_spin = np.average(self.floor_spinning_friction_range)
+        start_floor_roll = np.average(self.floor_rolling_friction_range)
+        start_mass = np.average(self.object_mass_range)
+        self.p.changeDynamics(self.hand_id, 1, lateralFriction=start_finger_lateral, rollingFriction=start_finger_roll, spinningFriction=start_finger_spin,
                          mass=.036)
-        self.p.changeDynamics(self.hand_id, 4, lateralFriction=0.5, rollingFriction=0.04,
+        self.p.changeDynamics(self.hand_id, 4, lateralFriction=start_finger_lateral, rollingFriction=start_finger_roll, spinningFriction=start_finger_spin,
                          mass=.036)
         self.p.changeDynamics(self.hand_id, 0, jointLowerLimit=-1.57, jointUpperLimit=1.57, mass=mass_link)
         self.p.changeDynamics(self.hand_id, 1, jointLowerLimit=0, jointUpperLimit=2.09, mass=mass_link)
         self.p.changeDynamics(self.hand_id, 3, jointLowerLimit=-1.57, jointUpperLimit=1.57, mass=mass_link)
         self.p.changeDynamics(self.hand_id, 4, jointLowerLimit=-2.09, jointUpperLimit=0, mass=mass_link)
-        self.p.changeDynamics(self.plane_id,-1,lateralFriction=0.25, spinningFriction=0.01, rollingFriction=0.05)
-        self.p.changeDynamics(self.obj.id, -1, mass=.03, restitution=.95, lateralFriction=1, localInertiaDiagonal=[0.000029435425,0.000029435425,0.00000725805])
-        self.p.changeVisualShape(self.hand_id, -1, rgbaColor=[0.3, 0.3, 0.3, 1])
-        self.p.changeVisualShape(self.hand_id, 0, rgbaColor=[1, 0.5, 0, 1])
-        self.p.changeVisualShape(self.hand_id, 1, rgbaColor=[0.3, 0.3, 0.3, 1])
-        self.p.changeVisualShape(self.hand_id, 3, rgbaColor=[1, 0.5, 0, 1])
-        self.p.changeVisualShape(self.hand_id, 4, rgbaColor=[0.3, 0.3, 0.3, 1])
-        self.p.changeVisualShape(self.obj_id, -1, rgbaColor=[0.1, 0.6, 0.1, 0.9])
+        self.p.changeDynamics(self.plane_id,-1,lateralFriction=start_floor_lateral, spinningFriction=start_floor_spin, rollingFriction=start_floor_roll)
+        self.p.changeDynamics(self.obj.id, -1, mass=start_mass, restitution=.95, lateralFriction=1, localInertiaDiagonal=[0.000029435425,0.000029435425,0.00000725805])
+        self.p.changeVisualShape(self.hand_id, -1, rgbaColor=[0.3, 0.3, 0.3, 0.4])
+        self.p.changeVisualShape(self.hand_id, 0, rgbaColor=[1, 0.5, 0, 0.4])
+        self.p.changeVisualShape(self.hand_id, 1, rgbaColor=[0.3, 0.3, 0.3, 0.4])
+        self.p.changeVisualShape(self.hand_id, 3, rgbaColor=[1, 0.5, 0, 0.4])
+        self.p.changeVisualShape(self.hand_id, 4, rgbaColor=[0.3, 0.3, 0.3, 0.4])
+        self.p.changeVisualShape(self.obj_id, -1, rgbaColor=[0.1, 0.6, 0.1, 0.4])
         # self.p.configureDebugVisualizer(self.p.COV_ENABLE_SHADOWS, 0)
         self.p.configureDebugVisualizer(self.p.COV_ENABLE_GUI, 0)
         self.hand.id = self.hand_id
@@ -227,13 +240,10 @@ class MultiprocessSingleShapeEnv(Environment):
                        [0, 0, 0], [0, 0.1, 0])
             
         # need to update friction values
-        self.finger_lateral_friction_range = [0.25, 0.75]
-        self.finger_spinning_friction_range = [0.01,0.0101]
-        self.finger_rolling_friction_range = [0.04,0.0401]
-        self.floor_lateral_friction_range = [0.15,0.45]
-        self.floor_spinning_friction_range = [0.01,0.0101]
-        self.floor_rolling_friction_range = [0.05,0.0501]
-        self.object_mass_range = [0.015, 0.045]
+        print('startng object mass', start_mass)
+        print('starting floor frictions', start_floor_lateral, start_floor_spin, start_floor_roll)
+        print('starting finger frictions',start_finger_lateral, start_finger_spin, start_finger_roll)
+
 
     def make_viz_point(self,thing):
         if type(thing[0]) == list:
@@ -332,16 +342,19 @@ class MultiprocessSingleShapeEnv(Environment):
         # print('dr terms',finger_friction, floor_friction, object_mass)
         if object_mass:
             new_mass = np.random.uniform(self.object_mass_range[0], self.object_mass_range[1])
+            print('object mass', new_mass)
             self.p.changeDynamics(self.obj_id, -1, mass=new_mass)
         if floor_friction:
             new_lateral_friction = np.random.uniform(self.floor_lateral_friction_range[0],self.floor_lateral_friction_range[1])
             new_spinning_friction = np.random.uniform(self.floor_spinning_friction_range[0],self.floor_spinning_friction_range[1])
             new_rolling_friction = np.random.uniform(self.floor_rolling_friction_range[0],self.floor_rolling_friction_range[1])
+            print('floor frictions', new_lateral_friction, new_spinning_friction, new_rolling_friction)
             self.p.changeDynamics(self.plane_id, -1, lateralFriction=new_lateral_friction, spinningFriction=new_spinning_friction, rollingFriction=new_rolling_friction)
         if finger_friction:
             new_lateral_friction = np.random.uniform(self.finger_lateral_friction_range[0],self.finger_lateral_friction_range[1])
             new_spinning_friction = np.random.uniform(self.finger_spinning_friction_range[0],self.finger_spinning_friction_range[1])
             new_rolling_friction = np.random.uniform(self.finger_rolling_friction_range[0],self.finger_rolling_friction_range[1])
+            print('finger frictions', new_lateral_friction, new_spinning_friction, new_rolling_friction)
             self.p.changeDynamics(self.hand_id, 1, lateralFriction=new_lateral_friction, spinningFriction=new_spinning_friction)
             self.p.changeDynamics(self.hand_id, 4, lateralFriction=new_lateral_friction, spinningFriction=new_spinning_friction, rollingFriction=new_rolling_friction)
 
