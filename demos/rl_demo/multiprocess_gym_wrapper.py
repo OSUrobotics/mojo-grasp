@@ -200,7 +200,7 @@ class MultiprocessGymWrapper(gym.Env):
         elif type(special) is list:
             self.env.reset_to_pos(special[0],special[1])
         elif type(special) is dict:
-            print('reseting with special dict', special)
+            # print('reseting with special dict', special)
             if 'fingers' in special.keys():
                 self.env.reset(special['goal_position'], special['fingers'])
             else:
@@ -241,7 +241,6 @@ class MultiprocessGymWrapper(gym.Env):
         Returns
         -------
         None.
-
         '''
         if self.discrete:
             action = action-1
@@ -296,7 +295,10 @@ class MultiprocessGymWrapper(gym.Env):
         self.timestep +=1
         return state, reward, done, info
         
-    
+    def disconnect(self):
+        self.p.disconnect()
+        print('disconnecting from the pybullet environment')
+
     def build_state(self, state_container: State):
         """
         Method takes in a State object 
@@ -401,7 +403,6 @@ class MultiprocessGymWrapper(gym.Env):
             
         return state
     
-
     def build_mirror_state(self, state_container: State):
         """
         Method takes in a State object 

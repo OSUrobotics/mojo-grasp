@@ -19,11 +19,49 @@ from scipy.spatial.transform import Rotation as R
 import mojograsp.simcore.reward_functions as rf
 import multiprocessing
 import pandas as pd
+import mojograsp.simcore.custom_markers as cm
+import matplotlib as mpl
+from matplotlib.patches import Circle, Polygon, Wedge
 
+mpl.rcParams["hatch.color"] = 'C1'
+mpl.rcParams['hatch.linewidth'] = 0.7
 def getitem_for(d, key):
     for level in key:
         d = d[level]
     return d
+
+def beefy_pool_process(episode_file):
+    with open(episode_file, 'rb') as ef:
+        tempdata = pkl.load(ef)
+    data = tempdata['timestep_list']
+
+    point_list = []
+    try:
+        
+        point_list.extend([data[0]['state']['obj_2']['pose'][0][0],data[0]['state']['obj_2']['pose'][0][1]-0.1])
+        point_list.extend([data[-1]['state']['obj_2']['pose'][0][0],data[-1]['state']['obj_2']['pose'][0][1]-0.1])
+        point_list.extend(data[0]['state']['goal_pose']['goal_position'][0:2])
+        point_list.append(data[0]['reward']['distance_to_goal'])
+        point_list.append(data[-1]['reward']['distance_to_goal'])
+        point_list.append(max([i['reward']['distance_to_goal'] for i in data]))
+        point_list.append(data[-1]['reward']['object_orientation'][2]) # end orientation
+        point_list.append(data[0]['state']['goal_pose']['goal_orientation']) # goal orientation
+        point_list.append(episode_file)
+        t1 = []
+        t2 = []
+        t3 = []
+        for i in data:
+            t1.append(i['reward']['distance_to_goal'])
+            t2.append(abs(i['reward']['object_orientation'][2] - i['state']['goal_pose']['goal_orientation']))
+            t3.append(max(i['reward']['f1_dist'],i['reward']['f2_dist']))
+        point_list.append(sum(t1))
+        point_list.append(sum(t2))
+        point_list.append(sum(t3))
+    except KeyError:
+        print('episode keys are wrong. check pool_process in data_gui_backend.py with your state and reward keys')
+
+    return point_list
+
 
 def pool_process(episode_file):
     with open(episode_file, 'rb') as ef:
@@ -176,10 +214,10 @@ class PlotBackend():
         episode_number=data_dict['number']
         trajectory_points = [f['state']['obj_2']['pose'][0] for f in data]
         print('goal position in state', data[0]['state']['goal_pose'])
-        try:
-            goal_poses = np.array([i['state']['goal_pose']['goal_pose'] for i in data])
-        except:
-            goal_poses = np.array([i['state']['goal_pose']['goal_position'] for i in data])
+        # try:
+        #     goal_poses = np.array([i['state']['goal_pose']['goal_pose'] for i in data])
+        # except:
+        goal_poses = np.array([i['state']['goal_pose']['goal_position'] for i in data])
         # print(trajectory_points)
         trajectory_points = np.array(trajectory_points)
         ideal = np.zeros([len(goal_poses)+1,2])
@@ -193,8 +231,8 @@ class PlotBackend():
         self.ax.set_ylim([0.02,0.18])
         self.ax.set_xlabel('X pos (m)')
         self.ax.set_ylabel('Y pos (m)')                                                                                                                                                                                                                                   
-        self.legend.extend(['RL Object Trajectory - episode '+str(episode_number), 'Ideal Path to Goal - episode '+str(episode_number)])
-        self.ax.legend(self.legend)
+        # self.legend.extend(['RL Object Trajectory - episode '+str(episode_number), 'Ideal Path to Goal - episode '+str(episode_number)])
+        # self.ax.legend(self.legend)
         self.ax.set_title('Object Path')
         self.ax.set_aspect('equal',adjustable='box')
         self.curr_graph = 'path'
@@ -1983,7 +2021,9 @@ class PlotBackend():
             poses = np.array([i['state']['obj_2']['pose'][0][0:2] for i in data])
             dist_traveled = [poses[i+1]-poses[i] for i in range(len(poses)-1)]
             temp = [np.linalg.norm(d) for d in dist_traveled]
+            # print(temp)
             mag_dist = np.sum(temp)
+
             dist_traveled_list.append(mag_dist)
             end_poses.append(data[-1]['state']['obj_2']['pose'][0][0:2])
             goal_poses.append(data[-1]['state']['goal_pose']['goal_position'])
@@ -1994,36 +2034,48 @@ class PlotBackend():
         end_poses = end_poses - np.array([0,0.1])
         dist_along_thing = {'E':[],'NE':[],'N':[],'NW':[],'W':[],'SW':[],'S':[],'SE':[]}
         efficiency = {'E':[],'NE':[],'N':[],'NW':[],'W':[],'SW':[],'S':[],'SE':[]}
+        endpoint =  {'E':[],'NE':[],'N':[],'NW':[],'W':[],'SW':[],'S':[],'SE':[]}
         # goal_poses = np.array
+        # print('Dist travelled list',dist_traveled_list)
         for e, g, dt in zip(end_poses, goal_poses, dist_traveled_list):
             for i,name in enumerate(name_key):
                 # print(name,g)
                 if all(name == g):
                     # print('we in here')
-                    dtemp = g/np.linalg.norm(g)*np.dot(e,g/np.linalg.norm(g))
+                    dtemp = np.dot(e,g/np.linalg.norm(g))
+                    # if dtemp > 0.07:
+                    #     print('clipping at 0.07', dtemp)
+                    #     dtemp = 0.07
+                        
+                    endpoint[name_key2[i]].append(g/np.linalg.norm(g)*dtemp)
                     dist_along_thing[name_key2[i]].append(dtemp)
                     efficiency[name_key2[i]].append(np.linalg.norm(dtemp)/dt)
             for i,name in enumerate(name_key_og):
                 # print(name,g)
                 if all(name == g):
-                    dtemp = g/np.linalg.norm(g)*np.dot(e,g/np.linalg.norm(g))
+                    dtemp = np.dot(e,g/np.linalg.norm(g))
+                    # if dtemp > 0.06:
+                    #     print('clipping at 0.06',dtemp)
+                    #     dtemp = 0.06
+                    endpoint[name_key_og2[i]].append(g/np.linalg.norm(g)*dtemp)
                     dist_along_thing[name_key_og2[i]].append(dtemp)
                     efficiency[name_key_og2[i]].append(np.linalg.norm(dtemp)/dt)
-        # print(dist_along_thing)
-        # print('efficiency', efficiency, dist_traveled_list)
+        print(dist_along_thing)
+        print('efficiency', efficiency, dist_traveled_list)
+        print('distances', dist_along_thing)
         # print(np.unique(goal_poses,axis=0))
         finals = []
         alls = []
         net_efficiency = []
         for k in name_key2:
             # print(k, dist_along_thing[k])
-            finals.append(np.average(dist_along_thing[k],axis=0))
-            alls.append(np.linalg.norm(dist_along_thing[k][0]))
+            finals.append(np.average(endpoint[k],axis=0))
+            alls.append(dist_along_thing[k][0])
             net_efficiency.append(efficiency[k][0])
             try:
-                alls.append(np.linalg.norm(dist_along_thing[k][1]))
+                alls.append(dist_along_thing[k][1])
                 net_efficiency.append(efficiency[k][1])
-                alls.append(np.linalg.norm(dist_along_thing[k][2]))
+                alls.append(dist_along_thing[k][2])
                 net_efficiency.append(efficiency[k][2])
             except:
                 pass
@@ -2035,14 +2087,17 @@ class PlotBackend():
         print(f'what we need. mean: {np.average(alls)*8}, {np.std(alls)}')
         # print()
         self.ax.plot(finals[:,0],finals[:,1]+0.1)
+        
         # self.ax.fill(finals[:,0],finals[:,1]+0.1, alpha=0.3)
         self.ax.set_xlim([-0.08,0.08])
-        self.ax.set_ylim([0.04,0.16])
+        self.ax.set_ylim([0.02,0.18])
         self.ax.set_xlabel('X pos (m)')
         self.ax.set_ylabel('Y pos (m)')
         self.legend.append(legend_thing)
-        self.ax.legend(self.legend)
+        # self.ax.legend(self.legend)
         self.ax.set_aspect('equal',adjustable='box')
+        self.ax.scatter(name_key[:,0],name_key[:,1]+0.1, c='C3')
+        self.ax.scatter([0],[0.1],c='C4')
         # self.ax.scatter(end_poses[:,0],end_poses[:,1])
         return [np.average(alls)*8, np.std(alls), np.average(net_efficiency), np.std(net_efficiency)]
 
@@ -2159,61 +2214,25 @@ class PlotBackend():
         # self.ax.set_aspect('equal',adjustable='box')
         return [np.average(all_pos_error), np.std(all_pos_error), np.average(all_orientation_error), np.std(all_orientation_error), np.average(all_or_covered),np.std(all_or_covered)]
 
-    def draw_orientation_success_rate(self,folder):
-        starttime = time.time()
+    def draw_orientation_success_rate(self,folder_path,tthold=26,rthold=5):
+        if self.point_dictionary is None:
+            self.build_scatter_magic(folder_path)
         self.clear_axes()
-        rotations = []
-        goals = []
-        episode_files = [os.path.join(folder, f) for f in os.listdir(folder) if f.lower().endswith('.pkl')]
-        filenames_only = [f for f in os.listdir(folder) if f.lower().endswith('.pkl')]
-        
-        filenums = [re.findall('\d+',f) for f in filenames_only]
-        final_filenums = []
-        for i in filenums:
-            if len(i) > 0 :
-                final_filenums.append(int(i[0]))
-        
-        sorted_inds = np.argsort(final_filenums)
-        final_filenums = np.array(final_filenums)
-        episode_files = np.array(episode_files)
-        filenames_only = np.array(filenames_only)
-
-        episode_files = episode_files[sorted_inds].tolist()
-        fail_rewards = []
-        fail_rotation = [] 
-        success_rewards = []
-        success_rotation = [] 
-        count = 0
-        pool = multiprocessing.Pool()
-        tst = (-1, -1, -1)
-        keys = (('state','obj_2','z_angle'),('state','goal_pose','goal_orientation'),('reward','distance_to_goal'))
-        thing = [[ef, tst, keys] for ef in episode_files]
-        print('applying async')
-        data_list = pool.starmap(pool_key_list,thing)
-        pool.close()
-        pool.join()
-        distances = []
-        for i in data_list:
-            if i[2]<0.026:
-                success_rewards.append(i[0])
-                success_rotation.append(i[1])
-            else:    
-                fail_rewards.append(i[0])
-                fail_rotation.append(i[1])
-        
-        success_rewards = np.array(success_rewards)*180/np.pi
-        success_rotation = np.array(success_rotation) *180/np.pi
-        fail_rewards = np.array(fail_rewards)*180/np.pi
-        fail_rotation = np.array(fail_rotation) *180/np.pi
-
-        # a = np.abs(rewards)
-        # b = np.average(a)
-        # c = np.std(a)
+        test = self.point_dictionary.copy()
+        test['s_f'] = np.where((test['Orientation Error'] < rthold/180*np.pi) & (test['End Distance'] < tthold/1000), True, False)
+        # self.point_dictionary['s_f'] = (self.point_dictionary['Orientation Error'] < rthold) and (self.point_dictionary['End Distance'] < tthold)
+        print(test)
+        sorted = test.groupby(['s_f'])
+        prev_x = 100
+        prev_y = 100
+        key_val = -1
+        print()
+        self.ax.scatter(sorted.get_group(True)['Goal Orientation']*180/np.pi,sorted.get_group(True)['End Orientation']*180/np.pi)
+        self.ax.scatter(sorted.get_group(False)['Goal Orientation']*180/np.pi,sorted.get_group(False)['End Orientation']*180/np.pi)
         # print('average and std orientation error', b,c)
-        self.ax.scatter(success_rotation,success_rewards)
-        self.ax.scatter(fail_rotation,fail_rewards)
         self.ax.plot([-360,360],[-360,360],color='green')
-
+        self.ax.plot([-360,360],[-360+rthold,360+rthold],color='green', linestyle=':')
+        self.ax.plot([-360,360],[-360-rthold,360-rthold],color='green', linestyle=':')
         self.ax.set_xlabel('Goal Orientation')
         self.ax.set_ylabel('Ending Orientation')
         self.ax.set_ylim(-75,75)
@@ -2301,48 +2320,20 @@ class PlotBackend():
         
     def draw_relative_reward_strength(self,folder,tholds):        
         # get list of pkl files in folder
-        episode_files = [os.path.join(folder, f) for f in os.listdir(folder) if f.lower().endswith('.pkl')]
-        filenames_only = [f for f in os.listdir(folder) if f.lower().endswith('.pkl')]
-        
-        filenums = [re.findall('\d+',f) for f in filenames_only]
-        final_filenums = []
-        for i in filenums:
-            if len(i) > 0 :
-                final_filenums.append(int(i[0]))
-        
-        
-        sorted_inds = np.argsort(final_filenums)
-        final_filenums = np.array(final_filenums)
-        temp = final_filenums[sorted_inds]
-        episode_files = np.array(episode_files)
-        filenames_only = np.array(filenames_only)
-
-        episode_files = episode_files[sorted_inds].tolist()
-
-        datapoints = [] 
-        pool = multiprocessing.Pool()
-        keys = (('reward','distance_to_goal'), ('reward', 'object_orientation'), ('reward','goal_orientation'), ('reward', 'f1_dist'), ('reward','f2_dist'))
-        thing = [[ef, keys] for ef in episode_files]
-        print('applying async')
-        data_list = pool.starmap(pool_key_list_all,thing)
-        pool.close()
-        pool.join()
+        if self.point_dictionary is None:
+            self.build_beefy(folder)
+        elif 'Slide Sum' not in self.point_dictionary.keys():
+            self.build_beefy(folder)
 
 
-        sliding_rewards = []
-        contact_rewards = []
-        orientation_rewards = []
-        for i in data_list:
-            sliding_rewards.append(-np.sum(i[0])/0.01*tholds['DISTANCE_SCALING'])
-            contact_rewards.append(-np.sum(np.max([np.array(i[3]),np.array(i[4])],axis=0))*100*tholds['CONTACT_SCALING'])
-            orientation_rewards.append(-np.sum(np.abs(np.array(i[1])[:,2]-np.array(i[2])))*tholds['ROTATION_SCALING'])
-        
-        sliding_rewards = np.array(sliding_rewards)
-        contact_rewards = np.array(contact_rewards)
-        orientation_rewards = np.array(orientation_rewards)
-        rewards = sliding_rewards + contact_rewards + orientation_rewards
+        sliding_rewards = -self.point_dictionary['Slide Sum']/0.01 * tholds['DISTANCE_SCALING']
+        orientation_rewards = -self.point_dictionary['Rotate Sum']*tholds['ROTATION_SCALING']
+        contact_rewards = -self.point_dictionary['Finger Sum']/0.01 * tholds['CONTACT_SCALING']
 
-        # print(rewards)
+        sliding_rewards = sliding_rewards.to_numpy()
+        orientation_rewards = orientation_rewards.to_numpy()
+        contact_rewards = contact_rewards.to_numpy()
+        rewards = sliding_rewards + orientation_rewards+ contact_rewards
         return_rewards = rewards.copy()
         if self.moving_avg != 1:
             contact_rewards = moving_average(contact_rewards,self.moving_avg)
@@ -2362,6 +2353,40 @@ class PlotBackend():
         self.ax.set_title("Agent Reward over Episode")
         # self.ax.set_ylim([-12, 0])
         self.ax.legend(['Sliding Rewards','Orientation Rewards','Contact Rewards','Net Rewards'])
+        self.ax.grid(True)
+        self.ax.set_aspect('auto',adjustable='box')
+        self.curr_graph = 'Group_Reward'
+        return return_rewards
+
+    def draw_full_rewards(self,folder,tholds,lname):        
+        # get list of pkl files in folder
+        if self.point_dictionary is None:
+            self.build_beefy(folder)
+        elif 'Slide Sum' not in self.point_dictionary.keys():
+            self.build_beefy(folder)
+
+        sliding_rewards = -self.point_dictionary['Slide Sum']/0.01 * tholds['DISTANCE_SCALING']
+        orientation_rewards = -self.point_dictionary['Rotate Sum']*tholds['ROTATION_SCALING']
+        contact_rewards = -self.point_dictionary['Finger Sum']/0.01 * tholds['CONTACT_SCALING']
+
+        sliding_rewards = sliding_rewards.to_numpy()
+        orientation_rewards = orientation_rewards.to_numpy()
+        contact_rewards = contact_rewards.to_numpy()
+        rewards = sliding_rewards + orientation_rewards+ contact_rewards
+        return_rewards = rewards.copy()
+        if self.moving_avg != 1:
+            rewards = moving_average(rewards,self.moving_avg)
+        if self.clear_plots | (self.curr_graph !='Group_Reward'):
+            self.clear_axes()
+             
+        # self.legend.append('Average Distance Reward')
+        self.ax.plot(range(len(rewards)),rewards)
+        self.ax.set_xlabel('Episode Number')
+        self.ax.set_ylabel('Total Reward Over the Entire Episode')
+        self.ax.set_title("Agent Reward over Episode")
+        # self.ax.set_ylim([-12, 0])
+        self.legend.append(lname)
+        self.ax.legend(self.legend)
         self.ax.grid(True)
         self.ax.set_aspect('auto',adjustable='box')
         self.curr_graph = 'Group_Reward'
@@ -2510,15 +2535,7 @@ class PlotBackend():
 
     def build_scatter_magic(self,folder_path):
         self.point_dictionary = {}
-        '''
-        This is only here because making it general was a pain in the ass. 
-        the x values are unique for the pattern i chose so we can use those to 
-        determine which point we are at
-        '''
 
-        # num_per_group = 128
-        # num_per_group = 1200
-        # print(folder_path, type(folder_path))
         if type(folder_path) is str:
             episode_files = [os.path.join(folder_path, f) for f in os.listdir(folder_path) if f.lower().endswith('.pkl')]
             filenames_only = [f for f in os.listdir(folder_path) if f.lower().endswith('.pkl')]
@@ -2555,8 +2572,10 @@ class PlotBackend():
         column_key = ['Start X','Start Y','End X','End Y','Goal X','Goal Y','Start Distance','End Distance', 'Max Distance',
                       'End Orientation','Goal Orientation','Path']
         self.point_dictionary = pd.DataFrame(data_list, columns = column_key)
-        self.point_dictionary['Rounded Start X'] = self.point_dictionary['Start X'].apply(lambda x:np.round(x,4))
-        self.point_dictionary['Rounded Start Y'] = self.point_dictionary['Start Y'].apply(lambda x:np.round(x,4))
+        self.point_dictionary['Rounded Start X'] = self.point_dictionary['Start X'].apply(lambda x:np.round(x,3))
+        self.point_dictionary['Rounded Start Y'] = self.point_dictionary['Start Y'].apply(lambda x:np.round(x,3))
+        self.point_dictionary['Rounded Goal X'] = self.point_dictionary['Goal X'].apply(lambda x:np.round(x,3))
+        self.point_dictionary['Rounded Goal Y'] = self.point_dictionary['Goal Y'].apply(lambda x:np.round(x,3))
         self.point_dictionary['Orientation Error'] = self.point_dictionary['Goal Orientation'] - self.point_dictionary['End Orientation']
         # print(sys.getsizeof(self.point_dictionary))
 
@@ -2578,12 +2597,30 @@ class PlotBackend():
             self.build_scatter_magic(folder_path)
 
         s_f = []
+        success_matrix = {'full success':[],'distance success':[], 'angle success':[], 'full failure':[]}
         for dist, orr in zip(self.point_dictionary['End Distance'],self.point_dictionary['Orientation Error']):
             if (dist < success_range/1000) and (abs(orr) < rot_success_range/180*np.pi):
                 s_f.append(100)
+                success_matrix['full success'].append([dist*100, abs(orr)*180/np.pi])
             else:
+                if dist < success_range/1000:
+                    success_matrix['distance success'].append([dist*100,abs(orr)*180/np.pi])
+                elif abs(orr) < rot_success_range/180*np.pi:
+                    success_matrix['angle success'].append([dist*100,abs(orr)*180/np.pi])
+                else:
+                    success_matrix['full failure'].append([dist*100,abs(orr)*180/np.pi])
                 s_f.append(0)
         print('total success rate', np.average(s_f))
+        print(f"full success: {len(success_matrix['full success'])}, distance success: {len(success_matrix['distance success'])}, angle success:{len(success_matrix['angle success'])}, full failure: {len(success_matrix['full failure'])}")
+        
+        full_success = np.array(success_matrix['full success'])
+        distance_success = np.array(success_matrix['distance success'])
+        angle_success = np.array(success_matrix['angle success'])
+        full_failure = np.array(success_matrix['full failure'])
+        print(f'success stuff,  {np.average(full_success,axis=0)}')
+        print(f'angle stuff,    {np.average(angle_success,axis=0)}')
+        print(f'distance stuff, {np.average(distance_success,axis=0)}')
+        print(f'failure stuff,  {np.average(full_failure,axis=0)}')
         if self.moving_avg != 1:
             s_f = moving_average(s_f,self.moving_avg)
         if self.clear_plots | (self.curr_graph != 's_f'):
@@ -2793,7 +2830,7 @@ class PlotBackend():
         # self.colorbar.set_clim()
         self.ax.set_aspect('equal',adjustable='box')
         self.curr_graph = 'scatter'
-        print(f'average end orientation {mean} +/- {std}')
+        print(f'average end orientation error {mean} +/- {std}')
         self.click_spell = None
         return [mean, std]
 
@@ -2975,6 +3012,152 @@ class PlotBackend():
         self.click_spell = None
         return [mean, std]
     
+    def draw_fuckery(self,folder_path, tholds):
+        if self.point_dictionary is None:
+            self.build_scatter_magic(folder_path)
+        t1 = tholds[0] /1000
+        t2 = tholds[1] *np.pi/180
+        t3 = tholds[2]
+        self.clear_axes()
+
+        def find_consecutive_threshold_exceedances(df, threshold1, threshold2, consecutive_points=4):
+            consecutive_count = 0
+            points_of_interest = []
+            min_positive_x = float(50/180*np.pi)
+            max_negative_x = float(-50/180*np.pi)
+            for index, row in df.iterrows():
+                if (row['Orientation Error'] > threshold1) or (row['End Distance'] > threshold2):
+                    consecutive_count += 1
+                    if consecutive_count == consecutive_points:
+                        print(row['Goal Orientation'], min_positive_x)
+                        if (row['Goal Orientation'] >= 0) and (row['Goal Orientation'] < min_positive_x):
+                            min_positive_x = row['Goal Orientation']-50/180*np.pi/128*consecutive_points
+                        elif (row['Goal Orientation'] < 0 )and (row['Goal Orientation'] > max_negative_x):
+                            max_negative_x = row['Goal Orientation']
+                else:
+                    consecutive_count = 0
+
+            return (min_positive_x-max_negative_x)*180/np.pi
+        
+        sorted = self.point_dictionary.groupby(['Rounded Start X','Rounded Start Y'])
+        start_x = sorted['Start X'].apply(np.average)*100
+        start_y = sorted['Start Y'].apply(np.average)*100
+
+        ranges = sorted.apply(lambda x:find_consecutive_threshold_exceedances(x,t1,t2,t3))
+        try:
+            a = self.ax.scatter(start_x, start_y, c = ranges, cmap='plasma')
+        except:
+            a = self.ax.scatter(start_x, start_y, c = ranges)
+
+        self.ax.set_ylabel('Y position (cm)')
+        self.ax.set_xlabel('X position (cm)')
+        self.ax.set_xlim([-8,8])
+        self.ax.set_ylim([-8,8])
+        self.ax.set_title('Range of Achievable Orientations')
+        self.colorbar = self.fig.colorbar(a, ax=self.ax)
+
+    def draw_z(self, folder_or_list, tholds, marker_size=50, sep_dist=8):
+        if self.point_dictionary is None:
+            self.build_scatter_magic(folder_or_list)
+        t1 = tholds[0] /1000
+        t2 = tholds[1] *np.pi/180
+        self.clear_axes()
+
+        def binning(df):
+            left = []
+            right = []
+            center = []
+            bin_things = [-17/180*np.pi, 17/180*np.pi]
+            for _,row in df.iterrows():
+                s_f = (abs(row['Orientation Error']) < t2) and (row['End Distance'] < t1)
+                if row['Goal Orientation'] < bin_things[0]:
+                    left.append(s_f)
+                elif row['Goal Orientation'] > bin_things[1]:
+                    right.append(s_f)
+                else:
+                    center.append(s_f)
+            # print('l,c,r', left, center, right)
+            return [np.average(left), np.average(center), np.average(right)]
+        sorted = self.point_dictionary.groupby(['Rounded Goal X','Rounded Goal Y'])
+        success_rates = sorted.apply(lambda x: binning(x))
+        start_x = sorted['Start X'].apply(np.average)*100
+        start_y = sorted['Start Y'].apply(np.average)*100
+        start_x = np.array(start_x)
+        start_y = np.array(start_y)
+        # print(success_rates)
+        success_rates = success_rates.to_numpy()
+        success_rates = np.array([s for s in success_rates])*100
+        print(np.shape(success_rates))
+
+        
+        a1 = self.ax.scatter(start_x, start_y,marker_size+sep_dist*success_rates[:,0],  marker=cm.custom_hemi(180),color = 'b',edgecolors = 'w')
+        a2 = self.ax.scatter(start_x, start_y,marker_size+sep_dist*success_rates[:,2],  marker=cm.custom_hemi(0),color = 'b',edgecolors = 'w')
+        a = self.ax.scatter(start_x, start_y,marker_size+sep_dist*success_rates[:,1], marker=cm.custom_hemi(-90),color = 'b',edgecolors = 'w')
+        self.ax.scatter(start_x, start_y, s=(marker_size+sep_dist*100)/np.sqrt(2)*0.9, facecolors='none', edgecolors='black', alpha=0.7)
+        self.ax.set_ylabel('Y position (cm)')
+        self.ax.set_xlabel('X position (cm)')
+        self.ax.set_xlim([-7,7])
+        self.ax.set_ylim([-7,7])
+        self.ax.set_title('Success Rates Based On Bin')
+        # self.colorbar = self.fig.colorbar(a, ax=self.ax)
+    def draw_z_diff(self, a_folder_or_list, b_folder_or_list, tholds, marker_size=50, sep_dist=8):
+        
+        t1 = tholds[0] /1000
+        t2 = tholds[1] *np.pi/180
+        self.clear_axes()
+
+        def binning(df):
+            left = []
+            right = []
+            center = []
+            bin_things = [-17/180*np.pi, 17/180*np.pi]
+            for _,row in df.iterrows():
+                s_f = (abs(row['Orientation Error']) < t2) and (row['End Distance'] < t1)
+                if row['Goal Orientation'] < bin_things[0]:
+                    left.append(s_f)
+                elif row['Goal Orientation'] > bin_things[1]:
+                    right.append(s_f)
+                else:
+                    center.append(s_f)
+            # print('l,c,r', left, center, right)
+            return [np.average(left), np.average(center), np.average(right)]
+        self.build_scatter_magic(a_folder_or_list)
+        sorted = self.point_dictionary.groupby(['Rounded Goal X','Rounded Goal Y'])
+        success_rates = sorted.apply(lambda x: binning(x))
+        start_x = sorted['Rounded Goal X'].apply(np.average)*100
+        start_y = sorted['Rounded Goal Y'].apply(np.average)*100
+        start_x = np.array(start_x)
+        start_y = np.array(start_y)
+        # print(success_rates)
+        success_rates = success_rates.to_numpy()
+        success_rates = np.array([s for s in success_rates])*100
+        print(np.shape(success_rates))
+        self.build_scatter_magic(b_folder_or_list)
+        bsorted = self.point_dictionary.groupby(['Rounded Goal X','Rounded Goal Y'])
+        bsuccess_rates = bsorted.apply(lambda x: binning(x))
+        bsuccess_rates = bsuccess_rates.to_numpy()
+        bsuccess_rates = np.array([s for s in bsuccess_rates])*100
+        # difference = success_rates- bsuccess_rates
+        a = self.ax.scatter(start_x, start_y,marker_size+sep_dist*success_rates[:,1], marker=cm.custom_hemi(-90),color = 'C0',edgecolors='C0',zorder=0)
+
+        a = self.ax.scatter(start_x, start_y,marker_size+sep_dist*bsuccess_rates[:,1], marker=cm.custom_hemi(-90),color = 'none',edgecolors='C1',zorder=20, hatch='\\ \\ \\ \\ \\ \\ \\ \\ \\ \\ \\',linewidths=0.7,alpha=1)
+
+        a1 = self.ax.scatter(start_x, start_y,marker_size+sep_dist*success_rates[:,0],  marker=cm.custom_hemi(180),color = 'C0',edgecolors='C0',zorder=1)
+        a2 = self.ax.scatter(start_x, start_y,marker_size+sep_dist*success_rates[:,2],  marker=cm.custom_hemi(0),color = 'C0',edgecolors='C0',zorder=2)
+        a1 = self.ax.scatter(start_x, start_y,marker_size+sep_dist*bsuccess_rates[:,0],  marker=cm.custom_hemi(180),color = 'none',edgecolors='C1',zorder=40, hatch='\\ \\ \\ \\ \\ \\ \\ \\ \\ \\ \\',linewidths=0.7, alpha=1)
+        a2 = self.ax.scatter(start_x, start_y,marker_size+sep_dist*bsuccess_rates[:,2],  marker=cm.custom_hemi(0),color = 'none',edgecolors='C1',zorder=30, hatch='\\ \\ \\ \\ \\ \\ \\ \\ \\ \\ \\',linewidths=0.7,alpha=1)
+        self.ax.scatter(start_x,start_y,marker_size+sep_dist*110,marker=cm.custom_hemi(90),color='w', edgecolors='w',zorder=4000)
+        # self.ax.scatter(start_x,start_y,marker_size+sep_dist*60,marker='x',facecolor='w',linewidths=0.8)
+        self.ax.scatter(start_x, start_y, s=(marker_size+sep_dist*100)/np.sqrt(2)*0.9, facecolors='none', edgecolors='black', alpha=0.7,zorder=400)
+        self.ax.set_ylabel('Y position (cm)')
+        self.ax.set_xlabel('X position (cm)')
+        self.ax.set_xlim([-7,7])
+        self.ax.set_ylim([-5,5])
+        self.ax.set_aspect('equal',adjustable='box')
+        # self.ax.legend(['Trained Hand','Transferred Hand'])
+        self.ax.set_title('Success Rate By Goal Orientation')
+        # self.colorbar = self.fig.colorbar(a, ax=self.ax)  hatch='\\ \\ \\ \\ \\ \\ \\',
+
     def draw_scatter_scaled_dist(self, folder_path, cmap='plasma'):
         if self.point_dictionary is None:
             self.build_scatter_magic(folder_path)
@@ -3062,8 +3245,58 @@ class PlotBackend():
         self.ax.set_aspect('equal',adjustable='box')
         self.ax.legend(['Achieved Angles within Threshold','Achieved Angles outside Threshold','Ideal Behavior'])
 
+    
+    def draw_orientation_success_region(self,clicks, slide_thold, rotate_thold):
+        if self.point_dictionary is None:
+            print('cant do it, need to run wizard first')
+            return False
+        if clicks[0] is None:
+            print('need to select a point first')
+            return
+        self.clear_axes()
+
+        if self.click_spell is None:
+            # Rounded Start X      Rounded Start Y
+            point_dist = np.sqrt((clicks[0]/100 - self.point_dictionary['Rounded Start X'])**2 + (clicks[1]/100 - self.point_dictionary['Rounded Start Y'])**2)
+            mask = np.isclose(point_dist,np.min(point_dist))
+            self.click_spell = mask
+
+        success_end_orientation = self.point_dictionary[(self.click_spell) & (self.point_dictionary['End Distance'] < slide_thold/1000)]['End Orientation']
+        success_goal_orientation = self.point_dictionary[(self.click_spell) & (self.point_dictionary['End Distance'] < slide_thold/1000)]['Goal Orientation']
+
+        fail_end_orientation = self.point_dictionary[(self.click_spell) & (self.point_dictionary['End Distance'] >= slide_thold/1000)]['End Orientation']
+        fail_goal_orientation = self.point_dictionary[(self.click_spell) & (self.point_dictionary['End Distance'] >= slide_thold/1000)]['Goal Orientation']
+
+        fail_end_orientation = np.array(fail_end_orientation)*180/np.pi
+        fail_goal_orientation = np.array(fail_goal_orientation)*180/np.pi
+        success_end_orientation = np.array(success_end_orientation)*180/np.pi
+        success_goal_orientation = np.array(success_goal_orientation)*180/np.pi
+
+        diffs = np.abs(success_end_orientation - success_goal_orientation)
+        full_success=[]
+        full_success_goal=[]
+        fack=fail_end_orientation.tolist()
+        fack2=fail_goal_orientation.tolist()
+        for d, s1,s2 in zip(diffs, success_end_orientation, success_goal_orientation):
+            if d <= rotate_thold:
+                full_success.append(s1)
+                full_success_goal.append(s2)
+            else:
+                fack.append(s1)
+                fack2.append(s2)
+        self.ax.scatter(full_success_goal,full_success)
+        self.ax.scatter(fack2,fack)
+        self.ax.plot([-360,360],[-360,360],color='green')
+        self.ax.plot([-360,360],[-360+rotate_thold,360+rotate_thold],color='green',linestyle=':')
+        self.ax.plot([-360,360],[-360-rotate_thold,360-rotate_thold],color='green',linestyle=':')
+        self.ax.set_xlabel('Goal Orientation')
+        self.ax.set_ylabel('Ending Orientation Error')
+        self.ax.set_ylim(-75,75)
+        self.ax.set_xlim(-75,75)
+        self.ax.set_aspect('equal',adjustable='box')
+        self.ax.legend(['Success','Fail','Ideal Behavior'])
+
     def draw_end_orientaion_buckets(self, folder_path):
-        print('buckle up') 
         if self.point_dictionary is None:
             self.build_scatter_magic(folder_path)
 
@@ -3200,3 +3433,192 @@ class PlotBackend():
         self.ax.set_aspect('equal',adjustable='box')
         self.ax.legend(['Achieved Angles within Threshold','Achieved Angles outside Threshold','Ideal Behavior'])
         self.colorbar = self.fig.colorbar(a, ax=self.ax, extend='max', label='Max Distance - Ending Distance')
+
+    def draw_boxen(self, clicks, rthold, tthold):
+        if self.point_dictionary is None:
+            print('make the fucking backend')
+        if clicks[0] is None:
+            print('need to select a point first')
+            return
+        if self.click_spell is None:
+            # Rounded Start X      Rounded Start Y
+            point_dist = np.sqrt((clicks[0]/100 - self.point_dictionary['Rounded Start X'])**2 + (clicks[1]/100 - self.point_dictionary['Rounded Start Y'])**2)
+            mask = np.isclose(point_dist,np.min(point_dist))
+            self.click_spell = mask
+        self.clear_axes()
+        test = self.point_dictionary[self.click_spell].copy()
+        test['s_f'] = np.where((test['Orientation Error'] < rthold/180*np.pi) & (test['End Distance'] < tthold/1000), True, False)
+        test['split'] = np.where(test['Goal Orientation'] <=0,True,False)
+        sorted = test.groupby('split')
+        for group in sorted:
+            if group[0]:
+                b = group[1].sort_values(['Goal Orientation'], ascending=False)
+        # sorted.get_group(True).sort_values(['Goal Orientation'], ascending=False)
+        a =sorted['s_f'].expanding().mean().reset_index(0)
+        c = b['s_f'].expanding().mean()
+        print(c)
+        x1 = np.array(range(len(c))) * 50/len(c)
+        x2 = np.array(range(len(a[a['split']==False]))) * 50/len(a[a['split']])
+        self.ax.plot(x1,c)
+        self.ax.plot(x2,a[a['split']==False]['s_f'])
+        self.ax.set_aspect('auto',adjustable='box')
+
+    def draw_boxen_2(self, rthold, tthold, count=0):
+        if self.point_dictionary is None:
+            print('make the fucking dictionary')
+
+
+        print('its about to get gross')
+        # center points
+        for i in range(5):
+            if i ==0:
+                mask = np.where((np.abs(self.point_dictionary['Goal X']) < 2.6/100) & (np.abs(self.point_dictionary['Goal Y']) < 1.9/100),True,False)
+                print('Center:',sum(mask))
+                tpart = 'Center'
+            elif i ==1:
+                mask = np.where((np.abs(self.point_dictionary['Goal X']) < 2.75/100) & (self.point_dictionary['Goal Y'] > 1.9/100),True,False)
+                print('Top:',sum(mask))
+                tpart = 'Top'
+            elif i == 2:
+                mask = np.where((np.abs(self.point_dictionary['Goal X']) < 3/100) & (self.point_dictionary['Goal Y'] < -2.2/100),True,False)
+                print('Bottom:',sum(mask))
+                tpart = 'Bottom'
+            elif i == 3:
+                mask = np.where((self.point_dictionary['Goal X'] < -2.4/100) & (np.abs(self.point_dictionary['Goal Y']) < 3.95/100),True,False)
+                print('Left:',sum(mask))
+                tpart = 'Left'
+            elif i == 4:
+                mask = np.where((self.point_dictionary['Goal X'] > 2.4/100) & (np.abs(self.point_dictionary['Goal Y']) < 3.95/100),True,False)
+                print('Right:',sum(mask))
+                tpart = 'Right'
+                # self.clear_axes()
+
+            test = self.point_dictionary[mask].copy()
+            test['s_f'] = np.where((test['Orientation Error'] < rthold/180*np.pi) & (test['End Distance'] < tthold/1000), True, False)
+            test['split1'] = np.where(test['Goal Orientation'] <=-0/180*np.pi,True,False)
+            test['split2'] = np.where(test['Goal Orientation'] >=0/180*np.pi,True,False)
+            sorted = test.groupby('split1')
+            for group in sorted:
+                if group[0]:
+                    b = group[1].sort_values(['Goal Orientation'], ascending=False)
+            sorted = test.groupby('split2')
+            for group in sorted:
+                if group[0]:
+                    d = group[1].sort_values(['Goal Orientation'], ascending=True)
+                            # sorted.get_group(True).sort_values(['Goal Orientation'], ascending=False)
+            # d['s_f'][0:6]=1
+            # print(d['s_f'][0:6])
+            # b['s_f'][0:6]=1
+            # a =d['s_f'].expanding().mean()
+            # c = b['s_f'].expanding().mean()
+            def binning(df):
+                s_fs = [[] for _ in range(20)]
+                # angs = [[] for _ in range(20)]
+                bin_edges = np.linspace(-50.001,50.001,21)*np.pi/180
+                for _,row in df.iterrows():
+                    s_f = (abs(row['Orientation Error']) < rthold/180*np.pi) and (row['End Distance'] < tthold/1000)
+                    ind = np.where(row['Goal Orientation'] >= bin_edges)[0][-1]
+                    s_fs[ind].append(s_f)
+                    # angs[ind].append(row['Goal Orientation']*180/np.pi)
+                # print([len(t) for t in s_fs])
+                # print(angs[0])
+                # print(angs[1])
+                return [np.average(t) for t in s_fs]
+
+            # a = d['s_f'].rolling(int(len(d['s_f'])/10)).mean()
+            # c = b['s_f'].rolling(int(len(d['s_f'])/10)).mean()
+            # print(type(test))
+            a = binning(test)
+            # print(a)
+            # c = b.apply(lambda x: binning(x))
+            # print(c)
+            # try:
+            #     negative_max = np.where(c > 0.75)[0][-1]
+            # except:
+            #     negative_max = 0
+            try:
+                temp = np.where(np.array(a)>0.7)[0]
+                # print(temp)
+                positive_max = 5*temp[-1] -45
+                negative_max = 5*temp[0] - 50
+            except:
+                positive_max = 5
+                negative_max = -5
+            # negative_max = negative_max *50/len(c)
+            # positive_max = positive_max *50/len(a)
+            print('angle range above 70 in deg', negative_max, positive_max, ['center','top','bottom','left','right'][count])
+            bins = np.linspace(-50,50,21)
+            # x1 = np.array(range(len(c))) * 50/len(c) - 2.5
+            x2 = np.array(range(len(a))) * 50/len(a) -2.5
+            self.ax.stairs(a,bins)
+
+
+        # self.ax.stairs(c,bins)
+        # self.ax.plot(x1,c)
+        # self.ax.plot(x2,a)
+        # self.ax.plot([-500,500],[0.75,0.75])
+        self.ax.set_title(f'Region Success Rate Based on Goal Orientation')
+        # self.ax.set_xlim(-1,51)
+        self.ax.set_ylim(-0.05,1.05)
+        self.ax.set_xlabel('Goal Orientation (degrees)')
+        self.ax.set_ylabel('Success Rate')
+        self.ax.set_aspect('auto',adjustable='box')
+        self.ax.legend(['Center','Top', 'Bottom','Left','Right'])
+        return [negative_max, positive_max]
+
+    def build_beefy(self,folder_path):
+        self.point_dictionary = {}
+
+        if type(folder_path) is str:
+            episode_files = [os.path.join(folder_path, f) for f in os.listdir(folder_path) if f.lower().endswith('.pkl')]
+            filenames_only = [f for f in os.listdir(folder_path) if f.lower().endswith('.pkl')]
+            filenums = [re.findall('\d+',f) for f in filenames_only]
+            final_filenums = []
+            for i in filenums:
+                if len(i) > 0 :
+                    final_filenums.append(int(i[0]))
+
+            sorted_inds = np.argsort(final_filenums)
+            episode_files = np.array(episode_files)
+            episode_files = episode_files[sorted_inds].tolist()
+        elif type(folder_path) is list:
+            episode_files = []
+            filenames_only = []
+            for path in folder_path:
+                ef = [os.path.join(path, f) for f in os.listdir(path) if f.lower().endswith('.pkl')]
+                fo = [f for f in os.listdir(path) if f.lower().endswith('.pkl')]
+                filenums = [re.findall('\d+',f) for f in fo]
+                final_filenums = []
+                for i in filenums:
+                    if len(i) > 0 :
+                        final_filenums.append(int(i[0]))
+                sorted_inds = np.argsort(final_filenums)
+                ef = np.array(ef)
+                ef = ef[sorted_inds].tolist()
+                episode_files.extend(ef)
+
+        print('applying async')
+        pool = multiprocessing.Pool()
+        data_list = pool.map(beefy_pool_process,episode_files)
+        pool.close()
+        pool.join()
+        column_key = ['Start X','Start Y','End X','End Y','Goal X','Goal Y','Start Distance','End Distance', 'Max Distance',
+                      'End Orientation','Goal Orientation','Path','Slide Sum', 'Rotate Sum','Finger Sum']
+        self.point_dictionary = pd.DataFrame(data_list, columns = column_key)
+        self.point_dictionary['Rounded Start X'] = self.point_dictionary['Start X'].apply(lambda x:np.round(x,3))
+        self.point_dictionary['Rounded Start Y'] = self.point_dictionary['Start Y'].apply(lambda x:np.round(x,3))
+        self.point_dictionary['Rounded Goal X'] = self.point_dictionary['Goal X'].apply(lambda x:np.round(x,3))
+        self.point_dictionary['Rounded Goal Y'] = self.point_dictionary['Goal Y'].apply(lambda x:np.round(x,3))
+        self.point_dictionary['Orientation Error'] = self.point_dictionary['Goal Orientation'] - self.point_dictionary['End Orientation']
+        # print(sys.getsizeof(self.point_dictionary))
+
+
+    def draw_rotation_real_comparison(self,folder_list):
+        '''
+        expects a list of lists of folders. Each sublist should contain four folders in this order
+        1. Simulated A rotation test
+        2. Simulated B rotation test
+        3. Real A rotation test
+        4. Real B rotation test'''
+
+        print('shiet')

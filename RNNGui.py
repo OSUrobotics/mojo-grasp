@@ -520,6 +520,7 @@ class RNNGui():
 
             elif event == 'Exit':
                 break
+
             # ----------------- Menu choices -----------------
             if event == '-browse-expert':
                 newfolder = sg.popup_get_folder('Select Folder Containing Expert Data',initial_folder=str(p1)+'/demos/rl_demo/data', no_window=True)
