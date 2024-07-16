@@ -351,7 +351,7 @@ def multiprocess_evaluate_loaded(filepath, aorb):
     print('LOADING A MODEL')
     args['state_noise']=0.0
     # print('HARDCODING THE TEST PATH TO BE THE ROTATION TEST')
-    args['test_path'] ="/home/mothra/mojo-grasp/demos/rl_demo/resources/Big_rotation_15_test.csv"
+    # args['test_path'] ="/home/mothra/mojo-grasp/demos/rl_demo/resources/Big_rotation_15_test.csv"
 
     if not('contact_start' in args.keys()):
         args['contact_start'] = True
@@ -794,9 +794,10 @@ def replay(argpath, episode_path):
         _ = eval_env.reset(start_position)
 
     else:
-        start_position = {'goal_position':[obj_pose[0][0][0], obj_pose[0][0][1]-0.1]}#, 'fingers':temp}
+        start_position = {'goal_position':[0,0]} #, 'fingers':temp}
         _ = eval_env.reset(start_position)
     print(data['timestep_list'][0]['state']['goal_pose'])
+    #print(data['timestep_list'][0]['state']['obj_2'])
     temp = data['timestep_list'][0]['state']['goal_pose']['goal_position']
     angle = data['timestep_list'][0]['state']['goal_pose']['goal_orientation']
 
@@ -844,8 +845,9 @@ def replay(argpath, episode_path):
     curr_id=p2.loadURDF('./resources/object_models/2v2_mod/2v2_mod_cylinder_small_alt.urdf', flags=p2.URDF_ENABLE_CACHED_GRAPHICS_SHAPES,
                 globalScaling=0.2, basePosition=temp_pos, baseOrientation=[ 0.7071068, 0, 0, 0.7071068 ])
     p2.changeVisualShape(curr_id, -1,rgbaColor=[1, 0.5, 0, 1])
-    cid = p2.createConstraint(2, -1, curr_id, -1, p2.JOINT_FIXED, [0, 0, 0], [0, 0, 0], [0,0.06,0], childFrameOrientation=[ 0.7071068, 0, 0, 0.7071068 ])
+    cid = p2.createConstraint(2, -1, curr_id, -1, p2.JOINT_FIXED, [0, 0, 0], [0, 0, 0], [0,0,0], childFrameOrientation=[ 0.7071068, 0, 0, 0.7071068 ])
     p2.setCollisionFilterPair(curr_id,tting,-1,-1,0)
+    p2.setCollisionFilterPair(curr_id,2,-1,-1,0)
     
 
     if 'contact' in args['task']:
@@ -888,6 +890,9 @@ def replay(argpath, episode_path):
     print('starting position', f1_poses[0],f2_poses[0], joint_angles[0])
     # input('start')
     joints = []
+    print("INITIAL")
+    print(p2.getBasePositionAndOrientation(eval_env.env.obj.id))
+
     for i,act in enumerate(actions):
         # print('action vs mirrored:', actions[i],act)
         print('joints in pkl file',joint_angles[i])
@@ -896,6 +901,7 @@ def replay(argpath, episode_path):
         eval_env.step(np.array(act),viz=True)
         step_num +=1
         print('reward from pickle', data['timestep_list'][i]['reward'])
+        print(p2.getBasePositionAndOrientation(eval_env.env.obj.id))
         # input('next step?')
         # time.sleep(0.5)
         # print(f'finger poses in pkl file, {f1_poses[i]}, {f2_poses[i]}')
@@ -1017,6 +1023,13 @@ if __name__ == '__main__':
 
     # multiprocess_evaluate_loaded('./data/HPC_Full/FTP_S1/experiment_config.json',"A")
     # multiprocess_evaluate_loaded('./data/HPC_Full/FTP_S1/experiment_config.json',"B")
+
+
+    # multiprocess_evaluate_loaded('./data/Shape_Baselines/circle/experiment_config.json',"A")
+    # multiprocess_evaluate_loaded('./data/Shape_Baselines/hourglass/experiment_config.json',"A")
+    # multiprocess_evaluate_loaded('./data/Shape_Baselines/square/experiment_config.json',"A")
+    replay('/home/ubuntu/MojoWork/mojo-grasp/demos/rl_demo/data/Shape_Baselines/square_concave/experiment_config.json',"/home/ubuntu/MojoWork/mojo-grasp/demos/rl_demo/data/Shape_Baselines/square_concave/Eval_A/Episode_1.pkl")
+    
 
     # asterisk_test('./data/Mothra_Slide/JA_S1/experiment_config.json','B')
     # print('finsihed test')
