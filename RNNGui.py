@@ -63,7 +63,7 @@ class RNNGui():
                          [sg.Button("Browse",key='-browse-save',button_color='DarkBlue'),sg.Text("/", key='-save-path')],
                          [sg.Text('Path to Previous Policy if Transferring')],
                          [sg.Button("Browse",key='-browse-load',button_color='DarkBlue'),sg.Text("/", key='-load-path')],
-                         [sg.Text('Object'), sg.OptionMenu(values=('Cube', 'Cylinder'), k='-object', default_value='Cube')],
+                         [sg.Text('Object'), sg.OptionMenu(values=('Cube', 'Cylinder', 'circle', 'hourglass', 'ellipse', 'square_concave', 'square', 'triangle', 'cone', 'teardrop'), k='-object', default_value='Cube')],
                          [sg.Text('Hands Used For Training and Testing')],
                          [sg.Checkbox('2v2_50.50_50.50_43',key='2v2_50.50_50.50_1.1_43',default=False),sg.Checkbox('2v2_50.50_50.50_53',key='2v2_50.50_50.50_1.1_53', default=True),sg.Checkbox('2v2_50.50_50.50_63',key='2v2_50.50_50.50_1.1_63', default=False),sg.Checkbox('2v2_50.50_50.50_73',key='2v2_50.50_50.50_1.1_73', default=False)],
                          [sg.Checkbox('2v2_65.35_50.50_43',key='2v2_65.35_50.50_1.1_43', default=False),sg.Checkbox('2v2_65.35_50.50_53',key='2v2_65.35_50.50_1.1_53', default=False),sg.Checkbox('2v2_65.35_50.50_63',key='2v2_65.35_50.50_1.1_63', default=False),sg.Checkbox('2v2_65.35_50.50_73',key='2v2_65.35_50.50_1.1_73', default=False)],
@@ -356,11 +356,61 @@ class RNNGui():
                 self.args['object_path'] = [str(resource_path.joinpath('object_models/2v2_mod/2v2_mod_cuboid_small.urdf'))]
         elif values['-object'] == 'Cylinder':
             if self.args['domain_randomization_object_size']:
-                self.args['object_path'] = [str(resource_path.joinpath('resources/object_models/2v2_mod/2v2_mod_cylinder_small_alt.urdf')),
-                                            str(resource_path.joinpath('resources/object_models/2v2_mod/2v2_mod_cylinder_small_alt_sub10.urdf')),
-                                            str(resource_path.joinpath('resources/object_models/2v2_mod/2v2_mod_cylinder_small_alt_add10.urdf'))]
+                self.args['object_path'] = [str(resource_path.joinpath('object_models/2v2_mod/2v2_mod_cylinder_small_alt.urdf')),
+                                            str(resource_path.joinpath('object_models/2v2_mod/2v2_mod_cylinder_small_alt_sub10.urdf')),
+                                            str(resource_path.joinpath('object_models/2v2_mod/2v2_mod_cylinder_small_alt_add10.urdf'))]
             else:
-                self.args['object_path'] = [str(resource_path.joinpath('resources/object_models/2v2_mod/2v2_mod_cylinder_small_alt.urdf'))]
+                self.args['object_path'] = [str(resource_path.joinpath('object_models/2v2_mod/2v2_mod_cylinder_small_alt.urdf'))]
+        elif values['-object'] == 'circle':
+            if self.args['domain_randomization_object_size']:
+                raise NotImplementedError('Sphere size randomization not implemented')
+            else:
+                self.args['object_path'] = [str(resource_path.joinpath('object_models/Jeremiah_Shapes/20_r_circle.urdf'))]
+
+        elif values['-object'] == 'hourglass':
+            if self.args['domain_randomization_object_size']:
+                raise NotImplementedError('Sphere size randomization not implemented')
+            else:
+                self.args['object_path'] = [str(resource_path.joinpath('object_models/Jeremiah_Shapes/20_r_hourglass.urdf'))]
+
+        elif values['-object'] == 'ellipse':
+            if self.args['domain_randomization_object_size']:
+                raise NotImplementedError('Sphere size randomization not implemented')
+            else:
+                self.args['object_path'] = [str(resource_path.joinpath('object_models/Jeremiah_Shapes/20x12p5_ellipse.urdf'))]
+
+        elif values['-object'] == 'square_concave':
+            if self.args['domain_randomization_object_size']:
+                raise NotImplementedError('Sphere size randomization not implemented')
+            else:
+                self.args['object_path'] = [str(resource_path.joinpath('object_models/Jeremiah_Shapes/40_square_40_concave.urdf'))]
+
+        elif values['-object'] == 'square':
+            if self.args['domain_randomization_object_size']:
+                raise NotImplementedError('Sphere size randomization not implemented')
+            else:
+                self.args['object_path'] = [str(resource_path.joinpath('object_models/Jeremiah_Shapes/40x40_square.urdf'))]
+
+        elif values['-object'] == 'triangle':
+            if self.args['domain_randomization_object_size']:
+                raise NotImplementedError('Sphere size randomization not implemented')
+            else:
+                self.args['object_path'] = [str(resource_path.joinpath('object_models/Jeremiah_Shapes/40x40_triangle.urdf'))]
+
+        elif values['-object'] == 'cone':
+            if self.args['domain_randomization_object_size']:
+                raise NotImplementedError('Sphere size randomization not implemented')
+            else:
+                self.args['object_path'] = [str(resource_path.joinpath('object_models/Jeremiah_Shapes/45_10_slope_cone.urdf'))]
+
+        elif values['-object'] == 'teardrop':
+            if self.args['domain_randomization_object_size']:
+                raise NotImplementedError('Sphere size randomization not implemented')
+            else:
+                self.args['object_path'] = [str(resource_path.joinpath('object_models/Jeremiah_Shapes/50x30_teardrop.urdf'))]
+
+        
+
         if values['-action'] == 'Joint Velocity':
             self.args['max_action'] = 1.57
         elif values['-action'] == 'Finger Tip Position':
