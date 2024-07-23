@@ -62,7 +62,7 @@ class MultiprocessState(StateDefault):
             
     def next_run(self):
         for thing in self.objects:
-            if (type(thing) == GoalHolder) | (type(thing) == RandomGoalHolder) | (type(thing) == SingleGoalHolder):
+            if (type(thing) == GoalHolder) | (type(thing) == RandomGoalHolder) | (type(thing) == SingleGoalHolder)|(type(thing) == HRLGoalHolder):
                 fingerys = thing.next_run()
                 temp = thing.get_data()
         return temp, fingerys
@@ -159,8 +159,8 @@ class MultiprocessState(StateDefault):
     
     def set_goal(self,goal_list):
         for thing in self.objects:
-            if (type(thing) == GoalHolder) | (type(thing) == RandomGoalHolder):
-                thing.set_all_pose(goal_list[0:2], goal_list[2])
+            if (type(thing) == GoalHolder) | (type(thing) == RandomGoalHolder)|(type(thing) == HRLGoalHolder):
+                thing.set_pose(goal_list[0:2], goal_list[2])
     
     def get_goal(self):
         # print(self.current_state)

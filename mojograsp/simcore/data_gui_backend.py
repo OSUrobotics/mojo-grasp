@@ -34,10 +34,8 @@ def beefy_pool_process(episode_file):
     with open(episode_file, 'rb') as ef:
         tempdata = pkl.load(ef)
     data = tempdata['timestep_list']
-
     point_list = []
     try:
-        
         point_list.extend([data[0]['state']['obj_2']['pose'][0][0],data[0]['state']['obj_2']['pose'][0][1]-0.1])
         point_list.extend([data[-1]['state']['obj_2']['pose'][0][0],data[-1]['state']['obj_2']['pose'][0][1]-0.1])
         point_list.extend(data[0]['state']['goal_pose']['goal_position'][0:2])
@@ -645,71 +643,41 @@ class PlotBackend():
          
         self.curr_graph = 'explored'
     
-    def draw_net_reward(self, folder_or_data_dict,plot_args=None):
-        if type(folder_or_data_dict) is str:
-            print('this will be slow, and we both know it')
-            
-            # get list of pkl files in folder
-            episode_files = [os.path.join(folder_or_data_dict, f) for f in os.listdir(folder_or_data_dict) if f.lower().endswith('.pkl')]
-            filenames_only = [f for f in os.listdir(folder_or_data_dict) if f.lower().endswith('.pkl')]
-            
-            filenums = [re.findall('\d+',f) for f in filenames_only]
-            final_filenums = []
-            for i in filenums:
-                if len(i) > 0 :
-                    final_filenums.append(int(i[0]))
-            
-            sorted_inds = np.argsort(final_filenums)
-            final_filenums = np.array(final_filenums)
-            episode_files = np.array(episode_files)
-            filenames_only = np.array(filenames_only)
+    def draw_net_reward(self,folder,tholds,legend=''):        
+        # get list of pkl files in folder
+        if self.point_dictionary is None:
+            self.build_beefy(folder)
+        elif 'Slide Sum' not in self.point_dictionary.keys():
+            self.build_beefy(folder)
 
-            episode_files = episode_files[sorted_inds].tolist()
-            rewards = []
-            count = 0
-            for episode_file in episode_files:
-                with open(episode_file, 'rb') as ef:
-                    tempdata = pkl.load(ef)
-                data = tempdata['timestep_list']
-                individual_rewards = []
-                for tstep in data:
-                    individual_rewards.append(self.build_reward(tstep['reward'], self.tholds)[0])
-                rewards.append(sum(individual_rewards))
-                if count% 100 ==0:
-                    print('count = ', count)
-                count +=1
-        elif type(folder_or_data_dict) is dict: 
-            try:
-                rewards = [-i['sum_dist']-i['sum_finger'] for i in folder_or_data_dict['episode_list']]
-            except:
-                rewards = []
-                for episode in folder_or_data_dict['episode_list']:
-                    data = episode['timestep_list']
-                    individual_rewards = []
-                    for timestep in data:
-                        individual_rewards.append(self.build_reward(timestep['reward'], self.tholds)[0])
-                    rewards.append(sum(individual_rewards))
-        elif type(folder_or_data_dict) is list:
-            rewards = folder_or_data_dict
-        else:
-            raise TypeError('argument should be string pointing to folder containing episode pickles, dictionary containing all episode data, or list of rewards')
+        sliding_rewards = -self.point_dictionary['Slide Sum']/0.01 * tholds['DISTANCE_SCALING']
+        orientation_rewards = -self.point_dictionary['Rotate Sum']*tholds['ROTATION_SCALING']
+        contact_rewards = -self.point_dictionary['Finger Sum']/0.01 * tholds['CONTACT_SCALING']
 
+        sliding_rewards = sliding_rewards.to_numpy()
+        orientation_rewards = orientation_rewards.to_numpy()
+        contact_rewards = contact_rewards.to_numpy()
+        rewards = sliding_rewards + orientation_rewards+ contact_rewards
         return_rewards = rewards.copy()
         if self.moving_avg != 1:
+            contact_rewards = moving_average(contact_rewards,self.moving_avg)
+            orientation_rewards = moving_average(orientation_rewards,self.moving_avg)
+            sliding_rewards = moving_average(sliding_rewards,self.moving_avg)
             rewards = moving_average(rewards,self.moving_avg)
         if self.clear_plots | (self.curr_graph !='Group_Reward'):
             self.clear_axes()
              
-        self.legend.append('Average Agent Reward')
-        if plot_args is None:
-            self.ax.plot(range(len(rewards)), rewards)
-        else:
-            self.ax.plot(range(len(rewards)), rewards, color=plot_args[0], linestyle=plot_args[1])
+        # self.legend.append('Average Distance Reward')
+        # self.ax.plot(range(len(sliding_rewards)), sliding_rewards)
+        # self.ax.plot(range(len(orientation_rewards)), orientation_rewards)
+        # self.ax.plot(range(len(contact_rewards)), contact_rewards)
+        self.ax.plot(range(len(rewards)),rewards)
         self.ax.set_xlabel('Episode Number')
-        self.ax.set_ylabel('Average Total Reward Over the Entire Episode')
+        self.ax.set_ylabel('Total Reward Over the Entire Episode')
         self.ax.set_title("Agent Reward over Episode")
         # self.ax.set_ylim([-12, 0])
-        self.ax.legend(self.legend)
+        self.legend.append(legend)
+        self.ax.legend(self.legend)#['Sliding Rewards','Orientation Rewards','Contact Rewards','Net Rewards'])
         self.ax.grid(True)
         self.ax.set_aspect('auto',adjustable='box')
         self.curr_graph = 'Group_Reward'
@@ -2010,6 +1978,7 @@ class PlotBackend():
         name_key_og2 = ["E","NE","N","NW","W","SW","S","SE"]
         dist_traveled_list = []
         for episode_file in episode_files:
+            print(episode_file)
             with open(episode_file, 'rb') as ef:
                 tempdata = pkl.load(ef)
             # print(tempdata)
@@ -2031,6 +2000,7 @@ class PlotBackend():
             #     print('count = ', count)
             # count +=1
         end_poses = np.array(end_poses)
+        print(end_poses)
         end_poses = end_poses - np.array([0,0.1])
         dist_along_thing = {'E':[],'NE':[],'N':[],'NW':[],'W':[],'SW':[],'S':[],'SE':[]}
         efficiency = {'E':[],'NE':[],'N':[],'NW':[],'W':[],'SW':[],'S':[],'SE':[]}
@@ -2343,7 +2313,6 @@ class PlotBackend():
         if self.clear_plots | (self.curr_graph !='Group_Reward'):
             self.clear_axes()
              
-        self.legend.append('Average Distance Reward')
         self.ax.plot(range(len(sliding_rewards)), sliding_rewards)
         self.ax.plot(range(len(orientation_rewards)), orientation_rewards)
         self.ax.plot(range(len(contact_rewards)), contact_rewards)
@@ -2591,6 +2560,8 @@ class PlotBackend():
 
     def load_point_dictionary(self,picklename):
         self.point_dictionary = pd.read_pickle(picklename)
+        print('Point Dictionary Loaded')
+        print(self.point_dictionary.keys())
 
     def draw_success_rate(self, folder_path, success_range, rot_success_range):
         if self.point_dictionary is None:
@@ -2599,6 +2570,7 @@ class PlotBackend():
         s_f = []
         success_matrix = {'full success':[],'distance success':[], 'angle success':[], 'full failure':[]}
         for dist, orr in zip(self.point_dictionary['End Distance'],self.point_dictionary['Orientation Error']):
+            # print(dist,orr)
             if (dist < success_range/1000) and (abs(orr) < rot_success_range/180*np.pi):
                 s_f.append(100)
                 success_matrix['full success'].append([dist*100, abs(orr)*180/np.pi])
@@ -2610,6 +2582,7 @@ class PlotBackend():
                 else:
                     success_matrix['full failure'].append([dist*100,abs(orr)*180/np.pi])
                 s_f.append(0)
+        # print(s_f)
         print('total success rate', np.average(s_f))
         print(f"full success: {len(success_matrix['full success'])}, distance success: {len(success_matrix['distance success'])}, angle success:{len(success_matrix['angle success'])}, full failure: {len(success_matrix['full failure'])}")
         

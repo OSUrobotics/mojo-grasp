@@ -14,7 +14,7 @@ from demos.rl_demo import multiprocess_manipulation_phase
 from demos.rl_demo import multiprocess_reward
 # import rl_env
 from demos.rl_demo.multiprocess_state import MultiprocessState
-from mojograsp.simcore.goal_holder import  GoalHolder, RandomGoalHolder, SimpleGoalHolder
+from mojograsp.simcore.goal_holder import  GoalHolder, RandomGoalHolder, SimpleGoalHolder, HRLGoalHolder
 from demos.rl_demo import rl_action
 from demos.rl_demo import multiprocess_direction_reward
 from demos.rl_demo import multiprocess_hierarchical_wrapper
@@ -158,14 +158,10 @@ def make_HRL_pybullet(arg_dict, pybullet_instance, rank, hand_info, sub_policies
     x = r * np.sin(theta)
     y = r * np.cos(theta)
     obj_pos = np.array([[i,j] for i,j in zip(x,y)])
-    theta = np.zeros(1000)
-    r = (1-(np.random.uniform(0, 0.95,1000))**2) * 50/1000
-    x = r * np.sin(theta)
-    y = r * np.cos(theta)
-    obj_goal = np.array([[i,j] for i,j in zip(x,y)])
-    fingers = np.random.uniform(0.01,0.01,(1000,2))
-
-    goals = GoalHolder(obj_goal, fingers, theta)
+    theta = np.random.uniform(-15/180*np.pi, 15/180*np.pi,1000)
+    fingers = np.random.uniform(0.01,0.01,(2,1000))
+    print(obj_pos)
+    goals = HRLGoalHolder(obj_pos, fingers, theta)
 
     # setup pybullet client to either run with or without rendering
     if viz:
@@ -298,13 +294,20 @@ def evaluate(filepath=None,aorb = 'A'):
     key_file = os.path.join(key_file,'resources','hand_bank','hand_params.json')
     with open(key_file,'r') as hand_file:
         hand_params = json.load(hand_file)
-    if args['model'] == 'PPO':
+    if 'PPO' in args['model']:
         model_type = PPO
     elif 'DDPG' in args['model']:
         model_type = DDPG
     elif 'TD3' in args['model']:
         model_type = TD3
     print('LOADING A MODEL')
+    load_path = args['load_path']
+    with open(load_path+'/experiment_config.json', 'r') as argfile:
+        args2 = json.load(argfile)
+    import pybullet as p1
+    model = model_type("MlpPolicy", None, _init_setup_model=False).load(load_path + '/best_model.zip')
+    subpolicy = modelHolder(model, args2)
+
 
     if aorb =='A':
         args['hand_file_list'] = ["2v2_50.50_50.50_1.1_53/hand/2v2_50.50_50.50_1.1_53.urdf"]
@@ -323,16 +326,16 @@ def evaluate(filepath=None,aorb = 'A'):
     else:
         print('not going to evaluate, aorb is wrong')
         return
-    import pybullet as p2
-    eval_env , _, poses= make_pybullet(args,p2, [0,1], hand_params)
-    eval_env.evaluate()
-    model = model_type("MlpPolicy", eval_env, tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-2.3}).load(args['save_path']+'best_model', env=eval_env)
-    for _ in range(1200):
-        obs = eval_env.reset()
+    env, _ = make_HRL_pybullet(args, pybullet_instance=p1, rank=[0,1], hand_info=hand_params, sub_policies=subpolicy)
+    # callback = multiprocess_gym_wrapper.MultiEvaluateCallback(vec_env,n_eval_episodes=int(1200), eval_freq=train_timesteps, best_model_save_path=args['save_path'])
+    env.evaluate()
+    model =  model_type('MlpPolicy',env,  tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-2.3}).load(args['save_path']+'last_model_full', env=env)
+    for _ in range(1):
+        obs = env.reset()
         done = False
         while not done:
             action, _ = model.predict(obs,deterministic=True)
-            obs, _, done, _ = eval_env.step(action,hand_type=ht)
+            obs, _, done, _ = env.step(action,hand_type=ht)
         
 def replay(argpath, episode_path):
     # replays the exact behavior contained in a pkl file without any learning agent running
@@ -424,8 +427,6 @@ def replay(argpath, episode_path):
                         basePosition=[temp[0]-0.0025,temp[1]-0.0025,0.11],
                         useMaximalCoordinates=True)
         
-        
-        
         temp = data['timestep_list'][0]['state']['goal_pose']['goal_finger'][2:4]
         visualShapeId = p2.createVisualShape(shapeType=p2.GEOM_SPHERE,
                                             rgbaColor=[0, 0, 1, 1],
@@ -456,7 +457,7 @@ def replay(argpath, episode_path):
         # input('next step?')
 
 def main(filepath = None, train_type='pre'):
-    num_cpu = multiprocessing.cpu_count() # Number of processes to use
+    num_cpu = 4#multiprocessing.cpu_count() # Number of processes to use
     # Create the vectorized environment
 
     if filepath is None:
@@ -505,19 +506,24 @@ def main(filepath = None, train_type='pre'):
         with open(load_path+'/experiment_config.json', 'r') as argfile:
             args2 = json.load(argfile)
         direction = [0,0]
-        import pybullet as p1
+
         model = model_type("MlpPolicy", None, _init_setup_model=False).load(load_path + '/best_model.zip')
         subpolicy = modelHolder(model, args2)
-
-        env, _ = make_HRL_pybullet(args, pybullet_instance=p1, rank=[0,1], hand_info=hand_params, sub_policies=subpolicy)
-        # callback = multiprocess_gym_wrapper.MultiEvaluateCallback(vec_env,n_eval_episodes=int(1200), eval_freq=train_timesteps, best_model_save_path=args['save_path'])
-        model = model_type('MlpPolicy',env,  tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-2.3})
+        multi=True
+        if multi:
+            vec_env = SubprocVecEnv([make_HRL_env(args,[i,num_cpu],hand_info=hand_params,sub_policies=subpolicy) for i in range(num_cpu)]) 
+        else: 
+            import pybullet as p1
+            vec_env, _ = make_HRL_pybullet(args, pybullet_instance=p1, rank=[0,1], hand_info=hand_params, sub_policies=subpolicy)
+        train_timesteps = int(args['evaluate']*(args['tsteps']+1)/num_cpu)
+        callback = multiprocess_hierarchical_wrapper.MultiEvaluateCallback(vec_env,n_eval_episodes=int(1200), eval_freq=train_timesteps, best_model_save_path=args['save_path'])
+        model = model_type('MlpPolicy',vec_env,  tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-2.3})
         try:
             print('starting the training using', get_device())
             print(torch.cuda.is_available())
             print(torch.version.cuda)
             print(torch.cuda.get_device_capability(0))
-            model.learn(total_timesteps=500000*(args['tsteps']+1))
+            model.learn(total_timesteps=500000*(args['tsteps']+1),callback=callback)
             filename = os.path.dirname(filepath)
             model.save(filename+'/last_model_full')
 
@@ -547,5 +553,7 @@ def main(filepath = None, train_type='pre'):
         except KeyboardInterrupt:
             filename = os.path.dirname(filepath)
             model.save(filename+'/canceled_model_full')
+    
 if __name__ == '__main__':
     main('./data/HRL_test_1/experiment_config.json', 'feudal')
+    # evaluate('./data/HRL_test_1/experiment_config.json')

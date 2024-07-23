@@ -18,12 +18,18 @@ class MultiprocessReward(RewardDefault):
     def set_reward(self, goal_info: dict, cube: ObjectBase, hand: TwoFingerGripper, end_reward):
         #TODO add the finger contact goal distance stuff
         current_cube_pose = cube.get_curr_pose()
+        # print('at least we here', goal_info.keys())
         # Finds distance between current cube position and goal position
-        
-        goal_position = [goal_info['goal_position'][0],goal_info['goal_position'][1]+0.1]
-        # print('goal in reward.set_reward', goal_position, current_cube_pose)
-        self.current_reward['goal_orientation']= goal_info['goal_orientation']
-        self.current_reward['goal_finger'] = goal_info['goal_finger']
+        if 'upper_goal_position' in goal_info.keys():
+            goal_position = [goal_info['upper_goal_position'][0],goal_info['upper_goal_position'][1]+0.1]
+            # print('goal in reward.set_reward', goal_position, current_cube_pose)
+            self.current_reward['goal_orientation']= goal_info['upper_goal_orientation']
+            self.current_reward['goal_finger'] = goal_info['upper_goal_finger']
+        else:
+            goal_position = [goal_info['goal_position'][0],goal_info['goal_position'][1]+0.1]
+            # print('goal in reward.set_reward', goal_position, current_cube_pose)
+            self.current_reward['goal_orientation']= goal_info['goal_orientation']
+            self.current_reward['goal_finger'] = goal_info['goal_finger']
         distance = np.sqrt((goal_position[0] - current_cube_pose[0][0])**2 +
                            (goal_position[1] - current_cube_pose[0][1])**2)
         
