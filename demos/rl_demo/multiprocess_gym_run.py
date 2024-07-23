@@ -1025,10 +1025,18 @@ if __name__ == '__main__':
     # multiprocess_evaluate_loaded('./data/HPC_Full/FTP_S1/experiment_config.json',"B")
 
 
-    # multiprocess_evaluate_loaded('./data/Shape_Baselines/circle/experiment_config.json',"A")
-    # multiprocess_evaluate_loaded('./data/Shape_Baselines/hourglass/experiment_config.json',"A")
-    # multiprocess_evaluate_loaded('./data/Shape_Baselines/square/experiment_config.json',"A")
-    replay('/home/ubuntu/MojoWork/mojo-grasp/demos/rl_demo/data/Shape_Baselines/square_concave/experiment_config.json',"/home/ubuntu/MojoWork/mojo-grasp/demos/rl_demo/data/Shape_Baselines/square_concave/Eval_A/Episode_1.pkl")
+    #multiprocess_evaluate_loaded('./data/Shape_Baselines/circle/experiment_config.json',"A")
+    #multiprocess_evaluate_loaded('./data/Shape_Baselines/cone/experiment_config.json',"A")
+    #multiprocess_evaluate_loaded('./data/Shape_Baselines/circle/experiment_config.json',"B")
+    #multiprocess_evaluate_loaded('./data/Shape_Baselines/cone/experiment_config.json',"B")
+    #multiprocess_evaluate_loaded('./data/Shape_Baselines/square/experiment_config.json',"A")
+    #multiprocess_evaluate_loaded('/media/ubuntu/New Volume/data/Shape_Baselines/ellipse/experiment_config.json',"A")
+    #multiprocess_evaluate_loaded('/media/ubuntu/New Volume/data/Shape_Baselines/triangle/experiment_config.json',"B")
+    #multiprocess_evaluate_loaded('/media/ubuntu/New Volume/data/Shape_Baselines/hourglass/experiment_config.json',"A")
+    #multiprocess_evaluate_loaded('/media/ubuntu/New Volume/data/Shape_Baselines/square_concave/experiment_config.json',"A")
+    #multiprocess_evaluate_loaded('/media/ubuntu/New Volume/data/Shape_Baselines/teardrop/experiment_config.json',"A")
+
+    replay('/media/ubuntu/New Volume/data/Shape_Baselines/hourglass/experiment_config.json',"/media/ubuntu/New Volume/data/Shape_Baselines/hourglass/Eval_A/Episode_206.pkl")
     
 
     # asterisk_test('./data/Mothra_Slide/JA_S1/experiment_config.json','B')
@@ -1051,15 +1059,15 @@ if __name__ == '__main__':
     # rotation_test('./data/Mothra_Rotation/JA_S2/experiment_config.json',"A_A")
     # rotation_test('./data/Mothra_Rotation/JA_S2/experiment_config.json',"B_B")
     # rotation_test('./data/Rotation_continue/JA_S3_larger_space_new_weight_contact/experiment_config.json',"B")
-    sub_names = ['FTP_S1','FTP_S2','FTP_S3','JA_S1','JA_S2','JA_S3']
-    top_names = ['Sliding_B']
-    for uname in top_names:
-        for lname in sub_names:
-            # rotation_test('./data/'+uname+'/'+lname+"/experiment_config.json","A_A")
-            # rotation_test('./data/'+uname+'/'+lname+"/experiment_config.json","B_B")
-            asterisk_test('./data/'+uname+'/'+lname+"/experiment_config.json","A")
-            asterisk_test('./data/'+uname+'/'+lname+"/experiment_config.json","B")
-            print(uname, lname)
+    # sub_names = ['FTP_S1','FTP_S2','FTP_S3','JA_S1','JA_S2','JA_S3']
+    # top_names = ['Sliding_B']
+    # for uname in top_names:
+    #     for lname in sub_names:
+    #         # rotation_test('./data/'+uname+'/'+lname+"/experiment_config.json","A_A")
+    #         # rotation_test('./data/'+uname+'/'+lname+"/experiment_config.json","B_B")
+    #         asterisk_test('./data/'+uname+'/'+lname+"/experiment_config.json","A")
+    #         asterisk_test('./data/'+uname+'/'+lname+"/experiment_config.json","B")
+    #         print(uname, lname)
 
     # for uname in top_names:
     #     for lname in sub_names:
