@@ -71,7 +71,7 @@ class MultiprocessGymWrapper(gym.Env):
         self.hand_type = None
         self.first = True
         self.reduced_saving = True
-        self.small_enough = args['epochs'] <= 100000
+        self.small_enough = False #args['epochs'] <= 100000
         self.OBJECT_POSE_RANDOMIZATION = args['object_random_start']
         try:
             self.DOMAIN_RANDOMIZATION_MASS = args['domain_randomization_object_mass']

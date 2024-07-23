@@ -7,11 +7,15 @@ def getitem_for(d, key):
     for level in key:
         d = d[level]
     return d
+
+
 class MultiprocessRecordData(RecordDataRLPKL):
     reduced_keys={'Start Pos':(0,'state','obj_2','pose',0),'End Pos':(0,'state','obj_2','pose',0),
                       'Goal Position': (0, 'state','goal_pose','goal_position'), 'Start Distance': (0,'reward','distance_to_goal'),
                       'End Distance': (-1, 'reward','distance_to_goal'), 'Max Distance': ('max','reward','distance_to_goal'),
-                      'End Orientation': (-1,'reward','object_orientation',2), 'Goal Orientation': (0, 'state','goal_pose','goal_orientation')}
+                      'End Orientation': (-1,'reward','object_orientation',2), 'Goal Orientation': (0, 'state','goal_pose','goal_orientation'),
+                      'Slide Sum':('sum','reward','distance_to_goal'), 'Rotate Sum':('abssum',('reward','object_orientation',2),('state','goal_pose','goal_orientation')),
+                      'Finger Sum':('maxsum',('reward','f1_dist'),('reward','f2_dist'))}
 
     def __init__(self, Record_id: list, data_path: str = None, data_prefix: str = "episode", save_all=False, save_episode=True,
                  state: State = StateDefault(), action: Action = ActionDefault(), reward: Reward = RewardDefault(), controller = None):
@@ -73,6 +77,15 @@ class MultiprocessRecordData(RecordDataRLPKL):
                 save_dict[key] = getitem_for(self.timesteps[sequence[0]],sequence[1:])
             elif sequence[0] == 'max':
                 save_dict[key] = max([getitem_for(i,sequence[1:]) for i in self.timesteps])
+            elif sequence[0] == 'sum':
+                save_dict[key] = sum([getitem_for(i,sequence[1:]) for i in self.timesteps])
+                print('sum thing', key)
+            elif sequence[0] == 'abssum':
+                save_dict[key] = sum([abs(getitem_for(i,sequence[1]) - getitem_for(i,sequence[2]) )for i in self.timesteps])
+                print('abs sum thing', key)
+            elif sequence[0] == 'maxsum':
+                save_dict[key] = sum([max(getitem_for(i,sequence[1]),getitem_for(i,sequence[2])) for i in self.timesteps])
+                print('max sum thing', key)
             else:
                 raise NotImplemented('unknown keyworkd')
         self.current_episode = save_dict

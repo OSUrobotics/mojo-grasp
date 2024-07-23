@@ -83,135 +83,141 @@ df.to_csv("./rotation_real_World_Results.csv", index=False)
 # Begin real world comparison table making
 sub_names =['FTP_S1','FTP_S2','FTP_S3','JA_S1','JA_S2','JA_S3']
 
-top_names_slide = ['mslide','hpcslide','jslide']
+top_names_slide = ['Sliding_B'] #['mslide','hpcslide','jslide']
 top_names_rotate = ['Mothra_Rotation','HPC_Rotation','Jeremiah_Rotation']
 top_names_full = ['Mothra_Full','HPC_Full','Jeremiah_Full']
 
 other = ['Ast_A','Ast_B','Real_A','Real_B']
 
+# csv_dict = {'Action Space':[], 'State Space':[], 'Sim A Distance Covered':[], 'Sim A Distance Std':[],
+#  'Sim A Efficiency':[],'Sim A Efficiency Std':[],'Real A Distance Covered':[], 'Real A Distance Std':[],
+#  'Real A Efficiency':[],'Real A Efficiency Std':[], 'Sim B Distance Covered':[], 'Sim B Distance Std':[],
+#  'Sim B Efficiency':[],'Sim B Efficiency Std':[],'Real B Distance Covered':[], 'Real B Distance Std':[],
+#  'Real B Efficiency':[],'Real B Efficiency Std':[]}
+
+
 csv_dict = {'Action Space':[], 'State Space':[], 'Sim A Distance Covered':[], 'Sim A Distance Std':[],
- 'Sim A Efficiency':[],'Sim A Efficiency Std':[],'Real A Distance Covered':[], 'Real A Distance Std':[],
- 'Real A Efficiency':[],'Real A Efficiency Std':[], 'Sim B Distance Covered':[], 'Sim B Distance Std':[],
- 'Sim B Efficiency':[],'Sim B Efficiency Std':[],'Real B Distance Covered':[], 'Real B Distance Std':[],
- 'Real B Efficiency':[],'Real B Efficiency Std':[]}
+ 'Sim A Efficiency':[],'Sim A Efficiency Std':[],'Sim B Distance Covered':[], 'Sim B Distance Std':[],
+ 'Sim B Efficiency':[],'Sim B Efficiency Std':[]}
+
+backend = data_gui_backend.PlotBackend()
+
+for lname in sub_names:
+    A_path = ['/'.join(['./data',uname,lname,'Ast_A']) for uname in top_names_slide]
+    B_path = ['/'.join(['./data',uname,lname,'Ast_B']) for uname in top_names_slide]
+    Real_A_path = ['/'.join(['./data',uname,lname,'Real_A']) for uname in top_names_slide]
+    Real_B_path = ['/'.join(['./data',uname,lname,'Real_B']) for uname in top_names_slide]
+
+    keys = lname.split('_')
+    
+    csv_dict['Action Space'].append(keys[0])
+    csv_dict['State Space'].append(keys[1])
+    # csv_dict['Upper Folder'].append(uname)
+    print(A_path)
+
+    asterisk_radar= backend.draw_radar(A_path,'Sim A')
+    csv_dict['Sim A Distance Covered'].append(asterisk_radar[0])
+    csv_dict['Sim A Distance Std'].append(asterisk_radar[1])
+    csv_dict['Sim A Efficiency'].append(asterisk_radar[2])
+    csv_dict['Sim A Efficiency Std'].append(asterisk_radar[3])
+
+    asterisk_radar= backend.draw_radar(B_path,'Sim B')
+    csv_dict['Sim B Distance Covered'].append(asterisk_radar[0])
+    csv_dict['Sim B Distance Std'].append(asterisk_radar[1])
+    csv_dict['Sim B Efficiency'].append(asterisk_radar[2])
+    csv_dict['Sim B Efficiency Std'].append(asterisk_radar[3])
+
+    # asterisk_radar= backend.draw_radar(Real_A_path,'Real A')
+    # csv_dict['Real A Distance Covered'].append(asterisk_radar[0])
+    # csv_dict['Real A Distance Std'].append(asterisk_radar[1])
+    # csv_dict['Real A Efficiency'].append(asterisk_radar[2])
+    # csv_dict['Real A Efficiency Std'].append(asterisk_radar[3])
+
+    # asterisk_radar= backend.draw_radar(Real_B_path,'Real B')
+    # csv_dict['Real B Distance Covered'].append(asterisk_radar[0])
+    # csv_dict['Real B Distance Std'].append(asterisk_radar[1])
+    # csv_dict['Real B Efficiency'].append(asterisk_radar[2])
+    # csv_dict['Real B Efficiency Std'].append(asterisk_radar[3])
+    # backend.fig.savefig(lname + '_holup.png',dpi=400)
+    backend.fig.savefig(lname + '_handb.png',dpi=400)
+    backend.reset()
+    backend.clear_axes()
 
 # backend = data_gui_backend.PlotBackend()
+# for o in other:
+#     f1 = ['/'.join(['./data',uname,'JA_S1',o]) for uname in top_names_slide]
+#     f2 = ['/'.join(['./data',uname,'JA_S2',o]) for uname in top_names_slide]
+#     f3 = ['/'.join(['./data',uname,'JA_S3',o]) for uname in top_names_slide]
+#     # Real_B_path = ['/'.join(['./data',uname,lname,'Real_B']) for uname in top_names_slide]
 
-# for lname in sub_names:
-#     A_path = ['/'.join(['./data',uname,lname,'Ast_A']) for uname in top_names_slide]
-#     B_path = ['/'.join(['./data',uname,lname,'Ast_B']) for uname in top_names_slide]
-#     Real_A_path = ['/'.join(['./data',uname,lname,'Real_A']) for uname in top_names_slide]
-#     Real_B_path = ['/'.join(['./data',uname,lname,'Real_B']) for uname in top_names_slide]
-
-#     keys = lname.split('_')
+#     # keys = lname.split('_')
     
-#     csv_dict['Action Space'].append(keys[0])
-#     csv_dict['State Space'].append(keys[1])
+#     # csv_dict['Action Space'].append(keys[0])
+#     # csv_dict['State Space'].append(keys[1])
 #     # csv_dict['Upper Folder'].append(uname)
-#     print(A_path)
+#     # print(A_path)
 
-#     asterisk_radar= backend.draw_radar(A_path,'Sim A')
+#     asterisk_radar= backend.draw_radar(f1,'JA_S1')
 #     csv_dict['Sim A Distance Covered'].append(asterisk_radar[0])
 #     csv_dict['Sim A Distance Std'].append(asterisk_radar[1])
 #     csv_dict['Sim A Efficiency'].append(asterisk_radar[2])
 #     csv_dict['Sim A Efficiency Std'].append(asterisk_radar[3])
 
-#     asterisk_radar= backend.draw_radar(B_path,'Sim B')
+#     asterisk_radar= backend.draw_radar(f2,'JA_S2')
 #     csv_dict['Sim B Distance Covered'].append(asterisk_radar[0])
 #     csv_dict['Sim B Distance Std'].append(asterisk_radar[1])
 #     csv_dict['Sim B Efficiency'].append(asterisk_radar[2])
 #     csv_dict['Sim B Efficiency Std'].append(asterisk_radar[3])
 
-#     asterisk_radar= backend.draw_radar(Real_A_path,'Real A')
+#     asterisk_radar= backend.draw_radar(f3,'JA_S3')
 #     csv_dict['Real A Distance Covered'].append(asterisk_radar[0])
 #     csv_dict['Real A Distance Std'].append(asterisk_radar[1])
 #     csv_dict['Real A Efficiency'].append(asterisk_radar[2])
 #     csv_dict['Real A Efficiency Std'].append(asterisk_radar[3])
 
-#     asterisk_radar= backend.draw_radar(Real_B_path,'Real B')
-#     csv_dict['Real B Distance Covered'].append(asterisk_radar[0])
-#     csv_dict['Real B Distance Std'].append(asterisk_radar[1])
-#     csv_dict['Real B Efficiency'].append(asterisk_radar[2])
-#     csv_dict['Real B Efficiency Std'].append(asterisk_radar[3])
-#     backend.fig.savefig(lname + '_holup.png',dpi=400)
+#     backend.fig.savefig(o + '_JA.png',dpi=400)
+#     backend.reset()
+#     backend.clear_axes()
+# backend = data_gui_backend.PlotBackend()
+
+# for o in other:
+#     f1 = ['/'.join(['./data',uname,'FTP_S1',o]) for uname in top_names_slide]
+#     f2 = ['/'.join(['./data',uname,'FTP_S2',o]) for uname in top_names_slide]
+#     f3 = ['/'.join(['./data',uname,'FTP_S3',o]) for uname in top_names_slide]
+#     # Real_B_path = ['/'.join(['./data',uname,lname,'Real_B']) for uname in top_names_slide]
+
+#     # keys = lname.split('_')
+    
+#     # csv_dict['Action Space'].append(keys[0])
+#     # csv_dict['State Space'].append(keys[1])
+#     # csv_dict['Upper Folder'].append(uname)
+#     # print(A_path)
+
+#     asterisk_radar= backend.draw_radar(f1,'FTP_S1')
+#     csv_dict['Sim A Distance Covered'].append(asterisk_radar[0])
+#     csv_dict['Sim A Distance Std'].append(asterisk_radar[1])
+#     csv_dict['Sim A Efficiency'].append(asterisk_radar[2])
+#     csv_dict['Sim A Efficiency Std'].append(asterisk_radar[3])
+
+#     asterisk_radar= backend.draw_radar(f2,'FTP_S2')
+#     csv_dict['Sim B Distance Covered'].append(asterisk_radar[0])
+#     csv_dict['Sim B Distance Std'].append(asterisk_radar[1])
+#     csv_dict['Sim B Efficiency'].append(asterisk_radar[2])
+#     csv_dict['Sim B Efficiency Std'].append(asterisk_radar[3])
+
+#     asterisk_radar= backend.draw_radar(f3,'FTP_S3')
+#     csv_dict['Real A Distance Covered'].append(asterisk_radar[0])
+#     csv_dict['Real A Distance Std'].append(asterisk_radar[1])
+#     csv_dict['Real A Efficiency'].append(asterisk_radar[2])
+#     csv_dict['Real A Efficiency Std'].append(asterisk_radar[3])
+
+#     backend.fig.savefig(o + '_FTP.png',dpi=400)
 #     backend.reset()
 #     backend.clear_axes()
 
-backend = data_gui_backend.PlotBackend()
-for o in other:
-    f1 = ['/'.join(['./data',uname,'JA_S1',o]) for uname in top_names_slide]
-    f2 = ['/'.join(['./data',uname,'JA_S2',o]) for uname in top_names_slide]
-    f3 = ['/'.join(['./data',uname,'JA_S3',o]) for uname in top_names_slide]
-    # Real_B_path = ['/'.join(['./data',uname,lname,'Real_B']) for uname in top_names_slide]
 
-    # keys = lname.split('_')
-    
-    # csv_dict['Action Space'].append(keys[0])
-    # csv_dict['State Space'].append(keys[1])
-    # csv_dict['Upper Folder'].append(uname)
-    # print(A_path)
-
-    asterisk_radar= backend.draw_radar(f1,'JA_S1')
-    csv_dict['Sim A Distance Covered'].append(asterisk_radar[0])
-    csv_dict['Sim A Distance Std'].append(asterisk_radar[1])
-    csv_dict['Sim A Efficiency'].append(asterisk_radar[2])
-    csv_dict['Sim A Efficiency Std'].append(asterisk_radar[3])
-
-    asterisk_radar= backend.draw_radar(f2,'JA_S2')
-    csv_dict['Sim B Distance Covered'].append(asterisk_radar[0])
-    csv_dict['Sim B Distance Std'].append(asterisk_radar[1])
-    csv_dict['Sim B Efficiency'].append(asterisk_radar[2])
-    csv_dict['Sim B Efficiency Std'].append(asterisk_radar[3])
-
-    asterisk_radar= backend.draw_radar(f3,'JA_S3')
-    csv_dict['Real A Distance Covered'].append(asterisk_radar[0])
-    csv_dict['Real A Distance Std'].append(asterisk_radar[1])
-    csv_dict['Real A Efficiency'].append(asterisk_radar[2])
-    csv_dict['Real A Efficiency Std'].append(asterisk_radar[3])
-
-    backend.fig.savefig(o + '_JA.png',dpi=400)
-    backend.reset()
-    backend.clear_axes()
-backend = data_gui_backend.PlotBackend()
-
-for o in other:
-    f1 = ['/'.join(['./data',uname,'FTP_S1',o]) for uname in top_names_slide]
-    f2 = ['/'.join(['./data',uname,'FTP_S2',o]) for uname in top_names_slide]
-    f3 = ['/'.join(['./data',uname,'FTP_S3',o]) for uname in top_names_slide]
-    # Real_B_path = ['/'.join(['./data',uname,lname,'Real_B']) for uname in top_names_slide]
-
-    # keys = lname.split('_')
-    
-    # csv_dict['Action Space'].append(keys[0])
-    # csv_dict['State Space'].append(keys[1])
-    # csv_dict['Upper Folder'].append(uname)
-    # print(A_path)
-
-    asterisk_radar= backend.draw_radar(f1,'FTP_S1')
-    csv_dict['Sim A Distance Covered'].append(asterisk_radar[0])
-    csv_dict['Sim A Distance Std'].append(asterisk_radar[1])
-    csv_dict['Sim A Efficiency'].append(asterisk_radar[2])
-    csv_dict['Sim A Efficiency Std'].append(asterisk_radar[3])
-
-    asterisk_radar= backend.draw_radar(f2,'FTP_S2')
-    csv_dict['Sim B Distance Covered'].append(asterisk_radar[0])
-    csv_dict['Sim B Distance Std'].append(asterisk_radar[1])
-    csv_dict['Sim B Efficiency'].append(asterisk_radar[2])
-    csv_dict['Sim B Efficiency Std'].append(asterisk_radar[3])
-
-    asterisk_radar= backend.draw_radar(f3,'FTP_S3')
-    csv_dict['Real A Distance Covered'].append(asterisk_radar[0])
-    csv_dict['Real A Distance Std'].append(asterisk_radar[1])
-    csv_dict['Real A Efficiency'].append(asterisk_radar[2])
-    csv_dict['Real A Efficiency Std'].append(asterisk_radar[3])
-
-    backend.fig.savefig(o + '_FTP.png',dpi=400)
-    backend.reset()
-    backend.clear_axes()
-
-
-# df = pd.DataFrame(csv_dict)
-# df.to_csv("./sim_real_comparison_slide_clipped.csv", index=False)
+df = pd.DataFrame(csv_dict)
+df.to_csv("./sim_real_comparison_b.csv", index=False)
 
 csv_dict = {'Action Space':[], 'State Space':[], 'Sim A Distance Error':[], 'Sim A Distance Std':[],
  'Sim A Orientation Error':[],'Sim A Orientation Std':[], 'Sim A Orientation Traveled':[], 'Sim A Traveled Std':[],'Real A Distance Error':[], 'Real A Distance Std':[],

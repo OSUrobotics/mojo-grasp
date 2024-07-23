@@ -32,12 +32,19 @@ def merge_from_folder(folder):
                 'End Distance':temp['End Distance'], 'Max Distance': temp['Max Distance'],
                 'End Orientation':temp['End Orientation'],'Goal Orientation': temp['Goal Orientation'],
                 'Path':''}
+        try:
+            tduct['Slide Sum'] =  temp['Slide Sum']
+            tduct['Rotate Sum'] = temp['Rotate Sum']
+            tduct['Finger Sum'] = temp['Finger Sum']
+        except:
+            print('no dice', temp.keys())
         all_things.append(tduct)
 
     full_df = pd.DataFrame(all_things)
     full_df['Rounded Start X'] = full_df['Start X'].apply(lambda x:np.round(x,4))
     full_df['Rounded Start Y'] = full_df['Start Y'].apply(lambda x:np.round(x,4))
     full_df['Orientation Error'] = full_df['Goal Orientation'] - full_df['End Orientation']
+
     full_df.to_pickle(folder +'combined_things.pkl')
 
     for file in episode_files:

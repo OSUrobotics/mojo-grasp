@@ -15,8 +15,9 @@ class GoalHolder():
             self.finger = goal_finger
         else:
             self.finger = np.array([None,None,None,None] * len(self.pose))
-            
+        
         self.finger_start = finger_start
+        print(np.shape(self.finger_start))
         self.len = len(self.pose)
         self.goal_names = goal_names
         if len(np.shape(self.pose)) == 1:
@@ -63,6 +64,7 @@ class GoalHolder():
         This is a sneaky backdoor to allow you to change the goal position of all the datapoints to the same thing.
         Mostly useful for rotation testing
         '''    
+        print('WE SHOULDNT BE IN GERE')
         if type(self.pose) is np.ndarray:
             self.pose[:] = pos
         else:
@@ -76,7 +78,6 @@ class GoalHolder():
                 self.orientation = np.array(self.orientation)
                 self.orientation[:] = orient
                 self.orientation.tolist()
-        # print('hard set poses',self.pose,self.orientation)
     def __len__(self):
         return len(self.pose)
     
@@ -86,7 +87,6 @@ class RandomGoalHolder(GoalHolder):
         self.rrange = radius_range
         self.pose = []
         self.next_run()
-        
     
     def next_run(self):
         l = np.sqrt(np.random.uniform(self.rrange[0]**2,self.rrange[1]**2))
@@ -148,3 +148,40 @@ class SingleGoalHolder(GoalHolder):
         
     def next_run(self):
         return [0.0,0.0]
+
+class HRLGoalHolder(GoalHolder):
+    def __init__(self, goal_pose, finger_start, goal_orientation=None, goal_finger=None, goal_names=None, mix_orientation=False, mix_finger=False):
+        super().__init__(goal_pose, finger_start, goal_orientation, goal_finger, goal_names, mix_orientation, mix_finger)
+        self.lower_pos = self.pose[self.run_num%self.len]
+        self.lower_or =  self.orientation[self.run_num%self.len]
+        self.lower_finger =  self.finger[self.run_num%self.len]
+
+    def set_pose(self, pos, orient=None):
+        '''
+        This is used by the higher level policy to set the goals for the lower level policy
+        '''    
+        # print('SETTING THE FPOSE')
+        self.lower_pos = pos
+        self.lower_or = orient
+
+    def reset(self):
+        super().reset()
+        self.lower_pos = self.pose[self.run_num%self.len]
+        self.lower_or = self.orientation[self.run_num%self.len]
+        self.lower_finger = self.finger[self.run_num%self.len]
+    
+    def next_run(self):
+        temp  = super().next_run()
+        self.lower_pos = self.pose[self.run_num%self.len]
+        self.lower_or = self.orientation[self.run_num%self.len]
+        self.lower_finger = self.finger[self.run_num%self.len]
+        return temp
+    
+    # def get_data_upper(self):
+    #     # print('data stuff', self.orientation)
+    #     return {'goal_position':self.pose[self.run_num%self.len],'goal_orientation':self.orientation[self.run_num%self.len], 'goal_finger':self.finger[self.run_num%self.len]}
+   
+    def get_data(self):
+        # print('data stuff', self.orientation)
+        return {'goal_position':self.lower_pos,'goal_orientation':self.lower_or, 'goal_finger':self.lower_finger,
+                'upper_goal_position':self.pose[self.run_num%self.len],'upper_goal_orientation':self.orientation[self.run_num%self.len], 'upper_goal_finger':self.finger[self.run_num%self.len]}

@@ -109,7 +109,7 @@ class MultiprocessGymWrapper(gym.Env):
         self.manipulation_phase.setup()
         
         state, _ = self.manipulation_phase.get_episode_info()
-
+        print(state['goal_pose'])
         state = self.build_state(state)
         if self.count % 1000==0:
             print('thing')
@@ -587,6 +587,7 @@ class FeudalHRLWrapper(gym.Env):
         self.state_list = args['state_list']
         self.CONTACT_SCALING = args['contact_scaling']
         self.DISTANCE_SCALING = args['distance_scaling'] 
+        self.ROTATION_SCALING = args['rotation_scaling']
         self.image_path = args['save_path'] + 'Videos/'
         self.record = record_data
         self.eval = False
@@ -612,9 +613,10 @@ class FeudalHRLWrapper(gym.Env):
         self.tholds = {'SUCCESS_THRESHOLD':self.SUCCESS_THRESHOLD,
                        'DISTANCE_SCALING':self.DISTANCE_SCALING,
                        'CONTACT_SCALING':self.CONTACT_SCALING,
+                       'ROTATION_SCALING':self.ROTATION_SCALING,
                        'SUCCESS_REWARD':self.SUCCESS_REWARD}
         
-        self.build_reward = rf.double_scaled
+        self.build_reward = rf.triple_scaled_slide
 
     def step(self, action, mirror=False, viz=False,hand_type=None):
         '''
@@ -628,12 +630,15 @@ class FeudalHRLWrapper(gym.Env):
         None.
 
         '''
+        # CURRENTLY WE ARE SETTING THE REWARD FOR THE FEUDAL NETWORK BASED ON THE GOAL IT SETS
+        # WE NEED TO MAKE SURE THE REWARD IS STILL BASED ON THE ORIGINAL GOAL POSE, NOT THE ONE IT SETS
         # print('got to step action')
 
         # action is a weight vector which we multiply by the output of the sub-polcies
         # print(action)
         self.manipulation_phase.set_goal(action)
         prev_state = self.manipulation_phase.get_state()
+        # print(prev_state['goal_pose'])
         # print('this one', prev_state['goal_pose'])
         # print('last one', prev_state['previous_state'][0]['goal_pose'])
         # print('further one', prev_state['previous_state'][1]['goal_pose'])
@@ -676,13 +681,21 @@ class FeudalHRLWrapper(gym.Env):
 
     def reset(self):
         self.count += 1
-
+        if not self.first:
+            if self.manipulation_phase.episode >= self.manipulation_phase.state.objects[-1].len:
+                self.manipulation_phase.reset()
+            new_goal,fingerys = self.manipulation_phase.next_ep()
         self.timestep=0
         self.first = False
         self.env.reset()
+                    
+
         self.manipulation_phase.setup()
-        
+        if self.eval:
+            self.eval_run +=1
         state, _ = self.manipulation_phase.get_episode_info()
+        # print('state before reset',state['goal_pose']
+        # print(state['goal_pose'])
 
         state = self.build_state(state)
         # print(state)
@@ -742,9 +755,9 @@ class FeudalHRLWrapper(gym.Env):
                     elif key == 'params':
                         state.extend(state_container['hand_params'])
                     elif key == 'gp':
-                        state.extend(state_container['previous_state'][i]['goal_pose']['goal_position'])
+                        state.extend(state_container['previous_state'][i]['goal_pose']['upper_goal_position'])
                     elif key == 'go':
-                        state.append(state_container['previous_state'][i]['goal_pose']['goal_orientation'])
+                        state.append(state_container['previous_state'][i]['goal_pose']['upper_goal_orientation'])
                     elif key == 'gf':
                         state.extend(state_container['previous_state'][i]['goal_pose']['goal_finger'])
                     else:
@@ -783,11 +796,31 @@ class FeudalHRLWrapper(gym.Env):
             elif key == 'params':
                 state.extend(state_container['hand_params'])
             elif key == 'gp':
-                state.extend(state_container['goal_pose']['goal_position'])
+                state.extend(state_container['goal_pose']['upper_goal_position'])
             elif key == 'go':
-                state.append(state_container['goal_pose']['goal_orientation'])
+                state.append(state_container['goal_pose']['upper_goal_orientation'])
             elif key == 'gf':
                 state.extend(state_container['goal_pose']['goal_finger'])
             else:
                 raise Exception('key does not match list of known keys')
         return state
+
+    def evaluate(self, ht=None):
+        # print('EVALUATE TRIGGERED')
+        self.eval = True
+        self.eval_run = 0
+        self.manipulation_phase.state.evaluate()
+        self.manipulation_phase.state.reset()
+        self.manipulation_phase.state.objects[-1].run_num = 0
+        self.manipulation_phase.eval = True
+        self.record.clear()
+        self.episode_type = 'test'
+        self.hand_type = ht
+
+    def train(self):
+        self.eval = False
+        self.manipulation_phase.eval = False
+        self.manipulation_phase.state.train()
+        self.manipulation_phase.state.reset()
+        self.reset()
+        self.episode_type = 'train'
