@@ -1025,10 +1025,18 @@ if __name__ == '__main__':
     # multiprocess_evaluate_loaded('./data/HPC_Full/FTP_S1/experiment_config.json',"B")
 
 
-    # multiprocess_evaluate_loaded('./data/Shape_Baselines/circle/experiment_config.json',"A")
-    # multiprocess_evaluate_loaded('./data/Shape_Baselines/hourglass/experiment_config.json',"A")
-    # multiprocess_evaluate_loaded('./data/Shape_Baselines/square/experiment_config.json',"A")
-    # replay('/home/ubuntu/MojoWork/mojo-grasp/demos/rl_demo/data/Shape_Baselines/square_concave/experiment_config.json',"/home/ubuntu/MojoWork/mojo-grasp/demos/rl_demo/data/Shape_Baselines/square_concave/Eval_A/Episode_1.pkl")
+    #multiprocess_evaluate_loaded('./data/Shape_Baselines/circle/experiment_config.json',"A")
+    #multiprocess_evaluate_loaded('./data/Shape_Baselines/cone/experiment_config.json',"A")
+    #multiprocess_evaluate_loaded('./data/Shape_Baselines/circle/experiment_config.json',"B")
+    #multiprocess_evaluate_loaded('./data/Shape_Baselines/cone/experiment_config.json',"B")
+    #multiprocess_evaluate_loaded('./data/Shape_Baselines/square/experiment_config.json',"A")
+    #multiprocess_evaluate_loaded('/media/ubuntu/New Volume/data/Shape_Baselines/ellipse/experiment_config.json',"A")
+    #multiprocess_evaluate_loaded('/media/ubuntu/New Volume/data/Shape_Baselines/triangle/experiment_config.json',"B")
+    #multiprocess_evaluate_loaded('/media/ubuntu/New Volume/data/Shape_Baselines/hourglass/experiment_config.json',"A")
+    #multiprocess_evaluate_loaded('/media/ubuntu/New Volume/data/Shape_Baselines/square_concave/experiment_config.json',"A")
+    #multiprocess_evaluate_loaded('/media/ubuntu/New Volume/data/Shape_Baselines/teardrop/experiment_config.json',"A")
+
+    replay('/media/ubuntu/New Volume/data/Shape_Baselines/hourglass/experiment_config.json',"/media/ubuntu/New Volume/data/Shape_Baselines/hourglass/Eval_A/Episode_206.pkl")
     
 
     # asterisk_test('./data/Mothra_Slide/JA_S1/experiment_config.json','B')
