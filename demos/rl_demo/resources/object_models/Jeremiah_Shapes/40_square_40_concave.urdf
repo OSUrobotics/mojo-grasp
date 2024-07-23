@@ -1,14 +1,14 @@
 <?xml version="1.0" ?>
 <robot name="40_square_40_concave">
 
-    <link name="40_square_40_concave">
+    <link concave="yes" name="40_square_40_concave">
         <visual>
             <origin rpy="1.5707963267948966 0 0" xyz="-0.02 0.02 -0.0525"/>
             <geometry>
                 <mesh filename="Shapes/40_square_40_concave.STL" scale=".001 .001 .001"/>
             </geometry>
         </visual>
-        <collision>
+        <collision concave="yes">
             <origin rpy="1.5707963267948966 0 0" xyz="-0.02 0.02 -0.0525"/>
             <geometry>
                 <mesh filename="Shapes/40_square_40_concave.STL" scale=".001 .001 .001"/>
