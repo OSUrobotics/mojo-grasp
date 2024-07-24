@@ -145,32 +145,6 @@ class MultiprocessManipulation(Phase):
                 temp = 'eval'
                 img.save(self.image_path+ temp + '_frame_'+ str(self.timestep)+'_'+str(i)+'.png')
 
-            # temp = self.p.getJointStates(self.hand.id, [0,1,3,4])
-            # print('joint states after motion', temp[0][0], temp[1][0], temp[2][0], temp[3][0])
-            # print('forces ', temp[0][3], temp[1][3], temp[2][3], temp[3][3])
-            # forces.append(temp[0][3])
-            # f2.append(temp[1][3])
-            # f3.append(temp[2][3])
-            # f4.append(temp[3][3])
-        # errs = np.array(errs)
-        # plt.plot(range(len(errs)), errs[:,0])
-        # fig, (ax1, ax2) = plt.subplots(2, 1)
-        # ax1.plot(range(len(goals)),goals)
-        # ax1.plot(range(len(actual)),actual)
-        # plt.legend(['goal positions','actual positions'])
-        # plt.plot(range(len(errs)), errs[:,1])
-        # plt.plot(range(len(errs)), errs[:,2])
-        # plt.plot(range(len(errs)), errs[:,3])
-        # ax1.set_xlabel('sim-step (1/240 s)')
-        # ax1.set_ylabel('Error (rad)')
-        # ax1.set_grid(True)
-
-        # ax2.plot(range(len(forces)),forces)
-        # ax2.plot(range(len(f2)),f2)
-        # ax2.plot(range(len(f3)),f3)
-        # ax2.plot(range(len(f4)),f4)
-
-        # plt.show()
         self.timestep += 1
 
     def post_step(self):

@@ -115,6 +115,7 @@ class MultiprocessState(StateDefault):
         """
         Default method that sets self.current_state to either get_data() for the object or an empty dictionary
         """
+        # print('initializing state')
         super().set_state()
         # print(self.current_state)
         temp1 = self.p.getClosestPoints(self.objects[1].id, self.objects[0].id, 10, -1, 1, -1)[0]

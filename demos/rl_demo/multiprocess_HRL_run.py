@@ -37,7 +37,7 @@ import os
 import multiprocessing
 import json
 from scipy.spatial.transform import Rotation as R
-from model_holder import modelHolder
+from model_holder import modelHolder,dummyHolder
 import torch
 # from stable_baselines3.DQN import MlpPolicy
 
@@ -162,7 +162,6 @@ def make_HRL_pybullet(arg_dict, pybullet_instance, rank, hand_info, sub_policies
     fingers = np.random.uniform(0.01,0.01,(2,1000))
     print(obj_pos)
     goals = HRLGoalHolder(obj_pos, fingers, theta)
-
     # setup pybullet client to either run with or without rendering
     if viz:
         physics_client = pybullet_instance.connect(pybullet_instance.GUI)
@@ -175,6 +174,7 @@ def make_HRL_pybullet(arg_dict, pybullet_instance, rank, hand_info, sub_policies
     pybullet_instance.setPhysicsEngineParameter(contactBreakingThreshold=.001)
     pybullet_instance.resetDebugVisualizerCamera(cameraDistance=.02, cameraYaw=0, cameraPitch=-89.9999,
                                  cameraTargetPosition=[0, 0.1, 0.5])
+
     if args['domain_randomization_object_size']:
         if type(args['object_path']) == str:
             object_path = args['object_path']
@@ -208,7 +208,7 @@ def make_HRL_pybullet(arg_dict, pybullet_instance, rank, hand_info, sub_policies
     hand_keys = hand_type.split('_')
     info_1 = hand_info[hand_keys[-1]][hand_keys[1]]
     info_2 = hand_info[hand_keys[-1]][hand_keys[2]]
-    print(info_1)
+    
     if args['contact_start']:
         hand_param_dict = {"link_lengths":[info_1['link_lengths'],info_2['link_lengths']],
                         "starting_angles":[info_1['contact_start_angles'][object_key][0],info_1['contact_start_angles'][object_key][1],-info_2['contact_start_angles'][object_key][0],-info_2['contact_start_angles'][object_key][1]],
@@ -266,16 +266,17 @@ def make_HRL_pybullet(arg_dict, pybullet_instance, rank, hand_info, sub_policies
     # Create phase
     manipulation = multiprocess_manipulation_phase.MultiprocessManipulation(
         hand, obj, state, action, reward, env, args=arg_dict, hand_type=hand_type)
-    
+
     # data recording
     record_data = MultiprocessRecordData(rank,
         data_path=args['save_path'], state=state, action=action, reward=reward, save_all=False, controller=manipulation.controller)
-    
+
     # gym wrapper around pybullet environment
     if model_type == 'option':
         gym_env = multiprocess_hierarchical_wrapper.SimpleHRLWrapper(env, manipulation, record_data, sub_policies, args)
     elif model_type == 'feudal':
         gym_env = multiprocess_hierarchical_wrapper.FeudalHRLWrapper(env, manipulation, record_data, sub_policies, args)
+
     return gym_env, args
 
 def evaluate(filepath=None,aorb = 'A'):
@@ -457,7 +458,7 @@ def replay(argpath, episode_path):
         # input('next step?')
 
 def main(filepath = None, train_type='pre'):
-    num_cpu = 4#multiprocessing.cpu_count() # Number of processes to use
+    num_cpu = 16#multiprocessing.cpu_count() # Number of processes to use
     # Create the vectorized environment
 
     if filepath is None:
@@ -507,8 +508,9 @@ def main(filepath = None, train_type='pre'):
             args2 = json.load(argfile)
         direction = [0,0]
 
-        model = model_type("MlpPolicy", None, _init_setup_model=False).load(load_path + '/best_model.zip')
-        subpolicy = modelHolder(model, args2)
+        model = model_type("MlpPolicy", None, _init_setup_model=False,device='cpu').load(load_path + '/best_model.zip',device='cpu')
+        subpolicy = modelHolder(model.policy, args2)
+        # subpolicy = dummyHolder(1,args2)
         multi=True
         if multi:
             vec_env = SubprocVecEnv([make_HRL_env(args,[i,num_cpu],hand_info=hand_params,sub_policies=subpolicy) for i in range(num_cpu)]) 
@@ -523,7 +525,11 @@ def main(filepath = None, train_type='pre'):
             print(torch.cuda.is_available())
             print(torch.version.cuda)
             print(torch.cuda.get_device_capability(0))
-            model.learn(total_timesteps=500000*(args['tsteps']+1),callback=callback)
+            print('timing this')
+            # a = time.time()
+            # print(num_cpu)
+            model.learn(total_timesteps=int(args['epochs']*(args['tsteps']+1)/num_cpu),callback=callback)
+            # print(time.time()-a)
             filename = os.path.dirname(filepath)
             model.save(filename+'/last_model_full')
 
@@ -555,5 +561,5 @@ def main(filepath = None, train_type='pre'):
             model.save(filename+'/canceled_model_full')
     
 if __name__ == '__main__':
-    main('./data/HRL_test_1/experiment_config.json', 'feudal')
+    main('./data/HRL_test_2/experiment_config.json', 'feudal')
     # evaluate('./data/HRL_test_1/experiment_config.json')
