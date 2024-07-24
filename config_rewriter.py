@@ -9,7 +9,7 @@ import json
 import os
 import pathlib
 
-folder_path = './demos/rl_demo/data/doubl_tsts/'
+folder_path = './demos/rl_demo/data/test/'
 
 
 overall_path = pathlib.Path(__file__).parent.resolve()
@@ -30,7 +30,11 @@ if 'experiment_config.json' in subfolders:
     print('overall folder', str(overall_path))
     print('overall path', )
     for k in config.keys():
-        if type(config[k]) == str:
+        if k == 'save_path':
+            print('old',k,config[k])
+            config[k] = config[k].replace(config[k], str(batch_run_folder))
+            print('new',k,config[k])
+        elif type(config[k]) == str:
             print('old',k,config[k])
             config[k] = config[k].replace(high_level_path, str(overall_path))
             print('new',k,config[k])
@@ -52,6 +56,10 @@ else:
         print('hlp', high_level_path)
         print('overall folder', str(overall_path))
         for k in config.keys():
+            if k == 'save_path':
+                print('old',k,config[k])
+                config[k] = config[k].replace(config[k], curr_folder)
+                print('new',k,config[k])
             if type(config[k]) == str:
                 print('old',k,config[k])
                 config[k] = config[k].replace(high_level_path, str(overall_path))

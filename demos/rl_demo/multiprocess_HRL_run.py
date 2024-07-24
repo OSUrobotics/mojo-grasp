@@ -507,7 +507,9 @@ def main(filepath = None, train_type='pre'):
         with open(load_path+'/experiment_config.json', 'r') as argfile:
             args2 = json.load(argfile)
         direction = [0,0]
-
+        fuckery = True
+        if fuckery:
+            print('aww shit, here we go again')
         model = model_type("MlpPolicy", None, _init_setup_model=False,device='cpu').load(load_path + '/best_model.zip',device='cpu')
         subpolicy = modelHolder(model.policy, args2)
         # subpolicy = dummyHolder(1,args2)
