@@ -115,3 +115,12 @@ class modelHolder:
     def __call__(self, State_vec):
         prepped = self.build_state(State_vec)
         return self.model.predict(prepped)
+    
+class dummyHolder:
+    def __init__(self,model,args):
+        self.model = model
+        self.state_list = args['state_list']
+        self.PREV_VALS = args['pv']
+    
+    def __call__(self,s):
+        return (np.array([1,1,1,1]),False)

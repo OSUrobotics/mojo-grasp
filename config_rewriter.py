@@ -9,7 +9,7 @@ import json
 import os
 import pathlib
 
-folder_path = './demos/rl_demo/data/Sliding_B/'
+folder_path = './demos/rl_demo/data/doubl_tsts/'
 
 
 overall_path = pathlib.Path(__file__).parent.resolve()
@@ -25,8 +25,7 @@ if 'experiment_config.json' in subfolders:
     curr_folder = str(batch_run_folder)
     with open(curr_folder+'/experiment_config.json', 'r') as file:
         config = json.load(file)
-    high_level_path =  pathlib.Path(config['save_path']).parent.resolve().parent.resolve().parent.resolve().parent.resolve()#.parent.resolve()
-    high_level_path = str(high_level_path)
+    high_level_path = config['save_path'].split('/demos/')[0]
     print('hlp', high_level_path)
     print('overall folder', str(overall_path))
     print('overall path', )
@@ -49,8 +48,7 @@ else:
         curr_folder = str(batch_run_folder.joinpath(folder))
         with open(curr_folder+'/experiment_config.json', 'r') as file:
             config = json.load(file)
-        high_level_path =  pathlib.Path(config['save_path']).parent.resolve().parent.resolve().parent.resolve().parent.resolve().parent.resolve()
-        high_level_path = str(high_level_path)
+        high_level_path = config['save_path'].split('/demos/')[0]
         print('hlp', high_level_path)
         print('overall folder', str(overall_path))
         for k in config.keys():

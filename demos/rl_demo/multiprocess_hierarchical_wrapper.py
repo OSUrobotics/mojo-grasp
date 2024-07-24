@@ -101,7 +101,7 @@ class MultiprocessGymWrapper(gym.Env):
     def reset(self,special=None):
         self.count += 1
         # if self.thing%1000 == 0:
-        # print(self.thing)
+        # print(self.count)
 
         self.timestep=0
         self.first = False
@@ -637,26 +637,21 @@ class FeudalHRLWrapper(gym.Env):
         # action is a weight vector which we multiply by the output of the sub-polcies
         # print(action)
         self.manipulation_phase.set_goal(action)
-        prev_state = self.manipulation_phase.get_state()
-        # print(prev_state['goal_pose'])
-        # print('this one', prev_state['goal_pose'])
-        # print('last one', prev_state['previous_state'][0]['goal_pose'])
-        # print('further one', prev_state['previous_state'][1]['goal_pose'])
-        # print('even more one', prev_state['previous_state'][2]['goal_pose'])
-        # print('in step',type(prev_state))
-        # We need to change the goal in prev state to match what we have here
-        # prev_state = self.prep_substate(prev_state,action)
-        # substate = self.sub_policy.build_state(prev_state)
-        final_action,_ = self.sub_policy(prev_state)
-        # print(final_action)
-        self.manipulation_phase.gym_pre_step(final_action)
-        self.manipulation_phase.execute_action(viz=viz)
-        done = self.manipulation_phase.exit_condition()
-        self.manipulation_phase.post_step()
+
+        for i in range(5):
+            # print('step ',i)
+            prev_state = self.manipulation_phase.get_state()
+
+            final_action,_ = self.sub_policy(prev_state)
+            self.manipulation_phase.gym_pre_step(final_action)
+            self.manipulation_phase.execute_action(viz=viz)
+            done = self.manipulation_phase.exit_condition()
+            self.manipulation_phase.post_step()
+            state, reward_container = self.manipulation_phase.get_episode_info()
         
         if self.eval or self.small_enough:
             self.record.record_timestep()
-        state, reward_container = self.manipulation_phase.get_episode_info()
+        # state, reward_container = self.manipulation_phase.get_episode_info()
         info = {}
         if mirror:
             state = self.build_mirror_state(state)
@@ -681,6 +676,7 @@ class FeudalHRLWrapper(gym.Env):
 
     def reset(self):
         self.count += 1
+        # print(self.count)
         if not self.first:
             if self.manipulation_phase.episode >= self.manipulation_phase.state.objects[-1].len:
                 self.manipulation_phase.reset()
@@ -694,7 +690,7 @@ class FeudalHRLWrapper(gym.Env):
         if self.eval:
             self.eval_run +=1
         state, _ = self.manipulation_phase.get_episode_info()
-        # print('state before reset',state['goal_pose']
+        # print('state before reset')
         # print(state['goal_pose'])
 
         state = self.build_state(state)
