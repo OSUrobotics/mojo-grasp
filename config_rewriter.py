@@ -58,7 +58,7 @@ else:
         for k in config.keys():
             if k == 'save_path':
                 print('old',k,config[k])
-                config[k] = config[k].replace(config[k], curr_folder)
+                config[k] = config[k].replace(config[k], curr_folder + '/')
                 print('new',k,config[k])
             if type(config[k]) == str:
                 print('old',k,config[k])

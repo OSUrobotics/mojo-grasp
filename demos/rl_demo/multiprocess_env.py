@@ -15,6 +15,11 @@ class MultiprocessEnv():
             self.hand_type = 'A'
         self.rand_start = rand_start
         self.p=pybullet_import
+        self.p.setCollisionFilterPair(hand.id, hand.id, 2, 5, 1)
+        self.p.setCollisionFilterPair(hand.id, hand.id, 2, 4, 1)
+        self.p.setCollisionFilterPair(hand.id, hand.id, 5, 2, 1)
+        self.p.setCollisionFilterPair(hand.id, hand.id, 5, 1, 1)
+        print("In the multiprocess env")
         
     def reset(self):
         # reset the simulator
@@ -178,6 +183,10 @@ class MultiprocessSingleShapeEnv(Environment):
         self.rand_object_orientation = args['object_random_orientation']
         self.rand_finger_all_open = args['finger_random_off']
         self.finger_open_fraction = args['fobfreq']
+        self.p.setCollisionFilterPair(hand.id, hand.id, 2, 5, 1)
+        self.p.setCollisionFilterPair(hand.id, hand.id, 2, 4, 1)
+        self.p.setCollisionFilterPair(hand.id, hand.id, 5, 2, 1)
+        self.p.setCollisionFilterPair(hand.id, hand.id, 5, 1, 1)
         
         if finger_points is None:
             self.finger_points = finger_points
@@ -191,7 +200,7 @@ class MultiprocessSingleShapeEnv(Environment):
 
         self.plane_id = self.p.loadURDF("plane.urdf", flags=self.p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES, basePosition=[0.5,0.3,0])
         self.hand_id = self.p.loadURDF(self.hand.path, useFixedBase=True,
-                             basePosition=[0.0, 0.0, 0.05], flags=self.p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
+                             basePosition=[0.0, 0.0, 0.05], flags=self.p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES | self.p.URDF_USE_SELF_COLLISION)
         self.obj_id = self.p.loadURDF(self.obj.path, basePosition=[0.0, 0.10, .05],
                                  flags=self.p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
         # print('object path', self.obj.path)
