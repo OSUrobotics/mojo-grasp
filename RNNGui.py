@@ -11,6 +11,7 @@ import os
 import pickle as pkl
 import numpy as np
 import json
+import copy
 from PIL import ImageGrab
 # from itertools import islice
 import threading
@@ -56,7 +57,7 @@ class RNNGui():
         self.double_names = ['f-b', 'l-r', 'diag-up', 'diag-down']
         self.alt_double_names = ['l-r','f','b']
         # define layout, show and read the window
-        data_layout =  [ [sg.Text('Model Type'), sg.OptionMenu(values=('TD3', 'TD3+HER', 'DDPG','DDPG+HER', 'PPO','PPO_Feudal'),  k='-model', default_value='PPO')],
+        data_layout =  [ [sg.Text('Model Type'), sg.OptionMenu(values=('TD3', 'TD3+HER', 'DDPG','DDPG+HER', 'PPO','PPO_Feudal','PPO_Zoo'),  k='-model', default_value='PPO')],
                          [sg.Text('Path to Expert Data if using FD')],
                          [sg.Button("Browse",key='-browse-expert',button_color='DarkBlue'),sg.Text("/", key='-expert-path')],
                          [sg.Text('Path to Save Data')],
@@ -178,6 +179,7 @@ class RNNGui():
         if self.args['model'] == 'PPO_Feudal':
             self.args['actor_mins'] = [-0.08,-0.08,-50/180*np.pi]
             self.args['actor_maxes'] = [0.08,0.08,50/180*np.pi]
+
 
         if values['-ftp']:
             if not RW:
@@ -317,6 +319,19 @@ class RNNGui():
         self.args['state_mins'] = state_mins
         self.args['state_maxes'] = state_maxes
         self.args['state_list'] = state_list
+        if self.args['model'] == 'PPO_Zoo':
+            temp =[]
+            for i in state_list:
+                if i == 'gp':
+                    temp.append('lgp')
+                elif i == 'go':
+                    temp.append('lgo')
+                elif i == 'ga':
+                    temp.append('lga')
+                else:
+                    temp.append(i)
+            self.args['worker_state_list'] = temp
+            
 
         if self.args['action'] =='Joint Velocity' or self.args['action'] =='Finger Tip Position':
             self.args['action_dim'] = 4
