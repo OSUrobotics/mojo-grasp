@@ -185,3 +185,5 @@ class HRLGoalHolder(GoalHolder):
         # print('data stuff', self.orientation)
         return {'goal_position':self.lower_pos,'goal_orientation':self.lower_or, 'goal_finger':self.lower_finger,
                 'upper_goal_position':self.pose[self.run_num%self.len],'upper_goal_orientation':self.orientation[self.run_num%self.len], 'upper_goal_finger':self.finger[self.run_num%self.len]}
+
+

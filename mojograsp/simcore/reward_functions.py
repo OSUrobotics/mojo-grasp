@@ -140,6 +140,10 @@ def contact_point(reward_container, tholds):
 def direction(reward_container, tholds):
     return reward_container['dist_reward'] - 0.1*max(reward_container['f1_dist'],reward_container['f2_dist']), False
 
+def worker(reward_container, tholds):
+    print('not implemented yet, returning 1')
+    return 1, False
+
 def triple_scaled_slide(reward_container, tholds):
     # print(reward_container)
     ftemp = -max(reward_container['f1_dist'], reward_container['f2_dist']) * 100 # 100 here to make ftemp = -1 when at 1 cm
