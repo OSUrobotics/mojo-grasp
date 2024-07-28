@@ -71,6 +71,7 @@ class MultiprocessGymWrapper(gym.Env):
         self.first = True
         self.small_enough = args['epochs'] <= 100000
         self.episode_type = 'train'
+        self._max_episode_steps = 25
         try:
             self.SUCCESS_REWARD = args['success_reward']
         except KeyError:
@@ -600,6 +601,7 @@ class FeudalHRLWrapper(gym.Env):
         self.first = True
         self.small_enough = args['epochs'] <= 500000
         self.episode_type = 'train'
+        self.horizon = 25
         try:
             self.SUCCESS_REWARD = args['success_reward']
         except KeyError:

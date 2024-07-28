@@ -213,6 +213,7 @@ class MultiprocessState(StateDefault):
         for thing in self.objects:
             if (type(thing) == GoalHolder) | (type(thing) == RandomGoalHolder)|(type(thing) == HRLGoalHolder):
                 thing.set_pose(goal_list[0:2], goal_list[2])
+                self.current_state[i.name] = i.get_data()
     
     def get_goal(self):
         # print(self.current_state)
