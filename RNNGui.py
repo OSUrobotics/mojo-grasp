@@ -114,6 +114,8 @@ class RNNGui():
                        [sg.Checkbox('HandParameters', default=False,key='-params')],
                        [sg.Checkbox('WallPose', default=False,key='-wall')],
                        [sg.Checkbox('Eigenvectors Times Eigenvalues', default=False,key='-evv')],
+                       [sg.Checkbox("Contact Distance", default=False, k='-rad')],
+                       [sg.Checkbox("Contact Angle", default=False, k='-ra')],
                        [sg.Text('Num Previous States'), sg.Input(2, k='-pv',size=(8, 2)), sg.Text('Success Radius (mm)'), sg.Input(2, key='-sr',size=(8, 2))],
                        [sg.Text("Distance Scale"),  sg.Input(1,key='-distance_scale',size=(8, 2)), sg.Text('Contact Scale'),  sg.Input(0.2,key='-contact_scale',size=(8, 2)), sg.Text('Success Reward'), sg.Input(1,key='-success_reward',size=(8, 2)), sg.Text('Rotation Scale'), sg.Input(1,key='-rotation_scale',size=(8, 2))],
                        [sg.Text("Action"), sg.OptionMenu(values=('Joint Velocity','Finger Tip Position','Object Pose'), k='-action',default_value='Finger Tip Position')],
@@ -299,6 +301,21 @@ class RNNGui():
             state_maxes.extend([0.08,0.18,1,1,1,1])
             state_len += 6
             state_list.append('wall')
+
+        #What Jereimah added
+        #print('state list', state_list)
+        if values['-rad']:
+            state_mins.extend([0,0,0,0])
+            state_maxes.extend([10,10,1,1])
+            state_len += 4
+            state_list.append('rad')
+            
+        if values['-ra']:
+            state_mins.extend([-np.pi,-np.pi])
+            state_maxes.extend([np.pi,np.pi])
+            state_len += 2
+            state_list.append('ra')
+
         if self.args['pv'] > 0:
             state_len += state_len * self.args['pv']
             temp_mins = state_mins.copy()
@@ -306,6 +323,8 @@ class RNNGui():
             for i in range(self.args['pv']):
                 state_mins.extend(temp_mins)
                 state_maxes.extend(temp_maxes)
+
+
         if state_len == 0:
             print('No selected state space')
             return False
