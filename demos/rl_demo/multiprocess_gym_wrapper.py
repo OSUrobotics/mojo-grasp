@@ -310,6 +310,7 @@ class MultiprocessGymWrapper(gym.Env):
         """
         angle_keys = ["finger0_segment0_joint","finger0_segment1_joint","finger1_segment0_joint","finger1_segment1_joint"]
         state = []
+        print('state list', self.state_list)
         if self.PREV_VALS > 0:
             for i in range(self.PREV_VALS):
                 for key in self.state_list:
@@ -353,6 +354,15 @@ class MultiprocessGymWrapper(gym.Env):
                     elif key == 'wall':
                         state.extend(state_container['previous_state'][i]['wall']['pose'][0][0:2])
                         state.extend(state_container['previous_state'][i]['wall']['pose'][1][0:4])
+                    # What Jeremiah Added
+                    elif key == 'rad':
+                        state.append(state_container['previous_state'][i]['f1_contact_distance'])
+                        state.append(state_container['previous_state'][i]['f2_contact_distance'])
+                        state.append(state_container['previous_state'][i]['f1_contact_flag'])
+                        state.append(state_container['previous_state'][i]['f2_contact_flag'])
+                    elif key == 'ra':
+                        state.append(state_container['previous_state'][i]['f1_contact_angle'])
+                        state.append(state_container['previous_state'][i]['f2_contact_angle'])
                     else:
                         raise Exception('key does not match list of known keys')
 
@@ -398,6 +408,17 @@ class MultiprocessGymWrapper(gym.Env):
             elif key == 'wall':
                 state.extend(state_container['wall']['pose'][0][0:2])
                 state.extend(state_container['wall']['pose'][1][0:4])
+                
+            # What Jeremiah Added
+            elif key == 'rad':
+                state.append(state_container['f1_contact_distance'])
+                state.append(state_container['f2_contact_distance'])
+                state.append(state_container['f1_contact_flag'])
+                state.append(state_container['f2_contact_flag'])
+            elif key == 'ra':
+                state.append(state_container['f1_contact_angle'])
+                state.append(state_container['f2_contact_angle'])
+
             else:
                 raise Exception('key does not match list of known keys')
             
