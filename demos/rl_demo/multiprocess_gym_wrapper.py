@@ -310,7 +310,7 @@ class MultiprocessGymWrapper(gym.Env):
         """
         angle_keys = ["finger0_segment0_joint","finger0_segment1_joint","finger1_segment0_joint","finger1_segment1_joint"]
         state = []
-        print('state list', self.state_list)
+        #print('state list', self.state_list)
         if self.PREV_VALS > 0:
             for i in range(self.PREV_VALS):
                 for key in self.state_list:
