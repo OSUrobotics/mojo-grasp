@@ -1036,7 +1036,7 @@ if __name__ == '__main__':
     #multiprocess_evaluate_loaded('/media/ubuntu/New Volume/data/Shape_Baselines/square_concave/experiment_config.json',"A")
     #multiprocess_evaluate_loaded('/media/ubuntu/New Volume/data/Shape_Baselines/teardrop/experiment_config.json',"A")
 
-    #replay('/media/ubuntu/New Volume/data/Shape_Baselines/circle/experiment_config.json',"/media/ubuntu/New Volume/data/Shape_Baselines/hourglass/Eval_A/Episode_206.pkl")
+    replay('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/sf2/experiment_config.json',"/media/ubuntu/New Volume/data/Shape_Baselines/hourglass/Eval_A/Episode_206.pkl")
     
 
     # asterisk_test('./data/Mothra_Slide/JA_S1/experiment_config.json','B')
@@ -1045,7 +1045,7 @@ if __name__ == '__main__':
     # rotation_test('./data/Jeremiah_Rotation/JA_S3/experiment_config.json',"A_A")
 
     # multiprocess_evaluate_loaded('./data/Full_continue/JA_S3_larger_space/experiment_config.json',"B")
-    main('./data/Test/ra+rad/experiment_config.json', 'run')
+    # main('./data/Test/ra+rad/experiment_config.json', 'run')
     # full_test('./data/Full_continue/JA_S3_new_weight/experiment_config.json',"A")
     # rotation_test('./data/Rotation_continue/JA_S3_new_weight_same_space/experiment_config.json',"A")
     # multiprocess_evaluate_loaded('./data/Rotation_continue/JA_S3_larger_space/experiment_config.json',"A")

@@ -72,6 +72,7 @@ class MultiprocessGymWrapper(gym.Env):
         self.first = True
         self.reduced_saving = True
         self.small_enough = False #args['epochs'] <= 100000
+        self.ONE_FINGER = args['one_finger']
         self.OBJECT_POSE_RANDOMIZATION = args['object_random_start']
         try:
             self.DOMAIN_RANDOMIZATION_MASS = args['domain_randomization_object_mass']
@@ -205,6 +206,9 @@ class MultiprocessGymWrapper(gym.Env):
                 self.env.reset(special['goal_position'], special['fingers'])
             else:
                 self.env.reset(special['goal_position'])
+            if self.ONE_FINGER:
+                self.env.reset([0,0],[-.785,1.57,0.174533,-0.174533])
+
         elif (self.TASK == 'Rotation_region') | ('contact' in self.TASK) | (self.TASK=='big_Rotation'):
             self.env.reset(new_goal['goal_position'],fingerys=fingerys)
         elif self.OBJECT_POSE_RANDOMIZATION:
@@ -215,6 +219,8 @@ class MultiprocessGymWrapper(gym.Env):
             self.env.reset([x,y])
         elif 'wall' in self.TASK:
             self.env.reset([0.0463644396618753, 0.012423314164921])
+        elif self.ONE_FINGER:
+            self.env.reset([0,0],[.785,-1.57,0.174533,-0.174533])
         else:
             # print('reseting with NO parameters')
             self.env.reset()
