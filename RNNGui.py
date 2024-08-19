@@ -77,12 +77,15 @@ class RNNGui():
                          [sg.Text("Task"), sg.OptionMenu(values=('asterisk','single',"big_random",
                           "Rotation_single", "Rotation_region","big_Rotation", "full_task","big_full_task", 'multi', "direction", "wall", "wall_single"), k='-task', default_value='unplanned_random')],
                          [sg.Text("Reward"), sg.OptionMenu(values=('Sparse','Distance','Distance + Finger', 'Hinge Distance + Finger', 'Slope', 'Slope + Finger','SmartDistance + Finger','SmartDistance + SmartFinger','ScaledDistance + Finger','ScaledDistance+ScaledFinger', 'SFS','DFS'), k='-reward',default_value='ScaledDistance+ScaledFinger')],
-                         [sg.Checkbox("Object Start Position", key='-rstart',default=False), sg.Checkbox("Relative Finger Position", key='-rfinger',default=False),sg.Checkbox("Object Orientation", key='-ror',default=False), sg.Checkbox("Finger Open", key='-rfo',default=False),sg.Checkbox("Finger Straight", key='-sf',default=False)],
+                         [sg.Checkbox("Object Start Position", key='-rstart',default=False), sg.Checkbox("Relative Finger Position", key='-rfinger',default=False),sg.Checkbox("Object Orientation", key='-ror',default=False), sg.Checkbox("Finger Open", key='-rfo',default=False),sg.Checkbox("Finger Straight", key='-sf',default=False),sg.Checkbox("Friction Experememnt", key='-fe',default=False)],
                          [sg.Text('Rotation limits, only used by Rotation and Full Tasks'), sg.Radio('75 degrees',group_id='rots',key='-75',default=False), sg.Radio('50 degrees',group_id='rots',key='-50',default=True), sg.Radio('15 degrees',group_id='rots',key='-15',default=False)],
                          [sg.Text('Replay Buffer Sampling'), sg.OptionMenu(values=['priority', 'random','random+expert'], k='-sampling', default_value='priority')],
                          [sg.Text('Domain Randomization Options')],
-                         [sg.Checkbox('Finger Friction', default=True, k='-DRFI'),sg.Checkbox('Floor Friction', default=True, k='-DRFL'),sg.Checkbox('Object Size', default=True, k='-DROS'), sg.Checkbox('Object Mass', default=True, k='-DROM')]]
-        
+                         [sg.Checkbox('Finger Friction', default=True, k='-DRFI'),sg.Checkbox('Floor Friction', default=True, k='-DRFL'),sg.Checkbox('Object Size', default=True, k='-DROS'), sg.Checkbox('Object Mass', default=True, k='-DROM')],
+                         # Jeremiah Added this
+                         [sg.Text('Lateral Friction Values'), sg.Input(0.25, key='-lfl',size=(8, 2)), sg.Input(0.75, key='-lfh',size=(8, 2))],
+                         [sg.Text('Spinning Friction Values'), sg.Input(0.01, key='-sfl',size=(8, 2)), sg.Input(0.0101, key='-sfh',size=(8, 2))],
+                         [sg.Text('Roll Friction Values'), sg.Input(0.04, key='-rfl',size=(8, 2)), sg.Input(0.0401, key='-rfh',size=(8, 2))]]
         
         model_layout = [ [sg.Text('Num Epochs'), sg.Input(1000000, key='-epochs',size=(8, 2)), sg.Text('Batch Size'), sg.Input(100, key='-batch-size',size=(8, 2))],
                          [sg.Text('Learning Rate'), sg.Input(0.0001,key='-learning',size=(8, 2)), sg.Text('Discount Factor'), sg.Input(0.995, key='-df',size=(8, 2))],
@@ -148,6 +151,12 @@ class RNNGui():
                      'sampling': values['-sampling'],
                      'reward': values['-reward'],
                      'action': values['-action'],
+                     'roll_fric_low': float(values['-rfl']),
+                     'roll_fric_high': float(values['-rfh']),
+                     'spin_fric_low': float(values['-sfl']),
+                     'spin_fric_high': float(values['-sfh']),
+                     'lat_fric_low': float(values['-lfl']),
+                     'lat_fric_high': float(values['-lfh']),
                      'rollout_size': int(values['-rollout_size']),
                      'rollout_weight': float(values['-rollout_weight']),
                      'tau': float(values['-tau']),
@@ -170,6 +179,8 @@ class RNNGui():
                      'object_random_orientation': bool(values['-ror']),
                      'finger_random_off': bool(values['-rfo']),
                      'one_finger': bool(values['-sf']),
+                     'friction_experiment': bool(values['-fe']),
+
                      'domain_randomization_finger_friction':bool(values['-DRFI']),
                      'domain_randomization_floor_friction':bool(values['-DRFL']),
                      'domain_randomization_object_size':bool(values['-DROS']),

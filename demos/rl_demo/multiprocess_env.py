@@ -24,6 +24,7 @@ class MultiprocessEnv():
     def reset(self):
         # reset the simulator
         self.p.resetSimulation()
+        #self.p.resetSimulation(self.p.RESET_USE_DEFORMABLE_WORLD)
         # reload the objects
         plane_id = self.p.loadURDF("plane.urdf", flags=self.p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
         
@@ -183,6 +184,13 @@ class MultiprocessSingleShapeEnv(Environment):
         self.rand_object_orientation = args['object_random_orientation']
         self.rand_finger_all_open = args['finger_random_off']
         self.finger_open_fraction = args['fobfreq']
+        self.HIGH_FRICTION = args['high_friction']
+        self.lateral_low = args['lat_fric_low']
+        self.lateral_high = args['lat_fric_high']
+        self.spinning_low = args['spin_fric_low']
+        self.spinning_high = args['spin_fric_high']
+        self.rolling_low = args['roll_fric_low']
+        self.rolling_high = args['roll_fric_high']
         self.p.setCollisionFilterPair(hand.id, hand.id, 2, 5, 1)
         self.p.setCollisionFilterPair(hand.id, hand.id, 2, 4, 1)
         self.p.setCollisionFilterPair(hand.id, hand.id, 5, 2, 1)
@@ -205,9 +213,15 @@ class MultiprocessSingleShapeEnv(Environment):
                                  flags=self.p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
         # print('object path', self.obj.path)
         # assert 1==0
-        self.finger_lateral_friction_range = [0.25, 0.75]
-        self.finger_spinning_friction_range = [0.01,0.0101]
-        self.finger_rolling_friction_range = [0.04,0.0401]
+        if self.HIGH_FRICTION:
+            self.finger_lateral_friction_range = [self.lateral_low, self.lateral_high] #[1,2] #[0.25, 0.75]
+            self.finger_spinning_friction_range = [self.spinning_low, self.spinning_high] #[0.05,0.06] #[0.01,0.0101]
+            self.finger_rolling_friction_range = [self.rolling_low, self.spinning_high] #[0.1,0.2] #[0.04,0.0401]
+        else:
+            self.finger_lateral_friction_range = [0.25, 0.75] #[1,2] #[0.25, 0.75]
+            self.finger_spinning_friction_range = [0.01,0.0101] #[0.05,0.06] #[0.01,0.0101]
+            self.finger_rolling_friction_range = [0.04,0.0401] #[0.1,0.2] #[0.04,0.0401]
+            
         self.floor_lateral_friction_range = [0.15,0.45]
         self.floor_spinning_friction_range = [0.01,0.0101]
         self.floor_rolling_friction_range = [0.05,0.0501]
