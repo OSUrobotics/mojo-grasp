@@ -200,14 +200,17 @@ class MultiprocessGymWrapper(gym.Env):
             self.env.reset(self.eval_point)
         elif type(special) is list:
             self.env.reset_to_pos(special[0],special[1])
+
+        # Jeremiah shenanigans I hope this breaks nothing
         elif type(special) is dict:
             # print('reseting with special dict', special)
             if 'fingers' in special.keys():
                 self.env.reset(special['goal_position'], special['fingers'])
+            elif self.ONE_FINGER:
+                self.env.reset([0,0],[-.785,1.57,0.174533,-0.174533])
             else:
                 self.env.reset(special['goal_position'])
-            if self.ONE_FINGER:
-                self.env.reset([0,0],[-.785,1.57,0.174533,-0.174533])
+            
 
         elif (self.TASK == 'Rotation_region') | ('contact' in self.TASK) | (self.TASK=='big_Rotation'):
             self.env.reset(new_goal['goal_position'],fingerys=fingerys)
