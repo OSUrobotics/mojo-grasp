@@ -184,7 +184,7 @@ class MultiprocessSingleShapeEnv(Environment):
         self.rand_object_orientation = args['object_random_orientation']
         self.rand_finger_all_open = args['finger_random_off']
         self.finger_open_fraction = args['fobfreq']
-        self.HIGH_FRICTION = args['high_friction']
+        self.HIGH_FRICTION = args['friction_experiment']
         self.lateral_low = args['lat_fric_low']
         self.lateral_high = args['lat_fric_high']
         self.spinning_low = args['spin_fric_low']
