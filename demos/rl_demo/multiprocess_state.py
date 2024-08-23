@@ -124,8 +124,8 @@ class MultiprocessState(StateDefault):
             # AND MAKE SURE THE OTHER ONES ARENT FUCKED TOO
         super().set_state()
 
-        temp1 = self.p.getClosestPoints(self.objects[1].id, self.objects[0].id, 10, -1, 1, -1)[0]
-        temp2 = self.p.getClosestPoints(self.objects[1].id, self.objects[0].id, 10, -1, 4, -1)[0]
+        #temp1 = self.p.getClosestPoints(self.objects[1].id, self.objects[0].id, 10, -1, 1, -1)[0]
+        #temp2 = self.p.getClosestPoints(self.objects[1].id, self.objects[0].id, 10, -1, 4, -1)[0]
         link1_pose = self.p.getLinkState(self.objects[0].id, 2)
 
         link2_pose = self.p.getLinkState(self.objects[0].id, 5)
@@ -139,15 +139,15 @@ class MultiprocessState(StateDefault):
         self.current_state['f2_base'] = list(link2_base[0])
         self.current_state['f1_ang'] = self.current_state['two_finger_gripper']['joint_angles']['finger0_segment0_joint'] + self.current_state['two_finger_gripper']['joint_angles']['finger0_segment1_joint']
         self.current_state['f2_ang'] = self.current_state['two_finger_gripper']['joint_angles']['finger1_segment0_joint'] + self.current_state['two_finger_gripper']['joint_angles']['finger1_segment1_joint']        
-        self.current_state['f1_contact_pos'] = list(temp1[6])
-        self.current_state['f2_contact_pos'] = list(temp2[6])
+        #self.current_state['f1_contact_pos'] = list(temp1[6])
+        #self.current_state['f2_contact_pos'] = list(temp2[6])
         self.current_state['hand_params'] = self.hand_params.copy()
 
         #What Jeremiah Is Adding
-        self.current_state['f1_contact_distance'] = self.calc_distance(self.current_state['f1_contact_pos'],self.current_state['obj_2']['pose'][0][0:2])
-        self.current_state['f2_contact_distance'] = self.calc_distance(self.current_state['f2_contact_pos'],self.current_state['obj_2']['pose'][0][0:2])
-        self.current_state['f1_contact_flag'], self.current_state['f2_contact_flag'] = self.check_contact() 
-        self.current_state['f1_contact_angle'], self.current_state['f2_contact_angle'] = self.calc_contact_angle()
+        #self.current_state['f1_contact_distance'] = self.calc_distance(self.current_state['f1_contact_pos'],self.current_state['obj_2']['pose'][0][0:2])
+        #self.current_state['f2_contact_distance'] = self.calc_distance(self.current_state['f2_contact_pos'],self.current_state['obj_2']['pose'][0][0:2])
+        #self.current_state['f1_contact_flag'], self.current_state['f2_contact_flag'] = self.check_contact() 
+        #self.current_state['f1_contact_angle'], self.current_state['f2_contact_angle'] = self.calc_contact_angle()
 
 
         # print('sim state', self.current_state['two_finger_gripper']['joint_angles'])
@@ -160,8 +160,8 @@ class MultiprocessState(StateDefault):
         # print('initializing state')
         super().set_state()
         # print(self.current_state)
-        temp1 = self.p.getClosestPoints(self.objects[1].id, self.objects[0].id, 10, -1, 1, -1)[0]
-        temp2 = self.p.getClosestPoints(self.objects[1].id, self.objects[0].id, 10, -1, 4, -1)[0]
+        #temp1 = self.p.getClosestPoints(self.objects[1].id, self.objects[0].id, 10, -1, 1, -1)[0]
+        #temp2 = self.p.getClosestPoints(self.objects[1].id, self.objects[0].id, 10, -1, 4, -1)[0]
         link1_pose = self.p.getLinkState(self.objects[0].id, 2)
         link2_pose = self.p.getLinkState(self.objects[0].id, 5)
         link1_base = self.p.getLinkState(self.objects[0].id, 1)
@@ -172,14 +172,14 @@ class MultiprocessState(StateDefault):
         self.current_state['f2_base'] = list(link2_base[0])
         self.current_state['f1_ang'] = self.current_state['two_finger_gripper']['joint_angles']['finger0_segment0_joint'] + self.current_state['two_finger_gripper']['joint_angles']['finger0_segment1_joint']
         self.current_state['f2_ang'] = self.current_state['two_finger_gripper']['joint_angles']['finger1_segment0_joint'] + self.current_state['two_finger_gripper']['joint_angles']['finger1_segment1_joint']
-        self.current_state['f1_contact_pos'] = list(temp1[6])
-        self.current_state['f2_contact_pos'] = list(temp2[6])
+        #self.current_state['f1_contact_pos'] = list(temp1[6])
+        #self.current_state['f2_contact_pos'] = list(temp2[6])
 
         #What Jeremiah Is Adding
-        self.current_state['f1_contact_distance'] = self.calc_distance(self.current_state['f1_contact_pos'], self.current_state['obj_2']['pose'][0][0:2])
-        self.current_state['f2_contact_distance'] = self.calc_distance(self.current_state['f2_contact_pos'], self.current_state['obj_2']['pose'][0][0:2]) 
-        self.current_state['f1_contact_angle'], self.current_state['f2_contact_angle'] = self.calc_contact_angle()
-        self.current_state['f1_contact_flag'], self.current_state['f2_contact_flag'] = self.check_contact()
+        # self.current_state['f1_contact_distance'] = self.calc_distance(self.current_state['f1_contact_pos'], self.current_state['obj_2']['pose'][0][0:2])
+        # self.current_state['f2_contact_distance'] = self.calc_distance(self.current_state['f2_contact_pos'], self.current_state['obj_2']['pose'][0][0:2]) 
+        # self.current_state['f1_contact_angle'], self.current_state['f2_contact_angle'] = self.calc_contact_angle()
+        # self.current_state['f1_contact_flag'], self.current_state['f2_contact_flag'] = self.check_contact()
 
         # print('LENGTH OF CURRENT STATE')
         # print(len(self.current_state))

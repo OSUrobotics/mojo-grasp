@@ -253,7 +253,13 @@ def make_pybullet(arg_dict, pybullet_instance, rank, hand_info, viz=False):
                          basePosition=[0.0, 0.0, 0.05], flags=pybullet_instance.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
     # print('object path',object_path)
     obj_id = pybullet_instance.loadURDF(object_path, basePosition=[0.0, 0.10, .05], flags=pybullet_instance.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
-    # print(f'OBJECT ID:{obj_id}')
+
+    # obj_id = pybullet_instance.loadSoftBody("/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/resources/object_models/Jeremiah_Shapes/Shapes/torus_textured.obj",
+    #                                       basePosition=[1.5, 1.5, -10.5],
+    #                                       scale = 0.05,
+    #                                       mass = 0.1,
+    #                                       )
+
 
     # Create TwoFingerGripper Object and set the initial joint positions
     hand = TwoFingerGripper(hand_id, path=args['hand_path'] + '/' + this_hand,hand_params=hand_param_dict)
@@ -1025,7 +1031,8 @@ if __name__ == '__main__':
     # multiprocess_evaluate_loaded('./data/HPC_Full/FTP_S1/experiment_config.json',"B")
 
 
-    #multiprocess_evaluate_loaded('./data/Shape_Baselines/circle/experiment_config.json',"A")
+    #multiprocess_evaluate_loaded('./data/Higher_friction/x5/experiment_config.json',"A")
+
     #multiprocess_evaluate_loaded('./data/Shape_Baselines/cone/experiment_config.json',"A")
     #multiprocess_evaluate_loaded('./data/Shape_Baselines/circle/experiment_config.json',"B")
     #multiprocess_evaluate_loaded('./data/Shape_Baselines/cone/experiment_config.json',"B")
@@ -1034,9 +1041,9 @@ if __name__ == '__main__':
     #multiprocess_evaluate_loaded('/media/ubuntu/New Volume/data/Shape_Baselines/triangle/experiment_config.json',"B")
     #multiprocess_evaluate_loaded('/media/ubuntu/New Volume/data/Shape_Baselines/hourglass/experiment_config.json',"A")
     #multiprocess_evaluate_loaded('/media/ubuntu/New Volume/data/Shape_Baselines/square_concave/experiment_config.json',"A")
-    #multiprocess_evaluate_loaded('/media/ubuntu/New Volume/data/Shape_Baselines/teardrop/experiment_config.json',"A")
+    #multiprocess_evaluate_loaded('/media/ubuntu/New Volume/data/Ellipse_Baselines/Contact_25/experiment_config.json',"A")
 
-    replay('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/sf2/experiment_config.json',"/media/ubuntu/New Volume/data/Shape_Baselines/hourglass/Eval_A/Episode_206.pkl")
+    #replay('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/Higher_friction/x3/experiment_config.json',"/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/Higher_friction/x3/Eval_A/Episode_837.pkl")
     
 
     # asterisk_test('./data/Mothra_Slide/JA_S1/experiment_config.json','B')
@@ -1045,7 +1052,7 @@ if __name__ == '__main__':
     # rotation_test('./data/Jeremiah_Rotation/JA_S3/experiment_config.json',"A_A")
 
     # multiprocess_evaluate_loaded('./data/Full_continue/JA_S3_larger_space/experiment_config.json',"B")
-    # main('./data/Test/ra+rad/experiment_config.json', 'run')
+    # main('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/Ellipse_Test_Straight/sf2/experiment_config.json', 'run')
     # full_test('./data/Full_continue/JA_S3_new_weight/experiment_config.json',"A")
     # rotation_test('./data/Rotation_continue/JA_S3_new_weight_same_space/experiment_config.json',"A")
     # multiprocess_evaluate_loaded('./data/Rotation_continue/JA_S3_larger_space/experiment_config.json',"A")
