@@ -4,169 +4,8 @@ from mojograsp.simobjects.object_base import ObjectBase
 import numpy as np
 import time
 import os
+import pybullet_data
 
-class MultiprocessEnv():
-    def __init__(self, pybullet_import, hand: TwoFingerGripper, obj: ObjectBase, hand_type, physicsClientId=None,rand_start = False):
-        self.hand = hand
-        self.obj = obj
-        if 'B' in hand_type:
-            self.hand_type = 'B'
-        else:
-            self.hand_type = 'A'
-        self.rand_start = rand_start
-        self.p=pybullet_import
-        self.p.setCollisionFilterPair(hand.id, hand.id, 2, 5, 1)
-        self.p.setCollisionFilterPair(hand.id, hand.id, 2, 4, 1)
-        self.p.setCollisionFilterPair(hand.id, hand.id, 5, 2, 1)
-        self.p.setCollisionFilterPair(hand.id, hand.id, 5, 1, 1)
-        print("In the multiprocess env")
-        
-    def reset(self):
-        # reset the simulator
-        self.p.resetSimulation()
-        # reload the objects
-        plane_id = self.p.loadURDF("plane.urdf", flags=self.p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
-        
-        # adding noise
-        if self.rand_start:
-            obj_change = np.random.normal(0,0.01,2)
-        else:
-            # no noise
-            obj_change = np.array([0,0])
-    
-        
-        # For alt configuration
-        hand_id = self.p.loadURDF(self.hand.path, useFixedBase=True,
-                             basePosition=[0.0, 0.0, 0.05], flags=self.p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
-
-        if self.hand_type =='A':
-            self.p.resetJointState(hand_id, 0, -.725)
-            self.p.resetJointState(hand_id, 1, 1.45)
-            self.p.resetJointState(hand_id, 3, .725)
-            self.p.resetJointState(hand_id, 4, -1.45)
-        if self.hand_type == 'B':
-            
-            self.p.resetJointState(hand_id, 0, -.46)
-            self.p.resetJointState(hand_id, 1, 1.5)
-            self.p.resetJointState(hand_id, 3, .46)
-            self.p.resetJointState(hand_id, 4, -1.5)
-        mass_link = .036
-        self.p.changeDynamics(hand_id, 1, lateralFriction=0.5, rollingFriction=0.04,
-                         mass=.036)
-        self.p.changeDynamics(hand_id, 4, lateralFriction=0.5, rollingFriction=0.04,
-                         mass=.036)
-        self.p.changeDynamics(hand_id, 0, jointLowerLimit=-1.57, jointUpperLimit=1.57, mass=mass_link)
-        self.p.changeDynamics(hand_id, 1, jointLowerLimit=0, jointUpperLimit=2.09, mass=mass_link)
-        self.p.changeDynamics(hand_id, 3, jointLowerLimit=-1.57, jointUpperLimit=1.57, mass=mass_link)
-        self.p.changeDynamics(hand_id, 4, jointLowerLimit=-2.09, jointUpperLimit=0, mass=mass_link)
-        
-        obj_id = self.p.loadURDF(self.obj.path, basePosition=[0.0+obj_change[0], 0.10+obj_change[1], .05],
-                        flags=self.p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
-
-        if self.rand_start:
-            f1_pos = [0.03+obj_change[0], 0.10+obj_change[1], 0.05]
-            f2_pos = [-0.03+obj_change[0], 0.10+obj_change[1], 0.05]
-            
-            f1_angs = self.p.calculateInverseKinematics(hand_id, 2, f1_pos, maxNumIterations=3000)
-            f2_angs = self.p.calculateInverseKinematics(hand_id, 5, f2_pos, maxNumIterations=3000)
-            self.p.resetJointState(hand_id, 0, -np.pi/2)
-            self.p.resetJointState(hand_id, 1, np.pi/4)
-            self.p.resetJointState(hand_id, 3, np.pi/2)
-            self.p.resetJointState(hand_id, 4, -np.pi/4)
-            
-            positions = np.linspace([-np.pi/2,np.pi/4,np.pi/2,-np.pi/4],[f1_angs[0],f1_angs[1],f2_angs[2],f2_angs[3]],20)
-            for action_to_execute in positions:
-                self.p.setJointMotorControlArray(hand_id, jointIndices=self.hand.get_joint_numbers(),
-                                            controlMode=self.p.POSITION_CONTROL, targetPositions=action_to_execute,
-                                            positionGains=[0.8,0.8,0.8,0.8], forces=[0.4,0.4,0.4,0.4])
-                self.step()
-                # time.sleep(0.01)
-        # # print(f1_angs, f2_angs)
-        # p.resetJointState(hand_id, 0, f1_angs[0])
-        # p.resetJointState(hand_id, 1, f1_angs[1])
-        # p.resetJointState(hand_id, 3, f2_angs[2])
-        # p.resetJointState(hand_id, 4, f2_angs[3])
-        self.p.changeDynamics(plane_id,-1,lateralFriction=0.5, spinningFriction=0.01, rollingFriction=0.05)
-        self.p.changeDynamics(self.obj.id, -1, mass=.03, restitution=.95, lateralFriction=0.5)
-        # p.resetJointState(hand_id, 0, .695)
-        # p.resetJointState(hand_id, 1, -1.487)
-        # p.resetJointState(hand_id, 3, -.695)
-        # p.resetJointState(hand_id, 4, 1.487)
-        
-        self.p.setGravity(0, 0, -10)
-        self.p.setPhysicsEngineParameter(contactBreakingThreshold=.001)
-        # obj_id = p.loadURDF(self.obj.path, basePosition=[0.0, 0.1067, .05])
-
-        # Update the object id's
-        self.hand.id = hand_id
-        self.obj.id = obj_id
-        # Change gripper color
-        self.p.changeVisualShape(hand_id, -1, rgbaColor=[0.3, 0.3, 0.3, 1])
-        self.p.changeVisualShape(hand_id, 0, rgbaColor=[1, 0.5, 0, 1])
-        self.p.changeVisualShape(hand_id, 1, rgbaColor=[0.3, 0.3, 0.3, 1])
-        self.p.changeVisualShape(hand_id, 3, rgbaColor=[1, 0.5, 0, 1])
-        self.p.changeVisualShape(hand_id, 4, rgbaColor=[0.3, 0.3, 0.3, 1])
-        self.p.changeVisualShape(obj_id, -1, rgbaColor=[0.1, 0.1, 0.1, 1])
-        # time.sleep(5)
-
-    def reset_to_pos(self, object_pos, finger_angles):
-        # reset the simulator
-        self.p.resetSimulation()
-        # reload the objects
-        plane_id = self.p.loadURDF("plane.urdf", flags=self.p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
-
-        
-        # For alt configuration
-        hand_id = self.p.loadURDF(self.hand.path, useFixedBase=True,
-                             basePosition=[0.0, 0.0, 0.05], flags=self.p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
-
-        self.p.resetJointState(hand_id, 0, finger_angles[0])
-        self.p.resetJointState(hand_id, 1, finger_angles[1])
-        self.p.resetJointState(hand_id, 3, finger_angles[2])
-        self.p.resetJointState(hand_id, 4, finger_angles[3])
-
-        mass_link = .036
-        self.p.changeDynamics(hand_id, 1, lateralFriction=0.5, rollingFriction=0.04,
-                         mass=.036)
-        self.p.changeDynamics(hand_id, 4, lateralFriction=0.5, rollingFriction=0.04,
-                         mass=.036)
-        self.p.changeDynamics(hand_id, 0, jointLowerLimit=-1.57, jointUpperLimit=1.57, mass=mass_link)
-        self.p.changeDynamics(hand_id, 1, jointLowerLimit=0, jointUpperLimit=2.09, mass=mass_link)
-        self.p.changeDynamics(hand_id, 3, jointLowerLimit=-1.57, jointUpperLimit=1.57, mass=mass_link)
-        self.p.changeDynamics(hand_id, 4, jointLowerLimit=-2.09, jointUpperLimit=0, mass=mass_link)
-        
-        obj_id = self.p.loadURDF(self.obj.path, basePosition=[object_pos[0], object_pos[1], .05],
-                        flags=self.p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
-
-
-        self.p.changeDynamics(plane_id,-1,lateralFriction=0.5, spinningFriction=0.01, rollingFriction=0.05)
-        self.p.changeDynamics(self.obj.id, -1, mass=.03, restitution=.95, lateralFriction=0.5)
-        # p.resetJointState(hand_id, 0, .695)
-        # p.resetJointState(hand_id, 1, -1.487)
-        # p.resetJointState(hand_id, 3, -.695)
-        # p.resetJointState(hand_id, 4, 1.487)
-        
-        self.p.setGravity(0, 0, -10)
-        self.p.setPhysicsEngineParameter(contactBreakingThreshold=.001)
-        # obj_id = p.loadURDF(self.obj.path, basePosition=[0.0, 0.1067, .05])
-
-        # Update the object id's
-        self.hand.id = hand_id
-        self.obj.id = obj_id
-        # Change gripper color
-        self.p.changeVisualShape(hand_id, -1, rgbaColor=[0.3, 0.3, 0.3, 1])
-        self.p.changeVisualShape(hand_id, 0, rgbaColor=[1, 0.5, 0, 1])
-        self.p.changeVisualShape(hand_id, 1, rgbaColor=[0.3, 0.3, 0.3, 1])
-        self.p.changeVisualShape(hand_id, 3, rgbaColor=[1, 0.5, 0, 1])
-        self.p.changeVisualShape(hand_id, 4, rgbaColor=[0.3, 0.3, 0.3, 1])
-        self.p.changeVisualShape(obj_id, -1, rgbaColor=[0.1, 0.1, 0.1, 1])
-        # time.sleep(5)
-
-    def setup(self):
-        pass
-
-    def step(self):
-        self.p.stepSimulation()
 
 class MultiprocessSingleShapeEnv(Environment):
     def __init__(self,pybulletInstance, hand: TwoFingerGripper, obj: ObjectBase, hand_type , args=None, finger_points=None):
@@ -183,10 +22,19 @@ class MultiprocessSingleShapeEnv(Environment):
         self.rand_object_orientation = args['object_random_orientation']
         self.rand_finger_all_open = args['finger_random_off']
         self.finger_open_fraction = args['fobfreq']
-        self.p.setCollisionFilterPair(hand.id, hand.id, 2, 5, 1)
-        self.p.setCollisionFilterPair(hand.id, hand.id, 2, 4, 1)
-        self.p.setCollisionFilterPair(hand.id, hand.id, 5, 2, 1)
-        self.p.setCollisionFilterPair(hand.id, hand.id, 5, 1, 1)
+        try:
+            print("first try except")
+            self.HIGH_FRICTION = args['friction_experiment']
+            self.lateral_low = args['lat_fric_low']
+            self.lateral_high = args['lat_fric_high']
+            self.spinning_low = args['spin_fric_low']
+            self.spinning_high = args['spin_fric_high']
+            self.rolling_low = args['roll_fric_low']
+            self.rolling_high = args['roll_fric_high']
+            self.collision = args['collision_on']
+        except:
+            pass
+
         
         if finger_points is None:
             self.finger_points = finger_points
@@ -196,18 +44,63 @@ class MultiprocessSingleShapeEnv(Environment):
             self.finger_points.append(self.p.createConstraint(finger_points[0].id,-1,-1,-1,self.p.JOINT_FIXED,[0,0,0],[0,0,0],[0,0,1]))
             self.finger_points.append(self.p.createConstraint(finger_points[1].id,-1,-1,-1,self.p.JOINT_FIXED,[0,0,0],[0,0,0],[0,0,1]))
         
-        self.p.resetSimulation()
+        self.p.resetSimulation(self.p.RESET_USE_DEFORMABLE_WORLD)
 
         self.plane_id = self.p.loadURDF("plane.urdf", flags=self.p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES, basePosition=[0.5,0.3,0])
-        self.hand_id = self.p.loadURDF(self.hand.path, useFixedBase=True,
-                             basePosition=[0.0, 0.0, 0.05], flags=self.p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES | self.p.URDF_USE_SELF_COLLISION)
+
+        #See if the paramater is there for self collision
+        try:
+            if self.collision:
+                self.hand_id = self.p.loadURDF(self.hand.path, useFixedBase=False,
+                                    basePosition=[0.0, 0.0, 0.05], flags=self.p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES | self.p.URDF_USE_SELF_COLLISION)
+            else:
+                self.hand_id = self.p.loadURDF(self.hand.path, useFixedBase=False,
+                                    basePosition=[0.0, 0.0, 0.05], flags=self.p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
+                
+        #If collision paramater is not there just use self collision
+        except:
+            print('NO COLLISION PARAMATER, USING DEFAULT SELF COLLISION')
+            self.hand_id = self.p.loadURDF(self.hand.path, useFixedBase=False,
+                                basePosition=[0.0, 0.0, 0.05], flags=self.p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES | self.p.URDF_USE_SELF_COLLISION)
+            self.p.createConstraint(self.hand_id, -1, -1, -1, self.p.JOINT_FIXED, [0,0,0], [0,0,0], [0,0,0.05])
+
+
         self.obj_id = self.p.loadURDF(self.obj.path, basePosition=[0.0, 0.10, .05],
                                  flags=self.p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
+        # self.obj_id = self.p.loadSoftBody("/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/resources/object_models/Jeremiah_Shapes/Shapes/torus_textured.obj",
+        #                                   simFileName="/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/resources/object_models/Jeremiah_Shapes/Shapes/torus.vtk",
+        #                                   basePosition=[1.5, 1.5, -10.5],
+        #                                   mass = 0.1,
+        #                                   scale = 1,
+        #                                   useNeoHookean = 1, 
+        #                                   NeoHookeanMu = 180, 
+        #                                   NeoHookeanLambda = 600, 
+        #                                   NeoHookeanDamping = 0.01, 
+        #                                   collisionMargin = 0.006, 
+        #                                   useSelfCollision = 0, 
+        #                                   frictionCoeff = 0.5, 
+        #                                   repulsionStiffness = 800)
+
+
         # print('object path', self.obj.path)
         # assert 1==0
-        self.finger_lateral_friction_range = [0.25, 0.75]
-        self.finger_spinning_friction_range = [0.01,0.0101]
-        self.finger_rolling_friction_range = [0.04,0.0401]
+        try:
+            print('trying to set high friction')
+            if self.HIGH_FRICTION:
+                self.finger_lateral_friction_range = [self.lateral_low, self.lateral_high] #[1,2] #[0.25, 0.75]
+                self.finger_spinning_friction_range = [self.spinning_low, self.spinning_high] #[0.05,0.06] #[0.01,0.0101]
+                self.finger_rolling_friction_range = [self.rolling_low, self.spinning_high] #[0.1,0.2] #[0.04,0.0401]
+            else:
+                self.finger_lateral_friction_range = [0.25, 0.75] #[1,2] #[0.25, 0.75]
+                self.finger_spinning_friction_range = [0.01,0.0101] #[0.05,0.06] #[0.01,0.0101]
+                self.finger_rolling_friction_range = [0.04,0.0401] #[0.1,0.2] #[0.04,0.0401]
+            
+        except:
+            print('no high friction')
+            self.finger_lateral_friction_range = [0.25, 0.75] #[1,2] #[0.25, 0.75]
+            self.finger_spinning_friction_range = [0.01,0.0101] #[0.05,0.06] #[0.01,0.0101]
+            self.finger_rolling_friction_range = [0.04,0.0401] #[0.1,0.2] #[0.04,0.0401]
+
         self.floor_lateral_friction_range = [0.15,0.45]
         self.floor_spinning_friction_range = [0.01,0.0101]
         self.floor_rolling_friction_range = [0.05,0.0501]
@@ -242,7 +135,8 @@ class MultiprocessSingleShapeEnv(Environment):
         self.start_time = 0
         
         self.p.setGravity(0, 0, -10)
-        self.p.setPhysicsEngineParameter(contactBreakingThreshold=.001)
+        self.p.setPhysicsEngineParameter(contactBreakingThreshold=.001, sparseSdfVoxelSize=0.25)
+        self.p.setRealTimeSimulation(0)
         fixed=False
         if fixed:
             self.p.createConstraint(self.obj_id, -1, -1, -1, self.p.JOINT_POINT2POINT, [0, 0, 1],
@@ -363,13 +257,13 @@ class MultiprocessSingleShapeEnv(Environment):
 
     def reset_to_pos(self, object_pos, finger_angles):
         # reset the simulator
-        self.p.resetSimulation()
+        self.p.resetSimulation(self.p.RESET_USE_DEFORMABLE_WORLD)
         # reload the objects
         plane_id = self.p.loadURDF("plane.urdf", flags=self.p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
 
         # For alt configuration
         hand_id = self.p.loadURDF(self.hand.path, useFixedBase=True,
-                             basePosition=[0.0, 0.0, 0.05], flags=self.p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
+                             basePosition=[0.0, 0.0, 0.05], flags=self.p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES | self.p.URDF_USE_SELF_COLLISION)
 
         self.p.resetJointState(hand_id, 0, finger_angles[0])
         self.p.resetJointState(hand_id, 1, finger_angles[1])
@@ -377,9 +271,10 @@ class MultiprocessSingleShapeEnv(Environment):
         self.p.resetJointState(hand_id, 4, finger_angles[3])
 
         mass_link = .036
-        self.p.changeDynamics(hand_id, 1, lateralFriction=0.5, rollingFriction=0.04,
+        #ASK ABOUT THIS
+        self.p.changeDynamics(hand_id, 1, lateralFriction=self.lateral_low , rollingFriction=self.rolling_low,
                          mass=.036)
-        self.p.changeDynamics(hand_id, 4, lateralFriction=0.5, rollingFriction=0.04,
+        self.p.changeDynamics(hand_id, 4, lateralFriction=self.lateral_low, rollingFriction=self.rolling_low,
                          mass=.036)
         self.p.changeDynamics(hand_id, 0, jointLowerLimit=-1.57, jointUpperLimit=1.57, mass=mass_link)
         self.p.changeDynamics(hand_id, 1, jointLowerLimit=0, jointUpperLimit=2.09, mass=mass_link)
@@ -388,13 +283,18 @@ class MultiprocessSingleShapeEnv(Environment):
         
         obj_id = self.p.loadURDF(self.obj.path, basePosition=[object_pos[0], object_pos[1], .05],
                         flags=self.p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
+        # obj_id = self.p.loadSoftBody("/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/resources/object_models/Jeremiah_Shapes/Shapes/torus.obj",
+        #                                   scale = 0.1,
+        #                                   basePosition=[1.5, 1.5, -10.5],
+        #                                   mass = 0.1)
 
 
         self.p.changeDynamics(plane_id,-1,lateralFriction=0.5, spinningFriction=0.01, rollingFriction=0.05)
         self.p.changeDynamics(self.obj.id, -1, mass=.03, restitution=.95, lateralFriction=0.5)
         
         self.p.setGravity(0, 0, -10)
-        self.p.setPhysicsEngineParameter(contactBreakingThreshold=.001)
+        self.p.setPhysicsEngineParameter(contactBreakingThreshold=.001, sparseSdfVoxelSize=0.25)
+        self.p.p.setRealTimeSimulation(0)
         # obj_id = self.p.loadURDF(self.obj.path, basePosition=[0.0, 0.1067, .05])
 
         # Update the object id's

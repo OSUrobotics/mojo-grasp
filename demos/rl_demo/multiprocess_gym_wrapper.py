@@ -72,6 +72,7 @@ class MultiprocessGymWrapper(gym.Env):
         self.first = True
         self.reduced_saving = True
         self.small_enough = False #args['epochs'] <= 100000
+        self.ONE_FINGER = args['one_finger']
         self.OBJECT_POSE_RANDOMIZATION = args['object_random_start']
         try:
             self.DOMAIN_RANDOMIZATION_MASS = args['domain_randomization_object_mass']
@@ -199,12 +200,18 @@ class MultiprocessGymWrapper(gym.Env):
             self.env.reset(self.eval_point)
         elif type(special) is list:
             self.env.reset_to_pos(special[0],special[1])
+
+        # Jeremiah shenanigans I hope this breaks nothing
         elif type(special) is dict:
             # print('reseting with special dict', special)
             if 'fingers' in special.keys():
                 self.env.reset(special['goal_position'], special['fingers'])
+            elif self.ONE_FINGER:
+                self.env.reset([0,0],[-.785,1.57,0.174533,-0.174533])
             else:
                 self.env.reset(special['goal_position'])
+            
+
         elif (self.TASK == 'Rotation_region') | ('contact' in self.TASK) | (self.TASK=='big_Rotation'):
             self.env.reset(new_goal['goal_position'],fingerys=fingerys)
         elif self.OBJECT_POSE_RANDOMIZATION:
@@ -215,6 +222,8 @@ class MultiprocessGymWrapper(gym.Env):
             self.env.reset([x,y])
         elif 'wall' in self.TASK:
             self.env.reset([0.0463644396618753, 0.012423314164921])
+        elif self.ONE_FINGER:
+            self.env.reset([0,0],[.785,-1.57,0.174533,-0.174533])
         else:
             # print('reseting with NO parameters')
             self.env.reset()
@@ -310,6 +319,7 @@ class MultiprocessGymWrapper(gym.Env):
         """
         angle_keys = ["finger0_segment0_joint","finger0_segment1_joint","finger1_segment0_joint","finger1_segment1_joint"]
         state = []
+        #print('state list', self.state_list)
         if self.PREV_VALS > 0:
             for i in range(self.PREV_VALS):
                 for key in self.state_list:
@@ -353,6 +363,15 @@ class MultiprocessGymWrapper(gym.Env):
                     elif key == 'wall':
                         state.extend(state_container['previous_state'][i]['wall']['pose'][0][0:2])
                         state.extend(state_container['previous_state'][i]['wall']['pose'][1][0:4])
+                    # What Jeremiah Added
+                    elif key == 'rad':
+                        state.append(state_container['previous_state'][i]['f1_contact_distance'])
+                        state.append(state_container['previous_state'][i]['f2_contact_distance'])
+                        state.append(state_container['previous_state'][i]['f1_contact_flag'])
+                        state.append(state_container['previous_state'][i]['f2_contact_flag'])
+                    elif key == 'ra':
+                        state.append(state_container['previous_state'][i]['f1_contact_angle'])
+                        state.append(state_container['previous_state'][i]['f2_contact_angle'])
                     else:
                         raise Exception('key does not match list of known keys')
 
@@ -398,6 +417,17 @@ class MultiprocessGymWrapper(gym.Env):
             elif key == 'wall':
                 state.extend(state_container['wall']['pose'][0][0:2])
                 state.extend(state_container['wall']['pose'][1][0:4])
+                
+            # What Jeremiah Added
+            elif key == 'rad':
+                state.append(state_container['f1_contact_distance'])
+                state.append(state_container['f2_contact_distance'])
+                state.append(state_container['f1_contact_flag'])
+                state.append(state_container['f2_contact_flag'])
+            elif key == 'ra':
+                state.append(state_container['f1_contact_angle'])
+                state.append(state_container['f2_contact_angle'])
+
             else:
                 raise Exception('key does not match list of known keys')
             

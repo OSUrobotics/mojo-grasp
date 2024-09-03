@@ -195,9 +195,11 @@ def make_pybullet(arg_dict, pybullet_instance, rank, hand_info, viz=False):
         physics_client = pybullet_instance.connect(pybullet_instance.DIRECT)
 
     # set initial gravity and general features
+    pybullet_instance.resetSimulation(pybullet_instance.RESET_USE_DEFORMABLE_WORLD)
     pybullet_instance.setAdditionalSearchPath(pybullet_data.getDataPath())
     pybullet_instance.setGravity(0, 0, -10)
-    pybullet_instance.setPhysicsEngineParameter(contactBreakingThreshold=.001)
+    pybullet_instance.setPhysicsEngineParameter(contactBreakingThreshold=.001, sparseSdfVoxelSize=0.25)
+    pybullet_instance.setRealTimeSimulation(0)
     pybullet_instance.resetDebugVisualizerCamera(cameraDistance=.02, cameraYaw=0, cameraPitch=-89.9999,
                                  cameraTargetPosition=[0, 0.1, 0.5])
     
@@ -253,7 +255,9 @@ def make_pybullet(arg_dict, pybullet_instance, rank, hand_info, viz=False):
                          basePosition=[0.0, 0.0, 0.05], flags=pybullet_instance.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
     # print('object path',object_path)
     obj_id = pybullet_instance.loadURDF(object_path, basePosition=[0.0, 0.10, .05], flags=pybullet_instance.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
-    # print(f'OBJECT ID:{obj_id}')
+
+    #obj_id = pybullet_instance.loadSoftBody("/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/resources/object_models/Jeremiah_Shapes/Shapes/torus.vtk", mass = 3, scale = 1, useNeoHookean = 1, NeoHookeanMu = 180, NeoHookeanLambda = 600, NeoHookeanDamping = 0.01, collisionMargin = 0.006, useSelfCollision = 1, frictionCoeff = 0.5, repulsionStiffness = 800)
+
 
     # Create TwoFingerGripper Object and set the initial joint positions
     hand = TwoFingerGripper(hand_id, path=args['hand_path'] + '/' + this_hand,hand_params=hand_param_dict)
@@ -1034,29 +1038,6 @@ if __name__ == '__main__':
     # multiprocess_evaluate_loaded('./data/HPC_Full/FTP_S1/experiment_config.json',"A")
     # multiprocess_evaluate_loaded('./data/HPC_Full/FTP_S1/experiment_config.json',"B")
 
-
-    #multiprocess_evaluate_loaded('./data/Shape_Baselines/circle/experiment_config.json',"A")
-    #multiprocess_evaluate_loaded('./data/Shape_Baselines/cone/experiment_config.json',"A")
-    #multiprocess_evaluate_loaded('./data/Shape_Baselines/circle/experiment_config.json',"B")
-    #multiprocess_evaluate_loaded('./data/Shape_Baselines/cone/experiment_config.json',"B")
-    #multiprocess_evaluate_loaded('./data/Shape_Baselines/square/experiment_config.json',"A")
-    multiprocess_evaluate_loaded('./data/sanity_check/experiment_config.json',"A")
-    multiprocess_evaluate_loaded('./data/sanity_check/experiment_config.json',"B")
-    #multiprocess_evaluate_loaded('/media/ubuntu/New Volume/data/Shape_Baselines/hourglass/experiment_config.json',"A")
-    #multiprocess_evaluate_loaded('/media/ubuntu/New Volume/data/Shape_Baselines/square_concave/experiment_config.json',"A")
-    #multiprocess_evaluate_loaded('/media/ubuntu/New Volume/data/Shape_Baselines/teardrop/experiment_config.json',"A")
-
-    # replay('/media/ubuntu/New Volume/data/Shape_Baselines/hourglass/experiment_config.json',"/media/ubuntu/New Volume/data/Shape_Baselines/hourglass/Eval_A/Episode_206.pkl")
-    
-
-    # asterisk_test('./data/Mothra_Slide/JA_S1/experiment_config.json','B')
-    # print('finsihed test')
-    # multiprocess_evaluate_loaded('./data/Rotation_continue/JA_S3_new_weight_same_space/experiment_config.json',"A")
-    # rotation_test('./data/Jeremiah_Rotation/JA_S3/experiment_config.json',"A_A")
-
-    # multiprocess_evaluate_loaded('./data/Full_continue/JA_S3_larger_space/experiment_config.json',"B")
-    # main('./data/sanity_check/experiment_config.json', 'run')
-    # full_test('./data/Full_continue/JA_S3_new_weight/experiment_config.json',"A")
     # rotation_test('./data/Rotation_continue/JA_S3_new_weight_same_space/experiment_config.json',"A")
     # multiprocess_evaluate_loaded('./data/Rotation_continue/JA_S3_larger_space/experiment_config.json',"A")
     # rotation_test('./data/Mothra_Rotation/JA_S3/experiment_config.json',"A")
