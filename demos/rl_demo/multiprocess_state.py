@@ -161,16 +161,21 @@ class MultiprocessState(StateDefault):
     def set_goal(self,goal_list):
         for thing in self.objects:
             if (type(thing) == GoalHolder) | (type(thing) == RandomGoalHolder)|(type(thing) == HRLGoalHolder):
-                thing.set_pose(goal_list[0:2], goal_list[2])
-                self.current_state[i.name] = i.get_data()
+                if len(goal_list) > 4:
+                    thing.set_pose(goal_list[0:2], goal_list[2],goal_list[3:5])
+                elif len(goal_list) >=3:
+                    thing.set_pose(goal_list[0:2], goal_list[2])
+                else:
+                    thing.set_pose(goal_list[0:2])
+                self.current_state[thing.name] = thing.get_data()
     
+
     def get_goal(self):
-        # print(self.current_state)
-        # print('goal from state.get_goal',self.current_state['goal_pose'])
         try:
             return self.current_state['goal_pose']
         except KeyError:
             return [0,0]
+
     def __eq__(self, o):
         # Doesnt check that the objects are the same or that the run number is the same,
         # only checks that the values saved in state are the same

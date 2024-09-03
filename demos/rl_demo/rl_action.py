@@ -67,3 +67,6 @@ class InterpAction(ExpertAction):
             # self.action_profile = np.linspace(start, target,self.interp_ratio)
             # alternative using some sinusoidal stuff
         # print(f'action profile {self.action_profile}')
+
+    def set_high_level_action(self, goal):
+        self.current_action['high_level_action'] = goal

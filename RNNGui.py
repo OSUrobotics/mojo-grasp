@@ -93,7 +93,7 @@ class RNNGui():
                          [sg.Text('State Training Noise'), sg.Input(0.0, key='-snoise',size=(8, 2)),sg.Text('Start Pos Range (mm)'), sg.Input(0, key='-start-noise',size=(8, 2))],
                          [sg.Text('Timestep Frequency'), sg.Input(3,key='-freq',size=(8, 2)), sg.Text('Entropy'), sg.Input(0.0,key='-entropy',size=(8, 2))],
                          [sg.Text('Finger off object frequency'), sg.Input(0.0, key='-fobfreq', size=(8,2))],
-                         [sg.Checkbox('Fingers Start in Contact', default=False, key='-contact_start')]]
+                         [sg.Checkbox('Fingers Start in Contact', default=False, key='-contact_start'),sg.Checkbox('Cirriculum',default=False,key='-cirriculum')]]
         
         plotting_layout = [[sg.Text('Model Title')],
                        [sg.Input('test1',key='-title')],
@@ -110,6 +110,7 @@ class RNNGui():
                        [sg.Checkbox('Goal Position', default=True, k='-gp')],
                        [sg.Checkbox('Goal Orientation', default=True, k = '-go')],
                        [sg.Checkbox('Goal Finger Pos', default=False, k='-gf')],
+                       [sg.Checkbox('Goal Finger Separation', default=False, k='gfs')],
                        [sg.Checkbox('Eigenvalues', default=False,key='-eva')],
                        [sg.Checkbox('Eigenvectors', default=False,key='-evc')],
                        [sg.Checkbox('HandParameters', default=False,key='-params')],
@@ -117,7 +118,8 @@ class RNNGui():
                        [sg.Checkbox('Eigenvectors Times Eigenvalues', default=False,key='-evv')],
                        [sg.Text('Num Previous States'), sg.Input(2, k='-pv',size=(8, 2)), sg.Text('Success Radius (mm)'), sg.Input(2, key='-sr',size=(8, 2))],
                        [sg.Text("Distance Scale"),  sg.Input(1,key='-distance_scale',size=(8, 2)), sg.Text('Contact Scale'),  sg.Input(0.2,key='-contact_scale',size=(8, 2)), sg.Text('Success Reward'), sg.Input(1,key='-success_reward',size=(8, 2)), sg.Text('Rotation Scale'), sg.Input(1,key='-rotation_scale',size=(8, 2))],
-                       [sg.Text("Action"), sg.OptionMenu(values=('Joint Velocity','Finger Tip Position','Object Pose'), k='-action',default_value='Finger Tip Position')],
+                       [sg.Text("Low Level Action"), sg.OptionMenu(values=('Joint Velocity','Finger Tip Position'), k='-action',default_value='Finger Tip Position')],
+                       [sg.Text('Manager Action'), sg.OptionMenu(values=("Object Pose", "Object XY","Object+Finger"), k='-manager_action',default_value='Object Pose')],
                        [sg.Checkbox('Vizualize Simulation', default=False, k='-viz'), sg.Checkbox('Real World?',default=False, k='-rw'), sg.Checkbox('IK every sim step?', default=False, key='-ik-freq')],
                        [sg.Button('Build Config File', key='-build')]]
 
@@ -146,6 +148,7 @@ class RNNGui():
                      'sampling': values['-sampling'],
                      'reward': values['-reward'],
                      'action': values['-action'],
+                     'manager_action': values['-manager_action'],
                      'rollout_size': int(values['-rollout_size']),
                      'rollout_weight': float(values['-rollout_weight']),
                      'tau': float(values['-tau']),
@@ -171,7 +174,8 @@ class RNNGui():
                      'domain_randomization_floor_friction':bool(values['-DRFL']),
                      'domain_randomization_object_size':bool(values['-DROS']),
                      'domain_randomization_object_mass':bool(values['-DROM']),
-                     'contact_start':bool(values['-contact_start'])}
+                     'contact_start':bool(values['-contact_start']),
+                     'cirriculum':bool(values['-cirriculum'])}
         state_len = 0
         state_mins = []
         state_maxes = []
@@ -296,6 +300,7 @@ class RNNGui():
             state_maxes.extend([0.072, 0.172, 0.072, 0.172])
             state_len += 4
             state_list.append('gf')
+
         if values['-wall']:
             state_mins.extend([-0.08,0.02,-1,-1,-1,-1])
             state_maxes.extend([0.08,0.18,1,1,1,1])

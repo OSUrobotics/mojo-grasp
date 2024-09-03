@@ -140,9 +140,6 @@ def contact_point(reward_container, tholds):
 def direction(reward_container, tholds):
     return reward_container['dist_reward'] - 0.1*max(reward_container['f1_dist'],reward_container['f2_dist']), False
 
-def worker(reward_container, tholds):
-    print('not implemented yet, returning 1')
-    return 1, False
 
 def triple_scaled_slide(reward_container, tholds):
     # print(reward_container)
@@ -152,10 +149,137 @@ def triple_scaled_slide(reward_container, tholds):
     obj_rotation = reward_container['object_orientation'][2]
     thing1 = (obj_rotation-reward_container['goal_orientation'])%(np.pi*2)
     thing2 = (reward_container['goal_orientation']-obj_rotation)%(np.pi*2)
-    rotation_temp = min(thing1,thing2)
+    rotation_temp = -min(thing1,thing2)
     ftemp,temp = max(ftemp,-2), max(temp, -2)
-    tstep_reward = temp*tholds['DISTANCE_SCALING'] + ftemp*tholds['CONTACT_SCALING'] - rotation_temp/np.pi*tholds['ROTATION_SCALING']
+    tstep_reward = temp*tholds['DISTANCE_SCALING'] + ftemp*tholds['CONTACT_SCALING'] + rotation_temp/np.pi*tholds['ROTATION_SCALING']
     return float(tstep_reward), False
+
+
+
+"""
+Begin HRL reward functions
+"""
+def manager(reward_container, tholds):
+    obj_rotation = reward_container['object_orientation'][2]
+    thing1 = (obj_rotation-reward_container['upper_goal_orientation'])%(np.pi*2)
+    thing2 = (reward_container['upper_goal_orientation']-obj_rotation)%(np.pi*2)
+    rotation_temp = -min(thing1,thing2)
+    ftemp = -max(reward_container['f1_dist'], reward_container['f2_dist']) * 10 # 100 here to make ftemp = -1 when at 10 cm
+    temp = -reward_container['upper_distance']/reward_container['start_dist'] # should scale this so that it is -1 at start 
+    ftemp,temp = max(ftemp,-2), max(temp, -2)
+    tstep_reward = temp*tholds['DISTANCE_SCALING'] + ftemp*tholds['CONTACT_SCALING'] + rotation_temp/np.pi*tholds['ROTATION_SCALING']
+    # print(temp*tholds['DISTANCE_SCALING'],-rotation_temp*tholds['ROTATION_SCALING'],ftemp*tholds['CONTACT_SCALING'], tstep_reward)
+    return tstep_reward, False
+
+def manager_alt_1(reward_container, tholds):
+    obj_rotation = reward_container['object_orientation'][2]
+    thing1 = (obj_rotation-reward_container['upper_goal_orientation'])%(np.pi*2)
+    thing2 = (reward_container['upper_goal_orientation']-obj_rotation)%(np.pi*2)
+    rotation_temp = -min(thing1,thing2)
+    ftemp = -max(reward_container['f1_dist'], reward_container['f2_dist']) * 10 # 100 here to make ftemp = -1 when at 10 cm
+    temp = -reward_container['upper_distance']/reward_container['start_dist'] # should scale this so that it is -1 at start 
+    ftemp,temp = max(ftemp,-2), max(temp, -2)
+    tstep_reward = temp*tholds['DISTANCE_SCALING'] + ftemp*tholds['CONTACT_SCALING'] + rotation_temp/np.pi*tholds['ROTATION_SCALING']
+    goal_vector = [reward_container['goal_position'][0]-reward_container['previous_pos'][0][0],
+                       reward_container['goal_position'][1]-reward_container['previous_pos'][0][1]]
+    movement_vector = [reward_container['object_pose'][0][0]-reward_container['previous_pos'][0][0],
+                       reward_container['object_pose'][0][1]-reward_container['previous_pos'][0][1]]
+    if np.isclose(np.linalg.norm(movement_vector),0):
+        lower_reward_term = 0
+    else:
+        lower_reward_term =  np.dot(goal_vector,movement_vector)/(np.linalg.norm(goal_vector)*np.linalg.norm(movement_vector))
+    # print(temp*tholds['DISTANCE_SCALING'],-rotation_temp*tholds['ROTATION_SCALING'],ftemp*tholds['CONTACT_SCALING'], tstep_reward)
+    return tstep_reward + lower_reward_term*0.02, False
+
+def worker_object_position(reward_container, tholds):
+    goal_vector = [reward_container['goal_position'][0]-reward_container['previous_pos'][0][0],
+                       reward_container['goal_position'][1]-reward_container['previous_pos'][0][1]]
+    movement_vector = [reward_container['object_pose'][0][0]-reward_container['previous_pos'][0][0],
+                       reward_container['object_pose'][0][1]-reward_container['previous_pos'][0][1]]
+    obj_rotation = reward_container['object_orientation'][2]
+    thing1 = (obj_rotation-reward_container['upper_goal_orientation'])%(np.pi*2)
+    thing2 = (reward_container['upper_goal_orientation']-obj_rotation)%(np.pi*2)
+    rotation_temp = -min(thing1,thing2)
+    ftemp = -max(reward_container['f1_dist'], reward_container['f2_dist']) * 100 # 100 here to make ftemp = -1 when at 1 cm
+    temp = -reward_container['upper_distance']/reward_container['start_dist'] # should scale this so that it is -1 at start 
+    ftemp,temp = max(ftemp,-2), max(temp, -2)
+    tstep_reward = temp*tholds['DISTANCE_SCALING'] + ftemp*tholds['CONTACT_SCALING'] + rotation_temp/np.pi*tholds['ROTATION_SCALING']
+    if np.isclose(np.linalg.norm(movement_vector),0):
+        lower_reward_term = 0
+    else:
+        lower_reward_term =  np.dot(goal_vector,movement_vector)/(np.linalg.norm(goal_vector)*np.linalg.norm(movement_vector))
+    # print('goal, movement')
+    # print(goal_vector, movement_vector)
+    # print('dot, lower')
+    # print(np.dot(goal_vector,movement_vector),lower_reward_term )
+    return tstep_reward/2 + lower_reward_term/2, False
+
+def worker_object_pose(reward_container, tholds):
+    goal_vector = [reward_container['goal_position'][0]-reward_container['previous_pos'][0][0],
+                       reward_container['goal_position'][1]-reward_container['previous_pos'][0][1],
+                       reward_container['goal_orientation']-reward_container['previous_orientation'][2]]
+    
+    movement_vector = [reward_container['object_pose'][0][0]-reward_container['previous_pos'][0][0],
+                       reward_container['object_pose'][0][1]-reward_container['previous_pos'][0][1],
+                       reward_container['object_orientation'][2]-reward_container['previous_orientation'][2]]
+    goal_vector[2] = goal_vector[2] /(-50/180*np.pi) * 0.08 
+    movement_vector[2] = movement_vector[2] /(-50/180*np.pi) * 0.08 
+
+    obj_rotation = reward_container['object_orientation'][2]
+    thing1 = (obj_rotation-reward_container['upper_goal_orientation'])%(np.pi*2)
+    thing2 = (reward_container['upper_goal_orientation']-obj_rotation)%(np.pi*2)
+    rotation_temp = -min(thing1,thing2)
+    ftemp = -max(reward_container['f1_dist'], reward_container['f2_dist']) * 100 # 100 here to make ftemp = -1 when at 1 cm
+    temp = -reward_container['upper_distance']/reward_container['start_dist'] # should scale this so that it is -1 at start 
+    ftemp,temp = max(ftemp,-2), max(temp, -2)
+    tstep_reward = temp*tholds['DISTANCE_SCALING'] + ftemp*tholds['CONTACT_SCALING'] + rotation_temp/np.pi*tholds['ROTATION_SCALING']
+    if np.isclose(np.linalg.norm(movement_vector),0,atol=0.0001):
+        lower_reward_term = 0
+    else:
+        lower_reward_term =  np.dot(goal_vector,movement_vector)/(np.linalg.norm(goal_vector)*np.linalg.norm(movement_vector))
+    # print('goal, movement')
+    # print(goal_vector, movement_vector)
+    # print('dot, lower')
+    # print(np.dot(goal_vector,movement_vector),lower_reward_term )
+    return tstep_reward/2 + lower_reward_term/2, False
+
+def worker_object_pose_finger(reward_container, tholds):
+    goal_vector = [reward_container['goal_position'][0]-reward_container['previous_pos'][0][0],
+                       reward_container['goal_position'][1]-reward_container['previous_pos'][0][1],
+                       reward_container['goal_orientation']-reward_container['previous_orientation'][2],
+                       reward_container['goal_finger'][0] - (reward_container['previous_finger_pose'][0]-reward_container['previous_finger_pose'][2]),
+                       reward_container['goal_finger'][1] - (reward_container['previous_finger_pose'][1]-reward_container['previous_finger_pose'][3])]
+    
+    movement_vector = [reward_container['object_pose'][0][0]-reward_container['previous_pos'][0][0],
+                       reward_container['object_pose'][0][1]-reward_container['previous_pos'][0][1],
+                       reward_container['object_orientation'][2]-reward_container['previous_orientation'][2],
+                       (reward_container['finger_pose'][0]-reward_container['previous_finger_pose'][2]) - (reward_container['previous_finger_pose'][0]-reward_container['previous_finger_pose'][2]),
+                       (reward_container['finger_pose'][1]-reward_container['previous_finger_pose'][3]) - (reward_container['previous_finger_pose'][1]-reward_container['previous_finger_pose'][3])]
+    goal_vector[2] = goal_vector[2] /(-50/180*np.pi) * 0.08 
+    movement_vector[2] = movement_vector[2] /(-50/180*np.pi) * 0.08 
+    goal_vector[3] = goal_vector[3] * 2
+    goal_vector[4] = goal_vector[4] * 2
+    movement_vector[3] = movement_vector[3] * 2
+    movement_vector[4] = movement_vector[4] * 2
+    obj_rotation = reward_container['object_orientation'][2]
+    thing1 = (obj_rotation-reward_container['upper_goal_orientation'])%(np.pi*2)
+    thing2 = (reward_container['upper_goal_orientation']-obj_rotation)%(np.pi*2)
+    rotation_temp = -min(thing1,thing2)
+    ftemp = -max(reward_container['f1_dist'], reward_container['f2_dist']) * 100 # 100 here to make ftemp = -1 when at 1 cm
+    temp = -reward_container['upper_distance']/reward_container['start_dist'] # should scale this so that it is -1 at start 
+    ftemp,temp = max(ftemp,-2), max(temp, -2)
+    tstep_reward = temp*tholds['DISTANCE_SCALING'] + ftemp*tholds['CONTACT_SCALING'] + rotation_temp/np.pi*tholds['ROTATION_SCALING']
+    if np.isclose(np.linalg.norm(movement_vector),0,atol=0.0001):
+        lower_reward_term = 0
+    else:
+        lower_reward_term =  np.dot(goal_vector,movement_vector)/(np.linalg.norm(goal_vector)*np.linalg.norm(movement_vector))
+    # print('goal, movement')
+    # print(goal_vector, movement_vector)
+    # print('dot, lower')
+    # print(np.dot(goal_vector,movement_vector),lower_reward_term )
+    separated = np.array([goal_vector[i] * movement_vector[i] for i in range(len(goal_vector))])
+    # print('broken down parts of thing', separated/np.linalg.norm(separated), lower_reward_term)
+    return tstep_reward/2 + lower_reward_term/2, False
 
 if __name__ == '__main__':
     import matplotlib.pyplot as plt

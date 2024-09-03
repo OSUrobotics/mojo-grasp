@@ -154,27 +154,27 @@ class HRLGoalHolder(GoalHolder):
         super().__init__(goal_pose, finger_start, goal_orientation, goal_finger, goal_names, mix_orientation, mix_finger)
         self.lower_pos = self.pose[self.run_num%self.len]
         self.lower_or =  self.orientation[self.run_num%self.len]
-        self.lower_finger =  self.finger[self.run_num%self.len]
-
-    def set_pose(self, pos, orient=None):
+        self.lower_finger =  [0,0]
+    def set_pose(self, pos, orient=None, finger_separation=None):
         '''
         This is used by the higher level policy to set the goals for the lower level policy
         '''    
         # print('SETTING THE FPOSE')
         self.lower_pos = pos
         self.lower_or = orient
+        self.lower_finger = finger_separation
 
     def reset(self):
         super().reset()
         self.lower_pos = self.pose[self.run_num%self.len]
         self.lower_or = self.orientation[self.run_num%self.len]
-        self.lower_finger = self.finger[self.run_num%self.len]
+        self.lower_finger = [0,0]
     
     def next_run(self):
         temp  = super().next_run()
         self.lower_pos = self.pose[self.run_num%self.len]
         self.lower_or = self.orientation[self.run_num%self.len]
-        self.lower_finger = self.finger[self.run_num%self.len]
+        self.lower_finger = [0,0]
         return temp
     
     # def get_data_upper(self):
@@ -182,7 +182,7 @@ class HRLGoalHolder(GoalHolder):
     #     return {'goal_position':self.pose[self.run_num%self.len],'goal_orientation':self.orientation[self.run_num%self.len], 'goal_finger':self.finger[self.run_num%self.len]}
    
     def get_data(self):
-        # print('data stuff', self.orientation)
+        # print('data stuff', self.lower_finger)
         return {'goal_position':self.lower_pos,'goal_orientation':self.lower_or, 'goal_finger':self.lower_finger,
                 'upper_goal_position':self.pose[self.run_num%self.len],'upper_goal_orientation':self.orientation[self.run_num%self.len], 'upper_goal_finger':self.finger[self.run_num%self.len]}
 
