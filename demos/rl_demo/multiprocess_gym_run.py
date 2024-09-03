@@ -993,7 +993,7 @@ def main(filepath = None,learn_type='run', num_cpu=16):
 if __name__ == '__main__':
     import csv
     # multiprocess_evaluate_loaded('./data/Mothra_Full/FTP_S1/experiment_config.json',"B")
-    # replay('./data/Jeremiah_Full/JA_S1/experiment_config.json', './data/Jeremiah_Full/JA_S1/Eval_A/Episode_26599.pkl')
+    # replay('./data/mslide/JA_S2/experiment_config.json', './data/mslide/JA_S2/Ast_A/Episode_5.pkl')
     # multiprocess_evaluate_loaded('./data/Mothra_Rotation/JA_S3/experiment_config.json',"B")
     # multiprocess_evaluate_loaded('./data/Mothra_Rotation/JA_S3/experiment_config.json',"A")
 
@@ -1003,12 +1003,22 @@ if __name__ == '__main__':
     # multiprocess_evaluate_loaded('./data/Full_long_test/experiment_config.json',"B")
     # multiprocess_evaluate_loaded('./data/HPC_Full/JA_S3/experiment_config.json',"B")
 
-    # multiprocess_evaluate_loaded('./data/Jeremiah_Full/FTP_S1/experiment_config.json',"A")
-    # multiprocess_evaluate_loaded('./data/Jeremiah_Full/FTP_S1/experiment_config.json',"B")
-    # multiprocess_evaluate_loaded('./data/Jeremiah_Full/FTP_S2/experiment_config.json',"A")
-    # multiprocess_evaluate_loaded('./data/Jeremiah_Full/FTP_S2/experiment_config.json',"B")
-    # multiprocess_evaluate_loaded('./data/Jeremiah_Full/FTP_S3/experiment_config.json',"A")
-    # multiprocess_evaluate_loaded('./data/Jeremiah_Full/FTP_S3/experiment_config.json',"B")
+    # multiprocess_evaluate_loaded('./data/HPC_Slide/FTP_S1/experiment_config.json',"A")
+    # multiprocess_evaluate_loaded('./data/HPC_Slide/FTP_S1/experiment_config.json',"B")
+    # multiprocess_evaluate_loaded('./data/HPC_Slide/FTP_S2/experiment_config.json',"A")
+    # multiprocess_evaluate_loaded('./data/HPC_Slide/FTP_S2/experiment_config.json',"B")
+
+    # multiprocess_evaluate_loaded('./data/HPC_Slide/JA_S1/experiment_config.json',"A")
+    # multiprocess_evaluate_loaded('./data/HPC_Slide/JA_S1/experiment_config.json',"B")
+    # multiprocess_evaluate_loaded('./data/HPC_Slide/JA_S2/experiment_config.json',"A")
+    # multiprocess_evaluate_loaded('./data/HPC_Slide/JA_S2/experiment_config.json',"B")
+
+    # multiprocess_evaluate_loaded('./data/HPC_Slide/JA_S3/experiment_config.json',"A")
+    # multiprocess_evaluate_loaded('./data/HPC_Slide/JA_S3/experiment_config.json',"B")
+    # multiprocess_evaluate_loaded('./data/HPC_Slide/FTP_S3/experiment_config.json',"A")
+    # multiprocess_evaluate_loaded('./data/HPC_Slide/FTP_S3/experiment_config.json',"B")
+
+
     # full_test('./data/Mothra_Full_Continue_New_weight/JA_S3/experiment_config.json','A')
     # full_test('./data/Mothra_Full_Continue_New_weight/JA_S3/experiment_config.json','B')
 
@@ -1030,8 +1040,8 @@ if __name__ == '__main__':
     #multiprocess_evaluate_loaded('./data/Shape_Baselines/circle/experiment_config.json',"B")
     #multiprocess_evaluate_loaded('./data/Shape_Baselines/cone/experiment_config.json',"B")
     #multiprocess_evaluate_loaded('./data/Shape_Baselines/square/experiment_config.json',"A")
-    #multiprocess_evaluate_loaded('/media/ubuntu/New Volume/data/Shape_Baselines/ellipse/experiment_config.json',"A")
-    #multiprocess_evaluate_loaded('/media/ubuntu/New Volume/data/Shape_Baselines/triangle/experiment_config.json',"B")
+    multiprocess_evaluate_loaded('./data/sanity_check/experiment_config.json',"A")
+    multiprocess_evaluate_loaded('./data/sanity_check/experiment_config.json',"B")
     #multiprocess_evaluate_loaded('/media/ubuntu/New Volume/data/Shape_Baselines/hourglass/experiment_config.json',"A")
     #multiprocess_evaluate_loaded('/media/ubuntu/New Volume/data/Shape_Baselines/square_concave/experiment_config.json',"A")
     #multiprocess_evaluate_loaded('/media/ubuntu/New Volume/data/Shape_Baselines/teardrop/experiment_config.json',"A")
@@ -1045,7 +1055,7 @@ if __name__ == '__main__':
     # rotation_test('./data/Jeremiah_Rotation/JA_S3/experiment_config.json',"A_A")
 
     # multiprocess_evaluate_loaded('./data/Full_continue/JA_S3_larger_space/experiment_config.json',"B")
-    # main('./data/test/experiment_config.json', 'run')
+    # main('./data/sanity_check/experiment_config.json', 'run')
     # full_test('./data/Full_continue/JA_S3_new_weight/experiment_config.json',"A")
     # rotation_test('./data/Rotation_continue/JA_S3_new_weight_same_space/experiment_config.json',"A")
     # multiprocess_evaluate_loaded('./data/Rotation_continue/JA_S3_larger_space/experiment_config.json',"A")

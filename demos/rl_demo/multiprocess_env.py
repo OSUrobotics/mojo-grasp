@@ -340,12 +340,6 @@ class MultiprocessSingleShapeEnv(Environment):
                                             positionGains=[0.8,0.8,0.8,0.8], forces=[0.4,0.4,0.4,0.4])
                 self.step()
             # thing = self.p.getBaseVelocity(self.obj_id)
-        # f1_dist = self.p.getClosestPoints(self.obj.id, self.hand.id, 10, -1, 1, -1)
-        # f2_dist = self.p.getClosestPoints(self.obj.id, self.hand.id, 10, -1, 4, -1)
-        # print(f1_dist[0][8],f2_dist[0][8])
-        # print('joint info', self.p.getJointInfo(self.hand_id,0))
-        # print('joint info', self.p.getJointInfo(self.hand_id,1))
-        # print('object info', self.p.getDynamicsInfo(self.obj.id,-1))
 
     def apply_domain_randomization(self, finger_friction, floor_friction, object_mass):
         # print('dr terms',finger_friction, floor_friction, object_mass)

@@ -6,7 +6,7 @@ from demos.rl_demo import multiprocess_env
 from demos.rl_demo import multiprocess_manipulation_phase
 # import rl_env
 from demos.rl_demo.multiprocess_state import MultiprocessState
-from mojograsp.simcore.goal_holder import  GoalHolder, RandomGoalHolder, SingleGoalHolder
+from mojograsp.simcore.goal_holder import  GoalHolder, RandomGoalHolder, SingleGoalHolder, HRLGoalHolder
 from demos.rl_demo import rl_action
 from demos.rl_demo import multiprocess_reward
 from demos.rl_demo import multiproccess_gym_wrapper_her
@@ -105,6 +105,7 @@ def load_set(args):
     assert len(eval_pose_list) ==len(eval_orientations)
     # print(f1y)
     return pose_list, eval_pose_list, orientations, eval_orientations, finger_contacts, eval_finger_contacts, [f1y,f2y,ef1y,ef2y]
+
 def make_pybullet(arg_dict, pybullet_instance, rank, hand_info, viz=False):
     # resource paths
     this_path = os.path.abspath(__file__)
@@ -126,27 +127,19 @@ def make_pybullet(arg_dict, pybullet_instance, rank, hand_info, viz=False):
     #TODO add the finger contact goal shapes AND the eval finger contact stuff
     # print(type(finger_starts), np.shape(np.array(finger_starts[0:2])))
     # set up goal holders based on task and points given
+    
     if finger_contacts is not None:
         print('we are shuffling the angle and fingertip for the training set WITH A FINGER GOAL')
         eval_finger_contacts = np.array(eval_finger_contacts[int(num_eval*rank[0]/rank[1]):int(num_eval*(rank[0]+1)/rank[1])])
-        goal_poses = GoalHolder(pose_list, np.array(finger_starts[0:2]),orientations,finger_contacts, mix_orientation=True, mix_finger=True)
-        eval_goal_poses = GoalHolder(eval_pose_list, np.array(eval_finger_starts),eval_orientations,eval_finger_contacts)
+        goal_poses = HRLGoalHolder(pose_list, np.array(finger_starts[0:2]),orientations,finger_contacts, mix_orientation=True, mix_finger=True)
+        eval_goal_poses = HRLGoalHolder(eval_pose_list, np.array(eval_finger_starts),eval_orientations,eval_finger_contacts)
     elif orientations is not None:
         print('we are shuffling the angle and fingertip for the training set with no finger goal')
-        goal_poses = GoalHolder(pose_list, np.array(finger_starts[0:2]), orientations,mix_orientation=True, mix_finger=True)
-        eval_goal_poses = GoalHolder(eval_pose_list, np.array(eval_finger_starts), eval_orientations)
-    elif args['task'] == 'unplanned_random':
-        goal_poses = RandomGoalHolder([0.02,0.065])
-        eval_goal_poses = GoalHolder(eval_pose_list)
-    elif args['task'] == 'wall':
-        goal_poses = GoalHolder(pose_list, np.array(finger_starts[0:2]))
-        eval_goal_poses = GoalHolder(eval_pose_list, np.array(finger_starts[2:4]))
-    elif args['task'] == 'wall_single':
-        goal_poses = SingleGoalHolder(pose_list)
-        eval_goal_poses = SingleGoalHolder(eval_pose_list)
+        goal_poses = HRLGoalHolder(pose_list, np.array(finger_starts[0:2]), orientations,mix_orientation=True, mix_finger=True)
+        eval_goal_poses = HRLGoalHolder(eval_pose_list, np.array(eval_finger_starts), eval_orientations)
     else:
-        goal_poses = GoalHolder(pose_list, finger_starts[0:2])
-        eval_goal_poses = GoalHolder(eval_pose_list, finger_starts[2:4])
+        goal_poses = HRLGoalHolder(pose_list, finger_starts[0:2])
+        eval_goal_poses = HRLGoalHolder(eval_pose_list, finger_starts[2:4])
     
     # setup pybullet client to either run with or without rendering
     if viz:
@@ -274,9 +267,9 @@ def make_pybullet(arg_dict, pybullet_instance, rank, hand_info, viz=False):
     gym_env = pettingzoowrapper.FullTaskWrapper(env, manipulation, record_data, args)
 
     return gym_env, args, [pose_list,eval_pose_list]
+    #just for notes
 
-
-def train(filepath = None,learn_type='run', num_cpu=16):
+def train(filepath, learn_type='run', num_cpu=16):
     # Create the vectorized environment
     print('cuda y/n?', get_device())
 
@@ -291,23 +284,166 @@ def train(filepath = None,learn_type='run', num_cpu=16):
     
     model_type = PPO
     import pybullet as pybullet_instance
-    from pettingzoo.utils.conversions import aec_to_parallel 
+    # from pettingzoo.utils.conversions import aec_to_parallel 
+    from pantheonrl.envs.pettingzoo import PettingZooAECWrapper
+    from pantheonrl.common.agents import OnPolicyAgent
     env, _ , _= make_pybullet(args, pybullet_instance, [0,1], hand_params, viz=False)
-    env = pettingzoowrapper.WrapWrap(env)
-    train_timesteps = int(args['evaluate']*(args['tsteps']+1)/num_cpu)
-    # callback = multiprocess_gym_wrapper.MultiEvaluateCallback(vec_env,n_eval_episodes=int(1200), eval_freq=train_timesteps, best_model_save_path=args['save_path'])
+    # env = pettingzoowrapper.WrapWrap(env)
+    # env = ss.pad_action_space_v0(env)
+    env = PettingZooAECWrapper(env)
+    partner = OnPolicyAgent(PPO('MlpPolicy', env.getDummyEnv(1), verbose=1,tensorboard_log=args['tname']+'/worker'),tensorboard_log=args['tname']+'/worker')
 
-    model = model_type("MlpPolicy", env,tensorboard_log=args['tname'])
+    # The second parameter ensures that the partner is assigned to a certain
+    # player number. Forgetting this parameter would mean that all of the
+    # partner agents can be picked as `player 2`, but none of them can be
+    # picked as `player 3`.
+    env.add_partner_agent(partner, player_num=1)
+    train_timesteps = int(args['evaluate']*(args['tsteps']+1))
+    worker_callback = pettingzoowrapper.WorkerEvaluateCallback(partner.model, args['save_path'])
+    callback = pettingzoowrapper.ZooEvaluateCallback(env,n_eval_episodes=int(1200), eval_freq=int(train_timesteps), best_model_save_path=args['save_path'],callback_on_new_best=worker_callback)
+
+    model = model_type("MlpPolicy", env,tensorboard_log=args['tname']+'/manager')
     try:
-        model.learn(total_timesteps=args['epochs']*(args['tsteps']+1))
+        model.learn(total_timesteps=args['epochs']*(args['tsteps']+1), callback=callback)
         filename = os.path.dirname(filepath)
-        model.save(filename+'/last_model')
+        model.save(filename+'/manager_last_model')
+        partner.model.save(filename+'/worker_last_model')
         merge_from_folder(args['save_path']+'Test/')
 
         # multiprocess_evaluate(model,vec_env)
     except KeyboardInterrupt:
         filename = os.path.dirname(filepath)
-        model.save(filename+'/canceled_model')
+        model.save(filename+'/manager_canceled_model')
+        partner.model.save(filename+'/worker_canceled_model')
+
+def evaluate(filepath, modeltype='best'):
+    with open(filepath, 'r') as argfile:
+        args = json.load(argfile)
+    filename = os.path.dirname(filepath)
+    key_file = os.path.abspath(__file__)
+    key_file = os.path.dirname(key_file)
+    key_file = os.path.join(key_file,'resources','hand_bank','hand_params.json')
+    with open(key_file,'r') as hand_file:
+        hand_params = json.load(hand_file)
+    
+    model_type = PPO
+    if modeltype =='best':
+        manager_name = filename +'/manager_best_model'
+        worker_name = filename +'/worker_best_model'
+    elif modeltype =='last':
+        manager_name = filename +'/manager_last_model'
+        worker_name = filename +'/worker_last_model'
+    elif modeltype =='canceled':
+        manager_name = filename +'/manager_canceled_model'
+        worker_name = filename +'/worker_canceled_model'
+    import pybullet as pybullet_instance
+    # print('hah')
+    from pantheonrl.envs.pettingzoo import PettingZooAECWrapper
+    from pantheonrl.common.agents import OnPolicyAgent
+    env, _ , _= make_pybullet(args, pybullet_instance, [0,1], hand_params, viz=False)
+
+    env = PettingZooAECWrapper(env)
+    partner = OnPolicyAgent(PPO('MlpPolicy', env.getDummyEnv(1), verbose=1,tensorboard_log=args['tname']+'/worker'),tensorboard_log=args['tname']+'/worker')
+
+    env.add_partner_agent(partner, player_num=1)
+
+    model = model_type("MlpPolicy", env,tensorboard_log=args['tname']+'/manager')
+    model.load(manager_name)
+    partner.model.load(worker_name)
+    env.base_env.evaluate('A')
+    df = pd.read_csv('./resources/start_poses.csv', index_col=False)
+    x_start = df['x']
+    y_start = df['y']
+    # input(len(x_start))
+    print('YOOOO')
+    for x,y in zip(x_start, y_start):
+        tihng = {'goal_position':[x,y]}
+        print('THING', tihng)
+        env.base_env.set_reset_point(tihng['goal_position'])
+        for i in range(1200):
+            obs = env.reset()
+            for _ in range(26):
+                action, _ = model.predict(obs,deterministic=True)
+                obs, _, done, _ = env.step(action,False)
+
+def evaluate_loaded(filepath, modeltype='best'):
+    with open(filepath, 'r') as argfile:
+        args = json.load(argfile)
+    filename = os.path.dirname(filepath)
+    key_file = os.path.abspath(__file__)
+    key_file = os.path.dirname(key_file)
+    key_file = os.path.join(key_file,'resources','hand_bank','hand_params.json')
+    with open(key_file,'r') as hand_file:
+        hand_params = json.load(hand_file)
+    
+    model_type = PPO
+    if modeltype =='best':
+        manager_name = filename +'/manager_best_model'
+        worker_name = filename +'/worker_best_model'
+    elif modeltype =='last':
+        manager_name = filename +'/manager_last_model'
+        worker_name = filename +'/worker_last_model'
+    elif modeltype =='canceled':
+        manager_name = filename +'/manager_canceled_model'
+        worker_name = filename +'/worker_canceled_model'
+    import pybullet as pybullet_instance
+    from pantheonrl.envs.pettingzoo import PettingZooAECWrapper
+    from pantheonrl.common.agents import OnPolicyAgent
+    env, _ , _= make_pybullet(args, pybullet_instance, [0,1], hand_params, viz=False)
+
+    env = PettingZooAECWrapper(env)
+    partner = OnPolicyAgent(PPO('MlpPolicy', env.getDummyEnv(1), verbose=1,tensorboard_log=args['tname']+'/worker'),tensorboard_log=args['tname']+'/worker')
+
+    env.add_partner_agent(partner, player_num=1)
+
+    model = model_type("MlpPolicy", env,tensorboard_log=args['tname']+'/manager')
+    model.load(manager_name)
+    partner.model.load(worker_name)
+    env.base_env.evaluate()
+    for i in range(1200):
+        obs = env.reset()
+        for _ in range(26):
+            action, _ = model.predict(obs,deterministic=True)
+            obs, _, done, _ = env.step(action,False)
+
+
+def replay(configpath, replaypath):
+    with open(configpath, 'r') as argfile:
+        args = json.load(argfile)
+    filename = os.path.dirname(configpath)
+    key_file = os.path.abspath(__file__)
+    key_file = os.path.dirname(key_file)
+    key_file = os.path.join(key_file,'resources','hand_bank','hand_params.json')
+    with open(key_file,'r') as hand_file:
+        hand_params = json.load(hand_file)
+    
+    import pybullet as pybullet_instance
+    from pantheonrl.envs.pettingzoo import PettingZooAECWrapper
+    from pantheonrl.common.agents import OnPolicyAgent
+
+    env, _ , _= make_pybullet(args, pybullet_instance, [0,1], hand_params, viz=True)
+    env.evaluate()
+
+    with open(replaypath,'rb') as playfile:
+        data = pkl.load(playfile)
+    
+    data = data['timestep_list']
+    actions = [i['action']['actor_output'] for i in data]
+    start_point = data[0]['state']['obj_2']['pose'][0][0:2]
+    start_point[1] = start_point[1]-0.1
+    angdict = data[0]['state']['two_finger_gripper']['joint_angles']
+    start_angs = [angdict['finger0_segment0_joint'],angdict['finger0_segment1_joint'],angdict['finger1_segment0_joint'],angdict['finger1_segment1_joint']]
+    # print(actions)
+    reset_dict = {'start_pos':start_point, 'finger_angs':start_angs}
+    obs = env.reset(reset_dict)
+    for action in actions:
+        print(action)
+        env.step(action,False)
+        time.sleep(0.1)
+
 
 if __name__ == '__main__':
-    train('./data/hrl_test_zoo/experiment_config.json')
+    # train('./data/hrl_finger_action/experiment_config.json')
+
+    # replay('./data/hrl_zoo_slide/experiment_config.json','./data/hrl_zoo_slide/Eval_A/Episode_50812.pkl')
+    evaluate('./data/hrl_slide_limited_action/experiment_config.json',modeltype='best')

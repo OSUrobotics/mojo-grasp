@@ -90,12 +90,12 @@ class MultiprocessManipulation(Phase):
         # Set the next action before the sim is stepped for Action (Done so that replay buffer and record data work)
         self.action.set_action(self.target, self.actor_portion)
         # Set the current state before sim is stepped
-        # self.state.set_state()
+        # self.state.set_state()        
 
     def execute_action(self, action_to_execute=None, pybullet_thing = None, viz = False):
         # Execute the target that we got from the controller in pre_step()
         errs = []
-        goals =[ ]
+        goals = []
         actual = []
         forces = []
         f2 = []
@@ -169,16 +169,17 @@ class MultiprocessManipulation(Phase):
 
     def set_goal(self, goal_list):
         self.state.set_goal(goal_list)
+        self.action.set_high_level_action(goal_list)
 
     def exit_condition(self, eval_exit=False) -> bool:
         # If we reach 400 steps or the controller exit condition finishes we exit the phase
         if eval_exit:
-            if self.timestep > self.eval_terminal_step:
+            if self.timestep >= self.eval_terminal_step:
                 self.controller.retry_count=0
-                # print('exiting in manipulation phase rl', self.timestep, self.terminal_step)
+                # print('exiting in manipulation phase rl', self.timestep, self.eval_terminal_step)
                 return True
         else:
-            if self.timestep > self.terminal_step:# or self.controller.exit_condition(self.terminal_step - self.timestep):
+            if self.timestep >= self.terminal_step:# or self.controller.exit_condition(self.terminal_step - self.timestep):
                 self.controller.retry_count=0
                 # print('exiting in manipulation phase rl', self.timestep, self.terminal_step)
                 return True
