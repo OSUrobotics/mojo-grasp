@@ -4,6 +4,7 @@ from mojograsp.simobjects.object_base import ObjectBase
 import numpy as np
 import time
 import os
+import pybullet_data
 
 
 class MultiprocessSingleShapeEnv(Environment):
@@ -21,13 +22,18 @@ class MultiprocessSingleShapeEnv(Environment):
         self.rand_object_orientation = args['object_random_orientation']
         self.rand_finger_all_open = args['finger_random_off']
         self.finger_open_fraction = args['fobfreq']
-        self.HIGH_FRICTION = args['friction_experiment']
-        self.lateral_low = args['lat_fric_low']
-        self.lateral_high = args['lat_fric_high']
-        self.spinning_low = args['spin_fric_low']
-        self.spinning_high = args['spin_fric_high']
-        self.rolling_low = args['roll_fric_low']
-        self.rolling_high = args['roll_fric_high']
+        try:
+            print("first try except")
+            self.HIGH_FRICTION = args['friction_experiment']
+            self.lateral_low = args['lat_fric_low']
+            self.lateral_high = args['lat_fric_high']
+            self.spinning_low = args['spin_fric_low']
+            self.spinning_high = args['spin_fric_high']
+            self.rolling_low = args['roll_fric_low']
+            self.rolling_high = args['roll_fric_high']
+            self.collision = args['collision_on']
+        except:
+            pass
 
         
         if finger_points is None:
@@ -41,9 +47,24 @@ class MultiprocessSingleShapeEnv(Environment):
         self.p.resetSimulation(self.p.RESET_USE_DEFORMABLE_WORLD)
 
         self.plane_id = self.p.loadURDF("plane.urdf", flags=self.p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES, basePosition=[0.5,0.3,0])
-        self.hand_id = self.p.loadURDF(self.hand.path, useFixedBase=False,
-                             basePosition=[0.0, 0.0, 0.05], flags=self.p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES | self.p.URDF_USE_SELF_COLLISION)
-        self.p.createConstraint(self.hand_id, -1, -1, -1, self.p.JOINT_FIXED, [0,0,0], [0,0,0], [0,0,0.05])
+
+        #See if the paramater is there for self collision
+        try:
+            if self.collision:
+                self.hand_id = self.p.loadURDF(self.hand.path, useFixedBase=False,
+                                    basePosition=[0.0, 0.0, 0.05], flags=self.p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES | self.p.URDF_USE_SELF_COLLISION)
+            else:
+                self.hand_id = self.p.loadURDF(self.hand.path, useFixedBase=False,
+                                    basePosition=[0.0, 0.0, 0.05], flags=self.p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
+                
+        #If collision paramater is not there just use self collision
+        except:
+            print('NO COLLISION PARAMATER, USING DEFAULT SELF COLLISION')
+            self.hand_id = self.p.loadURDF(self.hand.path, useFixedBase=False,
+                                basePosition=[0.0, 0.0, 0.05], flags=self.p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES | self.p.URDF_USE_SELF_COLLISION)
+            self.p.createConstraint(self.hand_id, -1, -1, -1, self.p.JOINT_FIXED, [0,0,0], [0,0,0], [0,0,0.05])
+
+
         self.obj_id = self.p.loadURDF(self.obj.path, basePosition=[0.0, 0.10, .05],
                                  flags=self.p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
         # self.obj_id = self.p.loadSoftBody("/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/resources/object_models/Jeremiah_Shapes/Shapes/torus_textured.obj",
@@ -63,15 +84,23 @@ class MultiprocessSingleShapeEnv(Environment):
 
         # print('object path', self.obj.path)
         # assert 1==0
-        if self.HIGH_FRICTION:
-            self.finger_lateral_friction_range = [self.lateral_low, self.lateral_high] #[1,2] #[0.25, 0.75]
-            self.finger_spinning_friction_range = [self.spinning_low, self.spinning_high] #[0.05,0.06] #[0.01,0.0101]
-            self.finger_rolling_friction_range = [self.rolling_low, self.spinning_high] #[0.1,0.2] #[0.04,0.0401]
-        else:
+        try:
+            print('trying to set high friction')
+            if self.HIGH_FRICTION:
+                self.finger_lateral_friction_range = [self.lateral_low, self.lateral_high] #[1,2] #[0.25, 0.75]
+                self.finger_spinning_friction_range = [self.spinning_low, self.spinning_high] #[0.05,0.06] #[0.01,0.0101]
+                self.finger_rolling_friction_range = [self.rolling_low, self.spinning_high] #[0.1,0.2] #[0.04,0.0401]
+            else:
+                self.finger_lateral_friction_range = [0.25, 0.75] #[1,2] #[0.25, 0.75]
+                self.finger_spinning_friction_range = [0.01,0.0101] #[0.05,0.06] #[0.01,0.0101]
+                self.finger_rolling_friction_range = [0.04,0.0401] #[0.1,0.2] #[0.04,0.0401]
+            
+        except:
+            print('no high friction')
             self.finger_lateral_friction_range = [0.25, 0.75] #[1,2] #[0.25, 0.75]
             self.finger_spinning_friction_range = [0.01,0.0101] #[0.05,0.06] #[0.01,0.0101]
             self.finger_rolling_friction_range = [0.04,0.0401] #[0.1,0.2] #[0.04,0.0401]
-            
+
         self.floor_lateral_friction_range = [0.15,0.45]
         self.floor_spinning_friction_range = [0.01,0.0101]
         self.floor_rolling_friction_range = [0.05,0.0501]
@@ -106,7 +135,8 @@ class MultiprocessSingleShapeEnv(Environment):
         self.start_time = 0
         
         self.p.setGravity(0, 0, -10)
-        self.p.setPhysicsEngineParameter(contactBreakingThreshold=.001)
+        self.p.setPhysicsEngineParameter(contactBreakingThreshold=.001, sparseSdfVoxelSize=0.25)
+        self.p.setRealTimeSimulation(0)
         fixed=False
         if fixed:
             self.p.createConstraint(self.obj_id, -1, -1, -1, self.p.JOINT_POINT2POINT, [0, 0, 1],
@@ -269,7 +299,8 @@ class MultiprocessSingleShapeEnv(Environment):
         self.p.changeDynamics(self.obj.id, -1, mass=.03, restitution=.95, lateralFriction=0.5)
         
         self.p.setGravity(0, 0, -10)
-        self.p.setPhysicsEngineParameter(contactBreakingThreshold=.001)
+        self.p.setPhysicsEngineParameter(contactBreakingThreshold=.001, sparseSdfVoxelSize=0.25)
+        self.p.p.setRealTimeSimulation(0)
         # obj_id = self.p.loadURDF(self.obj.path, basePosition=[0.0, 0.1067, .05])
 
         # Update the object id's

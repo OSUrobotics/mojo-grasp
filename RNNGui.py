@@ -77,7 +77,9 @@ class RNNGui():
                          [sg.Text("Task"), sg.OptionMenu(values=('asterisk','single',"big_random",
                           "Rotation_single", "Rotation_region","big_Rotation", "full_task","big_full_task", 'multi', "direction", "wall", "wall_single"), k='-task', default_value='unplanned_random')],
                          [sg.Text("Reward"), sg.OptionMenu(values=('Sparse','Distance','Distance + Finger', 'Hinge Distance + Finger', 'Slope', 'Slope + Finger','SmartDistance + Finger','SmartDistance + SmartFinger','ScaledDistance + Finger','ScaledDistance+ScaledFinger', 'SFS','DFS'), k='-reward',default_value='ScaledDistance+ScaledFinger')],
-                         [sg.Checkbox("Object Start Position", key='-rstart',default=False), sg.Checkbox("Relative Finger Position", key='-rfinger',default=False),sg.Checkbox("Object Orientation", key='-ror',default=False), sg.Checkbox("Finger Open", key='-rfo',default=False),sg.Checkbox("Finger Straight", key='-sf',default=False),sg.Checkbox("Friction Experememnt", key='-fe',default=False)],
+                         [sg.Checkbox("Object Start Position", key='-rstart',default=False), sg.Checkbox("Relative Finger Position", key='-rfinger',default=False),sg.Checkbox("Object Orientation", key='-ror',default=False), sg.Checkbox("Finger Open", key='-rfo',default=False)],
+                         # Jeremiah Added this
+                         [sg.Checkbox("Finger Straight", key='-sf',default=False),sg.Checkbox("Friction Experememnt", key='-fe',default=False),sg.Checkbox("Collision On", key='-co',default=True)],
                          [sg.Text('Rotation limits, only used by Rotation and Full Tasks'), sg.Radio('75 degrees',group_id='rots',key='-75',default=False), sg.Radio('50 degrees',group_id='rots',key='-50',default=True), sg.Radio('15 degrees',group_id='rots',key='-15',default=False)],
                          [sg.Text('Replay Buffer Sampling'), sg.OptionMenu(values=['priority', 'random','random+expert'], k='-sampling', default_value='priority')],
                          [sg.Text('Domain Randomization Options')],
@@ -180,6 +182,7 @@ class RNNGui():
                      'finger_random_off': bool(values['-rfo']),
                      'one_finger': bool(values['-sf']),
                      'friction_experiment': bool(values['-fe']),
+                     'collision_on': bool(values['-co']),
 
                      'domain_randomization_finger_friction':bool(values['-DRFI']),
                      'domain_randomization_floor_friction':bool(values['-DRFL']),

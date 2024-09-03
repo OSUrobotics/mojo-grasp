@@ -195,9 +195,11 @@ def make_pybullet(arg_dict, pybullet_instance, rank, hand_info, viz=False):
         physics_client = pybullet_instance.connect(pybullet_instance.DIRECT)
 
     # set initial gravity and general features
+    pybullet_instance.resetSimulation(pybullet_instance.RESET_USE_DEFORMABLE_WORLD)
     pybullet_instance.setAdditionalSearchPath(pybullet_data.getDataPath())
     pybullet_instance.setGravity(0, 0, -10)
-    pybullet_instance.setPhysicsEngineParameter(contactBreakingThreshold=.001)
+    pybullet_instance.setPhysicsEngineParameter(contactBreakingThreshold=.001, sparseSdfVoxelSize=0.25)
+    pybullet_instance.setRealTimeSimulation(0)
     pybullet_instance.resetDebugVisualizerCamera(cameraDistance=.02, cameraYaw=0, cameraPitch=-89.9999,
                                  cameraTargetPosition=[0, 0.1, 0.5])
     
@@ -254,11 +256,7 @@ def make_pybullet(arg_dict, pybullet_instance, rank, hand_info, viz=False):
     # print('object path',object_path)
     obj_id = pybullet_instance.loadURDF(object_path, basePosition=[0.0, 0.10, .05], flags=pybullet_instance.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
 
-    # obj_id = pybullet_instance.loadSoftBody("/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/resources/object_models/Jeremiah_Shapes/Shapes/torus_textured.obj",
-    #                                       basePosition=[1.5, 1.5, -10.5],
-    #                                       scale = 0.05,
-    #                                       mass = 0.1,
-    #                                       )
+    #obj_id = pybullet_instance.loadSoftBody("/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/resources/object_models/Jeremiah_Shapes/Shapes/torus.vtk", mass = 3, scale = 1, useNeoHookean = 1, NeoHookeanMu = 180, NeoHookeanLambda = 600, NeoHookeanDamping = 0.01, collisionMargin = 0.006, useSelfCollision = 1, frictionCoeff = 0.5, repulsionStiffness = 800)
 
 
     # Create TwoFingerGripper Object and set the initial joint positions
@@ -1031,20 +1029,17 @@ if __name__ == '__main__':
     # multiprocess_evaluate_loaded('./data/HPC_Full/FTP_S1/experiment_config.json',"B")
 
 
-    #multiprocess_evaluate_loaded('./data/Higher_friction/x5/experiment_config.json',"A")
+    multiprocess_evaluate_loaded('./data/Fixed_Collisions2/x1f/experiment_config.json',"A")
+    multiprocess_evaluate_loaded('./data/Fixed_Collisions2/x2f/experiment_config.json',"A")
+    multiprocess_evaluate_loaded('./data/Fixed_Collisions2/x3f/experiment_config.json',"A")
+    multiprocess_evaluate_loaded('./data/Fixed_Collisions3/x1f/experiment_config.json',"A")
+    multiprocess_evaluate_loaded('./data/Fixed_Collisions3/x2f/experiment_config.json',"A")
+    multiprocess_evaluate_loaded('./data/Fixed_Collisions3/x3f/experiment_config.json',"A")
 
-    #multiprocess_evaluate_loaded('./data/Shape_Baselines/cone/experiment_config.json',"A")
-    #multiprocess_evaluate_loaded('./data/Shape_Baselines/circle/experiment_config.json',"B")
-    #multiprocess_evaluate_loaded('./data/Shape_Baselines/cone/experiment_config.json',"B")
-    #multiprocess_evaluate_loaded('./data/Shape_Baselines/square/experiment_config.json',"A")
-    #multiprocess_evaluate_loaded('/media/ubuntu/New Volume/data/Shape_Baselines/ellipse/experiment_config.json',"A")
-    #multiprocess_evaluate_loaded('/media/ubuntu/New Volume/data/Shape_Baselines/triangle/experiment_config.json',"B")
-    #multiprocess_evaluate_loaded('/media/ubuntu/New Volume/data/Shape_Baselines/hourglass/experiment_config.json',"A")
-    #multiprocess_evaluate_loaded('/media/ubuntu/New Volume/data/Shape_Baselines/square_concave/experiment_config.json',"A")
-    #multiprocess_evaluate_loaded('/media/ubuntu/New Volume/data/Ellipse_Baselines/Contact_25/experiment_config.json',"A")
 
-    #replay('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/Higher_friction/x3/experiment_config.json',"/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/Higher_friction/x3/Eval_A/Episode_837.pkl")
-    
+    # replay('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/Higher_friction/x5/experiment_config.json',"/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/Fixed_Collisions/x2f/Ast_A/Episode_7.pkl")
+    #asterisk_test('./data/Higher_friction/x3/experiment_config.json','A')
+    #asterisk_test('./data/Fixed_Collisions/x3f/experiment_config.json','A')
 
     # asterisk_test('./data/Mothra_Slide/JA_S1/experiment_config.json','B')
     # print('finsihed test')
