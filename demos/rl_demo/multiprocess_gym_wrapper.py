@@ -198,7 +198,7 @@ class MultiprocessGymWrapper(gym.Env):
             self.eval_run +=1
 
         if self.eval_point is not None:
-            print('eval point and goal ', self.eval_point, new_goal)
+            # print('eval point and goal ', self.eval_point, new_goal)
             self.env.reset(self.eval_point)
         elif type(special) is list:
             self.env.reset_to_pos(special[0],special[1])
