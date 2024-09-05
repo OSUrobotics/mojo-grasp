@@ -2734,10 +2734,12 @@ class PlotBackend():
 
         s_f = []
         start_distances = []
+        radius = []
         success_matrix = {'full success':[],'distance success':[], 'angle success':[], 'full failure':[]}
-        for dist, orr, start in zip(self.point_dictionary['End Distance'],self.point_dictionary['Orientation Error'], self.point_dictionary['Start Distance']):
+        for dist, orr, start,x,y in zip(self.point_dictionary['End Distance'],self.point_dictionary['Orientation Error'], self.point_dictionary['Start Distance'],self.point_dictionary['Goal X'],self.point_dictionary['Goal Y']):
             start_distances.append(start)
             # print(dist,orr)
+            radius.append(np.linalg.norm([x,y]))
             if (dist < success_range/1000) and (abs(orr) < rot_success_range/180*np.pi):
                 s_f.append(100)
                 success_matrix['full success'].append([dist*100, abs(orr)*180/np.pi])
@@ -2764,6 +2766,22 @@ class PlotBackend():
         print('short success rate', np.average(short))
         print('long success rate', np.average(long))
         print('pivot point', distance_threshold_for_grouping)
+
+        #alternative
+        short = []
+        long = []
+        distance_threshold_for_grouping = np.median(radius)#0.05
+        #np.average(radius)
+        for d, s in zip(radius,s_f):
+            if d < distance_threshold_for_grouping:
+                short.append(s)
+            else:
+                long.append(s)
+        print('radius style', len(short),len(long))
+        print('short success rate', np.average(short))
+        print('long success rate', np.average(long))
+        print('pivot point', distance_threshold_for_grouping)
+
         full_success = np.array(success_matrix['full success'])
         distance_success = np.array(success_matrix['distance success'])
         angle_success = np.array(success_matrix['angle success'])
@@ -4086,16 +4104,25 @@ class PlotBackend():
         self.ax.set_aspect('auto',adjustable='box')
         self.curr_graph = 'rewards'
 
-
     def draw_start_end_bins(self,folder,tholds):
         if self.point_dictionary is None:
             self.build_beefy(folder)
+        if self.clear_plots | (self.curr_graph != 'rewards'):
+            self.clear_axes()
         edges = np.linspace(0,0.15,60)
-        self.point_dictionary['bins'] = pd.cut(self.point_dictionary,edges)
-        self.point_dictionary['bins_dist_mean'] = self.point_dictionary.groupby('bins')['End Distance'].transform('mean')
-        self.point_dictionary['bin_start_mean'] = self.point_dictionary.groupby('bins')['End Distance'].transform('mean')
-        start_distances = pd.unqiue(self.point_dictionary['bin_start_mean'])
-        end_distances = pd.unqiue(self.point_dictionary['bin_dist_mean'])
-        num_in_bin = pd.nunique(self.point_dictionary['bin_start_mean'])
-        # fuckit = self.point_dictionary.sort_values('Starting Distance')
-        self.ax.stairs()
+        self.point_dictionary['bins'] = pd.cut(self.point_dictionary['Start Distance'],edges)
+        self.point_dictionary['bin_dist_mean'] = self.point_dictionary.groupby('bins')['End Distance'].transform('mean')
+        self.point_dictionary['bin_start_mean'] = self.point_dictionary.groupby('bins')['Start Distance'].transform('mean')
+        start_distances = pd.unique(self.point_dictionary['bin_start_mean'])
+        end_distances = pd.unique(self.point_dictionary['bin_dist_mean'])
+        num_in_bin =  self.point_dictionary.groupby('bins')['End Distance'].nunique()
+        num_in_bin = np.array([n for n in num_in_bin if n>0])
+        print(start_distances,end_distances, num_in_bin)
+        ratio = np.mean(end_distances)/np.mean(num_in_bin)
+        length_thing = len(end_distances)+1
+        self.ax.stairs(end_distances,edges[:length_thing])
+        self.ax.stairs(num_in_bin*ratio,edges[:length_thing])
+        self.ax.legend(['End Distance', 'Number in bin'])
+        self.ax.set_xlabel('Starting Distance')
+        self.ax.set_ylabel('End distance')
+        self.ax.set_aspect('auto',adjustable='box')

@@ -72,16 +72,18 @@ class MultiprocessGymWrapper(gym.Env):
         self.first = True
         self.reduced_saving = True
         self.small_enough = False #args['epochs'] <= 100000
-        self.ONE_FINGER = args['one_finger']
+        
         self.OBJECT_POSE_RANDOMIZATION = args['object_random_start']
         try:
             self.DOMAIN_RANDOMIZATION_MASS = args['domain_randomization_object_mass']
             self.DOMAIN_RANDOMIZATION_FINGER = args['domain_randomization_finger_friction']
             self.DOMAIN_RANDOMIZATION_FLOOR = args['domain_randomization_floor_friction']
+            self.ONE_FINGER = args['one_finger']
         except KeyError:
             self.DOMAIN_RANDOMIZATION_MASS = False
             self.DOMAIN_RANDOMIZATION_FINGER = False
             self.DOMAIN_RANDOMIZATION_FLOOR = False
+            self.ONE_FINGER = False
         self.episode_type = 'train'
         try:
             self.SUCCESS_REWARD = args['success_reward']
@@ -196,7 +198,7 @@ class MultiprocessGymWrapper(gym.Env):
             self.eval_run +=1
 
         if self.eval_point is not None:
-            # print('eval point and goal ', self.eval_point, new_goal)
+            print('eval point and goal ', self.eval_point, new_goal)
             self.env.reset(self.eval_point)
         elif type(special) is list:
             self.env.reset_to_pos(special[0],special[1])
