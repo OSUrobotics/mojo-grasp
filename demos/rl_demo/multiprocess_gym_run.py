@@ -996,8 +996,12 @@ def main(filepath = None,learn_type='run', num_cpu=16):
 
 if __name__ == '__main__':
     import csv
+
+    # main('./data/sanity_check2/experiment_config.json','run')
+    # multiprocess_evaluate_loaded('./data/sanity_check/experiment_config.json','A')
+    # multiprocess_evaluate_loaded('./data/sanity_check2/experiment_config.json','B')
     # multiprocess_evaluate_loaded('./data/Mothra_Full/FTP_S1/experiment_config.json',"B")
-    # replay('./data/mslide/JA_S2/experiment_config.json', './data/mslide/JA_S2/Ast_A/Episode_5.pkl')
+    replay('./data/sanity_check2/experiment_config.json', './data/sanity_check2/Eval_A/Episode_5.pkl')
     # multiprocess_evaluate_loaded('./data/Mothra_Rotation/JA_S3/experiment_config.json',"B")
     # multiprocess_evaluate_loaded('./data/Mothra_Rotation/JA_S3/experiment_config.json',"A")
 

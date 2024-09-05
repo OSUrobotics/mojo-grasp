@@ -51,6 +51,7 @@ class MultiprocessSingleShapeEnv(Environment):
         #See if the paramater is there for self collision
         try:
             if self.collision:
+                print('WE ARE USING SELF COLLISION')
                 self.hand_id = self.p.loadURDF(self.hand.path, useFixedBase=False,
                                     basePosition=[0.0, 0.0, 0.05], flags=self.p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES | self.p.URDF_USE_SELF_COLLISION)
             else:
@@ -62,7 +63,7 @@ class MultiprocessSingleShapeEnv(Environment):
             print('NO COLLISION PARAMATER, USING DEFAULT SELF COLLISION')
             self.hand_id = self.p.loadURDF(self.hand.path, useFixedBase=False,
                                 basePosition=[0.0, 0.0, 0.05], flags=self.p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES | self.p.URDF_USE_SELF_COLLISION)
-            self.p.createConstraint(self.hand_id, -1, -1, -1, self.p.JOINT_FIXED, [0,0,0], [0,0,0], [0,0,0.05])
+        self.p.createConstraint(self.hand_id, -1, -1, -1, self.p.JOINT_FIXED, [0,0,0], [0,0,0], [0,0,0.05])
 
 
         self.obj_id = self.p.loadURDF(self.obj.path, basePosition=[0.0, 0.10, .05],
@@ -167,7 +168,7 @@ class MultiprocessSingleShapeEnv(Environment):
             # print('start pos was none')
             #no noise
             obj_change = np.array([0,0])
-        # print('starting object pose', obj_change, self.obj.path)
+        print('starting object pose', obj_change)#, self.obj.path)
 
 
         self.p.resetJointState(self.hand.id, 0, self.hand.starting_angles[0])
