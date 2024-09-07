@@ -44,7 +44,7 @@ class MultiprocessSingleShapeEnv(Environment):
             self.finger_points.append(self.p.createConstraint(finger_points[0].id,-1,-1,-1,self.p.JOINT_FIXED,[0,0,0],[0,0,0],[0,0,1]))
             self.finger_points.append(self.p.createConstraint(finger_points[1].id,-1,-1,-1,self.p.JOINT_FIXED,[0,0,0],[0,0,0],[0,0,1]))
         
-        self.p.resetSimulation(self.p.RESET_USE_DEFORMABLE_WORLD)
+        #self.p.resetSimulation(self.p.RESET_USE_DEFORMABLE_WORLD)
 
         self.plane_id = self.p.loadURDF("plane.urdf", flags=self.p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES, basePosition=[0.5,0.3,0])
 
@@ -136,7 +136,7 @@ class MultiprocessSingleShapeEnv(Environment):
         self.start_time = 0
         
         self.p.setGravity(0, 0, -10)
-        self.p.setPhysicsEngineParameter(contactBreakingThreshold=.001, sparseSdfVoxelSize=0.25)
+        self.p.setPhysicsEngineParameter(contactBreakingThreshold=.001)
         self.p.setRealTimeSimulation(0)
         fixed=False
         if fixed:
@@ -258,7 +258,7 @@ class MultiprocessSingleShapeEnv(Environment):
 
     def reset_to_pos(self, object_pos, finger_angles):
         # reset the simulator
-        self.p.resetSimulation(self.p.RESET_USE_DEFORMABLE_WORLD)
+        self.p.resetSimulation()
         # reload the objects
         plane_id = self.p.loadURDF("plane.urdf", flags=self.p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
 
@@ -294,7 +294,7 @@ class MultiprocessSingleShapeEnv(Environment):
         self.p.changeDynamics(self.obj.id, -1, mass=.03, restitution=.95, lateralFriction=0.5)
         
         self.p.setGravity(0, 0, -10)
-        self.p.setPhysicsEngineParameter(contactBreakingThreshold=.001, sparseSdfVoxelSize=0.25)
+        self.p.setPhysicsEngineParameter(contactBreakingThreshold=.001)
         self.p.p.setRealTimeSimulation(0)
         # obj_id = self.p.loadURDF(self.obj.path, basePosition=[0.0, 0.1067, .05])
 

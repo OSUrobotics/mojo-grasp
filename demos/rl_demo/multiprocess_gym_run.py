@@ -195,10 +195,10 @@ def make_pybullet(arg_dict, pybullet_instance, rank, hand_info, viz=False):
         physics_client = pybullet_instance.connect(pybullet_instance.DIRECT)
 
     # set initial gravity and general features
-    pybullet_instance.resetSimulation(pybullet_instance.RESET_USE_DEFORMABLE_WORLD)
+    pybullet_instance.resetSimulation()
     pybullet_instance.setAdditionalSearchPath(pybullet_data.getDataPath())
     pybullet_instance.setGravity(0, 0, -10)
-    pybullet_instance.setPhysicsEngineParameter(contactBreakingThreshold=.001, sparseSdfVoxelSize=0.25)
+    pybullet_instance.setPhysicsEngineParameter(contactBreakingThreshold=.001)
     pybullet_instance.setRealTimeSimulation(0)
     pybullet_instance.resetDebugVisualizerCamera(cameraDistance=.02, cameraYaw=0, cameraPitch=-89.9999,
                                  cameraTargetPosition=[0, 0.1, 0.5])
