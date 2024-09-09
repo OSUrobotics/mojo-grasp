@@ -44,7 +44,7 @@ class MultiprocessSingleShapeEnv(Environment):
             self.finger_points.append(self.p.createConstraint(finger_points[0].id,-1,-1,-1,self.p.JOINT_FIXED,[0,0,0],[0,0,0],[0,0,1]))
             self.finger_points.append(self.p.createConstraint(finger_points[1].id,-1,-1,-1,self.p.JOINT_FIXED,[0,0,0],[0,0,0],[0,0,1]))
         
-        #self.p.resetSimulation(self.p.RESET_USE_DEFORMABLE_WORLD)
+        self.p.resetSimulation()
 
         self.plane_id = self.p.loadURDF("plane.urdf", flags=self.p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES, basePosition=[0.5,0.3,0])
 
@@ -63,6 +63,7 @@ class MultiprocessSingleShapeEnv(Environment):
             print('NO COLLISION PARAMATER, USING DEFAULT SELF COLLISION')
             self.hand_id = self.p.loadURDF(self.hand.path, useFixedBase=False,
                                 basePosition=[0.0, 0.0, 0.05], flags=self.p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES | self.p.URDF_USE_SELF_COLLISION)
+        
         self.p.createConstraint(self.hand_id, -1, -1, -1, self.p.JOINT_FIXED, [0,0,0], [0,0,0], [0,0,0.05])
 
 
