@@ -145,7 +145,7 @@ def load_wall(args):
     eval_finger_contacts = None 
     return pose_list, eval_pose_list, orientations, eval_orientations, finger_contacts, eval_finger_contacts, [f1y,f2y,ef1y,ef2y]
     
-def make_pybullet(arg_dict, pybullet_instance, rank, hand_info, viz=False):
+def make_pybullet(arg_dict, pybullet_instance, rank, hand_info, frictionList = None, contactList = None, viz=False):
     # resource paths
     this_path = os.path.abspath(__file__)
     overall_path = os.path.dirname(os.path.dirname(os.path.dirname(this_path)))
@@ -288,9 +288,18 @@ def make_pybullet(arg_dict, pybullet_instance, rank, hand_info, viz=False):
     reward = multiprocess_reward.MultiprocessReward(pybullet_instance)
 
     #change initial physics parameters
-    pybullet_instance.changeDynamics(plane_id,-1,lateralFriction=0.05, spinningFriction=0.05, rollingFriction=0.05)
-    pybullet_instance.changeDynamics(obj.id, -1, mass=.03, restitution=.95, lateralFriction=1)
-    
+    if frictionList is None:
+        pybullet_instance.changeDynamics(plane_id,-1,lateralFriction=0.05, spinningFriction=0.05, rollingFriction=0.05)
+        pybullet_instance.changeDynamics(obj.id, -1, mass=.03, restitution=.95, lateralFriction=1)
+    else:
+        pybullet_instance.changeDynamics(hand_id, -1,lateralFriction=frictionList[0], spinningFriction=frictionList[1], rollingFriction=frictionList[2])
+        pybullet_instance.changeDynamics(plane_id, -1,lateralFriction=frictionList[3], spinningFriction=frictionList[4], rollingFriction=frictionList[5])
+        pybullet_instance.changeDynamics(obj.id, -1, mass=.03, restitution=.95, lateralFriction=frictionList[6],spinningFriction=frictionList[7], rollingFriction=frictionList[8])
+
+
+    if contactList is not None:
+        pybullet_instance.changeDynamics(hand_id, -1,contactStiffness=contactList[0],contactDamping=contactList[1], restitution=contactList[2])
+
     # set up dictionary for manipulation phase
     arg_dict = args.copy()
     if args['action'] == 'Joint Velocity':
@@ -414,7 +423,7 @@ def multiprocess_evaluate_loaded(filepath, aorb):
                     obs, _, done, _ = vec_env.step_wait()
     vec_env.env_method('disconnect')
 
-def asterisk_test(filepath,hand_type):
+def asterisk_test(filepath,hand_type,frictionList = None, contactList = None):
     # load a trained model and test it on its test set
     print('Evaluating on hands A or B')
     print('Hand A: 2v2_50.50_50.50_53')
@@ -469,15 +478,55 @@ def asterisk_test(filepath,hand_type):
     eval_env.reduced_saving = False
     model = model_type("MlpPolicy", eval_env, tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-2.3}).load(args['save_path']+'best_model', env=eval_env)
     eval_env.episode_type = 'asterisk'
-    for i in asterisk_thing:
-        eval_env.manipulation_phase.state.objects[-1].set_all_pose(i)
-        obs = eval_env.reset()
-        eval_env.manipulation_phase.state.objects[-1].set_all_pose(i)
-        done = False
+    if frictionList is not None:
+        for friction in range(len(frictionList)):
+            for j in range(1,51):
+                modifiedFrictionList = frictionList.copy()
+                #print("Copied Friction list in wrapper is :", modifiedFrictionList)
+                modifiedFrictionList[friction] = j * 0.1 * modifiedFrictionList[friction]
+                #print("Modified in wrapper is :", modifiedFrictionList)
+                eval_env.set_friction(modifiedFrictionList)
+                for i in asterisk_thing:
+                    eval_env.manipulation_phase.state.objects[-1].set_all_pose(i)
+                    obs = eval_env.reset()
+                    eval_env.manipulation_phase.state.objects[-1].set_all_pose(i)
+                    done = False
 
-        while not done:
-            action, _ = model.predict(obs,deterministic=True)
-            obs, _, done, _ = eval_env.step(action,hand_type=hand_type)
+                    while not done:
+                        action, _ = model.predict(obs,deterministic=True)
+                        obs, _, done, _ = eval_env.step(action,hand_type=hand_type)
+
+    elif contactList is not None:
+        for contact in range(len(contactList)):
+            for j in range(0,101):
+                modifiedContactList = contactList.copy()
+                #print("Copied Contact list in wrapper is :", modifiedContactList)
+                modifiedContactList[contact] = j * 0.1 * modifiedContactList[contact]
+                #print("Modified in wrapper is :", modifiedContactList)
+                eval_env.set_contact(modifiedContactList)
+                for i in asterisk_thing:
+                    eval_env.manipulation_phase.state.objects[-1].set_all_pose(i)
+                    obs = eval_env.reset()
+                    eval_env.manipulation_phase.state.objects[-1].set_all_pose(i)
+                    done = False
+
+                    while not done:
+                        action, _ = model.predict(obs,deterministic=True)
+                        obs, _, done, _ = eval_env.step(action,hand_type=hand_type)
+
+
+    else:
+        for i in asterisk_thing:
+            eval_env.manipulation_phase.state.objects[-1].set_all_pose(i)
+            obs = eval_env.reset()
+            eval_env.manipulation_phase.state.objects[-1].set_all_pose(i)
+            done = False
+
+            while not done:
+                action, _ = model.predict(obs,deterministic=True)
+                obs, _, done, _ = eval_env.step(action,hand_type=hand_type)
+
+    
 
 
 def rotation_test(filepath, hand_type):
@@ -999,7 +1048,7 @@ if __name__ == '__main__':
 
     # main('./data/The_last_run/JA_S1/experiment_config.json','run')
     # multiprocess_evaluate_loaded('./data/Mothra_Full/FTP_S1/experiment_config.json',"B")
-    replay('./data/The_last_run/FTP_S2/experiment_config.json', './data/Fixed_Collisions/x1f/Eval_A/Episode_5.pkl')
+    # replay('./data/The_last_run/FTP_S2/experiment_config.json', './data/Fixed_Collisions/x1f/Eval_A/Episode_5.pkl')
     # multiprocess_evaluate_loaded('./data/Mothra_Rotation/JA_S3/experiment_config.json',"B")
     # multiprocess_evaluate_loaded('./data/Mothra_Rotation/JA_S3/experiment_config.json',"A")
 
@@ -1023,8 +1072,9 @@ if __name__ == '__main__':
     # multiprocess_evaluate_loaded('./data/HPC_Slide/JA_S3/experiment_config.json',"B")
     # multiprocess_evaluate_loaded('./data/HPC_Slide/FTP_S3/experiment_config.json',"A")
     # multiprocess_evaluate_loaded('./data/HPC_Slide/FTP_S3/experiment_config.json',"B")
-
-
+    # contactList = [10, 20]#, 0.25]
+    # frictionList = [0.05 ,0.01 ,0.04 ,0.18 ,0.01 ,0.05, 1, 0.001, 0.001]
+    # asterisk_test('./data/The_last_run/JA_S3/experiment_config.json','A', frictionList=frictionList)
     # full_test('./data/Mothra_Full_Continue_New_weight/JA_S3/experiment_config.json','A')
     # full_test('./data/Mothra_Full_Continue_New_weight/JA_S3/experiment_config.json','B')
 
