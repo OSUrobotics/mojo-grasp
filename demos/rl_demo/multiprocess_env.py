@@ -103,7 +103,7 @@ class MultiprocessSingleShapeEnv(Environment):
             self.finger_spinning_friction_range = [0.01,0.0101] #[0.05,0.06] #[0.01,0.0101]
             self.finger_rolling_friction_range = [0.04,0.0401] #[0.1,0.2] #[0.04,0.0401]
 
-        self.floor_lateral_friction_range = [0.15,0.45]
+        self.floor_lateral_friction_range = [0.12,0.24]#[0.15,0.45]
         self.floor_spinning_friction_range = [0.01,0.0101]
         self.floor_rolling_friction_range = [0.05,0.0501]
         self.object_mass_range = [0.015, 0.045]
@@ -148,6 +148,17 @@ class MultiprocessSingleShapeEnv(Environment):
         # print('startng object mass', start_mass)
         # print('starting floor frictions', start_floor_lateral, start_floor_spin, start_floor_roll)
         # print('starting finger frictions',start_finger_lateral, start_finger_spin, start_finger_roll)
+
+    def set_friction(self, frictionList):
+        #print("Friction list in env is :", frictionList)
+        self.p.changeDynamics(self.hand_id, -1,lateralFriction=frictionList[0], spinningFriction=frictionList[1], rollingFriction=frictionList[2])
+        self.p.changeDynamics(self.plane_id, -1,lateralFriction=frictionList[3], spinningFriction=frictionList[4], rollingFriction=frictionList[5])
+        self.p.changeDynamics(self.obj.id, -1, mass=.03, restitution=.95, lateralFriction=frictionList[6],spinningFriction=frictionList[7], rollingFriction=frictionList[8])
+
+
+    def set_contact(self,contactList):
+        self.p.changeDynamics(self.hand_id, 1, contactStiffness=contactList[0], contactDamping=contactList[1])#, restitution=contactList[2])
+        self.p.changeDynamics(self.hand_id, 4, contactStiffness=contactList[0], contactDamping=contactList[1])#, restitution=contactList[2])
 
 
     def make_viz_point(self,thing):
