@@ -156,6 +156,8 @@ class MultiprocessGymWrapper(gym.Env):
                 self.build_reward = rf.double_scaled
             elif self.REWARD_TYPE == 'TripleScaled':
                 self.build_reward = rf.triple_scaled_slide
+            elif self.REWARD_TYPE == 'TripleScaledJ':
+                self.build_reward = rf.triple_scaled_slide_j
             elif self.REWARD_TYPE == 'SFS':
                 self.build_reward = rf.sfs
             elif self.REWARD_TYPE == 'DFS':
