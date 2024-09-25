@@ -42,7 +42,7 @@ def scaled(reward_container, tholds):
 def double_scaled(reward_container, tholds):
     ftemp = -max(reward_container['f1_dist'], reward_container['f2_dist']) * 100 # 100 here to make ftemp = -1 when at 1 cm
     temp = -reward_container['distance_to_goal']/reward_container['start_dist'] # should scale this so that it is -1 at start 
-    ftemp,temp = max(ftemp,-2), max(temp, -2)
+    ftemp,temp = np.clip(ftemp,-2, 0), np.clip(temp, -2, 0)
     tstep_reward = temp*tholds['DISTANCE_SCALING'] + ftemp*tholds['CONTACT_SCALING']
     return float(tstep_reward), False
 
@@ -154,7 +154,19 @@ def triple_scaled_slide(reward_container, tholds):
     tstep_reward = temp*tholds['DISTANCE_SCALING'] + ftemp*tholds['CONTACT_SCALING'] + rotation_temp/np.pi*tholds['ROTATION_SCALING']
     return float(tstep_reward), False
 
-
+def triple_scaled_slide_j(reward_container, tholds):
+    # print(reward_container)
+    ftemp = -max(reward_container['f1_dist'], reward_container['f2_dist']) * 100 # 100 here to make ftemp = -1 when at 1 cm
+    temp = -reward_container['distance_to_goal']/reward_container['start_dist'] # should scale this so that it is -1 at start 
+    # print(reward_container['distance_to_goal'],reward_container['start_dist'], temp)
+    obj_rotation = reward_container['object_orientation'][2]
+    thing1 = (obj_rotation-reward_container['goal_orientation'])%(np.pi*2)
+    thing2 = (reward_container['goal_orientation']-obj_rotation)%(np.pi*2)
+    rotation_temp = -min(thing1,thing2)
+    #Jeremiah Changed this for -2 to -3
+    ftemp,temp = max(ftemp,-3), max(temp, -2)
+    tstep_reward = temp*tholds['DISTANCE_SCALING'] + ftemp*tholds['CONTACT_SCALING'] + rotation_temp/np.pi*tholds['ROTATION_SCALING']
+    return float(tstep_reward), False
 
 """
 Begin HRL reward functions
