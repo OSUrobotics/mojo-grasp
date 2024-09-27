@@ -137,7 +137,7 @@ class MultiprocessSingleShapeEnv(Environment):
         self.start_time = 0
         
         self.p.setGravity(0, 0, -10)
-        self.p.setPhysicsEngineParameter(contactBreakingThreshold=.001)
+        self.p.setPhysicsEngineParameter(contactBreakingThreshold=.001, contactERP=0.8 ,enableConeFriction=0, globalCFM=0.01, numSubSteps=2)
         self.p.setRealTimeSimulation(0)
         fixed=False
         if fixed:
@@ -306,9 +306,9 @@ class MultiprocessSingleShapeEnv(Environment):
         self.p.changeDynamics(self.obj.id, -1, mass=.03, restitution=.95, lateralFriction=0.5)
         
         self.p.setGravity(0, 0, -10)
-        self.p.setPhysicsEngineParameter(contactBreakingThreshold=.001)
+        self.p.setPhysicsEngineParameter(contactBreakingThreshold=.001, contactERP=0.8 ,enableConeFriction=0, globalCFM=0.01, numSubSteps=2)
         self.p.p.setRealTimeSimulation(0)
-        # obj_id = self.p.loadURDF(self.obj.path, basePosition=[0.0, 0.1067, .05])
+
 
         # Update the object id's
         self.hand.id = hand_id
@@ -328,6 +328,11 @@ class MultiprocessSingleShapeEnv(Environment):
 
     def step(self):
         super().step()
+        # temp =self.p.getContactPoints(self.hand_id, self.obj_id)
+        # if temp != ():
+        #     if temp[0][8] < -0.5/1000:
+        #         print('contact points', temp[0][8] * 1000)
+            
         
     def set_finger_contact_goal(self,finger_goals):
         if self.finger_points is None:

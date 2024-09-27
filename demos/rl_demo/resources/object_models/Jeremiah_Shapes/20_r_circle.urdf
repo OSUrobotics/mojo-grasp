@@ -3,13 +3,13 @@
 
     <link name="20_r_circle">
         <visual>
-            <origin rpy="1.5707963267948966 0 0" xyz="0 0 -0.0525"/>
+            <origin rpy="1.5707963267948966 0 0" xyz="0 0 0.0"/>
             <geometry>
                 <mesh filename="Shapes/20_r_circle.STL" scale=".001 .001 .001"/>
             </geometry>
         </visual>
         <collision>
-            <origin rpy="1.5707963267948966 0 0" xyz="0 0 -0.0525"/>
+            <origin rpy="1.5707963267948966 0 0" xyz="0 0 0.0"/>
             <geometry>
                 <mesh filename="Shapes/20_r_circle.STL" scale=".001 .001 .001"/>
             </geometry>
