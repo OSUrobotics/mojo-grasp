@@ -198,10 +198,12 @@ def make_pybullet(arg_dict, pybullet_instance, rank, hand_info, frictionList = N
     pybullet_instance.resetSimulation()
     pybullet_instance.setAdditionalSearchPath(pybullet_data.getDataPath())
     pybullet_instance.setGravity(0, 0, -10)
-    pybullet_instance.setPhysicsEngineParameter(contactBreakingThreshold=.001)
+    pybullet_instance.setPhysicsEngineParameter(contactBreakingThreshold=.001, contactERP=0.8, enableConeFriction=1, globalCFM=0.01, numSubSteps=1)
     pybullet_instance.setRealTimeSimulation(0)
     pybullet_instance.resetDebugVisualizerCamera(cameraDistance=.02, cameraYaw=0, cameraPitch=-89.9999,
                                  cameraTargetPosition=[0, 0.1, 0.5])
+    pybullet_instance.configureDebugVisualizer(pybullet_instance.COV_ENABLE_MOUSE_PICKING,0)
+    pybullet_instance.configureDebugVisualizer(pybullet_instance.COV_ENABLE_WIREFRAME,0)
     
     # load hand/hands 
     if rank[1] < len(args['hand_file_list']):
@@ -254,7 +256,7 @@ def make_pybullet(arg_dict, pybullet_instance, rank, hand_info, frictionList = N
     hand_id = pybullet_instance.loadURDF(args['hand_path'] + '/' + this_hand, useFixedBase=True,
                          basePosition=[0.0, 0.0, 0.05], flags=pybullet_instance.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
     # print('object path',object_path)
-    obj_id = pybullet_instance.loadURDF(object_path, basePosition=[0.0, 0.10, .05], flags=pybullet_instance.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
+    obj_id = pybullet_instance.loadURDF(object_path, basePosition=[0.0, 0.10, .0], flags=pybullet_instance.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
 
     #obj_id = pybullet_instance.loadSoftBody("/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/resources/object_models/Jeremiah_Shapes/Shapes/torus.vtk", mass = 3, scale = 1, useNeoHookean = 1, NeoHookeanMu = 180, NeoHookeanLambda = 600, NeoHookeanDamping = 0.01, collisionMargin = 0.006, useSelfCollision = 1, frictionCoeff = 0.5, repulsionStiffness = 800)
 
@@ -900,12 +902,12 @@ def replay(argpath, episode_path):
     
     temp_pos = obj_pose[0][0].copy()
     temp_pos[2] += 0.06
-    curr_id=p2.loadURDF('./resources/object_models/2v2_mod/2v2_mod_cylinder_small_alt.urdf', flags=p2.URDF_ENABLE_CACHED_GRAPHICS_SHAPES,
-                globalScaling=0.2, basePosition=temp_pos, baseOrientation=[ 0.7071068, 0, 0, 0.7071068 ])
-    p2.changeVisualShape(curr_id, -1,rgbaColor=[1, 0.5, 0, 1])
-    cid = p2.createConstraint(2, -1, curr_id, -1, p2.JOINT_FIXED, [0, 0, 0], [0, 0, 0], [0,0,0], childFrameOrientation=[ 0.7071068, 0, 0, 0.7071068 ])
-    p2.setCollisionFilterPair(curr_id,tting,-1,-1,0)
-    p2.setCollisionFilterPair(curr_id,2,-1,-1,0)
+    # curr_id=p2.loadURDF('./resources/object_models/2v2_mod/2v2_mod_cylinder_small_alt.urdf', flags=p2.URDF_ENABLE_CACHED_GRAPHICS_SHAPES,
+    #             globalScaling=0.2, basePosition=temp_pos, baseOrientation=[ 0.7071068, 0, 0, 0.7071068 ])
+    # p2.changeVisualShape(curr_id, -1,rgbaColor=[1, 0.5, 0, 1])
+    # cid = p2.createConstraint(2, -1, curr_id, -1, p2.JOINT_FIXED, [0, 0, 0], [0, 0, 0], [0,0,0], childFrameOrientation=[ 0.7071068, 0, 0, 0.7071068 ])
+    # p2.setCollisionFilterPair(curr_id,tting,-1,-1,0)
+    # p2.setCollisionFilterPair(curr_id,2,-1,-1,0)
     
 
     if 'contact' in args['task']:
@@ -1051,19 +1053,16 @@ def main(filepath = None,learn_type='run', num_cpu=16):
 if __name__ == '__main__':
     import csv
 
-    # main('./data/The_last_run/JA_S1/experiment_config.json','run')
+    # main('','run')
     # multiprocess_evaluate_loaded('./data/Mothra_Full/FTP_S1/experiment_config.json',"B")
-    # replay('./data/The_last_run/FTP_S2/experiment_config.json', './data/Fixed_Collisions/x1f/Eval_A/Episode_5.pkl')
-    # multiprocess_evaluate_loaded('./data/Mothra_Rotation/JA_S3/experiment_config.json',"B")
-    # multiprocess_evaluate_loaded('./data/Mothra_Rotation/JA_S3/experiment_config.json',"A")
+    replay('./data/New_Fric2/low_c/experiment_config.json', './data/New_Fric2/low_c/Eval_A/Episode_902.pkl')
+    # multiprocess_evaluate_loaded('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/New_Fric2/just_fric/experiment_config.json',"A")
+    # multiprocess_evaluate_loaded('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/New_Fric2/low_c/experiment_config.json',"A")
 
-    # multiprocess_evaluate_loaded('./data/Mothra_Full/FTP_S3/experiment_config.json',"A")
-    # multiprocess_evaluate_loaded('./data/Mothra_Full/FTP_S3/experiment_config.json',"B")
+    # multiprocess_evaluate_loaded('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/New_Fric/Fric_n_low_c_reward/experiment_config.json',"A")
+    # multiprocess_evaluate_loaded('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/New_Fric/Just_Fric/experiment_config.json',"A")
 
-    # multiprocess_evaluate_loaded('./data/Full_long_test/experiment_config.json',"B")
-    # multiprocess_evaluate_loaded('./data/HPC_Full/JA_S3/experiment_config.json',"B")
-
-    # multiprocess_evaluate_loaded('./data/HPC_Slide/FTP_S1/experiment_config.json',"A")
+    # multiprocess_evaluate_loaded('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/The_last_run/JA_S3/experiment_config.json',"A")
     # multiprocess_evaluate_loaded('./data/HPC_Slide/FTP_S1/experiment_config.json',"B")
     # multiprocess_evaluate_loaded('./data/HPC_Slide/FTP_S2/experiment_config.json',"A")
     # multiprocess_evaluate_loaded('./data/HPC_Slide/FTP_S2/experiment_config.json',"B")
@@ -1077,9 +1076,9 @@ if __name__ == '__main__':
     # multiprocess_evaluate_loaded('./data/HPC_Slide/JA_S3/experiment_config.json',"B")
     # multiprocess_evaluate_loaded('./data/HPC_Slide/FTP_S3/experiment_config.json',"A")
     # multiprocess_evaluate_loaded('./data/HPC_Slide/FTP_S3/experiment_config.json',"B")
-    # contactList = [10, 20]#, 0.25]
-    # frictionList = [0.05 ,0.01 ,0.04 ,0.18 ,0.01 ,0.05, 1, 0.001, 0.001]
-    # asterisk_test('./data/The_last_run/JA_S3/experiment_config.json','A', frictionList=frictionList)
+    # contactList = [9, 6, 0.05]#, 0.25]
+    # frictionList = [0.05 ,0.01 ,0.04 ,0.20 ,0.01 ,0.05, 1, 0.001, 0.001]
+    # asterisk_test('./data/The_last_run/JA_S3/experiment_config.json','A', contactList=contactList)
     # full_test('./data/Mothra_Full_Continue_New_weight/JA_S3/experiment_config.json','A')
     # full_test('./data/Mothra_Full_Continue_New_weight/JA_S3/experiment_config.json','B')
 
