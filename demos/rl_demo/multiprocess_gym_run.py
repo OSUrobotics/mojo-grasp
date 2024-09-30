@@ -896,12 +896,12 @@ def replay(argpath, episode_path):
                     baseInertialFramePosition=[0,0,0],
                     baseCollisionShapeIndex=collisionShapeId,
                     baseVisualShapeIndex=visualShapeId,
-                    basePosition=[obj_temp[0]-0.0025,obj_temp[1]+0.1-0.0025,0.11],
+                    basePosition=[obj_temp[0]-0.0025,obj_temp[1]+0.1-0.0025,0.15],
                     baseOrientation =quat,
                     useMaximalCoordinates=True)
     
-    temp_pos = obj_pose[0][0].copy()
-    temp_pos[2] += 0.06
+    # temp_pos = obj_pose[0][0].copy()
+    # temp_pos[2] += 0.06
     # curr_id=p2.loadURDF('./resources/object_models/2v2_mod/2v2_mod_cylinder_small_alt.urdf', flags=p2.URDF_ENABLE_CACHED_GRAPHICS_SHAPES,
     #             globalScaling=0.2, basePosition=temp_pos, baseOrientation=[ 0.7071068, 0, 0, 0.7071068 ])
     # p2.changeVisualShape(curr_id, -1,rgbaColor=[1, 0.5, 0, 1])
@@ -1055,12 +1055,15 @@ if __name__ == '__main__':
 
     # main('','run')
     # multiprocess_evaluate_loaded('./data/Mothra_Full/FTP_S1/experiment_config.json',"B")
-    replay('./data/New_Fric2/low_c/experiment_config.json', './data/New_Fric2/low_c/Eval_A/Episode_902.pkl')
+    # replay('./data/New_Fric2/low_c/experiment_config.json', './data/New_Fric2/low_c/Eval_A/Episode_902.pkl')
+    replay('./data/New_Fric2/low_c/experiment_config.json', './data/The_last_run/JA_S3/Ast_A/Episode_6.pkl')
+    # replay('./data/Collision_Test/Test1/experiment_config.json', './data/Collision_Test/Test1/Eval_A/Episode_1013.pkl')
+
     # multiprocess_evaluate_loaded('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/New_Fric2/just_fric/experiment_config.json',"A")
     # multiprocess_evaluate_loaded('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/New_Fric2/low_c/experiment_config.json',"A")
 
-    # multiprocess_evaluate_loaded('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/New_Fric/Fric_n_low_c_reward/experiment_config.json',"A")
-    # multiprocess_evaluate_loaded('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/New_Fric/Just_Fric/experiment_config.json',"A")
+    #multiprocess_evaluate_loaded('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/Collision_Test/Test1/experiment_config.json',"A")
+    #multiprocess_evaluate_loaded('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/Collision_Test/Test2/experiment_config.json',"A")
 
     # multiprocess_evaluate_loaded('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/The_last_run/JA_S3/experiment_config.json',"A")
     # multiprocess_evaluate_loaded('./data/HPC_Slide/FTP_S1/experiment_config.json',"B")
@@ -1078,7 +1081,7 @@ if __name__ == '__main__':
     # multiprocess_evaluate_loaded('./data/HPC_Slide/FTP_S3/experiment_config.json',"B")
     # contactList = [9, 6, 0.05]#, 0.25]
     # frictionList = [0.05 ,0.01 ,0.04 ,0.20 ,0.01 ,0.05, 1, 0.001, 0.001]
-    # asterisk_test('./data/The_last_run/JA_S3/experiment_config.json','A', contactList=contactList)
+    # asterisk_test('./data/The_last_run/JA_S3/experiment_config.json','A')
     # full_test('./data/Mothra_Full_Continue_New_weight/JA_S3/experiment_config.json','A')
     # full_test('./data/Mothra_Full_Continue_New_weight/JA_S3/experiment_config.json','B')
 

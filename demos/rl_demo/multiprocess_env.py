@@ -67,7 +67,7 @@ class MultiprocessSingleShapeEnv(Environment):
         self.p.createConstraint(self.hand_id, -1, -1, -1, self.p.JOINT_FIXED, [0,0,0], [0,0,0], [0,0,0.05])
 
 
-        self.obj_id = self.p.loadURDF(self.obj.path, basePosition=[0.0, 0.10, .05],
+        self.obj_id = self.p.loadURDF(self.obj.path, basePosition=[0.0, 0.10, .05], useMaximalCoordinates=True,
                                  flags=self.p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
         # self.obj_id = self.p.loadSoftBody("/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/resources/object_models/Jeremiah_Shapes/Shapes/torus_textured.obj",
         #                                   simFileName="/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/resources/object_models/Jeremiah_Shapes/Shapes/torus.vtk",
@@ -103,7 +103,7 @@ class MultiprocessSingleShapeEnv(Environment):
             self.finger_spinning_friction_range = [0.01,0.0101] #[0.05,0.06] #[0.01,0.0101]
             self.finger_rolling_friction_range = [0.04,0.0401] #[0.1,0.2] #[0.04,0.0401]
 
-        self.floor_lateral_friction_range = [0.12,0.24]#[0.15,0.45]
+        self.floor_lateral_friction_range = [0.15,0.25]#[0.15,0.45]
         self.floor_spinning_friction_range = [0.01,0.0101]
         self.floor_rolling_friction_range = [0.05,0.0501]
         self.object_mass_range = [0.015, 0.045]
@@ -137,7 +137,7 @@ class MultiprocessSingleShapeEnv(Environment):
         self.start_time = 0
         
         self.p.setGravity(0, 0, -10)
-        self.p.setPhysicsEngineParameter(contactBreakingThreshold=.001, contactERP=0.8 ,enableConeFriction=0, globalCFM=0.01, numSubSteps=2)
+        self.p.setPhysicsEngineParameter(contactBreakingThreshold=.001, contactERP=0.8, numSubSteps=2, useSplitImpulse=1)
         self.p.setRealTimeSimulation(0)
         fixed=False
         if fixed:
@@ -294,7 +294,7 @@ class MultiprocessSingleShapeEnv(Environment):
         self.p.changeDynamics(hand_id, 3, jointLowerLimit=-1.57, jointUpperLimit=1.57, mass=mass_link)
         self.p.changeDynamics(hand_id, 4, jointLowerLimit=-2.09, jointUpperLimit=0, mass=mass_link)
         
-        obj_id = self.p.loadURDF(self.obj.path, basePosition=[object_pos[0], object_pos[1], .05],
+        obj_id = self.p.loadURDF(self.obj.path, basePosition=[object_pos[0], object_pos[1], .05], useMaximalCoordinates=True,
                         flags=self.p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
         # obj_id = self.p.loadSoftBody("/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/resources/object_models/Jeremiah_Shapes/Shapes/torus.obj",
         #                                   scale = 0.1,
@@ -306,7 +306,7 @@ class MultiprocessSingleShapeEnv(Environment):
         self.p.changeDynamics(self.obj.id, -1, mass=.03, restitution=.95, lateralFriction=0.5)
         
         self.p.setGravity(0, 0, -10)
-        self.p.setPhysicsEngineParameter(contactBreakingThreshold=.001, contactERP=0.8 ,enableConeFriction=0, globalCFM=0.01, numSubSteps=2)
+        self.p.setPhysicsEngineParameter(contactBreakingThreshold=.001, contactERP=0.8, numSubSteps=2, useSplitImpulse=1)
         self.p.p.setRealTimeSimulation(0)
 
 
@@ -330,7 +330,7 @@ class MultiprocessSingleShapeEnv(Environment):
         super().step()
         # temp =self.p.getContactPoints(self.hand_id, self.obj_id)
         # if temp != ():
-        #     if temp[0][8] < -0.5/1000:
+        #     if temp[0][8] < -0.1/1000:
         #         print('contact points', temp[0][8] * 1000)
             
         
