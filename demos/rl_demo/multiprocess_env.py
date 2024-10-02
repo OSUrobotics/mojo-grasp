@@ -55,6 +55,7 @@ class MultiprocessSingleShapeEnv(Environment):
                 self.hand_id = self.p.loadURDF(self.hand.path, useFixedBase=False,
                                     basePosition=[0.0, 0.0, 0.05], flags=self.p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES | self.p.URDF_USE_SELF_COLLISION)
             else:
+                print("This is strange")
                 self.hand_id = self.p.loadURDF(self.hand.path, useFixedBase=False,
                                     basePosition=[0.0, 0.0, 0.05], flags=self.p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
                 
@@ -137,7 +138,7 @@ class MultiprocessSingleShapeEnv(Environment):
         self.start_time = 0
         
         self.p.setGravity(0, 0, -10)
-        self.p.setPhysicsEngineParameter(contactBreakingThreshold=.001, contactERP=0.8, numSubSteps=2, useSplitImpulse=1)
+        self.p.setPhysicsEngineParameter(contactBreakingThreshold=.001, contactERP = 0.35, globalCFM = 0.0000001 ,numSubSteps=2)#, useSplitImpulse=1)
         self.p.setRealTimeSimulation(0)
         fixed=False
         if fixed:
@@ -290,9 +291,9 @@ class MultiprocessSingleShapeEnv(Environment):
         self.p.changeDynamics(hand_id, 4, lateralFriction=self.lateral_low, rollingFriction=self.rolling_low,
                          mass=.036)
         self.p.changeDynamics(hand_id, 0, jointLowerLimit=-1.57, jointUpperLimit=1.57, mass=mass_link)
-        self.p.changeDynamics(hand_id, 1, jointLowerLimit=0, jointUpperLimit=2.09, mass=mass_link)
+        self.p.changeDynamics(hand_id, 1, jointLowerLimit=0, jointUpperLimit=2.09, mass=mass_link, contactStiffness=10, contactDamping=0.1)
         self.p.changeDynamics(hand_id, 3, jointLowerLimit=-1.57, jointUpperLimit=1.57, mass=mass_link)
-        self.p.changeDynamics(hand_id, 4, jointLowerLimit=-2.09, jointUpperLimit=0, mass=mass_link)
+        self.p.changeDynamics(hand_id, 4, jointLowerLimit=-2.09, jointUpperLimit=0, mass=mass_link, contactStiffness=10, contactDamping=0.1)
         
         obj_id = self.p.loadURDF(self.obj.path, basePosition=[object_pos[0], object_pos[1], .05], useMaximalCoordinates=True,
                         flags=self.p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
@@ -306,7 +307,7 @@ class MultiprocessSingleShapeEnv(Environment):
         self.p.changeDynamics(self.obj.id, -1, mass=.03, restitution=.95, lateralFriction=0.5)
         
         self.p.setGravity(0, 0, -10)
-        self.p.setPhysicsEngineParameter(contactBreakingThreshold=.001, contactERP=0.8, numSubSteps=2, useSplitImpulse=1)
+        self.p.setPhysicsEngineParameter(contactBreakingThreshold=.001, contactERP = 0.35, globalCFM = 0.0000001 ,numSubSteps=2)
         self.p.p.setRealTimeSimulation(0)
 
 
@@ -328,10 +329,10 @@ class MultiprocessSingleShapeEnv(Environment):
 
     def step(self):
         super().step()
-        # temp =self.p.getContactPoints(self.hand_id, self.obj_id)
-        # if temp != ():
-        #     if temp[0][8] < -0.1/1000:
-        #         print('contact points', temp[0][8] * 1000)
+        temp =self.p.getContactPoints(self.hand_id, self.obj_id)
+        if temp != ():
+            if temp[0][8] < -0.1/1000:
+                print('contact points', temp[0][8] * 1000)
             
         
     def set_finger_contact_goal(self,finger_goals):
