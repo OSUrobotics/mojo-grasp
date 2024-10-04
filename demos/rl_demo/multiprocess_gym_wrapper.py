@@ -71,6 +71,8 @@ class MultiprocessGymWrapper(gym.Env):
         self.first = True
         self.reduced_saving = True
         self.small_enough = False #args['epochs'] <= 100000
+        self.frictionList = None
+        self.contactList = None
         
         self.OBJECT_POSE_RANDOMIZATION = args['object_random_start']
         try:
@@ -100,6 +102,14 @@ class MultiprocessGymWrapper(gym.Env):
                        'CONTACT_SCALING':self.CONTACT_SCALING,
                        'ROTATION_SCALING':self.ROTATION_SCALING,
                        'SUCCESS_REWARD':self.SUCCESS_REWARD}
+        
+    def set_friction(self,frictionList):
+        self.frictionList = frictionList
+        self.env.set_friction(frictionList)
+
+    def set_contact(self,contactList):
+        self.contactList = contactList
+        self.env.set_contact(contactList)
 
     def prep_reward(self):
         """
@@ -145,6 +155,8 @@ class MultiprocessGymWrapper(gym.Env):
                 self.build_reward = rf.double_scaled
             elif self.REWARD_TYPE == 'TripleScaled':
                 self.build_reward = rf.triple_scaled_slide
+            elif self.REWARD_TYPE == 'TripleScaledJ':
+                self.build_reward = rf.triple_scaled_slide_j
             elif self.REWARD_TYPE == 'SFS':
                 self.build_reward = rf.sfs
             elif self.REWARD_TYPE == 'DFS':
@@ -289,7 +301,7 @@ class MultiprocessGymWrapper(gym.Env):
                 if self.reduced_saving:
                     self.record.record_test_round()
                 else:
-                    self.record.record_episode(self.episode_type)
+                    self.record.record_episode(self.episode_type, self.frictionList, self.contactList)
 
                 if self.eval:
                     if self.hand_type is None:

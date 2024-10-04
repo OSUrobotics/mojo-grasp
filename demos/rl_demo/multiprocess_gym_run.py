@@ -145,7 +145,7 @@ def load_wall(args):
     eval_finger_contacts = None 
     return pose_list, eval_pose_list, orientations, eval_orientations, finger_contacts, eval_finger_contacts, [f1y,f2y,ef1y,ef2y]
     
-def make_pybullet(arg_dict, pybullet_instance, rank, hand_info, viz=False):
+def make_pybullet(arg_dict, pybullet_instance, rank, hand_info, frictionList = None, contactList = None, viz=False):
     # resource paths
     this_path = os.path.abspath(__file__)
     overall_path = os.path.dirname(os.path.dirname(os.path.dirname(this_path)))
@@ -195,13 +195,15 @@ def make_pybullet(arg_dict, pybullet_instance, rank, hand_info, viz=False):
         physics_client = pybullet_instance.connect(pybullet_instance.DIRECT)
 
     # set initial gravity and general features
-    pybullet_instance.resetSimulation(pybullet_instance.RESET_USE_DEFORMABLE_WORLD)
+    pybullet_instance.resetSimulation()
     pybullet_instance.setAdditionalSearchPath(pybullet_data.getDataPath())
     pybullet_instance.setGravity(0, 0, -10)
-    pybullet_instance.setPhysicsEngineParameter(contactBreakingThreshold=.001, sparseSdfVoxelSize=0.25)
+    pybullet_instance.setPhysicsEngineParameter(contactBreakingThreshold=.001, contactERP=0.8, enableConeFriction=1, globalCFM=0.01, numSubSteps=1)
     pybullet_instance.setRealTimeSimulation(0)
     pybullet_instance.resetDebugVisualizerCamera(cameraDistance=.02, cameraYaw=0, cameraPitch=-89.9999,
                                  cameraTargetPosition=[0, 0.1, 0.5])
+    pybullet_instance.configureDebugVisualizer(pybullet_instance.COV_ENABLE_MOUSE_PICKING,0)
+    pybullet_instance.configureDebugVisualizer(pybullet_instance.COV_ENABLE_WIREFRAME,0)
     
     # load hand/hands 
     if rank[1] < len(args['hand_file_list']):
@@ -254,7 +256,7 @@ def make_pybullet(arg_dict, pybullet_instance, rank, hand_info, viz=False):
     hand_id = pybullet_instance.loadURDF(args['hand_path'] + '/' + this_hand, useFixedBase=True,
                          basePosition=[0.0, 0.0, 0.05], flags=pybullet_instance.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
     # print('object path',object_path)
-    obj_id = pybullet_instance.loadURDF(object_path, basePosition=[0.0, 0.10, .05], flags=pybullet_instance.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
+    obj_id = pybullet_instance.loadURDF(object_path, basePosition=[0.0, 0.10, .0], flags=pybullet_instance.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
 
     #obj_id = pybullet_instance.loadSoftBody("/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/resources/object_models/Jeremiah_Shapes/Shapes/torus.vtk", mass = 3, scale = 1, useNeoHookean = 1, NeoHookeanMu = 180, NeoHookeanLambda = 600, NeoHookeanDamping = 0.01, collisionMargin = 0.006, useSelfCollision = 1, frictionCoeff = 0.5, repulsionStiffness = 800)
 
@@ -288,9 +290,18 @@ def make_pybullet(arg_dict, pybullet_instance, rank, hand_info, viz=False):
     reward = multiprocess_reward.MultiprocessReward(pybullet_instance)
 
     #change initial physics parameters
-    pybullet_instance.changeDynamics(plane_id,-1,lateralFriction=0.05, spinningFriction=0.05, rollingFriction=0.05)
-    pybullet_instance.changeDynamics(obj.id, -1, mass=.03, restitution=.95, lateralFriction=1)
-    
+    if frictionList is None:
+        pybullet_instance.changeDynamics(plane_id,-1,lateralFriction=0.05, spinningFriction=0.05, rollingFriction=0.05)
+        pybullet_instance.changeDynamics(obj.id, -1, mass=.03, restitution=.95, lateralFriction=1)
+    else:
+        pybullet_instance.changeDynamics(hand_id, -1,lateralFriction=frictionList[0], spinningFriction=frictionList[1], rollingFriction=frictionList[2])
+        pybullet_instance.changeDynamics(plane_id, -1,lateralFriction=frictionList[3], spinningFriction=frictionList[4], rollingFriction=frictionList[5])
+        pybullet_instance.changeDynamics(obj.id, -1, mass=.03, restitution=.95, lateralFriction=frictionList[6],spinningFriction=frictionList[7], rollingFriction=frictionList[8])
+
+
+    if contactList is not None:
+        pybullet_instance.changeDynamics(hand_id, -1,contactStiffness=contactList[0],contactDamping=contactList[1], restitution=contactList[2])
+
     # set up dictionary for manipulation phase
     arg_dict = args.copy()
     if args['action'] == 'Joint Velocity':
@@ -414,7 +425,7 @@ def multiprocess_evaluate_loaded(filepath, aorb):
                     obs, _, done, _ = vec_env.step_wait()
     vec_env.env_method('disconnect')
 
-def asterisk_test(filepath,hand_type):
+def asterisk_test(filepath,hand_type,frictionList = None, contactList = None):
     # load a trained model and test it on its test set
     print('Evaluating on hands A or B')
     print('Hand A: 2v2_50.50_50.50_53')
@@ -458,6 +469,11 @@ def asterisk_test(filepath,hand_type):
         print('get fucked')
         assert 1==0
     asterisk_thing = [[0,0.07],[0.0495,0.0495],[0.07,0.0],[0.0495,-0.0495],[0.0,-0.07],[-0.0495,-0.0495],[-0.07,0.0],[-0.0495,0.0495]]
+    scaled_points = [
+    [0.0, 0.04666666666666667], [0.033, 0.033], [0.04666666666666667, 0.0], 
+    [0.033, -0.033], [0.0, -0.04666666666666667], [-0.033, -0.033], 
+    [-0.04666666666666667, 0.0], [-0.033, 0.033]
+    ]
 
     if 'Rotation' in args['task']:
         print('get fucked')
@@ -469,15 +485,55 @@ def asterisk_test(filepath,hand_type):
     eval_env.reduced_saving = False
     model = model_type("MlpPolicy", eval_env, tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-2.3}).load(args['save_path']+'best_model', env=eval_env)
     eval_env.episode_type = 'asterisk'
-    for i in asterisk_thing:
-        eval_env.manipulation_phase.state.objects[-1].set_all_pose(i)
-        obs = eval_env.reset()
-        eval_env.manipulation_phase.state.objects[-1].set_all_pose(i)
-        done = False
+    if frictionList is not None:
+        for friction in range(len(frictionList)):
+            for j in range(1,51):
+                modifiedFrictionList = frictionList.copy()
+                #print("Copied Friction list in wrapper is :", modifiedFrictionList)
+                modifiedFrictionList[friction] = j * 0.1 * modifiedFrictionList[friction]
+                #print("Modified in wrapper is :", modifiedFrictionList)
+                eval_env.set_friction(modifiedFrictionList)
+                for i in asterisk_thing:
+                    eval_env.manipulation_phase.state.objects[-1].set_all_pose(i)
+                    obs = eval_env.reset()
+                    eval_env.manipulation_phase.state.objects[-1].set_all_pose(i)
+                    done = False
 
-        while not done:
-            action, _ = model.predict(obs,deterministic=True)
-            obs, _, done, _ = eval_env.step(action,hand_type=hand_type)
+                    while not done:
+                        action, _ = model.predict(obs,deterministic=True)
+                        obs, _, done, _ = eval_env.step(action,hand_type=hand_type)
+
+    elif contactList is not None:
+        for contact in range(len(contactList)):
+            for j in range(0,101):
+                modifiedContactList = contactList.copy()
+                #print("Copied Contact list in wrapper is :", modifiedContactList)
+                modifiedContactList[contact] = j * 0.1 * modifiedContactList[contact]
+                #print("Modified in wrapper is :", modifiedContactList)
+                eval_env.set_contact(modifiedContactList)
+                for i in asterisk_thing:
+                    eval_env.manipulation_phase.state.objects[-1].set_all_pose(i)
+                    obs = eval_env.reset()
+                    eval_env.manipulation_phase.state.objects[-1].set_all_pose(i)
+                    done = False
+
+                    while not done:
+                        action, _ = model.predict(obs,deterministic=True)
+                        obs, _, done, _ = eval_env.step(action,hand_type=hand_type)
+
+
+    else:
+        for i in asterisk_thing:
+            eval_env.manipulation_phase.state.objects[-1].set_all_pose(i)
+            obs = eval_env.reset()
+            eval_env.manipulation_phase.state.objects[-1].set_all_pose(i)
+            done = False
+
+            while not done:
+                action, _ = model.predict(obs,deterministic=True)
+                obs, _, done, _ = eval_env.step(action,hand_type=hand_type)
+
+    
 
 
 def rotation_test(filepath, hand_type):
@@ -840,18 +896,18 @@ def replay(argpath, episode_path):
                     baseInertialFramePosition=[0,0,0],
                     baseCollisionShapeIndex=collisionShapeId,
                     baseVisualShapeIndex=visualShapeId,
-                    basePosition=[obj_temp[0]-0.0025,obj_temp[1]+0.1-0.0025,0.11],
+                    basePosition=[obj_temp[0]-0.0025,obj_temp[1]+0.1-0.0025,0.15],
                     baseOrientation =quat,
                     useMaximalCoordinates=True)
     
-    temp_pos = obj_pose[0][0].copy()
-    temp_pos[2] += 0.06
-    curr_id=p2.loadURDF('./resources/object_models/2v2_mod/2v2_mod_cylinder_small_alt.urdf', flags=p2.URDF_ENABLE_CACHED_GRAPHICS_SHAPES,
-                globalScaling=0.2, basePosition=temp_pos, baseOrientation=[ 0.7071068, 0, 0, 0.7071068 ])
-    p2.changeVisualShape(curr_id, -1,rgbaColor=[1, 0.5, 0, 1])
-    cid = p2.createConstraint(2, -1, curr_id, -1, p2.JOINT_FIXED, [0, 0, 0], [0, 0, 0], [0,0,0], childFrameOrientation=[ 0.7071068, 0, 0, 0.7071068 ])
-    p2.setCollisionFilterPair(curr_id,tting,-1,-1,0)
-    p2.setCollisionFilterPair(curr_id,2,-1,-1,0)
+    # temp_pos = obj_pose[0][0].copy()
+    # temp_pos[2] += 0.06
+    # curr_id=p2.loadURDF('./resources/object_models/2v2_mod/2v2_mod_cylinder_small_alt.urdf', flags=p2.URDF_ENABLE_CACHED_GRAPHICS_SHAPES,
+    #             globalScaling=0.2, basePosition=temp_pos, baseOrientation=[ 0.7071068, 0, 0, 0.7071068 ])
+    # p2.changeVisualShape(curr_id, -1,rgbaColor=[1, 0.5, 0, 1])
+    # cid = p2.createConstraint(2, -1, curr_id, -1, p2.JOINT_FIXED, [0, 0, 0], [0, 0, 0], [0,0,0], childFrameOrientation=[ 0.7071068, 0, 0, 0.7071068 ])
+    # p2.setCollisionFilterPair(curr_id,tting,-1,-1,0)
+    # p2.setCollisionFilterPair(curr_id,2,-1,-1,0)
     
 
     if 'contact' in args['task']:
@@ -997,86 +1053,19 @@ def main(filepath = None,learn_type='run', num_cpu=16):
 if __name__ == '__main__':
     import csv
 
-    main('./data/SingleRotationBaseline/experiment_config.json','run')
-
-    # multiprocess_evaluate_loaded('./data/N_mothra_slide_rerun/FTP_S1/experiment_config.json','A')
-    # multiprocess_evaluate_loaded('./data/N_mothra_slide_rerun/FTP_S1/experiment_config.json','B')
-    # multiprocess_evaluate_loaded('./data/N_mothra_slide_rerun/FTP_S2/experiment_config.json','A')
-    # multiprocess_evaluate_loaded('./data/N_mothra_slide_rerun/FTP_S2/experiment_config.json','B')
-    # multiprocess_evaluate_loaded('./data/N_mothra_slide_rerun/FTP_S3/experiment_config.json','A')
-    # multiprocess_evaluate_loaded('./data/N_mothra_slide_rerun/FTP_S3/experiment_config.json','B')
-
-    # multiprocess_evaluate_loaded('./data/N_HPC_slide_rerun/FTP_S1/experiment_config.json','A')
-    # multiprocess_evaluate_loaded('./data/N_HPC_slide_rerun/FTP_S1/experiment_config.json','B')
-    # multiprocess_evaluate_loaded('./data/N_HPC_slide_rerun/FTP_S2/experiment_config.json','A')
-    # multiprocess_evaluate_loaded('./data/N_HPC_slide_rerun/FTP_S2/experiment_config.json','B')
-    # multiprocess_evaluate_loaded('./data/N_HPC_slide_rerun/FTP_S3/experiment_config.json','A')
-    # multiprocess_evaluate_loaded('./data/N_HPC_slide_rerun/FTP_S3/experiment_config.json','B')
-
-    # multiprocess_evaluate_loaded('./data/N_HPC_rerun/JA_S1/experiment_config.json','A')
-    # multiprocess_evaluate_loaded('./data/N_HPC_rerun/JA_S1/experiment_config.json','B')
-    # multiprocess_evaluate_loaded('./data/N_HPC_rerun/JA_S2/experiment_config.json','A')
-    # multiprocess_evaluate_loaded('./data/N_HPC_rerun/JA_S2/experiment_config.json','B')
-    # multiprocess_evaluate_loaded('./data/N_HPC_slide_rerun/JA_S3/experiment_config.json','A')
-    # multiprocess_evaluate_loaded('./data/N_HPC_slide_rerun/JA_S3/experiment_config.json','B')
-
-    # multiprocess_evaluate_loaded('./data/J_HPC_rerun/FTP_S2/experiment_config.json','A')
-    # multiprocess_evaluate_loaded('./data/J_HPC_rerun/FTP_S2/experiment_config.json','B')
-
-    # asterisk_test('./data/N_mothra_slide_rerun/JA_S1/experiment_config.json','A')
-    # asterisk_test('./data/N_mothra_slide_rerun/JA_S2/experiment_config.json','A')
-    # asterisk_test('./data/N_mothra_slide_rerun/JA_S3/experiment_config.json','A')
-    # asterisk_test('./data/N_mothra_slide_rerun/FTP_S1/experiment_config.json','A')
-    # asterisk_test('./data/N_mothra_slide_rerun/FTP_S2/experiment_config.json','A')
-    # asterisk_test('./data/N_mothra_slide_rerun/FTP_S3/experiment_config.json','A')
-
-    # asterisk_test('./data/N_mothra_slide_rerun/JA_S1/experiment_config.json','B')
-    # asterisk_test('./data/N_mothra_slide_rerun/JA_S2/experiment_config.json','B')
-    # asterisk_test('./data/N_mothra_slide_rerun/JA_S3/experiment_config.json','B')
-    # asterisk_test('./data/N_mothra_slide_rerun/FTP_S1/experiment_config.json','B')
-    # asterisk_test('./data/N_mothra_slide_rerun/FTP_S2/experiment_config.json','B')
-    # asterisk_test('./data/N_mothra_slide_rerun/FTP_S3/experiment_config.json','B')
-
-    # asterisk_test('./data/N_HPC_slide_rerun/JA_S1/experiment_config.json','A')
-    # asterisk_test('./data/N_HPC_slide_rerun/JA_S2/experiment_config.json','A')
-    # asterisk_test('./data/N_HPC_slide_rerun/JA_S3/experiment_config.json','A')
-    # asterisk_test('./data/N_HPC_slide_rerun/FTP_S1/experiment_config.json','A')
-    # asterisk_test('./data/N_HPC_slide_rerun/FTP_S2/experiment_config.json','A')
-    # asterisk_test('./data/N_HPC_slide_rerun/FTP_S3/experiment_config.json','A')
-
-    # asterisk_test('./data/N_HPC_slide_rerun/JA_S1/experiment_config.json','B')
-    # asterisk_test('./data/N_HPC_slide_rerun/JA_S2/experiment_config.json','B')
-    # asterisk_test('./data/N_HPC_slide_rerun/JA_S3/experiment_config.json','B')
-    # asterisk_test('./data/N_HPC_slide_rerun/FTP_S1/experiment_config.json','B')
-    # asterisk_test('./data/N_HPC_slide_rerun/FTP_S2/experiment_config.json','B')
-    # asterisk_test('./data/N_HPC_slide_rerun/FTP_S3/experiment_config.json','B')
-
-    # asterisk_test('./data/J_HPC_rerun/JA_S1/experiment_config.json','A')
-    # asterisk_test('./data/J_HPC_rerun/JA_S2/experiment_config.json','A')
-    # asterisk_test('./data/J_HPC_rerun/JA_S3/experiment_config.json','A')
-    # asterisk_test('./data/J_HPC_rerun/FTP_S1/experiment_config.json','A')
-    # asterisk_test('./data/J_HPC_rerun/FTP_S2/experiment_config.json','A')
-    # asterisk_test('./data/J_HPC_rerun/FTP_S3/experiment_config.json','A')
-
-    # asterisk_test('./data/J_HPC_rerun/JA_S1/experiment_config.json','B')
-    # asterisk_test('./data/J_HPC_rerun/JA_S2/experiment_config.json','B')
-    # asterisk_test('./data/J_HPC_rerun/JA_S3/experiment_config.json','B')
-    # asterisk_test('./data/J_HPC_rerun/FTP_S1/experiment_config.json','B')
-    # asterisk_test('./data/J_HPC_rerun/FTP_S2/experiment_config.json','B')
-    # asterisk_test('./data/J_HPC_rerun/FTP_S3/experiment_config.json','B')
-
+    # main('','run')
     # multiprocess_evaluate_loaded('./data/Mothra_Full/FTP_S1/experiment_config.json',"B")
-    # replay('./data/sanity_check2/experiment_config.json', './data/sanity_check2/Eval_A/Episode_5.pkl')rf
-    # multiprocess_evaluate_loaded('./data/Mothra_Rotation/JA_S3/experiment_config.json',"B")
-    # multiprocess_evaluate_loaded('./data/Mothra_Rotation/JA_S3/experiment_config.json',"A")
+    # replay('./data/New_Fric2/low_c/experiment_config.json', './data/New_Fric2/low_c/Eval_A/Episode_902.pkl')
+    replay('./data/New_Fric2/low_c/experiment_config.json', './data/The_last_run/JA_S3/Ast_A/Episode_6.pkl')
+    # replay('./data/Collision_Test/Test1/experiment_config.json', './data/Collision_Test/Test1/Eval_A/Episode_1013.pkl')
 
-    # multiprocess_evaluate_loaded('./data/Mothra_Full/FTP_S3/experiment_config.json',"A")
-    # multiprocess_evaluate_loaded('./data/Mothra_Full/FTP_S3/experiment_config.json',"B")
+    # multiprocess_evaluate_loaded('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/New_Fric2/just_fric/experiment_config.json',"A")
+    # multiprocess_evaluate_loaded('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/New_Fric2/low_c/experiment_config.json',"A")
 
-    # multiprocess_evaluate_loaded('./data/Full_long_test/experiment_config.json',"B")
-    # multiprocess_evaluate_loaded('./data/HPC_Full/JA_S3/experiment_config.json',"B")
+    #multiprocess_evaluate_loaded('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/Collision_Test/Test1/experiment_config.json',"A")
+    #multiprocess_evaluate_loaded('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/Collision_Test/Test2/experiment_config.json',"A")
 
-    # multiprocess_evaluate_loaded('./data/HPC_Slide/FTP_S1/experiment_config.json',"A")
+    # multiprocess_evaluate_loaded('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/The_last_run/JA_S3/experiment_config.json',"A")
     # multiprocess_evaluate_loaded('./data/HPC_Slide/FTP_S1/experiment_config.json',"B")
     # multiprocess_evaluate_loaded('./data/HPC_Slide/FTP_S2/experiment_config.json',"A")
     # multiprocess_evaluate_loaded('./data/HPC_Slide/FTP_S2/experiment_config.json',"B")
@@ -1090,7 +1079,9 @@ if __name__ == '__main__':
     # multiprocess_evaluate_loaded('./data/HPC_Slide/JA_S3/experiment_config.json',"B")
     # multiprocess_evaluate_loaded('./data/HPC_Slide/FTP_S3/experiment_config.json',"A")
     # multiprocess_evaluate_loaded('./data/HPC_Slide/FTP_S3/experiment_config.json',"B")
-
+    # contactList = [9, 6, 0.05]#, 0.25]
+    # frictionList = [0.05 ,0.01 ,0.04 ,0.20 ,0.01 ,0.05, 1, 0.001, 0.001]
+    # asterisk_test('./data/The_last_run/JA_S3/experiment_config.json','A')
     # full_test('./data/Mothra_Full_Continue_New_weight/JA_S3/experiment_config.json','A')
     # full_test('./data/Mothra_Full_Continue_New_weight/JA_S3/experiment_config.json','B')
 

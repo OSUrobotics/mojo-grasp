@@ -23,6 +23,12 @@ class MultiprocessRecordData(RecordDataRLPKL):
         self.num_threads = float(Record_id[1])
         self.my_thread = float(Record_id[0])
 
+    def record_episode(self, episode_type='train', frictionList = None, contactList = None):
+        super().record_episode(episode_type)
+        self.current_episode["frictionList"] = frictionList
+        self.current_episode["contactList"] = contactList
+        # print("Friction list in record is :", frictionList)
+
 
     def save_episode(self,evaluated='train', filename=False, hand_type=None):
         """
