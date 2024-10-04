@@ -12,7 +12,27 @@ from copy import deepcopy
 from mojograsp.simobjects.two_finger_gripper import TwoFingerGripper
 from mojograsp.simcore.goal_holder import *
         
-        
+class DictHolder():
+    def __init__(self,list_size):
+        self.data = []
+        self.max_len = list_size
+
+    def reset(self):
+        self.data = []
+
+    def append(self, data: dict):
+        self.data.append(data)
+        if len(self.data) > self.max_len:
+            self.data.pop(0)
+
+    def get_full(self):
+        data_dict = self.data[-1].copy()
+        if len(self.data) < self.max_len:
+            data_dict['previous_state'] = [self.data[0] if i<self.max_len-len(self.data) else self.data[i] for i in range(self.max_len-1)]
+        else:
+            data_dict['previous_state'] = self.data[0:-1]
+        return data_dict
+
 class MultiprocessState(StateDefault):
     """
     Default State Class that is used when the user does not need or wish to use the Action class
@@ -38,6 +58,7 @@ class MultiprocessState(StateDefault):
                 self.hand_name = object.record_name
         if prev_len > 0:            
             self.previous_states = [{}]*prev_len
+            # self.state_holder = DictHolder(prev_len)
             self.pflag = True
         else:
             self.pflag = False
@@ -62,7 +83,7 @@ class MultiprocessState(StateDefault):
             
     def next_run(self):
         for thing in self.objects:
-            if (type(thing) == GoalHolder) | (type(thing) == RandomGoalHolder) | (type(thing) == SingleGoalHolder)|(type(thing) == HRLGoalHolder):
+            if (type(thing) == GoalHolder) | (type(thing) == RandomGoalHolder) | (type(thing) == SingleGoalHolder)|(type(thing) == HRLGoalHolder)|(type(thing) == HRLMultigoalHolder):
                 fingerys = thing.next_run()
                 temp = thing.get_data()
         return temp, fingerys
@@ -142,7 +163,8 @@ class MultiprocessState(StateDefault):
         #self.current_state['f1_contact_pos'] = list(temp1[6])
         #self.current_state['f2_contact_pos'] = list(temp2[6])
         self.current_state['hand_params'] = self.hand_params.copy()
-
+        # if self.pflag:
+        #     self.state_holder.append(self.current_state.copy())
         #What Jeremiah Is Adding
         #self.current_state['f1_contact_distance'] = self.calc_distance(self.current_state['f1_contact_pos'],self.current_state['obj_2']['pose'][0][0:2])
         #self.current_state['f2_contact_distance'] = self.calc_distance(self.current_state['f2_contact_pos'],self.current_state['obj_2']['pose'][0][0:2])
@@ -187,7 +209,8 @@ class MultiprocessState(StateDefault):
         if self.pflag:
             for i in range(len(self.previous_states)):
                 self.previous_states[i] = self.current_state.copy()
-                
+        # if self.pflag:
+        #     self.state_holder.append(self.current_state.copy())
          
     def get_state(self) -> dict:
         """
@@ -199,6 +222,14 @@ class MultiprocessState(StateDefault):
         """
         # print('g state')
         # print('goal from get state', self.current_state['goal_pose'])
+
+        # if self.pflag:
+        #     temp = self.state_holder.get_full()
+        #     print(temp)
+        #     return temp
+        # else:
+        #     return self.current_state.copy()
+        # print(self.current_state)
         temp = self.current_state.copy()
         if self.pflag:
             temp['previous_state'] = self.previous_states.copy()
@@ -210,8 +241,10 @@ class MultiprocessState(StateDefault):
                 return thing.get_name()
     
     def set_goal(self,goal_list):
+        # print('SETTING THE GOAL')
         for thing in self.objects:
-            if (type(thing) == GoalHolder) | (type(thing) == RandomGoalHolder)|(type(thing) == HRLGoalHolder):
+            if (type(thing) == GoalHolder) | (type(thing) == RandomGoalHolder)|(type(thing) == HRLGoalHolder)|(type(thing) == HRLMultigoalHolder):
+                # print('setting goal', goal_list)
                 if len(goal_list) > 4:
                     thing.set_pose(goal_list[0:2], goal_list[2],goal_list[3:5])
                 elif len(goal_list) >=3:
@@ -219,6 +252,8 @@ class MultiprocessState(StateDefault):
                 else:
                     thing.set_pose(goal_list[0:2])
                 self.current_state[thing.name] = thing.get_data()
+                # if self.pflag:
+                #     self.state_holder[-1][thing.name] = thing.get_data()
     
 
     def get_goal(self):
@@ -226,6 +261,11 @@ class MultiprocessState(StateDefault):
             return self.current_state['goal_pose']
         except KeyError:
             return [0,0]
+
+    def check_goal(self):
+        for thing in self.objects:
+            if type(thing) == HRLMultigoalHolder:
+                thing.check_goal([self.current_state['obj_2']['pose'][0][0],self.current_state['obj_2']['pose'][0][0]-0.1])
 
     def __eq__(self, o):
         # Doesnt check that the objects are the same or that the run number is the same,

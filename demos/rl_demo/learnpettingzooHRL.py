@@ -4,9 +4,10 @@ import pybullet_data
 from demos.rl_demo import pettingzoowrapper
 from demos.rl_demo import multiprocess_env
 from demos.rl_demo import multiprocess_manipulation_phase
+from demos.rl_demo import multiprocess_multigoal_phase
 # import rl_env
 from demos.rl_demo.multiprocess_state import MultiprocessState
-from mojograsp.simcore.goal_holder import  GoalHolder, RandomGoalHolder, SingleGoalHolder, HRLGoalHolder
+from mojograsp.simcore.goal_holder import  GoalHolder, RandomGoalHolder, SingleGoalHolder, HRLGoalHolder, HRLMultigoalHolder
 from demos.rl_demo import rl_action
 from demos.rl_demo import multiprocess_reward
 from demos.rl_demo import multiproccess_gym_wrapper_her
@@ -27,11 +28,21 @@ import multiprocessing
 from demos.rl_demo.pkl_merger import merge_from_folder
 from scipy.spatial.transform import Rotation as R
 from stable_baselines3.common.noise import NormalActionNoise
-import supersuit as ss
+# import supersuit as ss    
+from pantheonrl.envs.pettingzoo import PettingZooAECWrapper
+from pantheonrl.common.agents import OnPolicyAgent
+
+def make_env(arg_dict=None,rank=0,hand_info=None):
+    def _init():
+        import pybullet as p1
+        env, _, _ = make_pybullet(arg_dict, p1, rank, hand_info)
+        env = PettingZooAECWrapper(env)
+        return env
+    return _init
 
 def load_set(args):
-    print(args['points_path'])
-    print(args['test_path'])
+    # print(args['points_path'])
+    # print(args['test_path'])
     if args['points_path'] =='':
         x = [0.0]
         y = [0.0]
@@ -127,16 +138,19 @@ def make_pybullet(arg_dict, pybullet_instance, rank, hand_info, viz=False):
     #TODO add the finger contact goal shapes AND the eval finger contact stuff
     # print(type(finger_starts), np.shape(np.array(finger_starts[0:2])))
     # set up goal holders based on task and points given
-    
-    if finger_contacts is not None:
+    if args['task'] == 'Multigoal':
+        print('WE ARE DOING MULTIGOAL SHIT')
+        goal_poses = HRLMultigoalHolder(pose_list, np.array(finger_starts[0:2]),mix_orientation=True, mix_finger=True, goals_smoothed=5, num_goals_present=args['manager goals'],radius=0.01)
+        eval_goal_poses = HRLMultigoalHolder(eval_pose_list, np.array(eval_finger_starts),goals_smoothed=5, num_goals_present=args['manager goals'],radius=0.01)
+    elif finger_contacts is not None:
         print('we are shuffling the angle and fingertip for the training set WITH A FINGER GOAL')
         eval_finger_contacts = np.array(eval_finger_contacts[int(num_eval*rank[0]/rank[1]):int(num_eval*(rank[0]+1)/rank[1])])
         goal_poses = HRLGoalHolder(pose_list, np.array(finger_starts[0:2]),orientations,finger_contacts, mix_orientation=True, mix_finger=True)
         eval_goal_poses = HRLGoalHolder(eval_pose_list, np.array(eval_finger_starts),eval_orientations,eval_finger_contacts)
     elif orientations is not None:
         print('we are shuffling the angle and fingertip for the training set with no finger goal')
-        goal_poses = HRLGoalHolder(pose_list, np.array(finger_starts[0:2]), orientations,mix_orientation=True, mix_finger=True)
-        eval_goal_poses = HRLGoalHolder(eval_pose_list, np.array(eval_finger_starts), eval_orientations)
+        goal_poses = HRLGoalHolder(pose_list, np.array(finger_starts[0:2]), orientations,mix_orientation=True, mix_finger=True,goals_smoothed=5)
+        eval_goal_poses = HRLGoalHolder(eval_pose_list, np.array(eval_finger_starts), eval_orientations,goals_smoothed=5)
     else:
         goal_poses = HRLGoalHolder(pose_list, finger_starts[0:2])
         eval_goal_poses = HRLGoalHolder(eval_pose_list, finger_starts[2:4])
@@ -255,8 +269,12 @@ def make_pybullet(arg_dict, pybullet_instance, rank, hand_info, viz=False):
         env = multiprocess_env.MultiprocessSingleShapeEnv(pybullet_instance, hand=hand, obj=obj, hand_type=hand_type, args=args)
     
     # Create phase
-    manipulation = multiprocess_manipulation_phase.MultiprocessManipulation(
-        hand, obj, state, action, reward, env, args=arg_dict, hand_type=hand_type)
+    if args['task'] == 'Multigoal':
+        manipulation = multiprocess_multigoal_phase.MultigoalManipulation(
+            hand, obj, state, action, reward, env, args=arg_dict, hand_type=hand_type)
+    else:
+        manipulation = multiprocess_manipulation_phase.MultiprocessManipulation(
+            hand, obj, state, action, reward, env, args=arg_dict, hand_type=hand_type)
     
     # data recording
     record_data = MultiprocessRecordData(rank,
@@ -315,6 +333,60 @@ def train(filepath, learn_type='run', num_cpu=16):
         filename = os.path.dirname(filepath)
         model.save(filename+'/manager_canceled_model')
         partner.model.save(filename+'/worker_canceled_model')
+
+def train_multiprocess(filepath, learn_type='run', num_cpu=16):
+    # Create the vectorized environment
+    print('cuda y/n?', get_device())
+
+    with open(filepath, 'r') as argfile:
+        args = json.load(argfile)
+
+    key_file = os.path.abspath(__file__)
+    key_file = os.path.dirname(key_file)
+    key_file = os.path.join(key_file,'resources','hand_bank','hand_params.json')
+    with open(key_file,'r') as hand_file:
+        hand_params = json.load(hand_file)
+    
+    model_type = PPO
+    # from pettingzoo.utils.conversions import aec_to_parallel 
+
+    env = SubprocVecEnv([make_env(args, [i,num_cpu], hand_params) for i in range(num_cpu)])
+    
+    # env = pettingzoowrapper.WrapWrap(env)
+    # env = ss.pad_action_space_v0(env)
+    # env = PettingZooAECWrapper(env)
+    def ho_shit(other_env,rank):
+        def _init():
+            other_env.env_method('getDummyEnv',player_ind=1)[rank]
+            return env
+        return _init()
+    other_player_env = SubprocVecEnv([ho_shit(env,i) for i in range(num_cpu)])
+
+    partner = OnPolicyAgent(PPO('MlpPolicy', other_player_env, verbose=1,tensorboard_log=args['tname']+'/worker'),tensorboard_log=args['tname']+'/worker')
+    # print(env.remotes[0])
+    # The second parameter ensures that the partner is assigned to a certain
+    # player number. Forgetting this parameter would mean that all of the
+    # partner agents can be picked as `player 2`, but none of them can be
+    # picked as `player 3`.
+    # env.env_method('evaluate')
+    env.env_method('add_partner_agent', agent=partner, player_num=1)
+    train_timesteps = int(args['evaluate']*(args['tsteps']+1))
+    worker_callback = pettingzoowrapper.WorkerEvaluateCallback(partner.model, args['save_path'])
+    callback = pettingzoowrapper.ZooEvaluateCallback(env,n_eval_episodes=int(1200), eval_freq=int(train_timesteps), best_model_save_path=args['save_path'],callback_on_new_best=worker_callback)
+
+    model = model_type("MlpPolicy", env,tensorboard_log=args['tname']+'/manager')
+    try:
+        model.learn(total_timesteps=args['epochs']*(args['tsteps']+1), callback=callback)
+        filename = os.path.dirname(filepath)
+        model.save(filename+'/manager_last_model')
+        partner.model.save(filename+'/worker_last_model')
+        merge_from_folder(args['save_path']+'Test/')
+
+    except KeyboardInterrupt:
+        filename = os.path.dirname(filepath)
+        model.save(filename+'/manager_canceled_model')
+        partner.model.save(filename+'/worker_canceled_model')
+
 
 def evaluate(filepath, modeltype='best'):
     with open(filepath, 'r') as argfile:
@@ -406,7 +478,6 @@ def evaluate_loaded(filepath, modeltype='best'):
             action, _ = model.predict(obs,deterministic=True)
             obs, _, done, _ = env.step(action,False)
 
-
 def replay(configpath, replaypath):
     with open(configpath, 'r') as argfile:
         args = json.load(argfile)
@@ -443,7 +514,7 @@ def replay(configpath, replaypath):
 
 
 if __name__ == '__main__':
-    # train('./data/hrl_finger_action/experiment_config.json')
-
+    # train_multiprocess('./data/hrl_slide_limited_action/experiment_config.json',num_cpu=2)
+    train('./data/HRL_multigoal/experiment_config.json')
     # replay('./data/hrl_zoo_slide/experiment_config.json','./data/hrl_zoo_slide/Eval_A/Episode_50812.pkl')
-    evaluate('./data/hrl_slide_limited_action/experiment_config.json',modeltype='best')
+    # evaluate('./data/hrl_slide_limited_action/experiment_config.json',modeltype='best')

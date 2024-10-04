@@ -62,7 +62,6 @@ def HRL_pool_process(episode_file):
     point_list.append(sum(t3))
     # except KeyError:
     #     print('episode keys are wrong. check pool_process in data_gui_backend.py with your state and reward keys')
-
     return point_list
 
 def reward_plotting_pool(episode_file):
@@ -279,7 +278,7 @@ class PlotBackend():
         elif key =='Rotation+Finger':
             self.build_reward = rf.rotation_with_finger
         elif key =='Manager':
-            self.build_reward = rf.manager
+            self.build_reward = rf.manager_rotation
         elif key == "worker slide only":
             self.build_reward = rf.worker_object_position
         elif key == "worker normalized":
@@ -2219,11 +2218,11 @@ class PlotBackend():
         self.ax.set_xlabel('X pos (m)')
         self.ax.set_ylabel('Y pos (m)')
         self.legend.append(legend_thing)
-        self.ax.legend(self.legend)
+        # self.ax.legend(self.legend)
         self.ax.set_aspect('equal',adjustable='box')
-        # if self.counter ==0:
-        #     self.ax.scatter(name_key[:,0],name_key[:,1]+0.1, c='C3')
-        #     self.ax.scatter([0],[0.1],c='C4',marker='s')
+        if self.counter ==0:
+            self.ax.scatter(name_key[:,0],name_key[:,1]+0.1, c='C3')
+            self.ax.scatter([0],[0.1],c='C4',marker='s')
         self.counter +=1
         # self.ax.scatter(end_poses[:,0],end_poses[:,1])
         return [np.average(alls)*8, np.std(alls), np.average(net_efficiency), np.std(net_efficiency)]
@@ -2736,8 +2735,8 @@ class PlotBackend():
         start_distances = []
         radius = []
         success_matrix = {'full success':[],'distance success':[], 'angle success':[], 'full failure':[]}
-        for dist, orr, start,x,y in zip(self.point_dictionary['End Distance'],self.point_dictionary['Orientation Error'], self.point_dictionary['Start Distance'],self.point_dictionary['Goal X'],self.point_dictionary['Goal Y']):
-            start_distances.append(start)
+        for dist, orr,x,y in zip(self.point_dictionary['End Distance'],self.point_dictionary['Orientation Error'],self.point_dictionary['Goal X'],self.point_dictionary['Goal Y']):
+            # start_distances.append(start)
             # print(dist,orr)
             radius.append(np.linalg.norm([x,y]))
             if (dist < success_range/1000) and (abs(orr) < rot_success_range/180*np.pi):
@@ -2756,31 +2755,31 @@ class PlotBackend():
         print(f"full success: {len(success_matrix['full success'])}, distance success: {len(success_matrix['distance success'])}, angle success:{len(success_matrix['angle success'])}, full failure: {len(success_matrix['full failure'])}")
         short = []
         long = []
-        distance_threshold_for_grouping = np.average(start_distances)
-        for d, s in zip(start_distances,s_f):
-            if d < distance_threshold_for_grouping:
-                short.append(s)
-            else:
-                long.append(s)
+        # distance_threshold_for_grouping = np.average(start_distances)
+        # for d, s in zip(start_distances,s_f):
+        #     if d < distance_threshold_for_grouping:
+        #         short.append(s)
+        #     else:
+        #         long.append(s)
 
-        print('short success rate', np.average(short))
-        print('long success rate', np.average(long))
-        print('pivot point', distance_threshold_for_grouping)
+        # print('short success rate', np.average(short))
+        # print('long success rate', np.average(long))
+        # print('pivot point', distance_threshold_for_grouping)
 
         #alternative
-        short = []
-        long = []
-        distance_threshold_for_grouping = np.median(radius)#0.05
-        #np.average(radius)
-        for d, s in zip(radius,s_f):
-            if d < distance_threshold_for_grouping:
-                short.append(s)
-            else:
-                long.append(s)
-        print('radius style', len(short),len(long))
-        print('short success rate', np.average(short))
-        print('long success rate', np.average(long))
-        print('pivot point', distance_threshold_for_grouping)
+        # short = []
+        # long = []
+        # distance_threshold_for_grouping = np.median(radius)#0.05
+        # #np.average(radius)
+        # for d, s in zip(radius,s_f):
+        #     if d < distance_threshold_for_grouping:
+        #         short.append(s)
+        #     else:
+        #         long.append(s)
+        # print('radius style', len(short),len(long))
+        # print('short success rate', np.average(short))
+        # print('long success rate', np.average(long))
+        # print('pivot point', distance_threshold_for_grouping)
 
         full_success = np.array(success_matrix['full success'])
         distance_success = np.array(success_matrix['distance success'])
@@ -3851,6 +3850,7 @@ class PlotBackend():
             r3 = moving_average(data_list[:,2],self.moving_avg)
             r4 =  moving_average(data_list[:,3],self.moving_avg)
             r5 =  moving_average(data_list[:,4],self.moving_avg)
+        self.clear_axes()
 
         self.ax.plot(range(len(r1)),r1)
         self.ax.plot(range(len(r2)),r2)
@@ -3906,7 +3906,7 @@ class PlotBackend():
         self.ax.set_aspect('auto',adjustable='box')
         self.curr_graph = 'rewards'
     
-    def try_fuckery(self, hand_A_path, hand_B_path, tholds,filename, merged=None):
+    def try_fuckery(self, hand_A_path, hand_B_path, tholds, filename, merged=None):
         self.clear_axes()
         if merged is None:
             if self.point_dictionary is None:
@@ -4089,13 +4089,17 @@ class PlotBackend():
         full_reward = []
         finger_shenanigans = [f['reward']['goal_finger'] for f in data]
         finger_shenanigans = np.array(finger_shenanigans)
+        finger_alternative = [f['reward']['finger_pose'] for f in data]
+        finger_alternative = np.array(finger_alternative)
         if self.clear_plots | (self.curr_graph != 'rewards'):
             self.clear_axes()
         
         title = 'Dx dy'
         self.ax.plot(range(len(finger_shenanigans)),finger_shenanigans[:,0])
         self.ax.plot(range(len(finger_shenanigans)),finger_shenanigans[:,1])
-        self.legend.extend(['Finger Dx', 'Finger Dy'])
+        self.ax.plot(range(len(finger_alternative)),finger_alternative[:,0]-finger_alternative[:,2])
+        self.ax.plot(range(len(finger_alternative)),finger_alternative[:,1]-finger_alternative[:,3])
+        self.legend.extend(['Goal Dx','Goal Dy', 'Finger Dx', 'Finger Dy'])
         self.ax.legend(self.legend)
         self.ax.set_ylabel('Manager Output')
         self.ax.set_xlabel('Timestep (1/30 s)')

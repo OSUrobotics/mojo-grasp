@@ -50,7 +50,6 @@ class MultiprocessGymWrapper(gym.Env):
         self.observation_space = spaces.Box(np.array(args['state_mins']),np.array(args['state_maxes']))
         self.STATE_NOISE = args['state_noise']
         if self.STATE_NOISE > 0:
-            print('WE ARE GETTING NOISEY. YOU SHOULD SEE THIUS. IF YOU DONT WE FYCKED UP')
             self.noisey_boi = NoiseAdder(np.array(args['state_mins']), np.array(args['state_maxes']))
         self.PREV_VALS = args['pv']
         self.REWARD_TYPE = args['reward']
@@ -232,10 +231,7 @@ class MultiprocessGymWrapper(gym.Env):
         self.manipulation_phase.setup()
         
         state, _ = self.manipulation_phase.get_episode_info()
-        # print(state['two_finger_gripper']['joint_angles'])
-        # print('goal pose in reset', state['goal_pose'])
-        # print('start object pos', state['obj_2']['pose'])
-        # print('joint angles', state['two_finger_gripper']['joint_angles'])
+
         if state['goal_pose']['goal_finger'] is not None:
             self.env.set_finger_contact_goal(state['goal_pose']['goal_finger'])
 

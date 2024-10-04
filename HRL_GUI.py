@@ -35,6 +35,7 @@ def save_element_as_file(element, filename):
     grab.save(filename)
 
 class RNNGui():
+    multi_rewards = ['sparse_multigoal']
     slide_rewards = ['Sparse','Distance','Distance + Finger', 'Hinge Distance + Finger', 'Slope', 'Slope + Finger','SmartDistance + Finger','SmartDistance + SmartFinger','ScaledDistance + Finger','ScaledDistance+ScaledFinger', 'SFS','DFS','TripleScaled']
     rotate_rewards = ["Rotation", "Rotation+Finger"]
     finger_rewards = ["continuous_finger", "end_finger"]
@@ -74,7 +75,7 @@ class RNNGui():
                          [sg.Checkbox('2v2_35.65_65.35_43',key='2v2_35.65_65.35_1.1_43', default=False),sg.Checkbox('2v2_35.65_65.35_53',key='2v2_35.65_65.35_1.1_53', default=False),sg.Checkbox('2v2_35.65_65.35_63',key='2v2_35.65_65.35_1.1_63', default=False),sg.Checkbox('2v2_35.65_65.35_73',key='2v2_35.65_65.35_1.1_73', default=False)],
                          [sg.Checkbox('2v2_70.30_70.30_43',key='2v2_70.30_70.30_1.1_43', default=False),sg.Checkbox('2v2_70.30_70.30_53',key='2v2_70.30_70.30_1.1_53', default=False),sg.Checkbox('2v2_70.30_70.30_63',key='2v2_70.30_70.30_1.1_63', default=False),sg.Checkbox('2v2_70.30_70.30_73',key='2v2_70.30_70.30_1.1_73', default=False)],
                          [sg.Checkbox('2v2_70.30_50.50_43',key='2v2_70.30_50.50_1.1_43', default=False),sg.Checkbox('2v2_70.30_50.50_53',key='2v2_70.30_50.50_1.1_53', default=False),sg.Checkbox('2v2_70.30_50.50_63',key='2v2_70.30_50.50_1.1_63', default=False),sg.Checkbox('2v2_70.30_50.50_73',key='2v2_70.30_50.50_1.1_73', default=False)],
-                         [sg.Text("Task"), sg.OptionMenu(values=('asterisk','single',"big_random",
+                         [sg.Text("Task"), sg.OptionMenu(values=('asterisk','single',"big_random","Multigoal",
                           "Rotation_single", "Rotation_region","big_Rotation", "full_task","big_full_task", 'multi', "direction", "wall", "wall_single"), k='-task', default_value='unplanned_random')],
                          [sg.Text("Reward"), sg.OptionMenu(values=('Sparse','Distance','Distance + Finger', 'Hinge Distance + Finger', 'Slope', 'Slope + Finger','SmartDistance + Finger','SmartDistance + SmartFinger','ScaledDistance + Finger','ScaledDistance+ScaledFinger', 'SFS','DFS'), k='-reward',default_value='ScaledDistance+ScaledFinger')],
                          [sg.Checkbox("Object Start Position", key='-rstart',default=False), sg.Checkbox("Relative Finger Position", key='-rfinger',default=False),sg.Checkbox("Object Orientation", key='-ror',default=False), sg.Checkbox("Finger Open", key='-rfo',default=False)],
@@ -111,6 +112,7 @@ class RNNGui():
                        [sg.Checkbox('Goal Finger Pos', default=False, k='-gf')],
                        [sg.Checkbox('Goal Finger Separation', default=False, k='-gfs')],
                        [sg.Checkbox('HandParameters', default=False,key='-params')],
+                       [sg.Checkbox('Timesteps Remaining', default=False,key='-timesteps_state')],
                        [sg.Checkbox('WallPose', default=False,key='-wall')]]),
                        sg.Col([[sg.Text('Manager State')],[sg.Checkbox('Finger Tip Position', default=True, k='-mftp')],
                        [sg.Checkbox('Finger Base Position', default=False, k='-mfbp')],
@@ -126,12 +128,14 @@ class RNNGui():
                        [sg.Checkbox('Goal Finger Pos', default=False, k='-mgf')],
                        [sg.Checkbox('Goal Finger Separation', default=False, k='-mgfs')],
                        [sg.Checkbox('HandParameters', default=False,key='-mparams')],
+                       [sg.Checkbox('Timesteps Remaining', default=False,key='-mtimesteps_state')],
                        [sg.Checkbox('WallPose', default=False,key='-mwall')]])],
                        [sg.Text('Num Previous States'), sg.Input(2, k='-pv',size=(8, 2)), sg.Text('Success Radius (mm)'), sg.Input(2, key='-sr',size=(8, 2))],
                        [sg.Text("Distance Scale"),  sg.Input(1,key='-distance_scale',size=(8, 2)), sg.Text('Contact Scale'),  sg.Input(0.2,key='-contact_scale',size=(8, 2)), sg.Text('Success Reward'), sg.Input(1,key='-success_reward',size=(8, 2)), sg.Text('Rotation Scale'), sg.Input(1,key='-rotation_scale',size=(8, 2))],
                        [sg.Text("Low Level Action"), sg.OptionMenu(values=('Joint Velocity','Finger Tip Position'), k='-action',default_value='Finger Tip Position')],
                        [sg.Text('Manager Action'), sg.OptionMenu(values=("Object Pose", "Object XY","Object+Finger"), k='-manager_action',default_value='Object Pose')],
-                       [sg.Checkbox('Vizualize Simulation', default=False, k='-viz'), sg.Checkbox('Real World?',default=False, k='-rw'), sg.Checkbox('IK every sim step?', default=False, key='-ik-freq')],
+                       [sg.Text('Number of Goals for Manager'), sg.Input(1, k='-manager_goals',size=(8, 2))],
+                       [sg.Checkbox('Vizualize Simulation', default=False, k='-viz'), sg.Checkbox('IK every sim step?', default=False, key='-ik-freq')],
                        [sg.Button('Build Config File', key='-build')]]
 
         layout = [[sg.TabGroup([[sg.Tab('Task and General parameters', data_layout, key='-mykey-'),
@@ -142,9 +146,7 @@ class RNNGui():
         self.window = sg.Window('RNN Gui', layout, return_keyboard_events=True, use_default_focus=False, finalize=True)
 
     def build_args(self, values):
-        RW = bool(values['-rw'])
         self.built = False
-        print('building RL arglist, real world setting: ',RW)
         self.args = {'epochs': int(values['-epochs']),
                      'batch_size': int(values['-batch-size']),
                      'model': values['-model'],
@@ -186,7 +188,8 @@ class RNNGui():
                      'domain_randomization_object_size':bool(values['-DROS']),
                      'domain_randomization_object_mass':bool(values['-DROM']),
                      'contact_start':bool(values['-contact_start']),
-                     'cirriculum':bool(values['-cirriculum'])}
+                     'cirriculum':bool(values['-cirriculum']),
+                     'manager goals':int(values['-manager_goals'])}
         state_len = 0
         state_mins = []
         state_maxes = []
@@ -197,48 +200,28 @@ class RNNGui():
         manager_state_len = 0
 
         if values['-ftp']:
-            if not RW:
-                state_mins.extend([-0.072, 0.018, -0.072, 0.018])
-                state_maxes.extend([0.072, 0.172, 0.072, 0.172])
-            elif RW:
-                state_mins.extend([-0.108, 0.132, -0.108, 0.132])
-                state_maxes.extend([0.108, 0.348, 0.108, 0.348])
+            state_mins.extend([-0.072, 0.018, -0.072, 0.018])
+            state_maxes.extend([0.072, 0.172, 0.072, 0.172])
             state_len += 4
             state_list.append('ftp')
         if values['-fbp']:
-            if not RW:
-                state_mins.extend([-0.072, 0.018, -0.072, 0.018])
-                state_maxes.extend([0.072, 0.172, 0.072, 0.172])
-            elif RW:
-                state_mins.extend([-0.108, 0.132, -0.108, 0.132])
-                state_maxes.extend([0.108, 0.348, 0.108, 0.348])
+            state_mins.extend([-0.072, 0.018, -0.072, 0.018])
+            state_maxes.extend([0.072, 0.172, 0.072, 0.172])
             state_len += 4
             state_list.append('fbp')
         if values['-fcp']:
-            if not RW:
-                state_mins.extend([-0.072, 0.018, -0.072, 0.018])
-                state_maxes.extend([0.072, 0.172, 0.072, 0.172])
-            elif RW:
-                state_mins.extend([-0.108, 0.132, -0.108, 0.132])
-                state_maxes.extend([0.108, 0.348, 0.108, 0.348])
+            state_mins.extend([-0.072, 0.018, -0.072, 0.018])
+            state_maxes.extend([0.072, 0.172, 0.072, 0.172])
             state_len += 4
             state_list.append('fcp')
         if values['-op']:
-            if not RW:
-                state_mins.extend([-0.072, 0.018])
-                state_maxes.extend([0.072, 0.172])
-            elif RW:
-                state_mins.extend([-0.108, 0.132])
-                state_maxes.extend([0.108, 0.348])
+            state_mins.extend([-0.072, 0.018])
+            state_maxes.extend([0.072, 0.172])
             state_len += 2
             state_list.append('op')
         if values['-oo']:
-            if not RW:
-                state_mins.extend([-1,-1,-1,-1])
-                state_maxes.extend([1,1,1,1])
-            elif RW:
-                state_mins.extend([-1,-1,-1,-1])
-                state_maxes.extend([1,1,1,1])
+            state_mins.extend([-1,-1,-1,-1])
+            state_maxes.extend([1,1,1,1])
             state_len += 4
             state_list.append('oo')
         if values['-oa']:
@@ -252,12 +235,8 @@ class RNNGui():
             state_len += 4
             state_list.append('ja')
         if values['-fod']:
-            if not RW:
-                state_mins.extend([-0.001, -0.001])
-                state_maxes.extend([0.072, 0.072])
-            elif RW:
-                state_mins.extend([-0.001, -0.001])
-                state_maxes.extend([0.108, 0.108])
+            state_mins.extend([-0.001, -0.001])
+            state_maxes.extend([0.072, 0.072])
             state_len += 2
             state_list.append('fod')
         if values['-fta']:
@@ -270,13 +249,14 @@ class RNNGui():
             state_maxes.extend([0.1008,0.0936,0.1008,0.0936,0.073])
             state_len += 5
             state_list.append('params')
+        if values['-timesteps_state']:
+            state_mins.append(0)
+            state_maxes.append(25)
+            state_len += 1
+            state_list.append('tstep')
         if values['-gp']:
-            if not RW:
-                state_mins.extend([-0.08, -0.08])
-                state_maxes.extend([0.08, 0.08])
-            elif RW:
-                state_mins.extend([-0.105, -0.105])
-                state_maxes.extend([0.105, 0.105])
+            state_mins.extend([-0.08, -0.08])
+            state_maxes.extend([0.08, 0.08])
             state_len += 2
             state_list.append('lgp')
         if values['-go']:
@@ -317,48 +297,28 @@ class RNNGui():
         """
         manager state space shenanigans"""
         if values['-mftp']:
-            if not RW:
-                manager_state_mins.extend([-0.072, 0.018, -0.072, 0.018])
-                manager_state_maxes.extend([0.072, 0.172, 0.072, 0.172])
-            elif RW:
-                manager_state_mins.extend([-0.108, 0.132, -0.108, 0.132])
-                manager_state_maxes.extend([0.108, 0.348, 0.108, 0.348])
+            manager_state_mins.extend([-0.072, 0.018, -0.072, 0.018])
+            manager_state_maxes.extend([0.072, 0.172, 0.072, 0.172])
             manager_state_len += 4
             manager_state_list.append('ftp')
         if values['-mfbp']:
-            if not RW:
-                manager_state_mins.extend([-0.072, 0.018, -0.072, 0.018])
-                manager_state_maxes.extend([0.072, 0.172, 0.072, 0.172])
-            elif RW:
-                manager_state_mins.extend([-0.108, 0.132, -0.108, 0.132])
-                manager_state_maxes.extend([0.108, 0.348, 0.108, 0.348])
+            manager_state_mins.extend([-0.072, 0.018, -0.072, 0.018])
+            manager_state_maxes.extend([0.072, 0.172, 0.072, 0.172])
             manager_state_len += 4
             manager_state_list.append('fbp')
         if values['-mfcp']:
-            if not RW:
-                manager_state_mins.extend([-0.072, 0.018, -0.072, 0.018])
-                manager_state_maxes.extend([0.072, 0.172, 0.072, 0.172])
-            elif RW:
-                manager_state_mins.extend([-0.108, 0.132, -0.108, 0.132])
-                manager_state_maxes.extend([0.108, 0.348, 0.108, 0.348])
+            manager_state_mins.extend([-0.072, 0.018, -0.072, 0.018])
+            manager_state_maxes.extend([0.072, 0.172, 0.072, 0.172])
             manager_state_len += 4
             manager_state_list.append('fcp')
         if values['-mop']:
-            if not RW:
-                manager_state_mins.extend([-0.072, 0.018])
-                manager_state_maxes.extend([0.072, 0.172])
-            elif RW:
-                manager_state_mins.extend([-0.108, 0.132])
-                manager_state_maxes.extend([0.108, 0.348])
+            manager_state_mins.extend([-0.072, 0.018])
+            manager_state_maxes.extend([0.072, 0.172])
             manager_state_len += 2
             manager_state_list.append('op')
         if values['-moo']:
-            if not RW:
-                manager_state_mins.extend([-1,-1,-1,-1])
-                manager_state_maxes.extend([1,1,1,1])
-            elif RW:
-                manager_state_mins.extend([-1,-1,-1,-1])
-                manager_state_maxes.extend([1,1,1,1])
+            manager_state_mins.extend([-1,-1,-1,-1])
+            manager_state_maxes.extend([1,1,1,1])
             manager_state_len += 4
             manager_state_list.append('oo')
         if values['-moa']:
@@ -372,12 +332,8 @@ class RNNGui():
             manager_state_len += 4
             manager_state_list.append('ja')
         if values['-mfod']:
-            if not RW:
-                manager_state_mins.extend([-0.001, -0.001])
-                manager_state_maxes.extend([0.072, 0.072])
-            elif RW:
-                manager_state_mins.extend([-0.001, -0.001])
-                manager_state_maxes.extend([0.108, 0.108])
+            manager_state_mins.extend([-0.001, -0.001])
+            manager_state_maxes.extend([0.072, 0.072])
             manager_state_len += 2
             manager_state_list.append('fod')
         if values['-mfta']:
@@ -385,20 +341,20 @@ class RNNGui():
             manager_state_maxes.extend([np.pi/2, np.pi/2+2.09])
             manager_state_len += 2
             manager_state_list.append('fta')
-
         if values['-mparams']:
             manager_state_mins.extend([0.0504,0.0432,0.0504,0.0432,0.053])
             manager_state_maxes.extend([0.1008,0.0936,0.1008,0.0936,0.073])
             manager_state_len += 5
             state_list.append('params')
+        if values['-mtimesteps_state']:
+            manager_state_mins.append(0)
+            manager_state_maxes.append(25)
+            manager_state_len += 1
+            manager_state_list.append('tstep')
         if values['-mgp']:
-            if not RW:
-                manager_state_mins.extend([-0.07, -0.07])
-                manager_state_maxes.extend([0.07, 0.07])
-            elif RW:
-                manager_state_mins.extend([-0.105, -0.105])
-                manager_state_maxes.extend([0.105, 0.105])
-            manager_state_len += 2
+            manager_state_mins.extend([-0.07, -0.07]*int(values['-manager_goals']))
+            manager_state_maxes.extend([0.07, 0.07]*int(values['-manager_goals']))
+            manager_state_len += 2*int(values['-manager_goals'])
             manager_state_list.append('gp')
         if values['-mgo']:
             if values['-75']:
@@ -469,8 +425,8 @@ class RNNGui():
             self.args['manager_mins'] = [-0.08,-0.08]
         elif self.args['manager_action'] == 'Object+Finger':
             self.args['manager_action_dim'] = 5
-            self.args['manager_maxes'] = [0.08, 0.08, 50/180*np.pi, 0.08, 0.04]
-            self.args['manager_mins'] = [-0.08,-0.08,-50/180*np.pi, 0.0,  -0.04]
+            self.args['manager_maxes'] = [0.08, 0.08, 50/180*np.pi, 0.10, 0.04]
+            self.args['manager_mins'] = [-0.08,-0.08,-50/180*np.pi, 0.02,  -0.04]
         if 'FD' in self.args['model']:
             exists = os.path.isfile(self.expert_path + 'episode_all.pkl')
             if not exists:
@@ -568,7 +524,7 @@ class RNNGui():
         if (values['-task'] == 'full_random') | (values['-task'] == 'unplanned_random'):
             self.args['points_path'] = str(resource_path.joinpath('points.csv'))
             self.args['test_path'] = str(resource_path.joinpath('test_points.csv'))
-        elif (values['-task'] == 'big_random') | (values['-task'] =='multi'):
+        elif (values['-task'] == 'big_random') | (values['-task'] =='multi')|(values['-task']=='Multigoal'):
             self.args['points_path'] = str(resource_path.joinpath('train_points_big.csv'))
             self.args['test_path'] = str(resource_path.joinpath('test_points_big.csv'))
         elif (values['-task'] =='Rotation_region')|(values['-task'] =='full_task'):
@@ -768,6 +724,8 @@ class RNNGui():
                     self.window.Element("-reward").Update(values=RNNGui.full_task_rewards)
                 elif 'wall' in values['-task']:
                     self.window.Element('-reward').Update(values=RNNGui.wall_task_rewards)
+                elif 'Multi' in values['-task']:
+                    self.window.Element('-reward').Update(values=RNNGui.multi_rewards)
                 else:
                     self.window.Element("-reward").Update(values=RNNGui.slide_rewards)
             # elif event == '-update':

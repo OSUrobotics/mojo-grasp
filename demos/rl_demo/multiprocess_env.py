@@ -23,7 +23,7 @@ class MultiprocessSingleShapeEnv(Environment):
         self.rand_finger_all_open = args['finger_random_off']
         self.finger_open_fraction = args['fobfreq']
         try:
-            print("first try except")
+            # print("first try except")
             self.HIGH_FRICTION = args['friction_experiment']
             self.lateral_low = args['lat_fric_low']
             self.lateral_high = args['lat_fric_high']
@@ -134,7 +134,7 @@ class MultiprocessSingleShapeEnv(Environment):
         self.hand.id = self.hand_id
         self.obj.id = self.obj_id
         self.start_time = 0
-        
+        # self.p.setPhysicsEngineParameter(enableFileCaching=1) 
         self.p.setGravity(0, 0, -10)
         self.p.setPhysicsEngineParameter(contactBreakingThreshold=.001, sparseSdfVoxelSize=0.25)
         self.p.setRealTimeSimulation(0)
@@ -161,6 +161,10 @@ class MultiprocessSingleShapeEnv(Environment):
 
     def reset(self, start_pos=None,finger=None,fingerys=None):
         # reset the simulator
+        # self.p.resetSimulation()
+
+        # self.p.setPhysicsEngineParameter(enableFileCaching=1)
+
         if start_pos is not None:
             
             obj_change = start_pos
