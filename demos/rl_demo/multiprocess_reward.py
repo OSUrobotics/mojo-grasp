@@ -30,6 +30,8 @@ class MultiprocessReward(RewardDefault):
             self.current_reward['previous_pos'] = self.prev_pos.copy()
             self.current_reward['previous_orientation'] = R.from_quat(self.prev_pos[1]).as_euler('xyz')
             self.current_reward['previous_finger_pose'] = self.prev_finger.copy()
+        if 'goals_reached' in goal_info.keys():
+            self.current_reward['goals_reached'] = goal_info['goals_reached']
         goal_position = [goal_info['goal_position'][0],goal_info['goal_position'][1]+0.1]
         # if goal_info['goal_finger'] is not None:
             # self.current_reward['']
@@ -90,7 +92,6 @@ class MultiprocessReward(RewardDefault):
             self.prev_finger = deepcopy(self.current_reward['finger_pose'])
             # print('we are 10 meters away or more. f1 and f2 dists set to 10 since we are already well below minimum possible reward')
         # print('reward in sim', self.current_reward)
-            
 
     def get_reward(self) -> dict:
         # print('reward', self.current_reward['distance_to_goal'])

@@ -107,9 +107,10 @@ class FullTaskWrapper(AECEnv):
         self.possible_agents = ["manager", "worker"]
         self.agents = copy(self.possible_agents)
         # testing this with both at -1 and 1, this is actual thing:spaces.Box(low=np.array([-0.08,-0.08,-50/180*np.pi]), high=np.array([0.08,0.08,50/180*np.pi]))
-        print(args['manager_maxes'],args['manager_mins'])
-        self._action_spaces = {"manager":spaces.Box(low=np.array(args['manager_mins']), high=np.array(args['manager_maxes'])),
+        # print(args['manager_maxes'],args['manager_mins'])
+        self._action_spaces = {"manager":spaces.Box(low=np.array(len(args['manager_mins'])*[-1]), high=np.array(len(args['manager_mins'])*[1])),
                                "worker": spaces.Box(low=np.array([-1,-1,-1,-1]), high=np.array([1,1,1,1]))}
+        self.manager_normalizer = {'mins':np.array(args['manager_mins']),'diff':np.array(args['manager_maxes'])-np.array(args['manager_mins'])}
         if 'manager_state_maxes' in args.keys():
             self._observation_spaces = {
                 'manager': spaces.Box(np.array(args['manager_state_mins']),np.array(args['manager_state_maxes'])),
@@ -123,16 +124,19 @@ class FullTaskWrapper(AECEnv):
             zip(self.possible_agents, list(range(len(self.possible_agents))))
         )
         # KEEP IN MIND THIS IS ALWAYS HERE
-        self.build_manager_reward = rf.manager
-        if self.TASK == "big_random":
-            print('SLIDING TASK')
+        if "Rotation" in self.TASK:
+            self.build_manager_reward = rf.manager_rotation
+            if args['manager_action_dim'] == 3:
+                self.build_worker_reward = rf.worker_object_pose
+            else:
+                self.build_worker_reward = rf.worker_object_pose_finger_rotation
+        elif "Multi" in self.TASK:
+            self.build_manager_reward = rf.sparse_multigoal
+            self.build_worker_reward = rf.worker_multigoal
+        elif self.TASK == "big_random":
+            self.build_manager_reward = rf.manager
             self.build_worker_reward = rf.worker_object_position
-        elif args['manager_action_dim'] == 3:
-            print('OBJECT POSE MANAGER ACTION')
-            self.build_worker_reward = rf.worker_object_pose
-        else:
-            print('OBJECT POSE AND FINGER ACTION')
-            self.build_worker_reward = rf.worker_object_pose_finger
+
         # self.count_test = 0
 
     def observation_space(self, agent) -> Space:
@@ -224,7 +228,7 @@ class FullTaskWrapper(AECEnv):
         Function to set a reset start point for all subsequent resets
         Intended to speed up evaluation of trained policy by allowing
         multiprocessing'''
-        print('SETTING RESET POINT', point)
+        # print('SETTING RESET POINT', point)
         self.eval_point = point
 
     def step(self, action, viz=False,hand_type=None):
@@ -237,20 +241,14 @@ class FullTaskWrapper(AECEnv):
         Returns
         -------
         None.
-
         '''
         
         agent = self.agent_selection
         # print(agent, action)
         self._cumulative_rewards[agent] = 0
-        # print('we steppin')
-        # self.actions[self.agent_selection] = action
-        # self.state[self.agent_selection] = action
+
         if self._agent_selector.is_last():
-            # print('in this loop', action)
-            # print(self.count_test)
-            # print('worker taking an action', self.substep)
-            # self.count_test+=1
+
             self.manipulation_phase.gym_pre_step(action)
             self.manipulation_phase.execute_action(viz=viz)
             done = self.manipulation_phase.exit_condition()
@@ -283,20 +281,21 @@ class FullTaskWrapper(AECEnv):
             self.substep+=1
 
         else:
-            self.manipulation_phase.set_goal(action)
+            normalized_action = (action+1) * self.manager_normalizer['diff']/2 + self.manager_normalizer['mins']
+            normalized_action=normalized_action.tolist()
+            self.manipulation_phase.set_goal(normalized_action)
             state_container = self.manipulation_phase.get_state()
             done = self.manipulation_phase.exit_condition()
             self.state['worker'] = state_container
             state = self.build_state(state_container, self.worker_state_list)
+            # print(state)
             # necessary so that observe() returns a reasonable observation at all times.
-            # print('manager taking a step')
             # no rewards are allocated until both players give an action
             self._clear_rewards()
             self.observations['worker'] = state
             self.timestep +=1
             self.agent_selection = self._agent_selector.next()
             self.substep=0
-
 
         if done:
             # print('done, recording stuff')
@@ -363,6 +362,8 @@ class FullTaskWrapper(AECEnv):
                         state.extend(scaled)
                     elif key == 'params':
                         state.extend(state_container['hand_params'])
+                    elif key == 'tstep':
+                        state.append(state_container['previous_state'][i]['goal_pose']['timesteps_remaining'])
                     elif key == 'gp':
                         state.extend(state_container['previous_state'][i]['goal_pose']['upper_goal_position'])
                     elif key == 'go':
@@ -410,6 +411,8 @@ class FullTaskWrapper(AECEnv):
                 state.extend(scaled)
             elif key == 'params':
                 state.extend(state_container['hand_params'])
+            elif key == 'tstep':
+                state.append(state_container['goal_pose']['timesteps_remaining'])
             elif key == 'gp':
                 state.extend(state_container['goal_pose']['upper_goal_position'])
             elif key == 'go':
@@ -427,7 +430,7 @@ class FullTaskWrapper(AECEnv):
         return np.array(state)
 
     def evaluate(self, ht=None):
-        # print('EVALUATE TRIGGERED')
+        print('EVALUATE TRIGGERED')
         self.eval = True
         self.eval_run = 0
         self.manipulation_phase.state.evaluate()

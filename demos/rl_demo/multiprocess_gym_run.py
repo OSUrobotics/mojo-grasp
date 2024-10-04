@@ -997,11 +997,76 @@ def main(filepath = None,learn_type='run', num_cpu=16):
 if __name__ == '__main__':
     import csv
 
-    main('./data/sanity_check2/experiment_config.json','run')
-    multiprocess_evaluate_loaded('./data/sanity_check/experiment_config.json','A')
-    multiprocess_evaluate_loaded('./data/sanity_check2/experiment_config.json','B')
+    main('./data/SingleRotationBaseline/experiment_config.json','run')
+
+    # multiprocess_evaluate_loaded('./data/N_mothra_slide_rerun/FTP_S1/experiment_config.json','A')
+    # multiprocess_evaluate_loaded('./data/N_mothra_slide_rerun/FTP_S1/experiment_config.json','B')
+    # multiprocess_evaluate_loaded('./data/N_mothra_slide_rerun/FTP_S2/experiment_config.json','A')
+    # multiprocess_evaluate_loaded('./data/N_mothra_slide_rerun/FTP_S2/experiment_config.json','B')
+    # multiprocess_evaluate_loaded('./data/N_mothra_slide_rerun/FTP_S3/experiment_config.json','A')
+    # multiprocess_evaluate_loaded('./data/N_mothra_slide_rerun/FTP_S3/experiment_config.json','B')
+
+    # multiprocess_evaluate_loaded('./data/N_HPC_slide_rerun/FTP_S1/experiment_config.json','A')
+    # multiprocess_evaluate_loaded('./data/N_HPC_slide_rerun/FTP_S1/experiment_config.json','B')
+    # multiprocess_evaluate_loaded('./data/N_HPC_slide_rerun/FTP_S2/experiment_config.json','A')
+    # multiprocess_evaluate_loaded('./data/N_HPC_slide_rerun/FTP_S2/experiment_config.json','B')
+    # multiprocess_evaluate_loaded('./data/N_HPC_slide_rerun/FTP_S3/experiment_config.json','A')
+    # multiprocess_evaluate_loaded('./data/N_HPC_slide_rerun/FTP_S3/experiment_config.json','B')
+
+    # multiprocess_evaluate_loaded('./data/N_HPC_rerun/JA_S1/experiment_config.json','A')
+    # multiprocess_evaluate_loaded('./data/N_HPC_rerun/JA_S1/experiment_config.json','B')
+    # multiprocess_evaluate_loaded('./data/N_HPC_rerun/JA_S2/experiment_config.json','A')
+    # multiprocess_evaluate_loaded('./data/N_HPC_rerun/JA_S2/experiment_config.json','B')
+    # multiprocess_evaluate_loaded('./data/N_HPC_slide_rerun/JA_S3/experiment_config.json','A')
+    # multiprocess_evaluate_loaded('./data/N_HPC_slide_rerun/JA_S3/experiment_config.json','B')
+
+    # multiprocess_evaluate_loaded('./data/J_HPC_rerun/FTP_S2/experiment_config.json','A')
+    # multiprocess_evaluate_loaded('./data/J_HPC_rerun/FTP_S2/experiment_config.json','B')
+
+    # asterisk_test('./data/N_mothra_slide_rerun/JA_S1/experiment_config.json','A')
+    # asterisk_test('./data/N_mothra_slide_rerun/JA_S2/experiment_config.json','A')
+    # asterisk_test('./data/N_mothra_slide_rerun/JA_S3/experiment_config.json','A')
+    # asterisk_test('./data/N_mothra_slide_rerun/FTP_S1/experiment_config.json','A')
+    # asterisk_test('./data/N_mothra_slide_rerun/FTP_S2/experiment_config.json','A')
+    # asterisk_test('./data/N_mothra_slide_rerun/FTP_S3/experiment_config.json','A')
+
+    # asterisk_test('./data/N_mothra_slide_rerun/JA_S1/experiment_config.json','B')
+    # asterisk_test('./data/N_mothra_slide_rerun/JA_S2/experiment_config.json','B')
+    # asterisk_test('./data/N_mothra_slide_rerun/JA_S3/experiment_config.json','B')
+    # asterisk_test('./data/N_mothra_slide_rerun/FTP_S1/experiment_config.json','B')
+    # asterisk_test('./data/N_mothra_slide_rerun/FTP_S2/experiment_config.json','B')
+    # asterisk_test('./data/N_mothra_slide_rerun/FTP_S3/experiment_config.json','B')
+
+    # asterisk_test('./data/N_HPC_slide_rerun/JA_S1/experiment_config.json','A')
+    # asterisk_test('./data/N_HPC_slide_rerun/JA_S2/experiment_config.json','A')
+    # asterisk_test('./data/N_HPC_slide_rerun/JA_S3/experiment_config.json','A')
+    # asterisk_test('./data/N_HPC_slide_rerun/FTP_S1/experiment_config.json','A')
+    # asterisk_test('./data/N_HPC_slide_rerun/FTP_S2/experiment_config.json','A')
+    # asterisk_test('./data/N_HPC_slide_rerun/FTP_S3/experiment_config.json','A')
+
+    # asterisk_test('./data/N_HPC_slide_rerun/JA_S1/experiment_config.json','B')
+    # asterisk_test('./data/N_HPC_slide_rerun/JA_S2/experiment_config.json','B')
+    # asterisk_test('./data/N_HPC_slide_rerun/JA_S3/experiment_config.json','B')
+    # asterisk_test('./data/N_HPC_slide_rerun/FTP_S1/experiment_config.json','B')
+    # asterisk_test('./data/N_HPC_slide_rerun/FTP_S2/experiment_config.json','B')
+    # asterisk_test('./data/N_HPC_slide_rerun/FTP_S3/experiment_config.json','B')
+
+    # asterisk_test('./data/J_HPC_rerun/JA_S1/experiment_config.json','A')
+    # asterisk_test('./data/J_HPC_rerun/JA_S2/experiment_config.json','A')
+    # asterisk_test('./data/J_HPC_rerun/JA_S3/experiment_config.json','A')
+    # asterisk_test('./data/J_HPC_rerun/FTP_S1/experiment_config.json','A')
+    # asterisk_test('./data/J_HPC_rerun/FTP_S2/experiment_config.json','A')
+    # asterisk_test('./data/J_HPC_rerun/FTP_S3/experiment_config.json','A')
+
+    # asterisk_test('./data/J_HPC_rerun/JA_S1/experiment_config.json','B')
+    # asterisk_test('./data/J_HPC_rerun/JA_S2/experiment_config.json','B')
+    # asterisk_test('./data/J_HPC_rerun/JA_S3/experiment_config.json','B')
+    # asterisk_test('./data/J_HPC_rerun/FTP_S1/experiment_config.json','B')
+    # asterisk_test('./data/J_HPC_rerun/FTP_S2/experiment_config.json','B')
+    # asterisk_test('./data/J_HPC_rerun/FTP_S3/experiment_config.json','B')
+
     # multiprocess_evaluate_loaded('./data/Mothra_Full/FTP_S1/experiment_config.json',"B")
-    # replay('./data/sanity_check2/experiment_config.json', './data/sanity_check2/Eval_A/Episode_5.pkl')
+    # replay('./data/sanity_check2/experiment_config.json', './data/sanity_check2/Eval_A/Episode_5.pkl')rf
     # multiprocess_evaluate_loaded('./data/Mothra_Rotation/JA_S3/experiment_config.json',"B")
     # multiprocess_evaluate_loaded('./data/Mothra_Rotation/JA_S3/experiment_config.json',"A")
 
@@ -1025,7 +1090,6 @@ if __name__ == '__main__':
     # multiprocess_evaluate_loaded('./data/HPC_Slide/JA_S3/experiment_config.json',"B")
     # multiprocess_evaluate_loaded('./data/HPC_Slide/FTP_S3/experiment_config.json',"A")
     # multiprocess_evaluate_loaded('./data/HPC_Slide/FTP_S3/experiment_config.json',"B")
-
 
     # full_test('./data/Mothra_Full_Continue_New_weight/JA_S3/experiment_config.json','A')
     # full_test('./data/Mothra_Full_Continue_New_weight/JA_S3/experiment_config.json','B')

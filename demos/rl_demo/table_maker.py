@@ -4,22 +4,26 @@ import pandas as pd
 
 
 sub_names =['FTP_S1','FTP_S2','FTP_S3','JA_S1','JA_S2','JA_S3']
-top_names =['Mothra_Rotation','HPC_Rotation','Jeremiah_Rotation'] #['Sliding_B']  #['Mothra_Rotation','HPC_Rotation','Jeremiah_Rotation','Mothra_Full','HPC_Full','Jeremiah_Full']
+top_names =['N_mothra_slide_rerun','J_HPC_rerun','N_HPC_slide_rerun'] # ['Mothra_Rotation','HPC_Rotation','Jeremiah_Rotation'] #['Sliding_B']  #['Mothra_Rotation','HPC_Rotation','Jeremiah_Rotation','Mothra_Full','HPC_Full','Jeremiah_Full']
 
 csv_dict = {'Action Space':[], 'State Space':[], 'Upper Folder':[], 'Sim A Distance Mean':[], 'Sim A Distance Std':[],
  'Sim A Angle Mean':[],'Sim A Angle Std':[],'Sim A Success Rate':[],'Sim B Distance Mean':[], 'Sim B Distance Std':[],
- 'Sim B Angle Mean':[],'Sim B Angle Std':[],'Sim B Success Rate':[], 'Real A Distance Mean':[], 'Real A Distance Std':[],
- 'Real A Angle Mean':[],'Real A Angle Std':[],'Real A Success Rate':[],'Real B Distance Mean':[], 'Real B Distance Std':[],
- 'Real B Angle Mean':[],'Real B Angle Std':[],'Real B Success Rate':[]}
+ 'Sim B Angle Mean':[],'Sim B Angle Std':[],'Sim B Success Rate':[] , 'Real A Distance Mean':[], 'Real A Distance Std':[],
+  'Real A Angle Mean':[],'Real A Angle Std':[],'Real A Success Rate':[], 'Real B Distance Mean':[], 'Real B Distance Std':[],
+  'Real B Angle Mean':[],'Real B Angle Std':[],'Real B Success Rate':[]}
+
+
+
 
 backend = data_gui_backend.PlotBackend()
-'''
+
 for uname in top_names:
     for lname in sub_names:
-        SimApath = '/'.join(['./data',uname,lname,'Ast_A'])
-        SimBpath = '/'.join(['./data',uname,lname,'Ast_B'])
-        RealApath= '/'.join(['./data',uname,lname,'RA3'])
-        RealBpath = '/'.join(['./data',uname,lname,'RB3'])
+        backend.real_world_flag=False
+        SimApath = '/'.join(['./data',uname,lname,'Eval_A'])
+        SimBpath = '/'.join(['./data',uname,lname,'Eval_B'])
+        RealApath= '/'.join(['./data',uname,lname,'RA'])
+        RealBpath = '/'.join(['./data',uname,lname,'RB'])
         if 'Rotation' in uname:
             r_thold = 5
             t_thold = 26
@@ -56,6 +60,7 @@ for uname in top_names:
         csv_dict['Sim B Success Rate'].append(sr)
         backend.reset()
 
+        backend.real_world_flag=True
         [mean, std] = backend.draw_scatter_end_magic(RealApath)
         csv_dict['Real A Distance Mean'].append(mean)
         csv_dict['Real A Distance Std'].append(std)
@@ -77,17 +82,20 @@ for uname in top_names:
         backend.reset()
 
 df = pd.DataFrame(csv_dict)
-df.to_csv("./rotation_real_World_Results.csv", index=False)
+df.to_csv("./rerun_results_sim.csv", index=False)
 
-'''
+
+
+
+
 # Begin real world comparison table making
 sub_names =['FTP_S1','FTP_S2','FTP_S3','JA_S1','JA_S2','JA_S3']
 
-top_names_slide = ['mslide','HPC_Slide','jslide']
-top_names_rotate = ['Mothra_Rotation','HPC_Rotation','Jeremiah_Rotation']
-top_names_full = ['Mothra_Full','HPC_Full','Jeremiah_Full']
+top_names_slide = ['N_mothra_slide_rerun','N_HPC_slide_rerun', 'J_HPC_rerun']
+# top_names_rotate =['Mothra_Rotation','HPC_Rotation','Jeremiah_Rotation']
+# top_names_full = ['Mothra_Full','HPC_Full','Jeremiah_Full']
 
-other = ['Ast_A','Ast_B','Real_A','Real_B']
+other = ['Ast_A','RA','RB']
 
 # csv_dict = {'Action Space':[], 'State Space':[], 'Sim A Distance Covered':[], 'Sim A Distance Std':[],
 #  'Sim A Efficiency':[],'Sim A Efficiency Std':[],'Real A Distance Covered':[], 'Real A Distance Std':[],
@@ -143,6 +151,7 @@ backend = data_gui_backend.PlotBackend()
     # backend.reset()
     # backend.clear_axes()
 
+
 # # backend = data_gui_backend.PlotBackend()
 # for o in other:
 #     f1 = ['/'.join(['./data',uname,'FTP_S1',o]) for uname in top_names_slide]
@@ -180,54 +189,58 @@ backend = data_gui_backend.PlotBackend()
 #     backend.reset()
 #     backend.clear_axes()
 # backend = data_gui_backend.PlotBackend()
-f1 = ['/'.join(['./data',uname,'FTP_S1',other[0]]) for uname in top_names_slide]
-f2 = ['/'.join(['./data',uname,'FTP_S2',other[0]]) for uname in top_names_slide]
-f3 = ['/'.join(['./data',uname,'FTP_S3',other[0]]) for uname in top_names_slide]
-j1 = ['/'.join(['./data',uname,'JA_S1',other[0]]) for uname in top_names_slide]
-j2 = ['/'.join(['./data',uname,'JA_S2',other[0]]) for uname in top_names_slide]
-j3 = ['/'.join(['./data',uname,'JA_S3',other[0]]) for uname in top_names_slide]
 
-for o in other[1:]:
-    cf1 = ['/'.join(['./data',uname,'FTP_S1',o]) for uname in top_names_slide]
-    cf2 = ['/'.join(['./data',uname,'FTP_S2',o]) for uname in top_names_slide]
-    cf3 = ['/'.join(['./data',uname,'FTP_S3',o]) for uname in top_names_slide]
-    cj1 = ['/'.join(['./data',uname,'JA_S1',o]) for uname in top_names_slide]
-    cj2 = ['/'.join(['./data',uname,'JA_S2',o]) for uname in top_names_slide]
-    cj3 = ['/'.join(['./data',uname,'JA_S3',o]) for uname in top_names_slide]
-    try:
-        print('FTP S1 comparison ' + o)
-        backend.radar_fuckery(f1,cf1)
-    except:
-        print('FTPS1 failed')
-    try:
-        print('FTP S2 comparison ' + o)
-        backend.radar_fuckery(f2,cf2)
-    except:
-        print('FTPS2 failed')
-    try:
-        print('FTP S3 comparison ' + o)
-        backend.radar_fuckery(f3,cf3)
-    except:
-        print('FTPS3 failed')
-    try:
-        print('JA S1 comparison ' + o)
-        backend.radar_fuckery(j1,cj1)
-    except:
-        print('JAS1 failed')
-    try:
-        print('JA S2 comparison ' + o)
-        backend.radar_fuckery(j2,cj2)
-    except:
-        print('JA S2 failed')
-    try:
-        print('JA S3 comparison ' + o)
-        backend.radar_fuckery(j3,cj3)
-    except:
-        print('JA S3 failed')
+
+
+# f1 = ['/'.join(['./data',uname,'FTP_S1',other[0]]) for uname in top_names_slide]
+# f2 = ['/'.join(['./data',uname,'FTP_S2',other[0]]) for uname in top_names_slide]
+# f3 = ['/'.join(['./data',uname,'FTP_S3',other[0]]) for uname in top_names_slide]
+# j1 = ['/'.join(['./data',uname,'JA_S1',other[0]]) for uname in top_names_slide]
+# j2 = ['/'.join(['./data',uname,'JA_S2',other[0]]) for uname in top_names_slide]
+# j3 = ['/'.join(['./data',uname,'JA_S3',other[0]]) for uname in top_names_slide]
+
+# for o in other[1:]:
+#     cf1 = ['/'.join(['./data',uname,'FTP_S1',o]) for uname in top_names_slide]
+#     cf2 = ['/'.join(['./data',uname,'FTP_S2',o]) for uname in top_names_slide]
+#     cf3 = ['/'.join(['./data',uname,'FTP_S3',o]) for uname in top_names_slide]
+#     cj1 = ['/'.join(['./data',uname,'JA_S1',o]) for uname in top_names_slide]
+#     cj2 = ['/'.join(['./data',uname,'JA_S2',o]) for uname in top_names_slide]
+#     cj3 = ['/'.join(['./data',uname,'JA_S3',o]) for uname in top_names_slide]
+#     try:
+#         print('FTP S1 comparison ' + o)
+#         backend.radar_fuckery(f1,cf1)
+#     except:
+#         print('FTPS1 failed')
+#     try:
+#         print('FTP S2 comparison ' + o)
+#         backend.radar_fuckery(f2,cf2)
+#     except:
+#         print('FTPS2 failed')
+#     try:
+#         print('FTP S3 comparison ' + o)
+#         backend.radar_fuckery(f3,cf3)
+#     except:
+#         print('FTPS3 failed')
+#     try:
+#         print('JA S1 comparison ' + o)
+#         backend.radar_fuckery(j1,cj1)
+#     except:
+#         print('JAS1 failed')
+#     try:
+#         print('JA S2 comparison ' + o)
+#         backend.radar_fuckery(j2,cj2)
+#     except:
+#         print('JA S2 failed')
+#     try:
+#         print('JA S3 comparison ' + o)
+#         backend.radar_fuckery(j3,cj3)
+#     except:
+#         print('JA S3 failed')
+
 # for o in other:
-#     f1 = ['/'.join(['./data',uname,'FTP_S1',o]) for uname in top_names_slide]
-#     f2 = ['/'.join(['./data',uname,'FTP_S2',o]) for uname in top_names_slide]
-#     f3 = ['/'.join(['./data',uname,'FTP_S3',o]) for uname in top_names_slide]
+#     f1 = ['/'.join(['./data',uname,'JA_S1',o]) for uname in top_names_slide]
+#     f2 = ['/'.join(['./data',uname,'JA_S2',o]) for uname in top_names_slide]
+#     f3 = ['/'.join(['./data',uname,'JA_S3',o]) for uname in top_names_slide]
 #     # Real_B_path = ['/'.join(['./data',uname,lname,'Real_B']) for uname in top_names_slide]
 
 #     # keys = lname.split('_')
@@ -237,31 +250,70 @@ for o in other[1:]:
 #     # csv_dict['Upper Folder'].append(uname)
 #     # print(A_path)
 
-#     asterisk_radar= backend.draw_radar(f1,'FTP_S1')
+#     asterisk_radar= backend.draw_radar(f3,'JA_S3')
+#     # csv_dict['Sim A Distance Covered'].append(asterisk_radar[0])
+#     # csv_dict['Sim A Distance Std'].append(asterisk_radar[1])
+#     # csv_dict['Sim A Efficiency'].append(asterisk_radar[2])
+#     # csv_dict['Sim A Efficiency Std'].append(asterisk_radar[3])
+
+#     asterisk_radar= backend.draw_radar(f2,'JA_S2')
+#     # csv_dict['Sim B Distance Covered'].append(asterisk_radar[0])
+#     # csv_dict['Sim B Distance Std'].append(asterisk_radar[1])
+#     # csv_dict['Sim B Efficiency'].append(asterisk_radar[2])
+#     # csv_dict['Sim B Efficiency Std'].append(asterisk_radar[3])
+
+#     asterisk_radar= backend.draw_radar(f1,'JA_S1')
+#     # csv_dict['Real A Distance Covered'].append(asterisk_radar[0])
+#     # csv_dict['Real A Distance Std'].append(asterisk_radar[1])
+#     # csv_dict['Real A Efficiency'].append(asterisk_radar[2])
+#     # csv_dict['Real A Efficiency Std'].append(asterisk_radar[3])
+
+#     backend.fig.savefig(o + '_JA.png',dpi=400)
+#     backend.reset()
+#     backend.clear_axes()
+
+# csv_dict = {'Action Space':[], 'State Space':[], 'Sim A Distance Covered':[], 'Sim A Distance Std':[],
+#  'Sim A Efficiency':[],'Sim A Efficiency Std':[],'Real A Distance Covered':[], 'Real A Distance Std':[],
+#  'Real A Efficiency':[],'Real A Efficiency Std':[],'Real B Distance Covered':[], 'Real B Distance Std':[],
+#  'Real B Efficiency':[],'Real B Efficiency Std':[]}
+# for o in sub_names:
+#     f1 = ['/'.join(['./data',uname,o,'Ast_A']) for uname in top_names_slide]
+#     f2 = ['/'.join(['./data',uname,o,'RA']) for uname in top_names_slide]
+#     f3 = ['/'.join(['./data',uname,o,'RB']) for uname in top_names_slide]
+#     # Real_B_path = ['/'.join(['./data',uname,lname,'Real_B']) for uname in top_names_slide]
+
+#     keys = o.split('_')
+    
+#     csv_dict['Action Space'].append(keys[0])
+#     csv_dict['State Space'].append(keys[1])
+#     # csv_dict['Upper Folder'].append(uname)
+#     # print(A_path)
+
+#     asterisk_radar= backend.draw_radar(f1,'JA_S1')
 #     csv_dict['Sim A Distance Covered'].append(asterisk_radar[0])
 #     csv_dict['Sim A Distance Std'].append(asterisk_radar[1])
 #     csv_dict['Sim A Efficiency'].append(asterisk_radar[2])
 #     csv_dict['Sim A Efficiency Std'].append(asterisk_radar[3])
 
-#     asterisk_radar= backend.draw_radar(f2,'FTP_S2')
-#     csv_dict['Sim B Distance Covered'].append(asterisk_radar[0])
-#     csv_dict['Sim B Distance Std'].append(asterisk_radar[1])
-#     csv_dict['Sim B Efficiency'].append(asterisk_radar[2])
-#     csv_dict['Sim B Efficiency Std'].append(asterisk_radar[3])
-
-#     asterisk_radar= backend.draw_radar(f3,'FTP_S3')
+#     asterisk_radar= backend.draw_radar(f2,'JA_S2')
 #     csv_dict['Real A Distance Covered'].append(asterisk_radar[0])
 #     csv_dict['Real A Distance Std'].append(asterisk_radar[1])
 #     csv_dict['Real A Efficiency'].append(asterisk_radar[2])
 #     csv_dict['Real A Efficiency Std'].append(asterisk_radar[3])
 
-#     backend.fig.savefig(o + '_FTP.png',dpi=400)
+#     asterisk_radar= backend.draw_radar(f3,'JA_S3')
+#     csv_dict['Real B Distance Covered'].append(asterisk_radar[0])
+#     csv_dict['Real B Distance Std'].append(asterisk_radar[1])
+#     csv_dict['Real B Efficiency'].append(asterisk_radar[2])
+#     csv_dict['Real B Efficiency Std'].append(asterisk_radar[3])
+
+
+
+#     # backend.fig.savefig(o + '_JA.png',dpi=400)
 #     backend.reset()
 #     backend.clear_axes()
-
-
 # df = pd.DataFrame(csv_dict)
-# df.to_csv("./sim_real_comparison_b.csv", index=False)
+# df.to_csv("./sim_real_rerun_stuff.csv", index=False)
 
 # csv_dict = {'Action Space':[], 'State Space':[], 'Sim A Distance Error':[], 'Sim A Distance Std':[],
 #  'Sim A Orientation Error':[],'Sim A Orientation Std':[], 'Sim A Orientation Traveled':[], 'Sim A Traveled Std':[],'Real A Distance Error':[], 'Real A Distance Std':[],
