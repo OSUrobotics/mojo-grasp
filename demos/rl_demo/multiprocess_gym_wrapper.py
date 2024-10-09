@@ -374,6 +374,9 @@ class MultiprocessGymWrapper(gym.Env):
                         state.extend(state_container['previous_state'][i]['wall']['pose'][0][0:2])
                         state.extend(state_container['previous_state'][i]['wall']['pose'][1][0:4])
                     # What Jeremiah Added
+                    elif key == 'slice':
+                        state.extend(state_container['previous_state'][i]['slice'])
+
                     elif key == 'rad':
                         state.append(state_container['previous_state'][i]['f1_contact_distance'])
                         state.append(state_container['previous_state'][i]['f2_contact_distance'])
@@ -429,6 +432,9 @@ class MultiprocessGymWrapper(gym.Env):
                 state.extend(state_container['wall']['pose'][1][0:4])
                 
             # What Jeremiah Added
+            elif key == 'slice':
+                    state.extend(state_container['slice'])
+
             elif key == 'rad':
                 state.append(state_container['f1_contact_distance'])
                 state.append(state_container['f2_contact_distance'])
