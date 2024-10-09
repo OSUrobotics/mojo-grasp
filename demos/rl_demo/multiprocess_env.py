@@ -333,10 +333,10 @@ class MultiprocessSingleShapeEnv(Environment):
 
     def step(self):
         super().step()
-        temp =self.p.getContactPoints(self.hand_id, self.obj_id)
-        if temp != ():
-            if temp[0][8] < -0.1/1000:
-                print('contact points', temp[0][8] * 1000)
+        # temp =self.p.getContactPoints(self.hand_id, self.obj_id)
+        # if temp != ():
+        #     if temp[0][8] < -0.8/1000:
+        #         print('contact points', temp[0][8] * 1000)
             
         
     def set_finger_contact_goal(self,finger_goals):

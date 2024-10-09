@@ -123,8 +123,9 @@ class RNNGui():
                        [sg.Checkbox('Eigenvectors Times Eigenvalues', default=False,key='-evv')],
                        [sg.Checkbox("Contact Distance", default=False, k='-rad')],
                        [sg.Checkbox("Contact Angle", default=False, k='-ra')],
+                       [sg.Checkbox("Radius Representation", default=False, k='-slice')],
                        [sg.Text('Num Previous States'), sg.Input(2, k='-pv',size=(8, 2)), sg.Text('Success Radius (mm)'), sg.Input(2, key='-sr',size=(8, 2))],
-                       [sg.Text("Distance Scale"),  sg.Input(1,key='-distance_scale',size=(8, 2)), sg.Text('Contact Scale'),  sg.Input(0.2,key='-contact_scale',size=(8, 2)), sg.Text('Success Reward'), sg.Input(1,key='-success_reward',size=(8, 2)), sg.Text('Rotation Scale'), sg.Input(1,key='-rotation_scale',size=(8, 2))],
+                       [sg.Text("Distance Scale"),  sg.Input(1,key='-distance_scale',size=(8, 2)), sg.Text('Contact Scale'),  sg.Input(0.2,key='-contact_scale',size=(8, 2)), sg.Text('Success Reward'), sg.Input(1,key='-success_reward',size=(8, 2)), sg.Text('Rotation Scale'), sg.Input(0,key='-rotation_scale',size=(8, 2))],
                        [sg.Text("Action"), sg.OptionMenu(values=('Joint Velocity','Finger Tip Position','Object Pose'), k='-action',default_value='Joint Velocity')],
                        [sg.Checkbox('Vizualize Simulation', default=False, k='-viz'), sg.Checkbox('Real World?',default=False, k='-rw'), sg.Checkbox('IK every sim step?', default=False, key='-ik-freq')],
                        [sg.Button('Build Config File', key='-build')]]
@@ -324,6 +325,14 @@ class RNNGui():
 
         #What Jereimah added
         #print('state list', state_list)
+        if values['-slice']:
+            for i in range(24):    
+                state_mins.extend([-.02])
+                state_maxes.extend([.02])
+                state_len +=1
+            state_list.append('slice')
+
+
         if values['-rad']:
             state_mins.extend([0,0,0,0])
             state_maxes.extend([10,10,1,1])
