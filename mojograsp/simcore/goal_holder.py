@@ -268,5 +268,36 @@ class HRLMultigoalHolder(HRLGoalHolder):
         self.tsteps_left = 25
         self.goals_reached = 0
 
+class HRLMultigoalFixed(HRLMultigoalHolder):
+    def __init__(self, goal_pose, finger_start, mix_orientation=False, mix_finger=False, goals_smoothed=1, num_goals_present=5, radius=0.01):
+        super().__init__(goal_pose, finger_start, mix_orientation, mix_finger, goals_smoothed, num_goals_present, radius)
+        self.open_goals = np.ones(self.num_goals_present)
 
+    def get_data(self):
+        # print('output of goal position', self.upper_position_set.flatten().tolist())
+        return {'goal_position':self.lower_pos.get_goal(),'goal_orientation':self.lower_or.get_goal(), 'goal_finger':self.lower_finger.get_goal(),
+                'upper_goal_position':self.upper_position_set.flatten().tolist(),'upper_goal_orientation':self.orientation[self.run_num%self.len], 'upper_goal_finger':self.finger[self.run_num%self.len],
+                'timesteps_remaining':self.tsteps_left, 'goals_reached': self.goals_reached, 'goals_open': self.open_goals.copy()}
     
+    def next_run(self):
+        self.open_goals = np.ones(self.num_goals_present)
+        temp=super().next_run()
+        # print(self.tsteps_left, self.upper_position_set)
+        return temp
+    
+    def check_goal(self, object_pos):
+        # op = object_pos-np.array([0,0.1])
+        dists = np.linalg.norm(self.upper_position_set-object_pos, axis=1)
+        self.goals_reached = 0
+        self.tsteps_left -= 1
+        # print('distances', dists)
+        for i, distance in enumerate(dists):
+            if (distance < self.radius) and self.open_goals[i]:
+                self.upper_position_num+=1
+                if self.upper_position_num + self.num_goals_present>=self.len:
+                    self.upper_position_num=0
+                    np.random.shuffle(self.pose)
+                # self.upper_position_set[i] = self.pose[self.upper_position_num+self.num_goals_present]
+                self.goals_reached +=1
+                self.open_goals[i] = 0
+                # print('achieved goal', object_pos, self.upper_position_set, self.open_goals)

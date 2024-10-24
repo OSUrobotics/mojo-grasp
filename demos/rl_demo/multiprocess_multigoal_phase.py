@@ -23,6 +23,7 @@ class MultigoalManipulation(MultiprocessManipulation):
 
     def exit_condition(self, eval_exit=False) -> bool:
         goals = self.state.get_goal()
+        # print(goals)
         if goals['timesteps_remaining'] <= 0:
             return True
         else:

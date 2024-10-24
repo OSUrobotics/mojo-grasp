@@ -334,9 +334,9 @@ class MultiprocessSingleShapeEnv(Environment):
     def step(self):
         super().step()
         temp =self.p.getContactPoints(self.hand_id, self.obj_id)
-        if temp != ():
-            if temp[0][8] < -0.1/1000:
-                print('contact points', temp[0][8] * 1000)
+        # if temp != ():
+        #     if temp[0][8] < -0.1/1000:
+        #         print('contact points', temp[0][8] * 1000)
             
         
     def set_finger_contact_goal(self,finger_goals):
@@ -345,6 +345,10 @@ class MultiprocessSingleShapeEnv(Environment):
         else:
             for finger,goal in zip(self.finger_points,finger_goals):
                 self.p.changeConstraint(finger,goal)
+
+    def set_obj_pose(self,pose):
+        current_obj_pose = self.p.getBasePositionAndOrientation(self.obj_id)
+        self.p.resetBasePositionAndOrientation(self.obj_id, posObj=[pose[0][0],pose[0][1],current_obj_pose[0][2]], ornObj=pose[1])
 
 
 

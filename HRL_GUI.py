@@ -58,7 +58,7 @@ class RNNGui():
         self.double_names = ['f-b', 'l-r', 'diag-up', 'diag-down']
         self.alt_double_names = ['l-r','f','b']
         # define layout, show and read the window
-        data_layout =  [ [sg.Text('Model Type'), sg.OptionMenu(values=('TD3', 'TD3+HER', 'DDPG','DDPG+HER', 'PPO','PPO_Feudal','PPO_Zoo'),  k='-model', default_value='PPO')],
+        data_layout =  [ [sg.Text('Model Type'), sg.OptionMenu(values=('PPO','PPO_Expert'),  k='-model', default_value='PPO')],
                          [sg.Text('Path to Expert Data if using FD')],
                          [sg.Button("Browse",key='-browse-expert',button_color='DarkBlue'),sg.Text("/", key='-expert-path')],
                          [sg.Text('Path to Save Data')],
@@ -75,7 +75,7 @@ class RNNGui():
                          [sg.Checkbox('2v2_35.65_65.35_43',key='2v2_35.65_65.35_1.1_43', default=False),sg.Checkbox('2v2_35.65_65.35_53',key='2v2_35.65_65.35_1.1_53', default=False),sg.Checkbox('2v2_35.65_65.35_63',key='2v2_35.65_65.35_1.1_63', default=False),sg.Checkbox('2v2_35.65_65.35_73',key='2v2_35.65_65.35_1.1_73', default=False)],
                          [sg.Checkbox('2v2_70.30_70.30_43',key='2v2_70.30_70.30_1.1_43', default=False),sg.Checkbox('2v2_70.30_70.30_53',key='2v2_70.30_70.30_1.1_53', default=False),sg.Checkbox('2v2_70.30_70.30_63',key='2v2_70.30_70.30_1.1_63', default=False),sg.Checkbox('2v2_70.30_70.30_73',key='2v2_70.30_70.30_1.1_73', default=False)],
                          [sg.Checkbox('2v2_70.30_50.50_43',key='2v2_70.30_50.50_1.1_43', default=False),sg.Checkbox('2v2_70.30_50.50_53',key='2v2_70.30_50.50_1.1_53', default=False),sg.Checkbox('2v2_70.30_50.50_63',key='2v2_70.30_50.50_1.1_63', default=False),sg.Checkbox('2v2_70.30_50.50_73',key='2v2_70.30_50.50_1.1_73', default=False)],
-                         [sg.Text("Task"), sg.OptionMenu(values=('asterisk','single',"big_random","Multigoal",
+                         [sg.Text("Task"), sg.OptionMenu(values=('asterisk','single',"big_random","Multigoal","MultigoalFixed",
                           "Rotation_single", "Rotation_region","big_Rotation", "full_task","big_full_task", 'multi', "direction", "wall", "wall_single"), k='-task', default_value='unplanned_random')],
                          [sg.Text("Reward"), sg.OptionMenu(values=('Sparse','Distance','Distance + Finger', 'Hinge Distance + Finger', 'Slope', 'Slope + Finger','SmartDistance + Finger','SmartDistance + SmartFinger','ScaledDistance + Finger','ScaledDistance+ScaledFinger', 'SFS','DFS'), k='-reward',default_value='ScaledDistance+ScaledFinger')],
                          [sg.Checkbox("Object Start Position", key='-rstart',default=False), sg.Checkbox("Relative Finger Position", key='-rfinger',default=False),sg.Checkbox("Object Orientation", key='-ror',default=False), sg.Checkbox("Finger Open", key='-rfo',default=False)],
@@ -108,6 +108,7 @@ class RNNGui():
                        [sg.Checkbox('Finger Object Distance', default=False, k='-fod')],
                        [sg.Checkbox('Finger Tip Angle', default=False, k='-fta')],
                        [sg.Checkbox('Goal Position', default=True, k='-gp')],
+                       [sg.Checkbox('Goals Achieved', default=False, k='-ga')],
                        [sg.Checkbox('Goal Orientation', default=True, k = '-go')],
                        [sg.Checkbox('Goal Finger Pos', default=False, k='-gf')],
                        [sg.Checkbox('Goal Finger Separation', default=False, k='-gfs')],
@@ -124,6 +125,7 @@ class RNNGui():
                        [sg.Checkbox('Finger Object Distance', default=False, k='-mfod')],
                        [sg.Checkbox('Finger Tip Angle', default=False, k='-mfta')],
                        [sg.Checkbox('Goal Position', default=True, k='-mgp')],
+                       [sg.Checkbox('Goals Achieved', default=False, k='-mga')],
                        [sg.Checkbox('Goal Orientation', default=True, k = '-mgo')],
                        [sg.Checkbox('Goal Finger Pos', default=False, k='-mgf')],
                        [sg.Checkbox('Goal Finger Separation', default=False, k='-mgfs')],
@@ -259,6 +261,11 @@ class RNNGui():
             state_maxes.extend([0.08, 0.08])
             state_len += 2
             state_list.append('lgp')
+        if values['-ga']:
+            state_mins.extend([0])
+            state_maxes.extend([1])
+            state_len += 1
+            state_list.append('lga')
         if values['-go']:
             if values['-75']:
                 state_mins.append(-75/180*np.pi)
@@ -356,6 +363,11 @@ class RNNGui():
             manager_state_maxes.extend([0.07, 0.07]*int(values['-manager_goals']))
             manager_state_len += 2*int(values['-manager_goals'])
             manager_state_list.append('gp')
+        if values['-mgp']:
+            manager_state_mins.extend([0]*int(values['-manager_goals']))
+            manager_state_maxes.extend([1]*int(values['-manager_goals']))
+            manager_state_len += int(values['-manager_goals'])
+            manager_state_list.append('ga')
         if values['-mgo']:
             if values['-75']:
                 manager_state_mins.append(-75/180*np.pi)
@@ -524,7 +536,7 @@ class RNNGui():
         if (values['-task'] == 'full_random') | (values['-task'] == 'unplanned_random'):
             self.args['points_path'] = str(resource_path.joinpath('points.csv'))
             self.args['test_path'] = str(resource_path.joinpath('test_points.csv'))
-        elif (values['-task'] == 'big_random') | (values['-task'] =='multi')|(values['-task']=='Multigoal'):
+        elif (values['-task'] == 'big_random') | (values['-task'] =='multi')|('Multigoal' in values['-task']):
             self.args['points_path'] = str(resource_path.joinpath('train_points_big.csv'))
             self.args['test_path'] = str(resource_path.joinpath('test_points_big.csv'))
         elif (values['-task'] =='Rotation_region')|(values['-task'] =='full_task'):
