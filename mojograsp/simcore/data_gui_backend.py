@@ -53,13 +53,20 @@ def HRL_pool_process(episode_file):
     t1 = []
     t2 = []
     t3 = []
+    # print(data[0]['reward'].keys())
+    # print(data[0]['state']['goal_pose'].keys())
     for i in data:
         t1.append(i['reward']['upper_distance'])
-        t2.append(abs(i['reward']['object_orientation'][2] - i['state']['goal_pose']['upper_goal_orientation']))
+        # t2.append(abs(i['reward']['object_orientation'][2] - i['state']['goal_pose']['upper_goal_orientation']))
+        t2.append(0)
         t3.append(max(i['reward']['f1_dist'],i['reward']['f2_dist']))
     point_list.append(sum(t1))
     point_list.append(sum(t2))
     point_list.append(sum(t3))
+    # print('right before goals reached')
+    # print([i['reward']['goals_reached'] for i in data])
+    point_list.append(sum([i['reward']['goals_reached'] for i in data]))
+    
     # except KeyError:
     #     print('episode keys are wrong. check pool_process in data_gui_backend.py with your state and reward keys')
     return point_list
@@ -337,31 +344,55 @@ class PlotBackend():
         print('goal position in state', data[0]['state']['goal_pose'])
         # try:
         upper_goal_poses = np.array([i['state']['goal_pose']['upper_goal_position'] for i in data])
-        # except:
-
-        goal_poses = np.array([i['state']['goal_pose']['goal_position'] for i in data])
-        # print(trajectory_points)
-        trajectory_points = np.array(trajectory_points)
-        ideal = np.zeros([len(goal_poses)+1,2])
-        ideal[0,:] = trajectory_points[0,0:2]
-        ideal[1:,:] = goal_poses + np.array([0,0.1])
-        upper_goal_poses[0,:] = trajectory_points[0,0:2]
-        upper_goal_poses[1:,:] = upper_goal_poses[1:,:] + np.array([0,0.1])
-        if self.clear_plots | (self.curr_graph != 'path'):
-            self.clear_axes()
-        self.ax.plot(trajectory_points[:,0], trajectory_points[:,1])
-        self.ax.plot(ideal[:,0],ideal[:,1])
-        self.ax.plot(upper_goal_poses[:,0],upper_goal_poses[:,1])
-        self.ax.set_xlim([-0.085,0.085])
-        self.ax.set_ylim([0.015,0.185])
-        self.ax.set_xlabel('X pos (m)')
-        self.ax.set_ylabel('Y pos (m)')                                                                                                                                                                                                                                   
-        self.legend.extend(['RL Object Trajectory', 'Upper Level Goals', 'Ideal Path to Goal'])
-        self.ax.legend(self.legend)
-        self.ax.set_title('Object Path')
-        self.ax.set_aspect('equal',adjustable='box')
-        self.curr_graph = 'path'
-        # print(data[0]['state']['direction'])
+        theshape=np.shape(upper_goal_poses)
+        if theshape[1] > 2:
+            upper_goal_poses = np.reshape(upper_goal_poses,(theshape[0],int(theshape[1]/2),2))
+            goal_poses = np.array([i['state']['goal_pose']['goal_position'] for i in data])
+            # print(upper_goal_poses)
+            trajectory_points = np.array(trajectory_points)
+            ideal = np.zeros([len(goal_poses)+1,2])
+            ideal[0,:] = trajectory_points[0,0:2]
+            ideal[1:,:] = goal_poses + np.array([0,0.1])
+            upper_goal_poses[0,:,:] = trajectory_points[0,0:2]
+            upper_goal_poses[1:,:,:] = upper_goal_poses[1:,:,:] + np.array([0,0.1])
+            if self.clear_plots | (self.curr_graph != 'path'):
+                self.clear_axes()
+            self.ax.plot(trajectory_points[:,0], trajectory_points[:,1])
+            self.ax.scatter(upper_goal_poses[1,:,0],upper_goal_poses[1,:,1],c='g')
+            self.ax.plot(ideal[:,0],ideal[:,1])
+            
+            self.ax.set_xlim([-0.085,0.085])
+            self.ax.set_ylim([0.015,0.185])
+            self.ax.set_xlabel('X pos (m)')
+            self.ax.set_ylabel('Y pos (m)')
+            self.legend.extend(['RL Object Trajectory', 'Upper Level Goals', 'Ideal Path to Goal'])
+            self.ax.legend(self.legend)
+            self.ax.set_title('Object Path')
+            self.ax.set_aspect('equal',adjustable='box')
+            self.curr_graph = 'path'
+        else:
+            goal_poses = np.array([i['state']['goal_pose']['goal_position'] for i in data])
+            # print(trajectory_points)
+            trajectory_points = np.array(trajectory_points)
+            ideal = np.zeros([len(goal_poses)+1,2])
+            ideal[0,:] = trajectory_points[0,0:2]
+            ideal[1:,:] = goal_poses + np.array([0,0.1])
+            upper_goal_poses[0,:] = trajectory_points[0,0:2]
+            upper_goal_poses[1:,:] = upper_goal_poses[1:,:] + np.array([0,0.1])
+            if self.clear_plots | (self.curr_graph != 'path'):
+                self.clear_axes()
+            self.ax.plot(trajectory_points[:,0], trajectory_points[:,1])
+            self.ax.plot(ideal[:,0],ideal[:,1])
+            self.ax.plot(upper_goal_poses[:,0],upper_goal_poses[:,1])
+            self.ax.set_xlim([-0.085,0.085])
+            self.ax.set_ylim([0.015,0.185])
+            self.ax.set_xlabel('X pos (m)')
+            self.ax.set_ylabel('Y pos (m)')                                                                                                                                                                                                                                   
+            self.legend.extend(['RL Object Trajectory', 'Upper Level Goals', 'Ideal Path to Goal'])
+            self.ax.legend(self.legend)
+            self.ax.set_title('Object Path')
+            self.ax.set_aspect('equal',adjustable='box')
+            self.curr_graph = 'path'
 
     def draw_HRL_orientation(self,data_dict):
         data = data_dict['timestep_list']
@@ -387,6 +418,7 @@ class PlotBackend():
         self.ax.set_ylabel('angle (deg)')
         self.ax.set_aspect('auto',adjustable='box')
         self.ax.legend(['Object Angle','HRL Goal Angle', 'Upper Goal Angle'])
+
     def draw_asterisk(self, folder_or_data_dict):
         
         # get list of pkl files in folder
@@ -1177,7 +1209,7 @@ class PlotBackend():
             min_dists = moving_average(min_dists,self.moving_avg)
         if self.clear_plots | (self.curr_graph != 'goal_dist'):
             self.clear_axes()
-             
+
         print(short_names)
         self.ax.plot(range(len(min_dists)),min_dists)
         self.legend.extend(['Min Goal Distance'])
@@ -1189,7 +1221,7 @@ class PlotBackend():
         self.ax.set_aspect('auto',adjustable='box')
         self.curr_graph = 'goal_dist'
         return return_mins
-            
+
     def draw_ending_velocity(self, all_data_dict):
 
         velocity = np.zeros((len(all_data_dict['episode_list']),2))
@@ -1264,14 +1296,12 @@ class PlotBackend():
 
         mean, std = np.average(ending_dists), np.std(ending_dists)
 
-
         if self.moving_avg != 1:
             ending_dists = moving_average(ending_dists,self.moving_avg)
-            
+
         if self.clear_plots | (self.curr_graph != 'goal_dist'):
             self.clear_axes()
-             
-                
+
         self.ax.plot(range(len(ending_dists)),ending_dists)
         self.legend.extend(['Ending Goal Distance'])
         self.ax.legend(self.legend)
@@ -1300,7 +1330,7 @@ class PlotBackend():
             for i, v in rewards.items():
                 if np.isclose(goal_pose, v[0]).all():
                     v[1].append(temp)
-                    
+
         # s = np.unique(sucessful_dirs)
         # print('succesful directions', s)
         maxes = []
@@ -1310,13 +1340,12 @@ class PlotBackend():
         print('showing best and worse ones')
         best = np.argmax(maxes)
         worst = np.argmin(maxes)
-        
+
         # if self.moving_avg != 1:
         #     closest_dists = moving_average(closest_dists,self.moving_avg)
         if self.clear_plots | (self.curr_graph != 'goal_dist'):
             self.clear_axes()
-             
-            
+
         self.ax.plot(range(len(rewards[keylist[best]][1])),rewards[keylist[best]][1])
         self.ax.plot(range(len(rewards[keylist[worst]][1])),rewards[keylist[worst]][1])
         self.legend.extend(['Best Direction: ' + keylist[best], 'Worst Direction: ' + keylist[worst]])
@@ -1338,15 +1367,14 @@ class PlotBackend():
         for i in filenums:
             if len(i) > 0 :
                 final_filenums.append(int(i[0]))
-        
-        
+
         sorted_inds = np.argsort(final_filenums)
         final_filenums = np.array(final_filenums)
         episode_files = np.array(episode_files)
         filenames_only = np.array(filenames_only)
 
         episode_files = episode_files[sorted_inds].tolist()
-        
+
         pool = multiprocessing.Pool()
         keys = (('action','actor_output'),)
         thing = [[ef, keys] for ef in episode_files]
@@ -1386,9 +1414,8 @@ class PlotBackend():
         self.ax.set_title('Fraction of Episode that Action is Maxed')
         self.ax.set_aspect('auto',adjustable='box')
         self.curr_graph = 'angles'
-    
-    def draw_goal_s_f(self, all_data_dict, success_range): # Depreciated
 
+    def draw_goal_s_f(self, all_data_dict, success_range): # Depreciated
         rewards = {'forward':[[0.0, 0.2],[]],'backward':[[0.0, 0.12],[]],'forwardleft':[[-0.03, 0.19],[]],'backwardleft':[[-0.03,0.13],[]],
                    'forwardright':[[0.03,0.19],[]],'backwardright':[[0.03, 0.13],[]],'left':[[-0.04, 0.16],[]],'right':[[0.04,0.16],[]]}
         # sucessful_dirs = []
@@ -1412,7 +1439,7 @@ class PlotBackend():
                 sf.append(moving_average(rewards[i][1],self.moving_avg))
         if self.clear_plots | (self.curr_graph != 's_f'):
             self.clear_axes()
-             
+
         for i,yax in enumerate(sf):
             self.ax.plot(range(len(yax)),yax)
             self.legend.extend([reduced_key_list[i]])
@@ -1439,7 +1466,7 @@ class PlotBackend():
         next_points = arrow_points + arrow_len
 
         self.clear_axes()
-         
+
         self.ax.plot(trajectory_points[:,0], trajectory_points[:,1])
         self.ax.plot(fingertip1_points[:,0], fingertip1_points[:,1])
         self.ax.plot(fingertip2_points[:,0], fingertip2_points[:,1])
@@ -1683,7 +1710,7 @@ class PlotBackend():
         # self.ax.plot(lineb[:,0],lineb[:,1])
         # self.ax.plot(linec[:,0],linec[:,1])
         # self.ax.plot(lined[:,0],lined[:,1])
-        
+
 
         self.ax.set_ylabel('Y position (cm)')
         self.ax.set_xlabel('X position (cm)')
@@ -3786,20 +3813,20 @@ class PlotBackend():
             self.point_dictionary['Orientation Error'] = self.point_dictionary['Goal Orientation'] - self.point_dictionary['End Orientation']
             self.point_dictionary['Policy'] = self.point_dictionary['Path'].str.split('/').str[5]
         else:
-            try:
-                pool = multiprocessing.Pool()
-                data_list = pool.map(HRL_pool_process,episode_files)
-                pool.close()
-                pool.join()
-            except:
-                # print('GOING TO BEEFY RATHER THAN HRL')
+            # try:
+            pool = multiprocessing.Pool()
+            data_list = pool.map(HRL_pool_process,episode_files)
+            pool.close()
+            pool.join()
+            # except:
+            #     print('GOING TO BEEFY RATHER THAN HRL')
                 
-                pool = multiprocessing.Pool()
-                data_list = pool.map(beefy_pool_process,episode_files)
-                pool.close()
-                pool.join()
+            #     pool = multiprocessing.Pool()
+            #     data_list = pool.map(beefy_pool_process,episode_files)
+            #     pool.close()
+            #     pool.join()
             column_key = ['Start X','Start Y','End X','End Y','Goal X','Goal Y','Start Distance','End Distance', 'Max Distance',
-                        'End Orientation','Goal Orientation','Path','Slide Sum', 'Rotate Sum','Finger Sum']
+                        'End Orientation','Goal Orientation','Path','Slide Sum', 'Rotate Sum','Finger Sum','Num Goals Reached']
             self.point_dictionary = pd.DataFrame(data_list, columns = column_key)
             self.point_dictionary['Rounded Start X'] = self.point_dictionary['Start X'].apply(lambda x:np.round(x,3))
             self.point_dictionary['Rounded Start Y'] = self.point_dictionary['Start Y'].apply(lambda x:np.round(x,3))
@@ -4130,3 +4157,98 @@ class PlotBackend():
         self.ax.set_xlabel('Starting Distance')
         self.ax.set_ylabel('End distance')
         self.ax.set_aspect('auto',adjustable='box')
+
+    def draw_number_achieved(self,episode_data):
+        self.clear_axes()
+        goal_poses = [data['state']['goal_pose']['upper_goal_position'] for data in episode_data['timestep_list']]
+        object_poses = [[data['state']['obj_2']['pose'][0][0],data['state']['obj_2']['pose'][0][1]-0.1] for data in episode_data['timestep_list']]
+        things = np.ones((len(goal_poses),5))
+        things2 = np.ones((len(goal_poses),5))
+        c = 0
+        for op, gp in zip(goal_poses,object_poses):
+            # print(len(gp),len(op))
+            distances = [np.sqrt((gp[0]-op[0])**2+(gp[1]-op[1])**2),np.sqrt((gp[0]-op[2])**2+(gp[1]-op[3])**2),
+                         np.sqrt((gp[0]-op[4])**2+(gp[1]-op[5])**2),np.sqrt((gp[0]-op[6])**2+(gp[1]-op[7])**2),np.sqrt((gp[0]-op[8])**2+(gp[1]-op[9])**2)]
+            alt_distances = [np.linalg.norm([gp[0]-op[0],gp[1]-op[1]]),
+                             np.linalg.norm([gp[0]-op[2],gp[1]-op[3]]),
+                             np.linalg.norm([gp[0]-op[4],gp[1]-op[5]]),
+                             np.linalg.norm([gp[0]-op[6],gp[1]-op[7]]),
+                             np.linalg.norm([gp[0]-op[8],gp[1]-op[9]])]
+            things[c,:] = distances
+            things2[c,:] = alt_distances
+            c +=1
+        for data in episode_data['timestep_list']:
+            print(data['state']['goal_pose']['goals_open'])
+        num_things = [sum(data['state']['goal_pose']['goals_open']) for data in episode_data['timestep_list']]
+        goals_reached = [data['state']['goal_pose']['goals_reached'] for data in episode_data['timestep_list']]
+        print('NUM THINGS',num_things)
+        print('Goals reached', goals_reached)
+        flatline = [0.01]*len(goal_poses)
+        # self.ax.plot(range(len(num_things)), num_things)
+        # self.ax.set_ylabel('Number of Goals Remaining')
+        self.ax.plot(range(len(goal_poses)), things[:,0])
+        self.ax.plot(range(len(goal_poses)), things[:,1])
+        self.ax.plot(range(len(goal_poses)), things[:,2])
+        self.ax.plot(range(len(goal_poses)), things[:,3])
+        self.ax.plot(range(len(goal_poses)), things[:,4])
+        # self.ax.plot(range(len(goal_poses)), things2[:,0])
+        # self.ax.plot(range(len(goal_poses)), things2[:,1])
+        # self.ax.plot(range(len(goal_poses)), things2[:,2])
+        self.ax.plot(range(len(goal_poses)), things2[:,3])
+        # self.ax.plot(range(len(goal_poses)), things2[:,4])
+        self.ax.plot(range(len(goal_poses)), flatline)
+        self.ax.set_ylabel('Distances')
+        self.ax.set_xlabel('Timestep')
+        self.ax.set_aspect('auto',adjustable='box')
+
+    def draw_average_reward_hrl(self, folder):
+        self.build_beefy(folder)
+        if self.clear_plots:
+            self.clear_axes()
+        goals_reached = moving_average(self.point_dictionary['Num Goals Reached'].to_list(),self.moving_avg)
+        a = self.ax.plot(range(len(goals_reached)),goals_reached)
+
+    def draw_uppers(self, folder):
+        # self.build_beefy(folder)
+        episode_files = [os.path.join(folder, f) for f in os.listdir(folder) if f.lower().endswith('.pkl')]
+        filenames_only = [f for f in os.listdir(folder) if f.lower().endswith('.pkl')]
+        
+        filenums = [re.findall('\d+',f) for f in filenames_only]
+        final_filenums = []
+        for i in filenums:
+            if len(i) > 0 :
+                final_filenums.append(int(i[0]))
+
+        sorted_inds = np.argsort(final_filenums)
+        final_filenums = np.array(final_filenums)
+        episode_files = np.array(episode_files)
+        filenames_only = np.array(filenames_only)
+        episode_files = episode_files[sorted_inds]
+        # episode_files_extra = episode_files[0:1200].tolist()
+        all_goals = []
+        for episode_file in episode_files:
+            with open(episode_file, 'rb') as ef:
+                tempdata = pkl.load(ef)
+            data = tempdata['timestep_list']
+            goal_poses = [i['state']['goal_pose']['goal_position'] for i in data]
+            all_goals.append(goal_poses)
+        temp = np.shape(all_goals)
+        print(temp)
+        
+        all_goals = np.array(all_goals)
+        all_goals = np.reshape(all_goals,(int(temp[0]/1200),1200,temp[1],temp[2]))
+        print(np.shape(all_goals))
+        mean = np.average(all_goals,axis=1)
+        std = np.std(all_goals,axis=1)
+        print(np.shape(std))
+        mean2 = np.average(all_goals[0:1200], axis=0)
+        std2 = np.std(all_goals[0:1200], axis=0)
+        print(np.mean(std)*100)
+        print(np.mean(std2)*100)
+        thing2 = np.mean(std, axis=1)
+        print(np.shape(thing2))
+        thing2 = np.mean(thing2, axis=1)
+        print(np.shape(thing2))
+        self.ax.plot(range(len(thing2)),thing2)
+        # self.ax.plot(mean[:,0],mean[:,1])
+        # self.ax.plot(mean2[:,0],mean2[:,1])

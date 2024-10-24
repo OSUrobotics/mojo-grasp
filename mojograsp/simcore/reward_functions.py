@@ -124,8 +124,6 @@ def slide_and_rotate(reward_container, tholds):
     temp = -reward_container['distance_to_goal']/reward_container['start_dist'] # should scale this so that it is -1 at start 
     ftemp,temp = max(ftemp,-2), max(temp, -2)
     tstep_reward = temp*tholds['DISTANCE_SCALING'] + ftemp*tholds['CONTACT_SCALING'] - rotation_temp/np.pi*tholds['ROTATION_SCALING']
-    # print('reward start dist', reward_container['start_dist'])
-    # print('things before scaling', temp, ftemp, -rotation_temp/np.pi)
     return float(tstep_reward), False
 
 def contact_point(reward_container, tholds):
@@ -155,10 +153,8 @@ def triple_scaled_slide(reward_container, tholds):
     return float(tstep_reward), False
 
 def triple_scaled_slide_j(reward_container, tholds):
-    # print(reward_container)
     ftemp = -max(reward_container['f1_dist'], reward_container['f2_dist']) * 100 # 100 here to make ftemp = -1 when at 1 cm
     temp = -reward_container['distance_to_goal']/reward_container['start_dist'] # should scale this so that it is -1 at start 
-    # print(reward_container['distance_to_goal'],reward_container['start_dist'], temp)
     obj_rotation = reward_container['object_orientation'][2]
     thing1 = (obj_rotation-reward_container['goal_orientation'])%(np.pi*2)
     thing2 = (reward_container['goal_orientation']-obj_rotation)%(np.pi*2)
@@ -180,7 +176,6 @@ def manager(reward_container, tholds):
     temp = -reward_container['upper_distance']/reward_container['start_dist'] # should scale this so that it is -1 at start 
     ftemp,temp = max(ftemp,-2), max(temp, -2)
     tstep_reward = temp*tholds['DISTANCE_SCALING'] + ftemp*tholds['CONTACT_SCALING'] + rotation_temp/np.pi*tholds['ROTATION_SCALING']
-    # print(temp*tholds['DISTANCE_SCALING'],-rotation_temp*tholds['ROTATION_SCALING'],ftemp*tholds['CONTACT_SCALING'], tstep_reward)
     return tstep_reward, False
 
 def manager_rotation(reward_container, tholds):
@@ -190,9 +185,7 @@ def manager_rotation(reward_container, tholds):
     rotation_temp = -min(thing1,thing2)
     ftemp = -max(reward_container['f1_dist'], reward_container['f2_dist']) * 10 # 100 here to make ftemp = -1 when at 10 cm
     temp = -reward_container['upper_distance']/0.01 # should scale this so that it is -1 at start 
-    # ftemp,temp = max(ftemp,-2), max(temp, -2)
     tstep_reward = temp*tholds['DISTANCE_SCALING'] + ftemp*tholds['CONTACT_SCALING'] + rotation_temp/np.pi*tholds['ROTATION_SCALING']
-    # print(temp*tholds['DISTANCE_SCALING'],-rotation_temp*tholds['ROTATION_SCALING'],ftemp*tholds['CONTACT_SCALING'], tstep_reward)
     return tstep_reward, False
 
 def manager_alt_1(reward_container, tholds):
@@ -212,7 +205,6 @@ def manager_alt_1(reward_container, tholds):
         lower_reward_term = 0
     else:
         lower_reward_term =  np.dot(goal_vector,movement_vector)/(np.linalg.norm(goal_vector)*np.linalg.norm(movement_vector))
-    # print(temp*tholds['DISTANCE_SCALING'],-rotation_temp*tholds['ROTATION_SCALING'],ftemp*tholds['CONTACT_SCALING'], tstep_reward)
     return tstep_reward + lower_reward_term*0.02, False
 
 def worker_object_position(reward_container, tholds):
@@ -232,17 +224,14 @@ def worker_object_position(reward_container, tholds):
         lower_reward_term = 0
     else:
         lower_reward_term =  np.dot(goal_vector,movement_vector)/(np.linalg.norm(goal_vector)*np.linalg.norm(movement_vector))
-    # print('goal, movement')
-    # print(goal_vector, movement_vector)
-    # print('dot, lower')
-    # print(np.dot(goal_vector,movement_vector),lower_reward_term )
+
     return tstep_reward/2 + lower_reward_term/2, False
 
 def worker_object_pose(reward_container, tholds):
     goal_vector = [reward_container['goal_position'][0]-reward_container['previous_pos'][0][0],
                        reward_container['goal_position'][1]-reward_container['previous_pos'][0][1],
                        reward_container['goal_orientation']-reward_container['previous_orientation'][2]]
-    
+
     movement_vector = [reward_container['object_pose'][0][0]-reward_container['previous_pos'][0][0],
                        reward_container['object_pose'][0][1]-reward_container['previous_pos'][0][1],
                        reward_container['object_orientation'][2]-reward_container['previous_orientation'][2]]
@@ -261,10 +250,6 @@ def worker_object_pose(reward_container, tholds):
         lower_reward_term = 0
     else:
         lower_reward_term =  np.dot(goal_vector,movement_vector)/(np.linalg.norm(goal_vector)*np.linalg.norm(movement_vector))
-    # print('goal, movement')
-    # print(goal_vector, movement_vector)
-    # print('dot, lower')
-    # print(np.dot(goal_vector,movement_vector),lower_reward_term )
     # may need to get this 
     return tstep_reward/2 + lower_reward_term/2, False
 
@@ -300,7 +285,6 @@ def worker_object_pose_finger(reward_container, tholds):
         lower_reward_term =  np.dot(goal_vector,movement_vector)/(np.linalg.norm(goal_vector)*np.linalg.norm(movement_vector))
 
     if lower_reward_term > 0.8:
-        # separated = np.array([goal_vector[i] * movement_vector[i] for i in range(len(goal_vector))])
         print('reward term:',lower_reward_term)
         print('goal vector:', goal_vector)
         print('move vector:', movement_vector)
@@ -365,7 +349,6 @@ def worker_multigoal(reward_container,tholds):
         upper_reward_term = -1
     return upper_reward_term*0+lower_reward_term, False
     
-
 if __name__ == '__main__':
     import matplotlib.pyplot as plt
     # goal_angs = np.linspace(-12.56,12.56,1000)
@@ -383,17 +366,3 @@ if __name__ == '__main__':
     plt.xlabel('finger_error')
     plt.ylabel('reward')
     plt.show()
-
-    # x,y = np.meshgrid(goal_angs,end_angs)
-    # z = np.zeros((len(goal_angs),len(end_angs)))
-    # tholds = {'DISTANCE_SCALING':0.1, 'CONTACT_SCALING':0.2}
-    # for i,a1 in enumerate(goal_angs):
-    #     for j,a2 in enumerate(end_angs):
-    #         reward_container = {'distance_to_goal':0, 'f1_dist':0, 'f2_dist':0, 'object_orientation':[0,0,a2], 'goal_orientation':a1}
-    #         r,_ = rotation_with_finger(reward_container, tholds)
-    #         z[i,j] = r
-    # fig,ax = plt.subplots(subplot_kw={"projection": "3d"})
-    # ax.scatter(x, y, z, linewidth=0, antialiased=False)
-    # plt.xlabel('goal angs')
-    # plt.ylabel('ending angs')
-    # plt.show()

@@ -7,7 +7,7 @@ from demos.rl_demo import multiprocess_manipulation_phase
 from demos.rl_demo import multiprocess_multigoal_phase
 # import rl_env
 from demos.rl_demo.multiprocess_state import MultiprocessState
-from mojograsp.simcore.goal_holder import  GoalHolder, RandomGoalHolder, SingleGoalHolder, HRLGoalHolder, HRLMultigoalHolder
+from mojograsp.simcore.goal_holder import  GoalHolder, RandomGoalHolder, SingleGoalHolder, HRLGoalHolder, HRLMultigoalHolder, HRLMultigoalFixed
 from demos.rl_demo import rl_action
 from demos.rl_demo import multiprocess_reward
 from demos.rl_demo import multiproccess_gym_wrapper_her
@@ -30,7 +30,7 @@ from scipy.spatial.transform import Rotation as R
 from stable_baselines3.common.noise import NormalActionNoise
 # import supersuit as ss    
 from pantheonrl.envs.pettingzoo import PettingZooAECWrapper
-from pantheonrl.common.agents import OnPolicyAgent
+from pantheonrl.common.agents import OnPolicyAgent, StaticPolicyAgent
 
 def make_env(arg_dict=None,rank=0,hand_info=None):
     def _init():
@@ -142,6 +142,9 @@ def make_pybullet(arg_dict, pybullet_instance, rank, hand_info, viz=False):
         print('WE ARE DOING MULTIGOAL SHIT')
         goal_poses = HRLMultigoalHolder(pose_list, np.array(finger_starts[0:2]),mix_orientation=True, mix_finger=True, goals_smoothed=5, num_goals_present=args['manager goals'],radius=0.01)
         eval_goal_poses = HRLMultigoalHolder(eval_pose_list, np.array(eval_finger_starts),goals_smoothed=5, num_goals_present=args['manager goals'],radius=0.01)
+    elif args['task'] == 'MultigoalFixed':
+        goal_poses = HRLMultigoalFixed(pose_list, np.array(finger_starts[0:2]),mix_orientation=True, mix_finger=True, goals_smoothed=5, num_goals_present=args['manager goals'],radius=0.01)
+        eval_goal_poses = HRLMultigoalFixed(eval_pose_list, np.array(eval_finger_starts),goals_smoothed=5, num_goals_present=args['manager goals'],radius=0.01)
     elif finger_contacts is not None:
         print('we are shuffling the angle and fingertip for the training set WITH A FINGER GOAL')
         eval_finger_contacts = np.array(eval_finger_contacts[int(num_eval*rank[0]/rank[1]):int(num_eval*(rank[0]+1)/rank[1])])
@@ -269,7 +272,7 @@ def make_pybullet(arg_dict, pybullet_instance, rank, hand_info, viz=False):
         env = multiprocess_env.MultiprocessSingleShapeEnv(pybullet_instance, hand=hand, obj=obj, hand_type=hand_type, args=args)
     
     # Create phase
-    if args['task'] == 'Multigoal':
+    if 'Multigoal' in args['task']:
         manipulation = multiprocess_multigoal_phase.MultigoalManipulation(
             hand, obj, state, action, reward, env, args=arg_dict, hand_type=hand_type)
     else:
@@ -309,12 +312,17 @@ def train(filepath, learn_type='run', num_cpu=16):
     # env = pettingzoowrapper.WrapWrap(env)
     # env = ss.pad_action_space_v0(env)
     env = PettingZooAECWrapper(env)
-    partner = OnPolicyAgent(PPO('MlpPolicy', env.getDummyEnv(1), verbose=1,tensorboard_log=args['tname']+'/worker'),tensorboard_log=args['tname']+'/worker')
+    if args['load_path'] == '//':
+        partner = OnPolicyAgent(PPO('MlpPolicy', env.getDummyEnv(1), verbose=1,tensorboard_log=args['tname']+'/worker'),tensorboard_log=args['tname']+'/worker')
+    else:
+        load_path = args['load_path']
+        previous_policy = model_type("MlpPolicy", None, _init_setup_model=False,device='cpu').load(load_path + '/best_model.zip',device='cpu') 
+        partner = StaticPolicyAgent(previous_policy)
 
     # The second parameter ensures that the partner is assigned to a certain
     # player number. Forgetting this parameter would mean that all of the
     # partner agents can be picked as `player 2`, but none of them can be
-    # picked as `player 3`.
+    # picked as `player 3`. 
     env.add_partner_agent(partner, player_num=1)
     train_timesteps = int(args['evaluate']*(args['tsteps']+1))
     worker_callback = pettingzoowrapper.WorkerEvaluateCallback(partner.model, args['save_path'])
@@ -386,7 +394,6 @@ def train_multiprocess(filepath, learn_type='run', num_cpu=16):
         filename = os.path.dirname(filepath)
         model.save(filename+'/manager_canceled_model')
         partner.model.save(filename+'/worker_canceled_model')
-
 
 def evaluate(filepath, modeltype='best'):
     with open(filepath, 'r') as argfile:
@@ -500,6 +507,7 @@ def replay(configpath, replaypath):
     
     data = data['timestep_list']
     actions = [i['action']['actor_output'] for i in data]
+    high_actions = [i['action']['high_level_action'] for i in data]
     start_point = data[0]['state']['obj_2']['pose'][0][0:2]
     start_point[1] = start_point[1]-0.1
     angdict = data[0]['state']['two_finger_gripper']['joint_angles']
@@ -507,14 +515,15 @@ def replay(configpath, replaypath):
     # print(actions)
     reset_dict = {'start_pos':start_point, 'finger_angs':start_angs}
     obs = env.reset(reset_dict)
-    for action in actions:
-        print(action)
-        env.step(action,False)
+    for h_act, action in zip(high_actions,actions):
+        print()
+        env.step(np.array(h_act),False)
+        env.step(np.array(action),False)
         time.sleep(0.1)
 
 
 if __name__ == '__main__':
     # train_multiprocess('./data/hrl_slide_limited_action/experiment_config.json',num_cpu=2)
-    train('./data/HRL_multigoal/experiment_config.json')
-    # replay('./data/hrl_zoo_slide/experiment_config.json','./data/hrl_zoo_slide/Eval_A/Episode_50812.pkl')
+    train('./data/HRL_multigoal_fixed/experiment_config.json')
+    # replay('./data/HRL_multigoal_fixed/experiment_config.json','./data/HRL_multigoal_fixed/Test/Episode_22.pkl')
     # evaluate('./data/hrl_slide_limited_action/experiment_config.json',modeltype='best')

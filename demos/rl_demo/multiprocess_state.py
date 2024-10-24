@@ -83,7 +83,7 @@ class MultiprocessState(StateDefault):
             
     def next_run(self):
         for thing in self.objects:
-            if (type(thing) == GoalHolder) | (type(thing) == RandomGoalHolder) | (type(thing) == SingleGoalHolder)|(type(thing) == HRLGoalHolder)|(type(thing) == HRLMultigoalHolder):
+            if (type(thing) == GoalHolder) | (type(thing) == RandomGoalHolder) | (type(thing) == SingleGoalHolder)|(type(thing) == HRLGoalHolder)|(type(thing) == HRLMultigoalHolder) |(type(thing) == HRLMultigoalFixed):
                 fingerys = thing.next_run()
                 temp = thing.get_data()
         return temp, fingerys
@@ -243,7 +243,7 @@ class MultiprocessState(StateDefault):
     def set_goal(self,goal_list):
         # print('SETTING THE GOAL')
         for thing in self.objects:
-            if (type(thing) == GoalHolder) | (type(thing) == RandomGoalHolder)|(type(thing) == HRLGoalHolder)|(type(thing) == HRLMultigoalHolder):
+            if (type(thing) == GoalHolder) | (type(thing) == RandomGoalHolder)|(type(thing) == HRLGoalHolder)|(type(thing) == HRLMultigoalHolder)|(type(thing) == HRLMultigoalFixed):
                 # print('setting goal', goal_list)
                 if len(goal_list) > 4:
                     thing.set_pose(goal_list[0:2], goal_list[2],goal_list[3:5])
@@ -264,8 +264,8 @@ class MultiprocessState(StateDefault):
 
     def check_goal(self):
         for thing in self.objects:
-            if type(thing) == HRLMultigoalHolder:
-                thing.check_goal([self.current_state['obj_2']['pose'][0][0],self.current_state['obj_2']['pose'][0][0]-0.1])
+            if (type(thing) == HRLMultigoalHolder) | (type(thing) == HRLMultigoalFixed):
+                thing.check_goal([self.current_state['obj_2']['pose'][0][0],self.current_state['obj_2']['pose'][0][1]-0.1])
 
     def __eq__(self, o):
         # Doesnt check that the objects are the same or that the run number is the same,

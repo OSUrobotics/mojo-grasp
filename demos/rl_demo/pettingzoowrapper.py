@@ -164,7 +164,6 @@ class FullTaskWrapper(AECEnv):
         """
         self._agent_selector = agent_selector(self.agents)
         self.agent_selection = self._agent_selector.next()
-        # print(self.agent_selection)
 
         self.count += 1
         if self.count%100 ==0:
@@ -207,7 +206,7 @@ class FullTaskWrapper(AECEnv):
             self.eval_run +=1
         
         state_container, _ = self.manipulation_phase.get_episode_info()
-
+        # print('resetting', state_container['goal_pose'])
         self.rewards = {agent: 0 for agent in self.agents}
         self._cumulative_rewards = {agent: 0 for agent in self.agents}
         self.terminations = {agent: False for agent in self.agents}
@@ -231,7 +230,7 @@ class FullTaskWrapper(AECEnv):
         # print('SETTING RESET POINT', point)
         self.eval_point = point
 
-    def step(self, action, viz=False,hand_type=None):
+    def step(self, action, viz=False,hand_type=None,direct_control=None):
         '''
         Parameters
         ----------
@@ -253,6 +252,9 @@ class FullTaskWrapper(AECEnv):
             self.manipulation_phase.execute_action(viz=viz)
             done = self.manipulation_phase.exit_condition()
             self.manipulation_phase.post_step()
+            if direct_control is not None:
+                # print('ASSUMING DIRECT CONTROL')
+                self.env.set_obj_pose(direct_control)
             state_container, reward_container = self.manipulation_phase.get_episode_info()
             # At this point we have the updated state after taking a move
             # So now we need to fill the observations for the next timestep?
@@ -279,13 +281,19 @@ class FullTaskWrapper(AECEnv):
             if self.substep >= self.manager_timesteps-1:
                 self.agent_selection = self._agent_selector.next()
             self.substep+=1
+            # if done:
+            #     print('done in worker step')
 
         else:
             normalized_action = (action+1) * self.manager_normalizer['diff']/2 + self.manager_normalizer['mins']
             normalized_action=normalized_action.tolist()
             self.manipulation_phase.set_goal(normalized_action)
             state_container = self.manipulation_phase.get_state()
-            done = self.manipulation_phase.exit_condition()
+            done=False
+            # done = self.manipulation_phase.exit_condition()
+            # if done:
+            #     print('done in manager step')
+            #     print(state_container['goal_pose'])
             self.state['worker'] = state_container
             state = self.build_state(state_container, self.worker_state_list)
             # print(state)
@@ -298,7 +306,6 @@ class FullTaskWrapper(AECEnv):
             self.substep=0
 
         if done:
-            # print('done, recording stuff')
             if self.eval or self.small_enough:
                 self.record.record_episode(self.episode_type)
                 if self.eval:
@@ -366,6 +373,8 @@ class FullTaskWrapper(AECEnv):
                         state.append(state_container['previous_state'][i]['goal_pose']['timesteps_remaining'])
                     elif key == 'gp':
                         state.extend(state_container['previous_state'][i]['goal_pose']['upper_goal_position'])
+                    elif key == 'ga':
+                        state.extend(state_container['previous_state'][i]['goal_pose']['goals_open'])
                     elif key == 'go':
                         state.append(state_container['previous_state'][i]['goal_pose']['upper_goal_orientation'])
                     elif key == 'gf':
@@ -415,6 +424,8 @@ class FullTaskWrapper(AECEnv):
                 state.append(state_container['goal_pose']['timesteps_remaining'])
             elif key == 'gp':
                 state.extend(state_container['goal_pose']['upper_goal_position'])
+            elif key == 'ga':
+                state.extend(state_container['goal_pose']['goals_open'])
             elif key == 'go':
                 state.append(state_container['goal_pose']['upper_goal_orientation'])
             elif key == 'gf':
