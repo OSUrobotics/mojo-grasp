@@ -3,15 +3,15 @@
 
     <link concave="yes" name="40_square_40_concave">
         <visual>
-            <origin rpy="1.5707963267948966 0 0" xyz="-0.02 0.02 -0.0525"/>
+            <origin rpy="1.5707963267948966 0 0" xyz="-0.0 0.00 -0.0"/>
             <geometry>
-                <mesh filename="Shapes/40_square_40_concave.STL" scale=".001 .001 .001"/>
+                <mesh filename="Shapes/40_square_40_concave.obj" scale="1 1 1"/>
             </geometry>
         </visual>
         <collision concave="yes">
-            <origin rpy="1.5707963267948966 0 0" xyz="-0.02 0.02 -0.0525"/>
+            <origin rpy="1.5707963267948966 0 0" xyz="-0.0 0.0 -0.0"/>
             <geometry>
-                <mesh filename="Shapes/40_square_40_concave.STL" scale=".001 .001 .001"/>
+                <mesh filename="Shapes/40_square_40_concave.obj" scale="1 1 1"/>
             </geometry>
         </collision>
         <inertial>

@@ -3,15 +3,15 @@
 
     <link name="20x12p5_ellipse">
         <visual>
-            <origin rpy="1.5707963267948966 0 0" xyz="0 0 -0.0525"/>
+            <origin rpy="1.5707963267948966 0 0" xyz="0 0 0"/>
             <geometry>
-                <mesh filename="Shapes/20x12p5_ellipse.STL" scale=".001 .001 .001"/>
+                <mesh filename="Shapes/20_r_12p5_ellipse.obj" scale="1 1 1"/>
             </geometry>
         </visual>
         <collision>
-            <origin rpy="1.5707963267948966 0 0" xyz="0 0 -0.0525"/>
+            <origin rpy="1.5707963267948966 0 0" xyz="0 0 0"/>
             <geometry>
-                <mesh filename="Shapes/20x12p5_ellipse.STL" scale=".001 .001 .001"/>
+                <mesh filename="Shapes/20_r_12p5_ellipse.obj" scale="1 1 1"/>
             </geometry>
         </collision>
         <inertial>

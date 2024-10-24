@@ -472,8 +472,7 @@ def asterisk_test(filepath,hand_type,frictionList = None, contactList = None):
     scaled_points = [
     [0.0, 0.04666666666666667], [0.033, 0.033], [0.04666666666666667, 0.0], 
     [0.033, -0.033], [0.0, -0.04666666666666667], [-0.033, -0.033], 
-    [-0.04666666666666667, 0.0], [-0.033, 0.033]
-    ]
+    [-0.04666666666666667, 0.0], [-0.033, 0.033]]
 
     if 'Rotation' in args['task']:
         print('get fucked')
@@ -862,6 +861,35 @@ def replay(argpath, episode_path):
     angle = data['timestep_list'][0]['state']['goal_pose']['goal_orientation']
 
 
+    visual_list = [[1.94800000e-02, 0.00000000e+00],
+                    [1.87354961e-02, 5.02016105e-03],
+                    [1.67978499e-02, 9.69824314e-03],
+                    [1.37745000e-02, 1.37745000e-02],
+                    [9.69824314e-03, 1.67978499e-02],
+                    [5.02016105e-03, 1.87354961e-02],
+                    [1.19280598e-18, 1.94800000e-02],
+                    [-5.02016105e-03, 1.87354961e-02],
+                    [-9.69824314e-03, 1.67978499e-02],
+                    [-1.37745000e-02, 1.37745000e-02],
+                    [-1.67978499e-02, 9.69824314e-03],
+                    [-1.87354961e-02, 5.02016105e-03],
+                    [-1.94800000e-02, 2.38561196e-18],
+                    [-1.87354961e-02, -5.02016105e-03],
+                    [-1.67978499e-02, -9.69824314e-03],
+                    [-1.37745000e-02, -1.37745000e-02],
+                    [-9.69824314e-03, -1.67978499e-02],
+                    [-5.02016105e-03, -1.87354961e-02],
+                    [-3.57841795e-18, -1.94800000e-02],
+                    [5.02016105e-03, -1.87354961e-02],
+                    [9.69824314e-03, -1.67978499e-02],
+                    [1.37745000e-02, -1.37745000e-02],
+                    [1.67978499e-02, -9.69824314e-03],
+                    [1.87354961e-02, -5.02016105e-03]]
+
+    
+    for i in visual_list:
+        eval_env.env.make_viz_point([i[0],i[1],0.0005])
+
     # df2 = pd.read_csv('./resources/start_poses.csv', index_col=False)
     # x_start = df2['x']
     # y_start = df2['y']
@@ -1056,14 +1084,14 @@ if __name__ == '__main__':
     # main('','run')
     # multiprocess_evaluate_loaded('./data/Mothra_Full/FTP_S1/experiment_config.json',"B")
     # replay('./data/New_Fric2/low_c/experiment_config.json', './data/New_Fric2/low_c/Eval_A/Episode_902.pkl')
-    replay('./data/New_Fric2/low_c/experiment_config.json', './data/The_last_run/JA_S3/Ast_A/Episode_6.pkl')
-    # replay('./data/Collision_Test/Test1/experiment_config.json', './data/Collision_Test/Test1/Eval_A/Episode_1013.pkl')
+    # replay('./data/New_Fric2/low_c/experiment_config.json', './data/The_last_run/JA_S3/Ast_A/Episode_4.pkl')
+    # replay('./data/Collision_Test/Test2/experiment_config.json', './data/Collision_Test/Test2/Eval_A/Episode_170.pkl')
 
     # multiprocess_evaluate_loaded('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/New_Fric2/just_fric/experiment_config.json',"A")
     # multiprocess_evaluate_loaded('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/New_Fric2/low_c/experiment_config.json',"A")
 
-    #multiprocess_evaluate_loaded('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/Collision_Test/Test1/experiment_config.json',"A")
-    #multiprocess_evaluate_loaded('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/Collision_Test/Test2/experiment_config.json',"A")
+    # multiprocess_evaluate_loaded('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/Collision_Test/Test3/experiment_config.json',"A")
+    # multiprocess_evaluate_loaded('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/Collision_Test/Test2/experiment_config.json',"A")
 
     # multiprocess_evaluate_loaded('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/The_last_run/JA_S3/experiment_config.json',"A")
     # multiprocess_evaluate_loaded('./data/HPC_Slide/FTP_S1/experiment_config.json',"B")

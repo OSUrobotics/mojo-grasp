@@ -333,9 +333,9 @@ class MultiprocessSingleShapeEnv(Environment):
 
     def step(self):
         super().step()
-        temp =self.p.getContactPoints(self.hand_id, self.obj_id)
+        # temp =self.p.getContactPoints(self.hand_id, self.obj_id)
         # if temp != ():
-        #     if temp[0][8] < -0.1/1000:
+        #     if temp[0][8] < -0.8/1000:
         #         print('contact points', temp[0][8] * 1000)
             
         
