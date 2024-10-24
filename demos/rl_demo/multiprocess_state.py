@@ -11,6 +11,7 @@ import numpy as np
 from copy import deepcopy
 from mojograsp.simobjects.two_finger_gripper import TwoFingerGripper
 from mojograsp.simcore.goal_holder import *
+# from point_generator import slice_obj_at_y_level, calculate_outer_perimeter, find_intersection_points
         
 class DictHolder():
     def __init__(self,list_size):
@@ -166,6 +167,12 @@ class MultiprocessState(StateDefault):
         # if self.pflag:
         #     self.state_holder.append(self.current_state.copy())
         #What Jeremiah Is Adding
+        self.current_state['slice'] = [0.01948, 0.0, 0.018735, 0.00502, 0.016798, 0.009698, 0.013775, 0.013774, 0.009698, 0.016798, 0.00502,
+                                        0.018735, 0.0, 0.01948, -0.00502, 0.018735, -0.009698, 0.016798, -0.013774, 0.013775, -0.016798, 
+                                        0.009698, -0.018735, 0.00502, -0.01948, 0.0, -0.018735, -0.00502, -0.016798, -0.009698, -0.013775, 
+                                        -0.013774, -0.009698, -0.016798, -0.00502, -0.018735, 0.0, -0.01948, 0.00502, -0.018735, 0.009698, 
+                                        -0.016798, 0.013774, -0.013775, 0.016798, -0.009698, 0.018735, -0.00502]
+
         #self.current_state['f1_contact_distance'] = self.calc_distance(self.current_state['f1_contact_pos'],self.current_state['obj_2']['pose'][0][0:2])
         #self.current_state['f2_contact_distance'] = self.calc_distance(self.current_state['f2_contact_pos'],self.current_state['obj_2']['pose'][0][0:2])
         #self.current_state['f1_contact_flag'], self.current_state['f2_contact_flag'] = self.check_contact() 
@@ -198,6 +205,11 @@ class MultiprocessState(StateDefault):
         #self.current_state['f2_contact_pos'] = list(temp2[6])
 
         #What Jeremiah Is Adding
+        self.current_state['slice'] = [0.03896, 0.0, 0.037471, 0.01004, 0.033596, 0.019396, 0.027549, 0.027549, 0.019396, 0.033596, 0.01004, 
+                                       0.037471, 0.0, 0.03896, -0.01004, 0.037471, -0.019396, 0.033596, -0.027549, 0.027549, -0.033596, 0.019396,
+                                       -0.037471, 0.01004, -0.03896, 0.0, -0.037471, -0.01004, -0.033596, -0.019396, -0.027549, -0.027549, 
+                                       -0.019396, -0.033596, -0.01004, -0.037471, 0.0, -0.03896, 0.01004, -0.037471, 0.019396, -0.033596, 
+                                       0.027549, -0.027549, 0.033596, -0.019396, 0.037471, -0.01004]
         # self.current_state['f1_contact_distance'] = self.calc_distance(self.current_state['f1_contact_pos'], self.current_state['obj_2']['pose'][0][0:2])
         # self.current_state['f2_contact_distance'] = self.calc_distance(self.current_state['f2_contact_pos'], self.current_state['obj_2']['pose'][0][0:2]) 
         # self.current_state['f1_contact_angle'], self.current_state['f2_contact_angle'] = self.calc_contact_angle()
