@@ -83,7 +83,7 @@ class RNNGui():
                          [sg.Text('Rotation limits, only used by Rotation and Full Tasks'), sg.Radio('75 degrees',group_id='rots',key='-75',default=False), sg.Radio('50 degrees',group_id='rots',key='-50',default=True), sg.Radio('15 degrees',group_id='rots',key='-15',default=False)],
                          [sg.Text('Replay Buffer Sampling'), sg.OptionMenu(values=['priority', 'random','random+expert'], k='-sampling', default_value='priority')],
                          [sg.Text('Domain Randomization Options')],
-                         [sg.Checkbox('Finger Friction', default=True, k='-DRFI'),sg.Checkbox('Floor Friction', default=True, k='-DRFL'),sg.Checkbox('Object Size', default=True, k='-DROS'), sg.Checkbox('Object Mass', default=True, k='-DROM')],
+                         [sg.Checkbox('Finger Friction', default=True, k='-DRFI'),sg.Checkbox('Floor Friction', default=True, k='-DRFL'),sg.Checkbox('Object Size', default=True, k='-DROS'), sg.Checkbox('Object Mass', default=True, k='-DROM'), sg.Checkbox("Rand Shapes", key='-rs',default=False)],
                          # Jeremiah Added this
                          [sg.Text('Lateral Friction Values'), sg.Input(0.25, key='-lfl',size=(8, 2)), sg.Input(0.75, key='-lfh',size=(8, 2))],
                          [sg.Text('Spinning Friction Values'), sg.Input(0.01, key='-sfl',size=(8, 2)), sg.Input(0.0101, key='-sfh',size=(8, 2))],
@@ -186,6 +186,7 @@ class RNNGui():
                      'friction_experiment': bool(values['-fe']),
                      'collision_on': bool(values['-co']),
 
+                     'random_shapes': bool(values['-rs']),
                      'domain_randomization_finger_friction':bool(values['-DRFI']),
                      'domain_randomization_floor_friction':bool(values['-DRFL']),
                      'domain_randomization_object_size':bool(values['-DROS']),
@@ -326,9 +327,9 @@ class RNNGui():
         #What Jereimah added
         #print('state list', state_list)
         if values['-slice']:
-            for i in range(24):    
-                state_mins.extend([-.02])
-                state_maxes.extend([.02])
+            for i in range(48):    
+                state_mins.extend([-.023])
+                state_maxes.extend([.023])
                 state_len +=1
             state_list.append('slice')
 
@@ -448,7 +449,9 @@ class RNNGui():
 
         elif values['-object'] == 'square':
             if self.args['domain_randomization_object_size']:
-                raise NotImplementedError('Sphere size randomization not implemented')
+                self.args['object_path'] = [str(resource_path.joinpath('object_models/Jeremiah_Shapes/40x40_square.urdf')),
+                                            str(resource_path.joinpath('object_models/Jeremiah_Shapes/small_40x40_square.urdf')),
+                                            str(resource_path.joinpath('object_models/Jeremiah_Shapes/large_40x40_square.urdf'))]
             else:
                 self.args['object_path'] = [str(resource_path.joinpath('object_models/Jeremiah_Shapes/40x40_square.urdf'))]
 
