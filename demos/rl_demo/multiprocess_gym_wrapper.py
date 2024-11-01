@@ -375,7 +375,23 @@ class MultiprocessGymWrapper(gym.Env):
                         state.extend(state_container['previous_state'][i]['wall']['pose'][1][0:4])
                     # What Jeremiah Added
                     elif key == 'slice':
-                        state.extend(state_container['previous_state'][i]['slice'])
+                        state.extend(state_container['previous_state'][i]['slice'].flatten())
+                    elif key == 'slice_move':
+                        shape = 0
+                        x,y = 0
+                        theta = 0
+
+                        shape[:, 0] += x
+                        shape[:, 1] += y
+
+                        rotation_matrix = np.array([
+                            [np.cos(theta), -np.sin(theta)],
+                            [np.sin(theta), np.cos(theta)]
+                        ])  
+
+                        shape = shape @ rotation_matrix.T
+                        state.extend(shape.flatten())                      
+
 
                     elif key == 'rad':
                         state.append(state_container['previous_state'][i]['f1_contact_distance'])
@@ -433,7 +449,24 @@ class MultiprocessGymWrapper(gym.Env):
                 
             # What Jeremiah Added
             elif key == 'slice':
-                    state.extend(state_container['slice'])
+                    #print("Slicing 2")
+                    #print(state_container['slice'].flatten())
+                    state.extend(state_container['slice'].flatten())
+            elif key == 'slice_move':
+                shape = 0
+                x,y = 0
+                theta = 0
+
+                shape[:, 0] += x
+                shape[:, 1] += y
+
+                rotation_matrix = np.array([
+                    [np.cos(theta), -np.sin(theta)],
+                    [np.sin(theta), np.cos(theta)]
+                ])  
+
+                shape = shape @ rotation_matrix.T
+                state.extend(shape.flatten())
 
             elif key == 'rad':
                 state.append(state_container['f1_contact_distance'])

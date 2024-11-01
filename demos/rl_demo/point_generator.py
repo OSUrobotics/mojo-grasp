@@ -1,15 +1,48 @@
+import os
 import numpy as np
 import trimesh
 import matplotlib.pyplot as plt
+import xml.etree.ElementTree as ET
 
-def get_sliced_points(obj_file, y_layer):
-    # Load the .obj file
-    mesh = trimesh.load_mesh(obj_file)
+# Function to extract mesh file and scale from the URDF file
+def get_mesh_from_urdf(urdf_file):
+    # Parse the URDF XML file
+    tree = ET.parse(urdf_file)
+    root = tree.getroot()
+
+    # Find the first link with a visual element
+    for link in root.findall('link'):
+        for visual in link.findall('visual'):
+            geometry = visual.find('geometry')
+            if geometry is not None:
+                mesh = geometry.find('mesh')
+                if mesh is not None:
+                    # Extract the filename and scale
+                    mesh_file = mesh.get('filename')
+                    scale_str = mesh.get('scale')
+
+                    if scale_str is not None:
+                        scale = np.array([float(s) for s in scale_str.split()])
+                    else:
+                        scale = np.array([1.0, 1.0, 1.0])  # Default scale
+
+                    # Get the directory of the URDF file and combine it with the mesh filename
+                    urdf_dir = os.path.dirname(urdf_file)  # Get the URDF directory
+                    full_mesh_path = os.path.join(urdf_dir, mesh_file)  # Append mesh filename to URDF path
+
+                    return full_mesh_path, scale
+
+    print("No mesh found in the URDF.")
+    return None, None
+
+# Function to slice the mesh and return scaled, rotated vertices
+def get_sliced_points(mesh_file, y_layer, scale):
+    # Load the mesh file (OBJ/STL)
+    mesh = trimesh.load_mesh(mesh_file)
 
     # Slice the mesh at the given y layer
     sliced_mesh = mesh.section(plane_origin=[0, y_layer, 0], plane_normal=[0, 1, 0])
 
-    # Check if the slicing was successful
     if sliced_mesh is None:
         print("Slicing failed. No intersection found at the given y layer.")
         return None
@@ -18,34 +51,19 @@ def get_sliced_points(obj_file, y_layer):
     slice_2D, _ = sliced_mesh.to_planar()
     vertices = slice_2D.vertices
 
-    theta = np.deg2rad(90)  # Convert 20 degrees to radians
+    # Apply the scale to the vertices directly
+    scaled_vertices = vertices * scale[:2]  # Only apply the x and z scaling (ignore y)
+
+    # Rotate the vertices by 90 degrees
+    theta = np.deg2rad(90)  # Rotation angle (adjust as needed)
     rotation_matrix = np.array([
-    [np.cos(theta), -np.sin(theta)], 
-    [np.sin(theta), np.cos(theta)]])
-    rotated_vertices = vertices @ rotation_matrix.T  # Apply rotation matrix
+        [np.cos(theta), -np.sin(theta)], 
+        [np.sin(theta), np.cos(theta)]])
+    rotated_vertices = scaled_vertices @ rotation_matrix.T  # Apply rotation matrix
 
     return rotated_vertices
 
-def weighted_distance(last_vertex, candidate_vertex, previous_vertex, weight_factor):
-    # Calculate Euclidean distance
-    euclidean_distance = np.linalg.norm(candidate_vertex - last_vertex)
-    
-    # Calculate perpendicular distance to the line segment formed by last_vertex and previous_vertex
-    if previous_vertex is not None:
-        line_vec = last_vertex - previous_vertex
-        point_vec = candidate_vertex - last_vertex
-        line_len = np.linalg.norm(line_vec)
-        line_unitvec = line_vec / line_len
-        point_vec_scaled = point_vec / line_len
-        t = np.dot(line_unitvec, point_vec_scaled)
-        nearest = line_vec * t
-        perpendicular_distance = np.linalg.norm(nearest - point_vec)
-    else:
-        perpendicular_distance = 0
-
-    # Combine distances with the weight factor
-    return euclidean_distance + weight_factor * perpendicular_distance
-
+# Function to connect vertices in a sorted order
 def connect_vertices(vertices, weight_factor=0.5):
     if vertices is None or len(vertices) < 2:
         print("No vertices to connect.")
@@ -62,14 +80,15 @@ def connect_vertices(vertices, weight_factor=0.5):
     # Initialize the list of connected vertices
     connected_vertices = [sorted_vertices[0]]
     unconnected_vertices = list(sorted_vertices[1:])
-    
+
     # Connect vertices by taking them in sorted order
     for vertex in unconnected_vertices:
         connected_vertices.append(vertex)
 
     return np.array(connected_vertices)
 
-def get_intersection_points(vertices, center=(0,0), angle_step=15):
+# Function to find intersection points based on radial lines
+def get_intersection_points(vertices, center=(0, 0), angle_step=15):
     intersections = []  # To store intersection points
 
     # Generate radial lines every angle_step degrees
@@ -89,6 +108,36 @@ def get_intersection_points(vertices, center=(0,0), angle_step=15):
 
     return np.array(intersections)
 
+# Function to calculate intersection between two line segments
+def get_line_intersection(p1, p2, p3, p4):
+    """
+    Calculate the intersection point of two lines (p1 to p2 and p3 to p4).
+    Returns the intersection point (x, y) if it exists, else None.
+    """
+    p1 = np.array(p1)
+    p2 = np.array(p2)
+    p3 = np.array(p3)
+    p4 = np.array(p4)
+
+    # Calculate the direction vectors of the lines
+    d1 = p2 - p1
+    d2 = p4 - p3
+
+    # Solve for t and u parameters
+    denom = d1[0] * d2[1] - d1[1] * d2[0]
+    if denom == 0:
+        return None  # Lines are parallel
+
+    t = ((p3[0] - p1[0]) * d2[1] - (p3[1] - p1[1]) * d2[0]) / denom
+    u = ((p3[0] - p1[0]) * d1[1] - (p3[1] - p1[1]) * d1[0]) / denom
+
+    if 0 <= t <= 1 and 0 <= u <= 1:
+        # Calculate the intersection point
+        intersection = p1 + t * d1
+        return intersection
+    return None  # No intersection within the segments
+
+# Function to plot connected vertices and intersection points
 def plot_connected_vertices(vertices, intersections):
     if vertices is None:
         print("No vertices to plot.")
@@ -113,46 +162,33 @@ def plot_connected_vertices(vertices, intersections):
     plt.legend()
     plt.show()
 
-def get_line_intersection(p1, p2, p3, p4):
-    """
-    Calculate the intersection point of two lines (p1 to p2 and p3 to p4).
-    Returns the intersection point (x, y) if it exists, else None.
-    """
-    # Convert points to numpy arrays for easy calculations
-    p1 = np.array(p1)
-    p2 = np.array(p2)
-    p3 = np.array(p3)
-    p4 = np.array(p4)
+def get_slice(urdf_file):
+    mesh_file, scale = get_mesh_from_urdf(urdf_file)
 
-    # Calculate the direction vectors of the lines
-    d1 = p2 - p1
-    d2 = p4 - p3
+    if mesh_file:
+        y_layer = 0.05
+        vertices = get_sliced_points(mesh_file, y_layer, scale)
+        connected_vertices = connect_vertices(vertices)
 
-    # Solve for t and u parameters
-    denom = d1[0] * d2[1] - d1[1] * d2[0]
-    if denom == 0:
-        return None  # Lines are parallel
+        intersections = get_intersection_points(connected_vertices).round(6)
+        intersections_flattened_rounded = intersections.flatten()
 
-    t = ((p3[0] - p1[0]) * d2[1] - (p3[1] - p1[1]) * d2[0]) / denom
-    u = ((p3[0] - p1[0]) * d1[1] - (p3[1] - p1[1]) * d1[0]) / denom
+    return intersections
+    
 
-    if 0 <= t <= 1 and 0 <= u <= 1:
-        # Calculate the intersection point
-        intersection = p1 + t * d1
-        return intersection
-    return None  # No intersection within the segments
+# # Example usage with a URDF file
+# urdf_file = '/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/resources/object_models/Jeremiah_Shapes/large_40x40_triangle.urdf'
+# mesh_file, scale = get_mesh_from_urdf(urdf_file)
 
-# Example usage
-obj_file = '/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/resources/object_models/Jeremiah_Shapes/Shapes/40x40_triangle.obj'
-y_layer = 0.05
-vertices = get_sliced_points(obj_file, y_layer)
-weight_factor = 0.4  # Adjust this value as needed
-connected_vertices = connect_vertices(vertices, weight_factor)
+# if mesh_file:
+#     y_layer = 0.05
+#     vertices = get_sliced_points(mesh_file, y_layer, scale)
+#     connected_vertices = connect_vertices(vertices)
 
-# Get intersection points
-center = (0, 0)  # Adjust based on your plot's center
-intersections = get_intersection_points(connected_vertices)
-print(intersections)
+#     intersections = get_intersection_points(connected_vertices)
+#     print(intersections)
 
-# Plot connected vertices and intersection points
-plot_connected_vertices(connected_vertices, intersections)
+#     # Plot connected vertices and intersection points
+#     plot_connected_vertices(connected_vertices, intersections)
+
+#(get_slice('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/resources/object_models/2v2_mod/2v2_mod_cuboid_small.urdf'))
