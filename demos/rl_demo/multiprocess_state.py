@@ -11,7 +11,7 @@ import numpy as np
 from copy import deepcopy
 from mojograsp.simobjects.two_finger_gripper import TwoFingerGripper
 from mojograsp.simcore.goal_holder import *
-import point_generator as pg
+import demos.rl_demo.point_generator as pg
         
 class DictHolder():
     def __init__(self,list_size):
