@@ -33,7 +33,7 @@ import multiprocessing
 from demos.rl_demo.pkl_merger import merge_from_folder
 from scipy.spatial.transform import Rotation as R
 from stable_baselines3.common.noise import NormalActionNoise
-from point_generator import get_slice
+
 
 def make_env(arg_dict=None,rank=0,hand_info=None):
     def _init():
@@ -225,50 +225,50 @@ def make_pybullet(arg_dict, pybullet_instance, rank, hand_info, frictionList = N
                     object_key = 'sub10'
                 else:
                     object_key = 'small'
-        elif args['randomize_shape']:
+        elif args['random_shapes']:
             object_path = args['object_path'][rank[0]%len(args['object_path'])]
             if 'square' in object_path:
                 if 'small' in object_path:
-                    object_key = 'small_square'
+                    object_key = 'sub10'
                 elif 'large' in object_path:
-                    object_key = 'large_square'
+                    object_key = 'add10'
                 else:
-                    object_key = 'medium_square'
+                    object_key = 'small'
             if 'circle' in object_path:
                 if 'small' in object_path:
-                    object_key = 'small_cricle'
+                    object_key = 'sub10'
                 elif 'large' in object_path:
-                    object_key = 'large_cricle'
+                    object_key = 'add10'
                 else:
-                    object_key = 'medium_circle'
+                    object_key = 'small'
             if 'triangle' in object_path:
                 if 'small' in object_path:
-                    object_key = 'small_triangle'
+                    object_key = 'sub10'
                 elif 'large' in object_path:
-                    object_key = 'large_triangle'
+                    object_key = 'add10'
                 else:
-                    object_key = 'medium_triangle'
-            if 'ellipse' in object_path:
-                if 'small' in object_path:
-                    object_key = 'small_ellipse'
-                elif 'large' in object_path:
-                    object_key = 'large_ellipse'
-                else:
-                    object_key = 'medium_ellipse'
-            if 'teardrop' in object_path:
-                if 'small' in object_path:
-                    object_key = 'small_teardrop'
-                elif 'large' in object_path:
-                    object_key = 'large_teardrop'
-                else:
-                    object_key = 'medium_teardrop'
-            if 'concave' in object_path:
-                if 'small' in object_path:
-                    object_key = 'small_concave'
-                elif 'large' in object_path:
-                    object_key = 'large_concave'
-                else:
-                    object_key = 'medium_concave'
+                    object_key = 'small'
+            # if 'ellipse' in object_path:
+            #     if 'small' in object_path:
+            #         object_key = 'small_ellipse'
+            #     elif 'large' in object_path:
+            #         object_key = 'large_ellipse'
+            #     else:
+            #         object_key = 'medium_ellipse'
+            # if 'teardrop' in object_path:
+            #     if 'small' in object_path:
+            #         object_key = 'small_teardrop'
+            #     elif 'large' in object_path:
+            #         object_key = 'large_teardrop'
+            #     else:
+            #         object_key = 'medium_teardrop'
+            # if 'concave' in object_path:
+            #     if 'small' in object_path:
+            #         object_key = 'small_concave'
+            #     elif 'large' in object_path:
+            #         object_key = 'large_concave'
+            #     else:
+            #         object_key = 'medium_concave'
         else:
             if type(args['object_path']) == str:
                 object_path = args['object_path']
@@ -1151,24 +1151,16 @@ def main(filepath = None,learn_type='run', num_cpu=16):
 if __name__ == '__main__':
     import csv
 
-    main('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/Slice_Test/Full/experiment_config.json','run')
+    #main('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/The_last_run/JA_S3/experiment_config.json','run')
+    main('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/Random_Shape_Test/Slice_Move/experiment_config.json','run')
     # multiprocess_evaluate_loaded('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/The_last_run/JA_S3/experiment_config.json',"A")
     # replay('./data/Bogo/JA_S3/experiment_config.json', './data/Bogo/JA_S3/Eval_A/Episode_96.pkl')
     # replay('./data/New_Fric2/low_c/experiment_config.json', './data/The_last_run/JA_S3/Ast_A/Episode_4.pkl')
     # replay('./data/Collision_Test/Test2/experiment_config.json', './data/Collision_Test/Test2/Eval_A/Episode_170.pkl')
 
-    # multiprocess_evaluate_loaded('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/Transfer_Baselines/Triangle/experiment_config.json',"A")
-    # multiprocess_evaluate_loaded('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/Transfer_Baselines/Ellipse/experiment_config.json',"A")
-    # multiprocess_evaluate_loaded('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/Transfer_Baselines/Teardrop/experiment_config.json',"A")
-    # multiprocess_evaluate_loaded('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/Transfer_Rotations/Square/experiment_config.json',"A")
-    # multiprocess_evaluate_loaded('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/Transfer_Rotations/Circle/experiment_config.json',"A")
-    # multiprocess_evaluate_loaded('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/Transfer_Rotations/Triangle/experiment_config.json',"A")
-    # multiprocess_evaluate_loaded('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/Transfer_Rotations/Ellipse/experiment_config.json',"A")
-    # multiprocess_evaluate_loaded('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/Transfer_Rotations/Teardrop/experiment_config.json',"A")
-
-
-    # multiprocess_evaluate_loaded('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/Collision_Test/Test3/experiment_config.json',"A")
-    # multiprocess_evaluate_loaded('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/Collision_Test/Test2/experiment_config.json',"A")
+    # multiprocess_evaluate_loaded('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/Slice_Test/Full/experiment_config.json',"A")
+    # multiprocess_evaluate_loaded('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/Slice_Test/Partial/experiment_config.json',"A")
+    # multiprocess_evaluate_loaded('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/Slice_Test/Double_Partial/experiment_config.json',"A")
 
     #multiprocess_evaluate_loaded('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/The_last_run/JA_S3/experiment_config.json',"A")
     # multiprocess_evaluate_loaded('./data/HPC_Slide/FTP_S1/experiment_config.json',"B")

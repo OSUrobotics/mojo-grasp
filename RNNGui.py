@@ -64,7 +64,7 @@ class RNNGui():
                          [sg.Button("Browse",key='-browse-save',button_color='DarkBlue'),sg.Text("/", key='-save-path')],
                          [sg.Text('Path to Previous Policy if Transferring')],
                          [sg.Button("Browse",key='-browse-load',button_color='DarkBlue'),sg.Text("/", key='-load-path')],
-                         [sg.Text('Object'), sg.OptionMenu(values=('Cube', 'Cylinder', 'circle', 'hourglass', 'ellipse', 'square_concave', 'square', 'triangle', 'cone', 'teardrop'), k='-object', default_value='Cube')],
+                         [sg.Text('Object'), sg.OptionMenu(values=('Cube', 'Cylinder', 'circle', 'hourglass', 'ellipse', 'square_concave', 'square', 'triangle', 'cone', 'teardrop','triple'), k='-object', default_value='Cube')],
                          [sg.Text('Hands Used For Training and Testing')],
                          [sg.Checkbox('2v2_50.50_50.50_43',key='2v2_50.50_50.50_1.1_43',default=False),sg.Checkbox('2v2_50.50_50.50_53',key='2v2_50.50_50.50_1.1_53', default=True),sg.Checkbox('2v2_50.50_50.50_63',key='2v2_50.50_50.50_1.1_63', default=False),sg.Checkbox('2v2_50.50_50.50_73',key='2v2_50.50_50.50_1.1_73', default=False)],
                          [sg.Checkbox('2v2_65.35_50.50_43',key='2v2_65.35_50.50_1.1_43', default=False),sg.Checkbox('2v2_65.35_50.50_53',key='2v2_65.35_50.50_1.1_53', default=False),sg.Checkbox('2v2_65.35_50.50_63',key='2v2_65.35_50.50_1.1_63', default=False),sg.Checkbox('2v2_65.35_50.50_73',key='2v2_65.35_50.50_1.1_73', default=False)],
@@ -124,6 +124,7 @@ class RNNGui():
                        [sg.Checkbox("Contact Distance", default=False, k='-rad')],
                        [sg.Checkbox("Contact Angle", default=False, k='-ra')],
                        [sg.Checkbox("Radius Representation", default=False, k='-slice')],
+                       [sg.Checkbox("Moving Radius Representation", default=False, k='-mslice')],
                        [sg.Text('Num Previous States'), sg.Input(2, k='-pv',size=(8, 2)), sg.Text('Success Radius (mm)'), sg.Input(2, key='-sr',size=(8, 2))],
                        [sg.Text("Distance Scale"),  sg.Input(1,key='-distance_scale',size=(8, 2)), sg.Text('Contact Scale'),  sg.Input(0.2,key='-contact_scale',size=(8, 2)), sg.Text('Success Reward'), sg.Input(1,key='-success_reward',size=(8, 2)), sg.Text('Rotation Scale'), sg.Input(0,key='-rotation_scale',size=(8, 2))],
                        [sg.Text("Action"), sg.OptionMenu(values=('Joint Velocity','Finger Tip Position','Object Pose'), k='-action',default_value='Joint Velocity')],
@@ -333,6 +334,13 @@ class RNNGui():
                 state_len +=1
             state_list.append('slice')
 
+        if values['-mslice']:
+            for i in range(48):    
+                state_mins.extend([-.023])
+                state_maxes.extend([.023])
+                state_len +=1
+            state_list.append('mslice')
+
 
         if values['-rad']:
             state_mins.extend([0,0,0,0])
@@ -425,7 +433,9 @@ class RNNGui():
                 self.args['object_path'] = [str(resource_path.joinpath('object_models/2v2_mod/2v2_mod_cylinder_small_alt.urdf'))]
         elif values['-object'] == 'circle':
             if self.args['domain_randomization_object_size']:
-                raise NotImplementedError('Sphere size randomization not implemented')
+                self.args['object_path'] = [str(resource_path.joinpath('object_models/Jeremiah_Shapes/20_r_circle.urdf')),
+                                            str(resource_path.joinpath('object_models/Jeremiah_Shapes/small_20_r_circle.urdf')),
+                                            str(resource_path.joinpath('object_models/Jeremiah_Shapes/large_20_r_circle.urdf'))]
             else:
                 self.args['object_path'] = [str(resource_path.joinpath('object_models/Jeremiah_Shapes/20_r_circle.urdf'))]
 
@@ -472,6 +482,17 @@ class RNNGui():
                 raise NotImplementedError('Sphere size randomization not implemented')
             else:
                 self.args['object_path'] = [str(resource_path.joinpath('object_models/Jeremiah_Shapes/50x30_teardrop.urdf'))]
+
+        elif values['-object'] == 'triple':
+            self.args['object_path'] = [str(resource_path.joinpath('object_models/Jeremiah_Shapes/40x40_square.urdf')),
+                                            str(resource_path.joinpath('object_models/Jeremiah_Shapes/small_40x40_square.urdf')),
+                                            str(resource_path.joinpath('object_models/Jeremiah_Shapes/large_40x40_square.urdf')),
+                                            str(resource_path.joinpath('object_models/Jeremiah_Shapes/20_r_circle.urdf')),
+                                            str(resource_path.joinpath('object_models/Jeremiah_Shapes/small_20_r_circle.urdf')),
+                                            str(resource_path.joinpath('object_models/Jeremiah_Shapes/large_20_r_circle.urdf')),
+                                            str(resource_path.joinpath('object_models/Jeremiah_Shapes/40x40_triangle.urdf')),
+                                            str(resource_path.joinpath('object_models/Jeremiah_Shapes/small_40x40_triangle.urdf')),
+                                            str(resource_path.joinpath('object_models/Jeremiah_Shapes/large_40x40_triangle.urdf'))]
 
         
 

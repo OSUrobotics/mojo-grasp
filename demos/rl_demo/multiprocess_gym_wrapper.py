@@ -376,10 +376,12 @@ class MultiprocessGymWrapper(gym.Env):
                     # What Jeremiah Added
                     elif key == 'slice':
                         state.extend(state_container['previous_state'][i]['slice'].flatten())
-                    elif key == 'slice_move':
-                        shape = 0
-                        x,y = 0
-                        theta = 0
+                    elif key == 'mslice':
+                        shape = state_container['previous_state'][i]['slice']
+                        x,y = state_container['previous_state'][i]['obj_2']['pose'][0][0:2]
+                        a,b,c,w = state_container['previous_state'][i]['obj_2']['pose'][1]
+
+                        theta = np.arctan2(2 * (w * c + a * b), 1 - 2 * (b**2 + c**2))
 
                         shape[:, 0] += x
                         shape[:, 1] += y
@@ -452,10 +454,11 @@ class MultiprocessGymWrapper(gym.Env):
                     #print("Slicing 2")
                     #print(state_container['slice'].flatten())
                     state.extend(state_container['slice'].flatten())
-            elif key == 'slice_move':
-                shape = 0
-                x,y = 0
-                theta = 0
+            elif key == 'mslice':
+                shape = state_container['slice']
+                x,y = state_container['obj_2']['pose'][0][0:2]
+                a,b,c,w = state_container['obj_2']['pose'][1]
+                theta = np.arctan2(2 * (w * c + a * b), 1 - 2 * (b**2 + c**2))
 
                 shape[:, 0] += x
                 shape[:, 1] += y
