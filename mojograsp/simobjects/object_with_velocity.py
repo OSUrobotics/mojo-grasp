@@ -18,3 +18,12 @@ class ObjectWithVelocity(ObjectBase):
         data["velocity"] = self.get_curr_velocity()
         data['z_angle'] = R.from_quat(data['pose'][1]).as_euler('xyz')[-1]
         return data
+    
+    def get_path(self):
+        """
+        Returns the path of the object.
+
+        :return: path of the object
+        :rtype: str
+        """
+        return self.path
