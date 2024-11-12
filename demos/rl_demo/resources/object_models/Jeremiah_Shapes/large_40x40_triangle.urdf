@@ -1,0 +1,23 @@
+<?xml version="1.0" ?>
+<robot name="40x40_Triangle">
+
+    <link name="40x40_Triangle">
+        <visual>
+            <origin rpy="1.5707963267948966 0 0" xyz="-0.0025 0 -0.0"/>
+            <geometry>
+                <mesh filename="Shapes/40x40_triangle.obj" scale="1.1 1.1 1.1"/>
+            </geometry>
+        </visual>
+        <collision>
+            <origin rpy="1.5707963267948966 0 0" xyz="-0.0025 0 -0.0"/>
+            <geometry>
+                <mesh filename="Shapes/40x40_triangle.obj" scale="1.1 1.1 1.1"/>
+            </geometry>
+        </collision>
+        <inertial>
+            <mass value="0.3"/>
+            <inertia ixx="0.000029435425" ixy="0.0" ixz="0.0" iyy="0.000029435425" iyz="0.0" izz="0.00000725805"/>
+        </inertial>
+    </link>
+
+</robot>

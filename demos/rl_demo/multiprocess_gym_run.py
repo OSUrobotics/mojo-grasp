@@ -34,6 +34,7 @@ from demos.rl_demo.pkl_merger import merge_from_folder
 from scipy.spatial.transform import Rotation as R
 from stable_baselines3.common.noise import NormalActionNoise
 
+
 def make_env(arg_dict=None,rank=0,hand_info=None):
     def _init():
         import pybullet as p1
@@ -210,29 +211,98 @@ def make_pybullet(arg_dict, pybullet_instance, rank, hand_info, frictionList = N
         raise IndexError('TOO MANY HANDS FOR NUMBER OF PROVIDED CORES')
     elif rank[1] % len(args['hand_file_list']) != 0:
         print('WARNING: number of hands does not evenly divide into number of pybullet instances. Hands will have uneven number of samples')
-    
-    if args['domain_randomization_object_size']:
-        if type(args['object_path']) == str:
-            object_path = args['object_path']
-            object_key = "small"
-            print('older version of object loading, no object domain randomization used')
-        else:
-            object_path = args['object_path'][rank[0]%len(args['object_path'])]
-            if 'add10' in object_path:
-                object_key = 'add10'
-            elif 'sub10' in object_path:
-                object_key = 'sub10'
+    try:
+        if args['domain_randomization_object_size']:
+            if type(args['object_path']) == str:
+                object_path = args['object_path']
+                object_key = "small"
+                print('older version of object loading, no object domain randomization used')
             else:
-                object_key = 'small'
-    else:
-        if type(args['object_path']) == str:
-            object_path = args['object_path']
-            object_key = "small"
-            # print('older version of object loading, no object domain randomization used')
+                object_path = args['object_path'][rank[0]%len(args['object_path'])]
+                if 'add10' in object_path:
+                    object_key = 'add10'
+                elif 'sub10' in object_path:
+                    object_key = 'sub10'
+                else:
+                    object_key = 'small'
+        elif args['random_shapes']:
+            object_path = args['object_path'][rank[0]%len(args['object_path'])]
+            if 'square' in object_path:
+                if 'small' in object_path:
+                    object_key = 'sub10'
+                elif 'large' in object_path:
+                    object_key = 'add10'
+                else:
+                    object_key = 'small'
+            if 'circle' in object_path:
+                if 'small' in object_path:
+                    object_key = 'sub10'
+                elif 'large' in object_path:
+                    object_key = 'add10'
+                else:
+                    object_key = 'small'
+            if 'triangle' in object_path:
+                if 'small' in object_path:
+                    object_key = 'sub10'
+                elif 'large' in object_path:
+                    object_key = 'add10'
+                else:
+                    object_key = 'small'
+            # if 'ellipse' in object_path:
+            #     if 'small' in object_path:
+            #         object_key = 'small_ellipse'
+            #     elif 'large' in object_path:
+            #         object_key = 'large_ellipse'
+            #     else:
+            #         object_key = 'medium_ellipse'
+            # if 'teardrop' in object_path:
+            #     if 'small' in object_path:
+            #         object_key = 'small_teardrop'
+            #     elif 'large' in object_path:
+            #         object_key = 'large_teardrop'
+            #     else:
+            #         object_key = 'medium_teardrop'
+            # if 'concave' in object_path:
+            #     if 'small' in object_path:
+            #         object_key = 'small_concave'
+            #     elif 'large' in object_path:
+            #         object_key = 'large_concave'
+            #     else:
+            #         object_key = 'medium_concave'
         else:
-            # print('normally would get object DR but not this time')
-            object_path = args['object_path'][0]
-            object_key = 'small'   
+            if type(args['object_path']) == str:
+                object_path = args['object_path']
+                object_key = "small"
+                # print('older version of object loading, no object domain randomization used')
+            else:
+                # print('normally would get object DR but not this time')
+                object_path = args['object_path'][0]
+                object_key = 'small'   
+
+    except KeyError:
+        if args['domain_randomization_object_size']:
+            if type(args['object_path']) == str:
+                object_path = args['object_path']
+                object_key = "small"
+                print('older version of object loading, no object domain randomization used')
+            else:
+                object_path = args['object_path'][rank[0]%len(args['object_path'])]
+                if 'add10' in object_path:
+                    object_key = 'add10'
+                elif 'sub10' in object_path:
+                    object_key = 'sub10'
+                else:
+                    object_key = 'small'
+        else:
+            if type(args['object_path']) == str:
+                object_path = args['object_path']
+                object_key = "small"
+                # print('older version of object loading, no object domain randomization used')
+            else:
+                # print('normally would get object DR but not this time')
+                object_path = args['object_path'][0]
+                object_key = 'small'   
+
     this_hand = args['hand_file_list'][rank[0]%len(args['hand_file_list'])]
     hand_type = this_hand.split('/')[0]
     hand_keys = hand_type.split('_')
@@ -249,7 +319,7 @@ def make_pybullet(arg_dict, pybullet_instance, rank, hand_info, frictionList = N
                         "starting_angles":[info_1['near_start_angles'][object_key][0],info_1['near_start_angles'][object_key][1],-info_2['near_start_angles'][object_key][0],-info_2['near_start_angles'][object_key][1]],
                         "palm_width":info_1['palm_width'],
                         "hand_name":hand_type}
-
+        
     # load objects into pybullet
     plane_id = pybullet_instance.loadURDF("plane.urdf", flags=pybullet_instance.URDF_ENABLE_CACHED_GRAPHICS_SHAPES, basePosition=[0.50,0.50,0])
     # other_id = pybullet_instance.loadURDF('./resources/object_models/wallthing/vertical_wall.urdf', basePosition=[0.0,0.0,-0.1],
@@ -886,8 +956,8 @@ def replay(argpath, episode_path):
                     [1.87354961e-02, -5.02016105e-03]]
 
     
-    for i in visual_list:
-        eval_env.env.make_viz_point([i[0],i[1],0.0005])
+    # for i in visual_list:
+    #     eval_env.env.make_viz_point([i[0],i[1],0.0005])
 
     # df2 = pd.read_csv('./resources/start_poses.csv', index_col=False)
     # x_start = df2['x']
@@ -1080,19 +1150,18 @@ def main(filepath = None,learn_type='run', num_cpu=16):
 if __name__ == '__main__':
     import csv
 
-    main('./data/Sliding_older_version/experiment_config.json','run')
-    # asterisk_test('./data/Sliding_older_version/experiment_config.json',"A")
-    # replay('./data/New_Fric2/low_c/experiment_config.json', './data/New_Fric2/low_c/Eval_A/Episode_902.pkl')
+    #main('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/The_last_run/JA_S3/experiment_config.json','run')
+    main('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/Random_Shape_Test/Slice_Move/experiment_config.json','run')
+    # multiprocess_evaluate_loaded('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/The_last_run/JA_S3/experiment_config.json',"A")
+    # replay('./data/Bogo/JA_S3/experiment_config.json', './data/Bogo/JA_S3/Eval_A/Episode_96.pkl')
     # replay('./data/New_Fric2/low_c/experiment_config.json', './data/The_last_run/JA_S3/Ast_A/Episode_4.pkl')
     # replay('./data/Collision_Test/Test2/experiment_config.json', './data/Collision_Test/Test2/Eval_A/Episode_170.pkl')
 
-    # multiprocess_evaluate_loaded('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/New_Fric2/just_fric/experiment_config.json',"A")
-    # multiprocess_evaluate_loaded('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/New_Fric2/low_c/experiment_config.json',"A")
+    # multiprocess_evaluate_loaded('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/Slice_Test/Full/experiment_config.json',"A")
+    # multiprocess_evaluate_loaded('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/Slice_Test/Partial/experiment_config.json',"A")
+    # multiprocess_evaluate_loaded('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/Slice_Test/Double_Partial/experiment_config.json',"A")
 
-    # multiprocess_evaluate_loaded('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/Collision_Test/Test3/experiment_config.json',"A")
-    # multiprocess_evaluate_loaded('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/Collision_Test/Test2/experiment_config.json',"A")
-
-    # multiprocess_evaluate_loaded('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/The_last_run/JA_S3/experiment_config.json',"A")
+    #multiprocess_evaluate_loaded('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/The_last_run/JA_S3/experiment_config.json',"A")
     # multiprocess_evaluate_loaded('./data/HPC_Slide/FTP_S1/experiment_config.json',"B")
     # multiprocess_evaluate_loaded('./data/HPC_Slide/FTP_S2/experiment_config.json',"A")
     # multiprocess_evaluate_loaded('./data/HPC_Slide/FTP_S2/experiment_config.json',"B")
