@@ -27,6 +27,7 @@ class MultiprocessRecordData(RecordDataRLPKL):
         super().record_episode(episode_type)
         self.current_episode["frictionList"] = frictionList
         self.current_episode["contactList"] = contactList
+        print('calling record episode')
         # print("Friction list in record is :", frictionList)
 
 
@@ -36,6 +37,7 @@ class MultiprocessRecordData(RecordDataRLPKL):
         episode dictionary to a pkl file. 
         """
         # print(self.eval_num,self.num_threads, self.my_thread)
+        # print('saving the episode')
         # print(int(self.eval_num*self.num_threads+self.my_thread))
         if self.save_episode_flag and self.data_path != None:
             if evaluated == 'test':

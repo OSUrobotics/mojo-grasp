@@ -125,12 +125,12 @@ class MultiprocessSingleShapeEnv(Environment):
         self.p.changeDynamics(self.hand_id, 4, jointLowerLimit=-2.09, jointUpperLimit=0, mass=mass_link)
         self.p.changeDynamics(self.plane_id,-1,lateralFriction=start_floor_lateral, spinningFriction=start_floor_spin, rollingFriction=start_floor_roll)
         self.p.changeDynamics(self.obj.id, -1, mass=start_mass, restitution=.95, lateralFriction=1, localInertiaDiagonal=[0.000029435425,0.000029435425,0.00000725805])
-        self.p.changeVisualShape(self.hand_id, -1, rgbaColor=[0.3, 0.3, 0.3, 0.4])
-        self.p.changeVisualShape(self.hand_id, 0, rgbaColor=[1, 0.5, 0, 0.4])
-        self.p.changeVisualShape(self.hand_id, 1, rgbaColor=[0.3, 0.3, 0.3, 0.4])
-        self.p.changeVisualShape(self.hand_id, 3, rgbaColor=[1, 0.5, 0, 0.4])
-        self.p.changeVisualShape(self.hand_id, 4, rgbaColor=[0.3, 0.3, 0.3, 0.4])
-        self.p.changeVisualShape(self.obj_id, -1, rgbaColor=[0.1, 0.6, 0.1, 0.4])
+        self.p.changeVisualShape(self.hand_id, -1, rgbaColor=[0.3, 0.3, 0.3, 1])
+        self.p.changeVisualShape(self.hand_id, 0, rgbaColor=[1, 0.5, 0, 1])
+        self.p.changeVisualShape(self.hand_id, 1, rgbaColor=[0.3, 0.3, 0.3, 1])
+        self.p.changeVisualShape(self.hand_id, 3, rgbaColor=[1, 0.5, 0, 1])
+        self.p.changeVisualShape(self.hand_id, 4, rgbaColor=[0.3, 0.3, 0.3, 1])
+        self.p.changeVisualShape(self.obj_id, -1, rgbaColor=[0.1, 0.6, 0.1, 1])
         # self.p.configureDebugVisualizer(self.p.COV_ENABLE_SHADOWS, 0)
         self.p.configureDebugVisualizer(self.p.COV_ENABLE_GUI, 0)
         self.hand.id = self.hand_id
@@ -380,5 +380,3 @@ class MultiprocessMazeEnv(MultiprocessSingleShapeEnv):
 
     def set_wall_pose(self,pose):
         self.wall.set_pose(pose)
-
-    

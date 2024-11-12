@@ -37,8 +37,6 @@ import multiprocessing
 import json
 
 def make_pybullet(args, pybullet_instance, viz=True):
-
-    
     if viz:
         physics_client = pybullet_instance.connect(pybullet_instance.GUI)
     else:
@@ -140,9 +138,7 @@ def make_pybullet(args, pybullet_instance, viz=True):
 
     return gym_env, args, [obj_id, wall_id]
 
-
 # control types: conventional + options, full, feudal? option keyboard?
-
 
 def simple_interpolatinator(base_path):
     # drastically reduces number of points

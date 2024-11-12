@@ -3813,20 +3813,22 @@ class PlotBackend():
             self.point_dictionary['Orientation Error'] = self.point_dictionary['Goal Orientation'] - self.point_dictionary['End Orientation']
             self.point_dictionary['Policy'] = self.point_dictionary['Path'].str.split('/').str[5]
         else:
-            # try:
-            pool = multiprocessing.Pool()
-            data_list = pool.map(HRL_pool_process,episode_files)
-            pool.close()
-            pool.join()
-            # except:
-            #     print('GOING TO BEEFY RATHER THAN HRL')
-                
-            #     pool = multiprocessing.Pool()
-            #     data_list = pool.map(beefy_pool_process,episode_files)
-            #     pool.close()
-            #     pool.join()
-            column_key = ['Start X','Start Y','End X','End Y','Goal X','Goal Y','Start Distance','End Distance', 'Max Distance',
+            try:
+                pool = multiprocessing.Pool()
+                data_list = pool.map(HRL_pool_process,episode_files)
+                pool.close()
+                pool.join()
+                column_key = ['Start X','Start Y','End X','End Y','Goal X','Goal Y','Start Distance','End Distance', 'Max Distance',
                         'End Orientation','Goal Orientation','Path','Slide Sum', 'Rotate Sum','Finger Sum','Num Goals Reached']
+            except:
+                print('Using Non-HRL pool process')
+                
+                pool = multiprocessing.Pool()
+                data_list = pool.map(beefy_pool_process,episode_files)
+                pool.close()
+                pool.join()
+                column_key = ['Start X','Start Y','End X','End Y','Goal X','Goal Y','Start Distance','End Distance', 'Max Distance',
+                            'End Orientation','Goal Orientation','Path','Slide Sum', 'Rotate Sum','Finger Sum']
             self.point_dictionary = pd.DataFrame(data_list, columns = column_key)
             self.point_dictionary['Rounded Start X'] = self.point_dictionary['Start X'].apply(lambda x:np.round(x,3))
             self.point_dictionary['Rounded Start Y'] = self.point_dictionary['Start Y'].apply(lambda x:np.round(x,3))
@@ -4207,6 +4209,8 @@ class PlotBackend():
             self.clear_axes()
         goals_reached = moving_average(self.point_dictionary['Num Goals Reached'].to_list(),self.moving_avg)
         a = self.ax.plot(range(len(goals_reached)),goals_reached)
+        self.ax.set_ylim((0,1))
+        self.ax.set_aspect('auto',adjustable='box')
 
     def draw_uppers(self, folder):
         # self.build_beefy(folder)
@@ -4250,5 +4254,6 @@ class PlotBackend():
         thing2 = np.mean(thing2, axis=1)
         print(np.shape(thing2))
         self.ax.plot(range(len(thing2)),thing2)
+        self.ax.set_aspect('auto',adjustable='box')
         # self.ax.plot(mean[:,0],mean[:,1])
         # self.ax.plot(mean2[:,0],mean2[:,1])

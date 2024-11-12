@@ -27,10 +27,10 @@ class ZooEvaluateCallback(EvalCallback):
         if self.eval_freq > 0 and self.n_calls % self.eval_freq == 0:
             self.eval_env.envs[0].evaluate()
             temp = super(ZooEvaluateCallback,self)._on_step()
+            print('about to train')
+            # a = time.time()
             self.eval_env.envs[0].train()
-            # print(f'during previous 1000 steps there were: {len(t1)} times the \
-            #       finger tip motion was too high with an average magnitude of \
-            #       {np.average(t1)} and a maximum of {max(t1)}')
+            # print('finishing the evaluate callback, returning to training', time.time()-a)
             # self.eval_env.envs[0].manipulation_phase.controller.mags=[]
 
             return temp
@@ -113,7 +113,12 @@ class FullTaskWrapper(AECEnv):
         self.manager_normalizer = {'mins':np.array(args['manager_mins']),'diff':np.array(args['manager_maxes'])-np.array(args['manager_mins'])}
         if 'manager_state_maxes' in args.keys():
             self._observation_spaces = {
-                'manager': spaces.Box(np.array(args['manager_state_mins']),np.array(args['manager_state_maxes'])),
+                "manager": spaces.Box(
+                                low=0, high=255, 
+                                shape=(240, 240,1), 
+                                dtype=np.uint8
+                            ),
+                # 'manager': spaces.Box(np.array(args['manager_state_mins']),np.array(args['manager_state_maxes'])),
                 'worker':  spaces.Box(np.array(args['worker_state_mins']),np.array(args['worker_state_maxes']))
             }
         else:
@@ -247,7 +252,6 @@ class FullTaskWrapper(AECEnv):
         self._cumulative_rewards[agent] = 0
 
         if self._agent_selector.is_last():
-
             self.manipulation_phase.gym_pre_step(action)
             self.manipulation_phase.execute_action(viz=viz)
             done = self.manipulation_phase.exit_condition()
@@ -271,22 +275,22 @@ class FullTaskWrapper(AECEnv):
             self.truncations = {
                 agent:done for agent in self.agents
             }
-
             # manager gets new state
             self.state['manager'] = state_container
             self.observations['manager'] = self.build_state(state_container, self.manager_state_list)
             if self.eval or self.small_enough:
                 self.record.record_timestep()
-            self.timestep +=1
-            if self.substep >= self.manager_timesteps-1:
+            self.timestep += 1
+            if self.substep >= self.manager_timesteps - 1:
                 self.agent_selection = self._agent_selector.next()
-            self.substep+=1
+            self.substep += 1
             # if done:
             #     print('done in worker step')
 
         else:
             normalized_action = (action+1) * self.manager_normalizer['diff']/2 + self.manager_normalizer['mins']
             normalized_action=normalized_action.tolist()
+            print('goal to manip phase', normalized_action)
             self.manipulation_phase.set_goal(normalized_action)
             state_container = self.manipulation_phase.get_state()
             done=False
@@ -301,9 +305,9 @@ class FullTaskWrapper(AECEnv):
             # no rewards are allocated until both players give an action
             self._clear_rewards()
             self.observations['worker'] = state
-            self.timestep +=1
+            self.timestep += 1
             self.agent_selection = self._agent_selector.next()
-            self.substep=0
+            self.substep = 0
 
         if done:
             if self.eval or self.small_enough:
@@ -379,6 +383,8 @@ class FullTaskWrapper(AECEnv):
                         state.append(state_container['previous_state'][i]['goal_pose']['upper_goal_orientation'])
                     elif key == 'gf':
                         state.extend(state_container['previous_state'][i]['goal_pose']['goal_finger'])
+                    elif key == 'mims':
+                        pass
                     elif key =='lgp':
                         state.extend(state_container['previous_state'][i]['goal_pose']['goal_position'])
                     elif key == 'lgo':
@@ -430,6 +436,8 @@ class FullTaskWrapper(AECEnv):
                 state.append(state_container['goal_pose']['upper_goal_orientation'])
             elif key == 'gf':
                 state.extend(state_container['goal_pose']['goal_finger'])
+            elif key == 'mims':
+                state = state_container['image']
             elif key =='lgp':
                 state.extend(state_container['goal_pose']['goal_position'])
             elif key == 'lgo':
@@ -453,9 +461,12 @@ class FullTaskWrapper(AECEnv):
         self.hand_type = ht
 
     def train(self):
+        # t1 = time.time()
+        # print('Train triggered!!!!!!')
         self.eval = False
         self.manipulation_phase.eval = False
         self.manipulation_phase.state.train()
         self.manipulation_phase.state.reset()
         self.reset()
         self.episode_type = 'train'
+        # print(time.time()-t1)

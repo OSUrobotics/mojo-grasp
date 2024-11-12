@@ -12,7 +12,7 @@ from copy import deepcopy
 from mojograsp.simobjects.two_finger_gripper import TwoFingerGripper
 from mojograsp.simcore.goal_holder import *
 # from point_generator import slice_obj_at_y_level, calculate_outer_perimeter, find_intersection_points
-        
+from mojograsp.simcore.image_maker import ImageGenerator
 class DictHolder():
     def __init__(self,list_size):
         self.data = []
@@ -69,6 +69,7 @@ class MultiprocessState(StateDefault):
             self.train_flag = True
         else:
             self.eval_goals = None
+        self.image_gen = ImageGenerator((240,240,1))
             
     def evaluate(self):
         if (self.eval_goals is not None) and self.train_flag:
@@ -172,13 +173,15 @@ class MultiprocessState(StateDefault):
                                         0.009698, -0.018735, 0.00502, -0.01948, 0.0, -0.018735, -0.00502, -0.016798, -0.009698, -0.013775, 
                                         -0.013774, -0.009698, -0.016798, -0.00502, -0.018735, 0.0, -0.01948, 0.00502, -0.018735, 0.009698, 
                                         -0.016798, 0.013774, -0.013775, 0.016798, -0.009698, 0.018735, -0.00502]
-
+        unreached_goals = [[self.current_state['goal_pose']['upper_goal_position'][2*i],self.current_state['goal_pose']['upper_goal_position'][i*2+1]] for i,v in enumerate(self.current_state['goal_pose']['goals_open']) if v]
+        self.current_state['image'] = self.image_gen.draw_stamp(self.current_state['obj_2']['pose'],
+                                                                unreached_goals)
         #self.current_state['f1_contact_distance'] = self.calc_distance(self.current_state['f1_contact_pos'],self.current_state['obj_2']['pose'][0][0:2])
         #self.current_state['f2_contact_distance'] = self.calc_distance(self.current_state['f2_contact_pos'],self.current_state['obj_2']['pose'][0][0:2])
         #self.current_state['f1_contact_flag'], self.current_state['f2_contact_flag'] = self.check_contact() 
         #self.current_state['f1_contact_angle'], self.current_state['f2_contact_angle'] = self.calc_contact_angle()
 
-
+        print('object pose', self.current_state['obj_2']['pose'][0][0:2])
         # print('sim state', self.current_state['two_finger_gripper']['joint_angles'])
         # print('joint state', self.p.getJointState(self.objects[0].id,0))
         
@@ -210,6 +213,10 @@ class MultiprocessState(StateDefault):
                                        -0.037471, 0.01004, -0.03896, 0.0, -0.037471, -0.01004, -0.033596, -0.019396, -0.027549, -0.027549, 
                                        -0.019396, -0.033596, -0.01004, -0.037471, 0.0, -0.03896, 0.01004, -0.037471, 0.019396, -0.033596, 
                                        0.027549, -0.027549, 0.033596, -0.019396, 0.037471, -0.01004]
+        unreached_goals = [[self.current_state['goal_pose']['upper_goal_position'][2*i],self.current_state['goal_pose']['upper_goal_position'][i*2+1]] for i,v in enumerate(self.current_state['goal_pose']['goals_open']) if v]
+
+        self.current_state['image'] = self.image_gen.draw_stamp(self.current_state['obj_2']['pose'],
+                                                                unreached_goals)
         # self.current_state['f1_contact_distance'] = self.calc_distance(self.current_state['f1_contact_pos'], self.current_state['obj_2']['pose'][0][0:2])
         # self.current_state['f2_contact_distance'] = self.calc_distance(self.current_state['f2_contact_pos'], self.current_state['obj_2']['pose'][0][0:2]) 
         # self.current_state['f1_contact_angle'], self.current_state['f2_contact_angle'] = self.calc_contact_angle()

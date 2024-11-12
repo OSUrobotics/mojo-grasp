@@ -279,12 +279,14 @@ class RecordDataPKL(RecordData):
         Method called by :func:`~mojograsp.simcore.sim_manager.SimManager` after all episodes are completed. Saves all
         episode dictionaries to a pkl file. 
         """
+        print('calling save all')
         if self.save_all_flag and self.data_path != None:
             file_path = self.data_path + \
                 self.data_prefix + "_all.pkl"
             with open(file_path, 'wb') as fout:
                 self.episodes = {"episode_list": self.episode_data}
                 pkl.dump(self.episodes, fout)
+        
 
     def clear(self):
         self.current_episode = {}
@@ -308,7 +310,7 @@ class RecordDataRLPKL(RecordDataPKL):
         timestep_dict = {"number": self.timestep_num}
         if self.state:
             temp = self.state.get_state()
-            exclude_keys = ['previous_state']
+            exclude_keys = ['previous_state', 'image']
             timestep_dict["state"] = {k: temp[k] for k in set(list(temp.keys())) - set(exclude_keys)}
         if self.reward:
             timestep_dict["reward"] = self.reward.get_reward()
