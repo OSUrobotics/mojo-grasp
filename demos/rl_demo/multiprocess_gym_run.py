@@ -479,7 +479,7 @@ def asterisk_test(filepath,hand_type,frictionList = None, contactList = None):
         assert 1==0
 
     import pybullet as p2
-    eval_env , _, poses= make_pybullet(args,p2, [0,1], hand_params, viz=False)
+    eval_env , _, poses= make_pybullet(args,p2, [0,1], hand_params, viz=True)
     eval_env.evaluate()
     eval_env.reduced_saving = False
     model = model_type("MlpPolicy", eval_env, tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-2.3}).load(args['save_path']+'best_model', env=eval_env)
@@ -495,6 +495,7 @@ def asterisk_test(filepath,hand_type,frictionList = None, contactList = None):
                 for i in asterisk_thing:
                     eval_env.manipulation_phase.state.objects[-1].set_all_pose(i)
                     obs = eval_env.reset()
+                    input('go')
                     eval_env.manipulation_phase.state.objects[-1].set_all_pose(i)
                     done = False
 
@@ -513,6 +514,7 @@ def asterisk_test(filepath,hand_type,frictionList = None, contactList = None):
                 for i in asterisk_thing:
                     eval_env.manipulation_phase.state.objects[-1].set_all_pose(i)
                     obs = eval_env.reset()
+                    input('go')
                     eval_env.manipulation_phase.state.objects[-1].set_all_pose(i)
                     done = False
 
@@ -527,13 +529,10 @@ def asterisk_test(filepath,hand_type,frictionList = None, contactList = None):
             obs = eval_env.reset()
             eval_env.manipulation_phase.state.objects[-1].set_all_pose(i)
             done = False
-
+            input('go')
             while not done:
                 action, _ = model.predict(obs,deterministic=True)
                 obs, _, done, _ = eval_env.step(action,hand_type=hand_type)
-
-    
-
 
 def rotation_test(filepath, hand_type):
     # load a trained model and test it on its test set
@@ -1081,8 +1080,8 @@ def main(filepath = None,learn_type='run', num_cpu=16):
 if __name__ == '__main__':
     import csv
 
-    # main('','run')
-    # multiprocess_evaluate_loaded('./data/Mothra_Full/FTP_S1/experiment_config.json',"B")
+    main('./data/Sliding_older_version/experiment_config.json','run')
+    # asterisk_test('./data/Sliding_older_version/experiment_config.json',"A")
     # replay('./data/New_Fric2/low_c/experiment_config.json', './data/New_Fric2/low_c/Eval_A/Episode_902.pkl')
     # replay('./data/New_Fric2/low_c/experiment_config.json', './data/The_last_run/JA_S3/Ast_A/Episode_4.pkl')
     # replay('./data/Collision_Test/Test2/experiment_config.json', './data/Collision_Test/Test2/Eval_A/Episode_170.pkl')
@@ -1107,7 +1106,7 @@ if __name__ == '__main__':
     # multiprocess_evaluate_loaded('./data/HPC_Slide/JA_S3/experiment_config.json',"B")
     # multiprocess_evaluate_loaded('./data/HPC_Slide/FTP_S3/experiment_config.json',"A")
     # multiprocess_evaluate_loaded('./data/HPC_Slide/FTP_S3/experiment_config.json',"B")
-    # contactList = [9, 6, 0.05]#, 0.25]
+    # contactList = [9, 6, 0.05]
     # frictionList = [0.05 ,0.01 ,0.04 ,0.20 ,0.01 ,0.05, 1, 0.001, 0.001]
     # asterisk_test('./data/The_last_run/JA_S3/experiment_config.json','A')
     # full_test('./data/Mothra_Full_Continue_New_weight/JA_S3/experiment_config.json','A')

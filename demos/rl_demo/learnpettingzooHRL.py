@@ -125,10 +125,10 @@ def make_pybullet(arg_dict, pybullet_instance, rank, hand_info, viz=False):
     # print(args['task'])
 
     # load the desired test set based on the task
-    try:
-        pose_list, eval_pose_list, orientations, eval_orientations, finger_contacts, eval_finger_contacts, finger_starts = load_set(args)
-    except: 
-        pose_list, eval_pose_list, orientations, eval_orientations, finger_contacts, eval_finger_contacts, finger_starts = load_wall(args)
+    # try:
+    pose_list, eval_pose_list, orientations, eval_orientations, finger_contacts, eval_finger_contacts, finger_starts = load_set(args)
+    # except: 
+    #     pose_list, eval_pose_list, orientations, eval_orientations, finger_contacts, eval_finger_contacts, finger_starts = load_wall(args)
     
     # Break test sets into pieces for multithreading
     num_eval = len(eval_pose_list)
@@ -358,7 +358,7 @@ def train_multiprocess(filepath, learn_type='run', num_cpu=16):
     model_type = PPO
     # from pettingzoo.utils.conversions import aec_to_parallel 
 
-    env = SubprocVecEnv([make_env(args, [i,num_cpu], hand_params) for i in range(num_cpu)])
+    # env = SubprocVecEnv([make_env(args, [i,num_cpu], hand_params) for i in range(num_cpu)])
     
     # env = pettingzoowrapper.WrapWrap(env)
     # env = ss.pad_action_space_v0(env)
@@ -368,7 +368,22 @@ def train_multiprocess(filepath, learn_type='run', num_cpu=16):
             other_env.env_method('getDummyEnv',player_ind=1)[rank]
             return env
         return _init()
-    other_player_env = SubprocVecEnv([ho_shit(env,i) for i in range(num_cpu)])
+    
+    def make_both_envs(arg_dict=None,rank=0,hand_info=None):
+        def _init():
+            import pybullet as p1
+            env, _, _ = make_pybullet(arg_dict, p1, rank, hand_info)
+            env = PettingZooAECWrapper(env)
+            return env
+        def _init_partner():
+            e2 = env.getDummyEnv()
+            return e2
+        return _init, _init_partner
+    temp = [make_both_envs(args, [i,num_cpu], hand_params) for i in range(num_cpu)]
+    envs1 = [t[0] for t in temp]
+    envs2 = [t[1] for t in temp]
+    env = SubprocVecEnv(envs1)
+    other_player_env = SubprocVecEnv(envs2)
 
     partner = OnPolicyAgent(PPO('MlpPolicy', other_player_env, verbose=1,tensorboard_log=args['tname']+'/worker'),tensorboard_log=args['tname']+'/worker')
     # print(env.remotes[0])
@@ -523,7 +538,7 @@ def replay(configpath, replaypath):
 
 
 if __name__ == '__main__':
-    # train_multiprocess('./data/hrl_slide_limited_action/experiment_config.json',num_cpu=2)
-    train('./data/HRL_multigoal_fixed/experiment_config.json')
+    train_multiprocess('./data/hrl_slide_limited_action/experiment_config.json',num_cpu=2)
+    # train('./data/HRL_multigoal_fixed/experiment_config.json')
     # replay('./data/HRL_multigoal_fixed/experiment_config.json','./data/HRL_multigoal_fixed/Test/Episode_22.pkl')
     # evaluate('./data/hrl_slide_limited_action/experiment_config.json',modeltype='best')

@@ -300,4 +300,4 @@ class HRLMultigoalFixed(HRLMultigoalHolder):
                 # self.upper_position_set[i] = self.pose[self.upper_position_num+self.num_goals_present]
                 self.goals_reached +=1
                 self.open_goals[i] = 0
-                # print('achieved goal', object_pos, self.upper_position_set, self.open_goals)
+                print('achieved goal', object_pos, self.upper_position_set, self.open_goals)

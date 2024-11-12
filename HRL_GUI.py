@@ -114,6 +114,9 @@ class RNNGui():
                        [sg.Checkbox('Goal Finger Separation', default=False, k='-gfs')],
                        [sg.Checkbox('HandParameters', default=False,key='-params')],
                        [sg.Checkbox('Timesteps Remaining', default=False,key='-timesteps_state')],
+                       [sg.Checkbox('Image Stamp', key='-ims')],
+                       [sg.Checkbox('Image Fill', key='-imf')],
+                       [sg.Checkbox('Image Obstacle', key='-imo')],
                        [sg.Checkbox('WallPose', default=False,key='-wall')]]),
                        sg.Col([[sg.Text('Manager State')],[sg.Checkbox('Finger Tip Position', default=True, k='-mftp')],
                        [sg.Checkbox('Finger Base Position', default=False, k='-mfbp')],
@@ -131,6 +134,9 @@ class RNNGui():
                        [sg.Checkbox('Goal Finger Separation', default=False, k='-mgfs')],
                        [sg.Checkbox('HandParameters', default=False,key='-mparams')],
                        [sg.Checkbox('Timesteps Remaining', default=False,key='-mtimesteps_state')],
+                       [sg.Checkbox('Image Stamp', key='-mims')],
+                       [sg.Checkbox('Image Fill', key='-mimf')],
+                       [sg.Checkbox('Image Obstacle', key='-mimo')],
                        [sg.Checkbox('WallPose', default=False,key='-mwall')]])],
                        [sg.Text('Num Previous States'), sg.Input(2, k='-pv',size=(8, 2)), sg.Text('Success Radius (mm)'), sg.Input(2, key='-sr',size=(8, 2))],
                        [sg.Text("Distance Scale"),  sg.Input(1,key='-distance_scale',size=(8, 2)), sg.Text('Contact Scale'),  sg.Input(0.2,key='-contact_scale',size=(8, 2)), sg.Text('Success Reward'), sg.Input(1,key='-success_reward',size=(8, 2)), sg.Text('Rotation Scale'), sg.Input(1,key='-rotation_scale',size=(8, 2))],
@@ -390,6 +396,21 @@ class RNNGui():
             manager_state_maxes.extend([0.04, 0.04])
             manager_state_len += 2
             manager_state_list.append('gfs')
+        if values['-mims']:
+            manager_state_mins.extend([0]*240*240)
+            manager_state_maxes.extend([255]*240*240)
+            manager_state_len += 240*240
+            manager_state_list.append('mims')
+        if values['-mimf']:
+            manager_state_mins.extend([0]*240*240)
+            manager_state_maxes.extend([255]*240*240)
+            manager_state_len += 240*240
+            manager_state_list.append('mimf')
+        if values['-mimo']:
+            manager_state_mins.extend([0]*240*240)
+            manager_state_maxes.extend([255]*240*240)
+            manager_state_len += 240*240
+            manager_state_list.append('mimo')
         if values['-mwall']:
             manager_state_mins.extend([-0.08,0.02,-1,-1,-1,-1])
             manager_state_maxes.extend([0.08,0.18,1,1,1,1])

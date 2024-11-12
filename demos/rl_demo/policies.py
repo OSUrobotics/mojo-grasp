@@ -9,7 +9,7 @@ import numpy as np
 from gymnasium import spaces
 from torch.nn import functional as F
 from stable_baselines3.common.utils import explained_variance, get_schedule_fn
-
+import sys 
 class PPOExpertData(PPO):
     def __init__(self, 
                  policy: str | type[ActorCriticPolicy], 
@@ -87,12 +87,15 @@ class PPOExpertData(PPO):
         expert_losses=[]
         continue_training = True
         # train for n_epochs epochs
-        expert_modifier = max(self.expert_coef*(1-10*self.num_timesteps/self._total_timesteps),0)
+        # print('starting the train cycle')
+        # print(sys.getsizeof(self.rollout_buffer), sys.getsizeof(self.expert_buffer))
+        expert_modifier = max(self.expert_coef*(1-2*self.num_timesteps/self._total_timesteps),0)
         for epoch in range(self.n_epochs):
             approx_kl_divs = []
             # print('epoch', epoch, self.n_epochs)
             # Do a complete pass on the rollout buffer
             for rollout_data in self.rollout_buffer.get(self.batch_size):
+                # print('rollout size, expert size',sys.getsizeof(self.rollout_buffer), sys.getsizeof(self.expert_buffer))
                 actions = rollout_data.actions
                 if isinstance(self.action_space, spaces.Discrete):
                     # Convert discrete action from float to long
@@ -146,7 +149,13 @@ class PPOExpertData(PPO):
                 entropy_losses.append(entropy_loss.item())
 
                 expert_data = self.expert_buffer.sample(self.batch_size)
-                _, expert_log_prob, _ = self.policy.evaluate_actions(expert_data.observations, expert_data.actions)
+                # print(expert_data.observations.shape)
+                # print('rollout data:', rollout_data.observations.shape)
+                if len(expert_data.observations.shape) ==5:
+                    t = expert_data.observations.squeeze(-1)
+                    _, expert_log_prob, _ = self.policy.evaluate_actions(t, expert_data.actions)
+                else:
+                    _, expert_log_prob, _ = self.policy.evaluate_actions(expert_data.observations, expert_data.actions)
                 expert_loss = -th.mean(expert_log_prob)
                 # print(expert_loss,expert_loss.item(),expert_modifier)
                 # print()
