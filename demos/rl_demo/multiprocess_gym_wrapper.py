@@ -375,23 +375,23 @@ class MultiprocessGymWrapper(gym.Env):
                         state.extend(state_container['previous_state'][i]['wall']['pose'][1][0:4])
                     # What Jeremiah Added
                     elif key == 'slice':
-                        state.extend(state_container['previous_state'][i]['slice'].flatten())
+                        pass
+                        # state.extend(state_container['previous_state'][i]['slice'].flatten())
                     elif key == 'mslice':
                         shape = state_container['previous_state'][i]['slice']
-                        x,y = state_container['previous_state'][i]['obj_2']['pose'][0][0:2]
-                        a,b,c,w = state_container['previous_state'][i]['obj_2']['pose'][1]
+                        x, y = state_container['previous_state'][i]['obj_2']['pose'][0][0:2]
+                        a, b, c, w = state_container['previous_state'][i]['obj_2']['pose'][1]
 
                         theta = np.arctan2(2 * (w * c + a * b), 1 - 2 * (b**2 + c**2))
-
-                        shape[:, 0] += x
-                        shape[:, 1] += y
 
                         rotation_matrix = np.array([
                             [np.cos(theta), -np.sin(theta)],
                             [np.sin(theta), np.cos(theta)]
-                        ])  
+                        ])
 
                         shape = shape @ rotation_matrix.T
+                        shape[:, 0] += x
+                        shape[:, 1] += y
                         state.extend(shape.flatten())                      
 
 
@@ -451,17 +451,13 @@ class MultiprocessGymWrapper(gym.Env):
                 
             # What Jeremiah Added
             elif key == 'slice':
-                    #print("Slicing 2")
-                    #print(state_container['slice'].flatten())
-                    state.extend(state_container['slice'].flatten())
+                    pass
+                    # state.extend(state_container['slice'].flatten())
             elif key == 'mslice':
                 shape = state_container['slice']
                 x,y = state_container['obj_2']['pose'][0][0:2]
                 a,b,c,w = state_container['obj_2']['pose'][1]
                 theta = np.arctan2(2 * (w * c + a * b), 1 - 2 * (b**2 + c**2))
-
-                shape[:, 0] += x
-                shape[:, 1] += y
 
                 rotation_matrix = np.array([
                     [np.cos(theta), -np.sin(theta)],
@@ -469,6 +465,8 @@ class MultiprocessGymWrapper(gym.Env):
                 ])  
 
                 shape = shape @ rotation_matrix.T
+                shape[:, 0] += x
+                shape[:, 1] += y
                 state.extend(shape.flatten())
 
             elif key == 'rad':

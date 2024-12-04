@@ -173,11 +173,6 @@ class MultiprocessState(StateDefault):
         # if self.pflag:
         #     self.state_holder.append(self.current_state.copy())
         #What Jeremiah Is Adding
-        self.current_state['slice'] = [0.01948, 0.0, 0.018735, 0.00502, 0.016798, 0.009698, 0.013775, 0.013774, 0.009698, 0.016798, 0.00502,
-                                        0.018735, 0.0, 0.01948, -0.00502, 0.018735, -0.009698, 0.016798, -0.013774, 0.013775, -0.016798, 
-                                        0.009698, -0.018735, 0.00502, -0.01948, 0.0, -0.018735, -0.00502, -0.016798, -0.009698, -0.013775, 
-                                        -0.013774, -0.009698, -0.016798, -0.00502, -0.018735, 0.0, -0.01948, 0.00502, -0.018735, 0.009698, 
-                                        -0.016798, 0.013774, -0.013775, 0.016798, -0.009698, 0.018735, -0.00502]
         if 'upper_goal_position' in self.current_state['goal_pose'].keys():
             unreached_goals = [[self.current_state['goal_pose']['upper_goal_position'][2*i],self.current_state['goal_pose']['upper_goal_position'][i*2+1]] for i,v in enumerate(self.current_state['goal_pose']['goals_open']) if v]
             self.current_state['image'] = self.image_gen.draw_stamp(self.current_state['obj_2']['pose'],
@@ -189,7 +184,7 @@ class MultiprocessState(StateDefault):
         #self.current_state['f1_contact_flag'], self.current_state['f2_contact_flag'] = self.check_contact() 
         #self.current_state['f1_contact_angle'], self.current_state['f2_contact_angle'] = self.calc_contact_angle()
 
-        print('object pose', self.current_state['obj_2']['pose'][0][0:2])
+        # print('object pose', self.current_state['obj_2']['pose'][0][0:2])
         # print('sim state', self.current_state['two_finger_gripper']['joint_angles'])
         # print('joint state', self.p.getJointState(self.objects[0].id,0))
         
