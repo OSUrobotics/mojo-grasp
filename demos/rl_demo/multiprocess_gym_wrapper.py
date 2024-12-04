@@ -451,8 +451,7 @@ class MultiprocessGymWrapper(gym.Env):
                 
             # What Jeremiah Added
             elif key == 'slice':
-                    pass
-                    # state.extend(state_container['slice'].flatten())
+                    state.extend(state_container['slice'].flatten())
             elif key == 'mslice':
                 shape = state_container['slice']
                 x,y = state_container['obj_2']['pose'][0][0:2]
