@@ -4193,9 +4193,7 @@ class PlotBackend():
         self.ax.plot(range(len(goal_poses)), things[:,2])
         self.ax.plot(range(len(goal_poses)), things[:,3])
         self.ax.plot(range(len(goal_poses)), things[:,4])
-        # self.ax.plot(range(len(goal_poses)), things2[:,0])
-        # self.ax.plot(range(len(goal_poses)), things2[:,1])
-        # self.ax.plot(range(len(goal_poses)), things2[:,2])
+
         self.ax.plot(range(len(goal_poses)), things2[:,3])
         # self.ax.plot(range(len(goal_poses)), things2[:,4])
         self.ax.plot(range(len(goal_poses)), flatline)
@@ -4209,7 +4207,9 @@ class PlotBackend():
             self.clear_axes()
         goals_reached = moving_average(self.point_dictionary['Num Goals Reached'].to_list(),self.moving_avg)
         a = self.ax.plot(range(len(goals_reached)),goals_reached)
-        self.ax.set_ylim((0,1))
+        self.ax.set_ylim((0.5,1.8))
+        self.ax.set_xlim((0,14400))
+        self.ax.legend(['Expert Manager + Pretrained Worker','Training Manager + Pretrianed Worker','Training Both Worker and Manager'])
         self.ax.set_aspect('auto',adjustable='box')
 
     def draw_uppers(self, folder):

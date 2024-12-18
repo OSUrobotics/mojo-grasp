@@ -13,7 +13,7 @@ from mojograsp.simobjects.two_finger_gripper import TwoFingerGripper
 from mojograsp.simcore.goal_holder import *
 # from point_generator import slice_obj_at_y_level, calculate_outer_perimeter, find_intersection_points
 from mojograsp.simcore.image_maker import ImageGenerator
-import demos.rl_demo.point_generator as pg
+# import demos.rl_demo.point_generator as pg
         
 class DictHolder():
     def __init__(self,list_size):
@@ -56,7 +56,7 @@ class MultiprocessState(StateDefault):
         self.objects = objects 
         obj_path = self.objects[1].get_path()
         #print('OBJ PATH', obj_path)
-        self.slice = pg.get_slice(obj_path)
+        # self.slice = pg.get_slice(obj_path)
         for object in self.objects:
             if type(object) == TwoFingerGripper:
                 temp = object.link_lengths
@@ -90,7 +90,7 @@ class MultiprocessState(StateDefault):
             
     def next_run(self):
         for thing in self.objects:
-            if (type(thing) == GoalHolder) | (type(thing) == RandomGoalHolder) | (type(thing) == SingleGoalHolder)|(type(thing) == HRLGoalHolder)|(type(thing) == HRLMultigoalHolder) |(type(thing) == HRLMultigoalFixed):
+            if (type(thing) == GoalHolder) | (type(thing) == RandomGoalHolder) | (type(thing) == SingleGoalHolder)|(type(thing) == HRLGoalHolder)|(type(thing) == HRLMultigoalHolder) |(type(thing) == HRLMultigoalFixed)| (type(thing) == HRLMultigoalFixedPaired):
                 fingerys = thing.next_run()
                 temp = thing.get_data()
         return temp, fingerys
@@ -173,23 +173,23 @@ class MultiprocessState(StateDefault):
         # if self.pflag:
         #     self.state_holder.append(self.current_state.copy())
         #What Jeremiah Is Adding
-        self.current_state['slice'] = [0.01948, 0.0, 0.018735, 0.00502, 0.016798, 0.009698, 0.013775, 0.013774, 0.009698, 0.016798, 0.00502,
-                                        0.018735, 0.0, 0.01948, -0.00502, 0.018735, -0.009698, 0.016798, -0.013774, 0.013775, -0.016798, 
-                                        0.009698, -0.018735, 0.00502, -0.01948, 0.0, -0.018735, -0.00502, -0.016798, -0.009698, -0.013775, 
-                                        -0.013774, -0.009698, -0.016798, -0.00502, -0.018735, 0.0, -0.01948, 0.00502, -0.018735, 0.009698, 
-                                        -0.016798, 0.013774, -0.013775, 0.016798, -0.009698, 0.018735, -0.00502]
+        # self.current_state['slice'] = [0.01948, 0.0, 0.018735, 0.00502, 0.016798, 0.009698, 0.013775, 0.013774, 0.009698, 0.016798, 0.00502,
+        #                                 0.018735, 0.0, 0.01948, -0.00502, 0.018735, -0.009698, 0.016798, -0.013774, 0.013775, -0.016798, 
+        #                                 0.009698, -0.018735, 0.00502, -0.01948, 0.0, -0.018735, -0.00502, -0.016798, -0.009698, -0.013775, 
+        #                                 -0.013774, -0.009698, -0.016798, -0.00502, -0.018735, 0.0, -0.01948, 0.00502, -0.018735, 0.009698, 
+        #                                 -0.016798, 0.013774, -0.013775, 0.016798, -0.009698, 0.018735, -0.00502]
         if 'upper_goal_position' in self.current_state['goal_pose'].keys():
             unreached_goals = [[self.current_state['goal_pose']['upper_goal_position'][2*i],self.current_state['goal_pose']['upper_goal_position'][i*2+1]] for i,v in enumerate(self.current_state['goal_pose']['goals_open']) if v]
             self.current_state['image'] = self.image_gen.draw_stamp(self.current_state['obj_2']['pose'],
                                                                 unreached_goals)
-        self.current_state['slice'] = self.slice
+        # self.current_state['slice'] = self.slice
 
         #self.current_state['f1_contact_distance'] = self.calc_distance(self.current_state['f1_contact_pos'],self.current_state['obj_2']['pose'][0][0:2])
         #self.current_state['f2_contact_distance'] = self.calc_distance(self.current_state['f2_contact_pos'],self.current_state['obj_2']['pose'][0][0:2])
         #self.current_state['f1_contact_flag'], self.current_state['f2_contact_flag'] = self.check_contact() 
         #self.current_state['f1_contact_angle'], self.current_state['f2_contact_angle'] = self.calc_contact_angle()
 
-        print('object pose', self.current_state['obj_2']['pose'][0][0:2])
+        # print('object pose', self.current_state['obj_2']['pose'][0][0:2])
         # print('sim state', self.current_state['two_finger_gripper']['joint_angles'])
         # print('joint state', self.p.getJointState(self.objects[0].id,0))
         
@@ -216,17 +216,17 @@ class MultiprocessState(StateDefault):
         #self.current_state['f2_contact_pos'] = list(temp2[6])
         self.current_state['hand_params'] = self.hand_params.copy()
         #What Jeremiah Is Adding
-        self.current_state['slice'] = [0.03896, 0.0, 0.037471, 0.01004, 0.033596, 0.019396, 0.027549, 0.027549, 0.019396, 0.033596, 0.01004, 
-                                       0.037471, 0.0, 0.03896, -0.01004, 0.037471, -0.019396, 0.033596, -0.027549, 0.027549, -0.033596, 0.019396,
-                                       -0.037471, 0.01004, -0.03896, 0.0, -0.037471, -0.01004, -0.033596, -0.019396, -0.027549, -0.027549, 
-                                       -0.019396, -0.033596, -0.01004, -0.037471, 0.0, -0.03896, 0.01004, -0.037471, 0.019396, -0.033596, 
-                                       0.027549, -0.027549, 0.033596, -0.019396, 0.037471, -0.01004]
+        # self.current_state['slice'] = [0.03896, 0.0, 0.037471, 0.01004, 0.033596, 0.019396, 0.027549, 0.027549, 0.019396, 0.033596, 0.01004, 
+        #                                0.037471, 0.0, 0.03896, -0.01004, 0.037471, -0.019396, 0.033596, -0.027549, 0.027549, -0.033596, 0.019396,
+        #                                -0.037471, 0.01004, -0.03896, 0.0, -0.037471, -0.01004, -0.033596, -0.019396, -0.027549, -0.027549, 
+        #                                -0.019396, -0.033596, -0.01004, -0.037471, 0.0, -0.03896, 0.01004, -0.037471, 0.019396, -0.033596, 
+        #                                0.027549, -0.027549, 0.033596, -0.019396, 0.037471, -0.01004]
         if 'upper_goal_position' in self.current_state['goal_pose'].keys():
             unreached_goals = [[self.current_state['goal_pose']['upper_goal_position'][2*i],self.current_state['goal_pose']['upper_goal_position'][i*2+1]] for i,v in enumerate(self.current_state['goal_pose']['goals_open']) if v]
 
             self.current_state['image'] = self.image_gen.draw_stamp(self.current_state['obj_2']['pose'],
                                                                     unreached_goals)
-        self.current_state['slice'] = self.slice
+        # self.current_state['slice'] = self.slice
         # self.current_state['f1_contact_distance'] = self.calc_distance(self.current_state['f1_contact_pos'], self.current_state['obj_2']['pose'][0][0:2])
         # self.current_state['f2_contact_distance'] = self.calc_distance(self.current_state['f2_contact_pos'], self.current_state['obj_2']['pose'][0][0:2]) 
         # self.current_state['f1_contact_angle'], self.current_state['f2_contact_angle'] = self.calc_contact_angle()
@@ -272,7 +272,7 @@ class MultiprocessState(StateDefault):
     def set_goal(self,goal_list):
         # print('SETTING THE GOAL')
         for thing in self.objects:
-            if (type(thing) == GoalHolder) | (type(thing) == RandomGoalHolder)|(type(thing) == HRLGoalHolder)|(type(thing) == HRLMultigoalHolder)|(type(thing) == HRLMultigoalFixed):
+            if (type(thing) == GoalHolder) | (type(thing) == RandomGoalHolder)|(type(thing) == HRLGoalHolder)|(type(thing) == HRLMultigoalHolder)|(type(thing) == HRLMultigoalFixed)| (type(thing) == HRLMultigoalFixedPaired):
                 # print('setting goal', goal_list)
                 if len(goal_list) > 4:
                     thing.set_pose(goal_list[0:2], goal_list[2],goal_list[3:5])
@@ -293,7 +293,7 @@ class MultiprocessState(StateDefault):
 
     def check_goal(self):
         for thing in self.objects:
-            if (type(thing) == HRLMultigoalHolder) | (type(thing) == HRLMultigoalFixed):
+            if (type(thing) == HRLMultigoalHolder) | (type(thing) == HRLMultigoalFixed)| (type(thing) == HRLMultigoalFixedPaired):
                 thing.check_goal([self.current_state['obj_2']['pose'][0][0],self.current_state['obj_2']['pose'][0][1]-0.1])
 
     def __eq__(self, o):

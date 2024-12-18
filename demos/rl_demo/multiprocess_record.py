@@ -27,7 +27,7 @@ class MultiprocessRecordData(RecordDataRLPKL):
         super().record_episode(episode_type)
         self.current_episode["frictionList"] = frictionList
         self.current_episode["contactList"] = contactList
-        print('calling record episode')
+        # print('calling record episode')
         # print("Friction list in record is :", frictionList)
 
 
@@ -50,7 +50,7 @@ class MultiprocessRecordData(RecordDataRLPKL):
                 else:
                     file_path = self.data_path + "Eval_" + hand_type+"/Episode_" + str(int(self.eval_num*self.num_threads+self.my_thread)) + '.pkl'
                 self.eval_num +=1
-                print('save episode evaluated', self.eval_num*self.num_threads+self.my_thread, hand_type)
+                # print('save episode evaluated', self.eval_num*self.num_threads+self.my_thread, hand_type)
             elif evaluated == 'asterisk':
                 # print('hu')
                 if hand_type is None:

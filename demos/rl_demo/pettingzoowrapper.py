@@ -113,12 +113,12 @@ class FullTaskWrapper(AECEnv):
         self.manager_normalizer = {'mins':np.array(args['manager_mins']),'diff':np.array(args['manager_maxes'])-np.array(args['manager_mins'])}
         if 'manager_state_maxes' in args.keys():
             self._observation_spaces = {
-                "manager": spaces.Box(
-                                low=0, high=255, 
-                                shape=(240, 240,1), 
-                                dtype=np.uint8
-                            ),
-                # 'manager': spaces.Box(np.array(args['manager_state_mins']),np.array(args['manager_state_maxes'])),
+                # "manager": spaces.Box(
+                #                 low=0, high=255, 
+                #                 shape=(240, 240,1), 
+                #                 dtype=np.uint8
+                #             ),
+                'manager': spaces.Box(np.array(args['manager_state_mins']),np.array(args['manager_state_maxes'])),
                 'worker':  spaces.Box(np.array(args['worker_state_mins']),np.array(args['worker_state_maxes']))
             }
         else:
@@ -290,7 +290,7 @@ class FullTaskWrapper(AECEnv):
         else:
             normalized_action = (action+1) * self.manager_normalizer['diff']/2 + self.manager_normalizer['mins']
             normalized_action=normalized_action.tolist()
-            print('goal to manip phase', normalized_action)
+            # print('goal to manip phase', normalized_action)
             self.manipulation_phase.set_goal(normalized_action)
             state_container = self.manipulation_phase.get_state()
             done=False

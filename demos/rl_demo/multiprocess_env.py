@@ -251,8 +251,12 @@ class MultiprocessSingleShapeEnv(Environment):
                                             controlMode=self.p.POSITION_CONTROL, targetPositions=action_to_execute,
                                             positionGains=[0.8,0.8,0.8,0.8], forces=[0.4,0.4,0.4,0.4])
                 self.step()
+        # print('fingertip distance')
+        # f1_dist = self.p.getClosestPoints(self.obj.id, self.hand.id, 10, -1, 1, -1)
+        # f2_dist = self.p.getClosestPoints(self.obj.id, self.hand.id, 10, -1, 4, -1)
+        # print(f1_dist[0][8],f2_dist[0][8])
             # thing = self.p.getBaseVelocity(self.obj_id)
-
+            # print('object position',obj_change, f1_pos, f2_pos)
     def apply_domain_randomization(self, finger_friction, floor_friction, object_mass):
         # print('dr terms',finger_friction, floor_friction, object_mass)
         if object_mass:

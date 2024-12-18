@@ -220,9 +220,9 @@ class HRLMultigoalHolder(HRLGoalHolder):
         super().__init__(goal_pose, finger_start, None, None, None, mix_orientation, mix_finger, goals_smoothed)
         self.upper_position_num = 0
         self.upper_position_set = np.array(self.pose[self.upper_position_num:self.upper_position_num+num_goals_present])
-        self.num_goals_present = 5
+        self.num_goals_present = num_goals_present
         self.radius = radius
-        self.tsteps_left = 25
+        self.tsteps_left = 40
         self.goals_reached = 0
         # print('making a multigoal holder')
 
@@ -260,12 +260,12 @@ class HRLMultigoalHolder(HRLGoalHolder):
         self.lower_finger.add_goal([0,0.06])
         self.lower_or.add_goal(0)
         self.lower_pos.add_goal([0,0])
-        self.tsteps_left = 25
+        self.tsteps_left = 40
         return [self.finger_start[0][self.run_num%self.len],self.finger_start[1][self.run_num%self.len]]
     
     def reset(self):
         super().reset()
-        self.tsteps_left = 25
+        self.tsteps_left = 40
         self.goals_reached = 0
 
 class HRLMultigoalFixed(HRLMultigoalHolder):
@@ -282,7 +282,6 @@ class HRLMultigoalFixed(HRLMultigoalHolder):
     def next_run(self):
         self.open_goals = np.ones(self.num_goals_present)
         temp=super().next_run()
-        # print(self.tsteps_left, self.upper_position_set)
         return temp
     
     def check_goal(self, object_pos):
@@ -290,7 +289,6 @@ class HRLMultigoalFixed(HRLMultigoalHolder):
         dists = np.linalg.norm(self.upper_position_set-object_pos, axis=1)
         self.goals_reached = 0
         self.tsteps_left -= 1
-        # print('distances', dists)
         for i, distance in enumerate(dists):
             if (distance < self.radius) and self.open_goals[i]:
                 self.upper_position_num+=1
@@ -301,3 +299,70 @@ class HRLMultigoalFixed(HRLMultigoalHolder):
                 self.goals_reached +=1
                 self.open_goals[i] = 0
                 print('achieved goal', object_pos, self.upper_position_set, self.open_goals)
+
+class HRLMultigoalFixedPaired(HRLMultigoalFixed):
+    # assumes the poses are 4 long (x1,y1,x2,y2)
+    def __init__(self, goal_pose, finger_start, goals_smoothed=5, num_goals_present=2, radius=0.01):
+        self.pose = goal_pose
+        self.name = 'goal_pose'
+        self.orientation = np.array([None] * len(self.pose))
+
+        self.finger = np.array([None,None,None,None] * len(self.pose))
+        
+        self.finger_start = finger_start
+        # print(np.shape(self.finger_start))
+        print('IN THE RIGHT MULTIGOAL THING')
+        self.len = len(self.pose)
+        if len(np.shape(self.pose)) == 1:
+            self.pose = [self.pose]
+        self.run_num = 0
+        self.upper_position_set = np.array(self.pose[self.run_num%self.len])
+        self.num_goals_present = num_goals_present
+        self.radius = radius
+        self.tsteps_left = 40
+        self.goals_reached = 0
+        print('AAAA ', self.upper_position_set)
+        self.lower_pos=GoalAverager(goals_smoothed)
+        self.lower_or=GoalAverager(goals_smoothed)
+        self.lower_finger=GoalAverager(goals_smoothed)
+        self.lower_finger.add_goal([0,0.06])
+        self.lower_or.add_goal(0)
+        self.lower_pos.add_goal([0,0])
+        self.open_goals = np.ones(self.num_goals_present)
+
+    
+    def next_run(self):
+        self.run_num +=1
+        if self.run_num > self.len:
+            np.random.shuffle(self.pose)
+        self.upper_position_set = np.array(self.pose[self.run_num%self.len])
+        self.lower_finger.reset()
+        self.lower_or.reset()
+        self.lower_pos.reset()
+        self.lower_finger.add_goal([0,0.06])
+        self.lower_or.add_goal(0)
+        self.lower_pos.add_goal([0,0])
+        self.tsteps_left = 40
+        self.open_goals = np.ones(self.num_goals_present)
+        # print('next run', self.upper_position_set)
+        return [self.finger_start[0][self.run_num%self.len],self.finger_start[1][self.run_num%self.len]]
+    
+    def get_data(self):
+        # print('output of goal position', self.upper_position_set.flatten().tolist())
+        # print(self.tsteps_left)
+        return {'goal_position':self.lower_pos.get_goal(),'goal_orientation':self.lower_or.get_goal(), 'goal_finger':self.lower_finger.get_goal(),
+                'upper_goal_position':self.upper_position_set.flatten().tolist(),'upper_goal_orientation':self.orientation[self.run_num%self.len], 'upper_goal_finger':self.finger[self.run_num%self.len],
+                'timesteps_remaining':self.tsteps_left, 'goals_reached': self.goals_reached, 'goals_open': self.open_goals.copy()}
+    
+    def check_goal(self, object_pos):
+        # print('checking')
+        # op = object_pos-np.array([0,0.1])
+        positions = np.reshape(self.upper_position_set,(2,2))
+        dists = np.linalg.norm(positions-object_pos, axis=1)
+        self.goals_reached = 0
+        self.tsteps_left -= 1
+        for i, distance in enumerate(dists):
+            if (distance < self.radius) and self.open_goals[i]:
+                self.goals_reached +=1
+                self.open_goals[i] = 0
+                # print('achieved goal', object_pos, positions[i], self.open_goals)

@@ -17,14 +17,16 @@ class MultigoalManipulation(MultiprocessManipulation):
 
     def post_step(self):
         #check for goal achievements
+        # print('AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA')
         self.state.check_goal()
         # Set the reward from the given action after the step
         self.reward.set_reward(self.state.get_goal(), self.cube, self.hand, self.controller.final_reward)
 
     def exit_condition(self, eval_exit=False) -> bool:
         goals = self.state.get_goal()
-        # print(goals)
-        if goals['timesteps_remaining'] <= 0:
+        # print(goals['timesteps_remaining'])
+        if (goals['timesteps_remaining'] <= 0) | (sum(goals['goals_open'])==0):
+            # print(goals['timesteps_remaining'])
             return True
         else:
             return False

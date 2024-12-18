@@ -297,11 +297,11 @@ def make_pybullet(arg_dict, pybullet_instance, rank, hand_info, frictionList = N
             if type(args['object_path']) == str:
                 object_path = args['object_path']
                 object_key = "small"
-                # print('older version of object loading, no object domain randomization used')
+                print('older version of object loading, no object domain randomization used')
             else:
                 # print('normally would get object DR but not this time')
-                object_path = args['object_path'][0]
-                object_key = 'small'   
+                object_path = args['object_path'][2]
+                object_key = 'add10'   
 
     this_hand = args['hand_file_list'][rank[0]%len(args['hand_file_list'])]
     hand_type = this_hand.split('/')[0]
@@ -314,7 +314,7 @@ def make_pybullet(arg_dict, pybullet_instance, rank, hand_info, frictionList = N
                         "palm_width":info_1['palm_width'],
                         "hand_name":hand_type}
     else:
-        # print('STARTING AWAY FROM THE OBJECT')
+        print('STARTING AWAY FROM THE OBJECT', object_key)
         hand_param_dict = {"link_lengths":[info_1['link_lengths'],info_2['link_lengths']],
                         "starting_angles":[info_1['near_start_angles'][object_key][0],info_1['near_start_angles'][object_key][1],-info_2['near_start_angles'][object_key][0],-info_2['near_start_angles'][object_key][1]],
                         "palm_width":info_1['palm_width'],
@@ -446,6 +446,9 @@ def multiprocess_evaluate_loaded(filepath, aorb):
         ht = aorb
     elif aorb =='B':
         args['hand_file_list'] = ["2v2_65.35_65.35_1.1_53/hand/2v2_65.35_65.35_1.1_53.urdf"]
+        ht = aorb
+    elif aorb =='C':
+        args['hand_file_list'] = ["2v2_35.65_35.65_1.1_53/hand/2v2_35.65_35.65_1.1_53.urdf"]
         ht = aorb
     else:
         print('not going to evaluate, aorb is wrong')
@@ -928,33 +931,6 @@ def replay(argpath, episode_path):
     #print(data['timestep_list'][0]['state']['obj_2'])
     temp = data['timestep_list'][0]['state']['goal_pose']['goal_position']
     angle = data['timestep_list'][0]['state']['goal_pose']['goal_orientation']
-
-
-    visual_list = [[1.94800000e-02, 0.00000000e+00],
-                    [1.87354961e-02, 5.02016105e-03],
-                    [1.67978499e-02, 9.69824314e-03],
-                    [1.37745000e-02, 1.37745000e-02],
-                    [9.69824314e-03, 1.67978499e-02],
-                    [5.02016105e-03, 1.87354961e-02],
-                    [1.19280598e-18, 1.94800000e-02],
-                    [-5.02016105e-03, 1.87354961e-02],
-                    [-9.69824314e-03, 1.67978499e-02],
-                    [-1.37745000e-02, 1.37745000e-02],
-                    [-1.67978499e-02, 9.69824314e-03],
-                    [-1.87354961e-02, 5.02016105e-03],
-                    [-1.94800000e-02, 2.38561196e-18],
-                    [-1.87354961e-02, -5.02016105e-03],
-                    [-1.67978499e-02, -9.69824314e-03],
-                    [-1.37745000e-02, -1.37745000e-02],
-                    [-9.69824314e-03, -1.67978499e-02],
-                    [-5.02016105e-03, -1.87354961e-02],
-                    [-3.57841795e-18, -1.94800000e-02],
-                    [5.02016105e-03, -1.87354961e-02],
-                    [9.69824314e-03, -1.67978499e-02],
-                    [1.37745000e-02, -1.37745000e-02],
-                    [1.67978499e-02, -9.69824314e-03],
-                    [1.87354961e-02, -5.02016105e-03]]
-
     
     # for i in visual_list:
     #     eval_env.env.make_viz_point([i[0],i[1],0.0005])
@@ -1149,74 +1125,24 @@ def main(filepath = None,learn_type='run', num_cpu=16):
 
 if __name__ == '__main__':
     import csv
-
-    #main('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/The_last_run/JA_S3/experiment_config.json','run')
-    main('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/Random_Shape_Test/Slice_Move/experiment_config.json','run')
-    # multiprocess_evaluate_loaded('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/The_last_run/JA_S3/experiment_config.json',"A")
-    # replay('./data/Bogo/JA_S3/experiment_config.json', './data/Bogo/JA_S3/Eval_A/Episode_96.pkl')
-    # replay('./data/New_Fric2/low_c/experiment_config.json', './data/The_last_run/JA_S3/Ast_A/Episode_4.pkl')
-    # replay('./data/Collision_Test/Test2/experiment_config.json', './data/Collision_Test/Test2/Eval_A/Episode_170.pkl')
-
-    # multiprocess_evaluate_loaded('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/Slice_Test/Full/experiment_config.json',"A")
-    # multiprocess_evaluate_loaded('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/Slice_Test/Partial/experiment_config.json',"A")
-    # multiprocess_evaluate_loaded('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/Slice_Test/Double_Partial/experiment_config.json',"A")
-
-    #multiprocess_evaluate_loaded('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/The_last_run/JA_S3/experiment_config.json',"A")
-    # multiprocess_evaluate_loaded('./data/HPC_Slide/FTP_S1/experiment_config.json',"B")
-    # multiprocess_evaluate_loaded('./data/HPC_Slide/FTP_S2/experiment_config.json',"A")
-    # multiprocess_evaluate_loaded('./data/HPC_Slide/FTP_S2/experiment_config.json',"B")
-
-    # multiprocess_evaluate_loaded('./data/HPC_Slide/JA_S1/experiment_config.json',"A")
-    # multiprocess_evaluate_loaded('./data/HPC_Slide/JA_S1/experiment_config.json',"B")
-    # multiprocess_evaluate_loaded('./data/HPC_Slide/JA_S2/experiment_config.json',"A")
-    # multiprocess_evaluate_loaded('./data/HPC_Slide/JA_S2/experiment_config.json',"B")
-
-    # multiprocess_evaluate_loaded('./data/HPC_Slide/JA_S3/experiment_config.json',"A")
-    # multiprocess_evaluate_loaded('./data/HPC_Slide/JA_S3/experiment_config.json',"B")
-    # multiprocess_evaluate_loaded('./data/HPC_Slide/FTP_S3/experiment_config.json',"A")
-    # multiprocess_evaluate_loaded('./data/HPC_Slide/FTP_S3/experiment_config.json',"B")
-    # contactList = [9, 6, 0.05]
-    # frictionList = [0.05 ,0.01 ,0.04 ,0.20 ,0.01 ,0.05, 1, 0.001, 0.001]
-    # asterisk_test('./data/The_last_run/JA_S3/experiment_config.json','A')
-    # full_test('./data/Mothra_Full_Continue_New_weight/JA_S3/experiment_config.json','A')
-    # full_test('./data/Mothra_Full_Continue_New_weight/JA_S3/experiment_config.json','B')
-
-    # multiprocess_evaluate_loaded('./data/Mothra_Full_Continue_New_weight/JA_S3/experiment_config.json','A')
-    # multiprocess_evaluate_loaded('./data/Mothra_Full_Continue_New_weight/JA_S3/experiment_config.json','B')
-    # multiprocess_evaluate_loaded('./data/HPC_Rotation/FTP_S1/experiment_config.json',"A")
-    # multiprocess_evaluate_loaded('./data/HPC_Rotation/FTP_S1/experiment_config.json',"B")
-    # multiprocess_evaluate_loaded('./data/HPC_Rotation/FTP_S2/experiment_config.json',"A")
-    # multiprocess_evaluate_loaded('./data/HPC_Rotation/FTP_S2/experiment_config.json',"B")
-    # multiprocess_evaluate_loaded('./data/HPC_Rotation/FTP_S3/experiment_config.json',"A")
-    # multiprocess_evaluate_loaded('./data/HPC_Rotation/FTP_S3/experiment_config.json',"B")
-
-    # multiprocess_evaluate_loaded('./data/HPC_Full/FTP_S1/experiment_config.json',"A")
-    # multiprocess_evaluate_loaded('./data/HPC_Full/FTP_S1/experiment_config.json',"B")
-
-    # rotation_test('./data/Rotation_continue/JA_S3_new_weight_same_space/experiment_config.json',"A")
-    # multiprocess_evaluate_loaded('./data/Rotation_continue/JA_S3_larger_space/experiment_config.json',"A")
-    # rotation_test('./data/Mothra_Rotation/JA_S3/experiment_config.json',"A")
-    # rotation_test('./data/Rotation_continue/JA_S3_larger_space_new_weight/experiment_config.json',"A")
-    # rotation_test('./data/Rotation_continue/JA_S3_larger_space_new_weight_contact/experiment_config.json',"A")
-    # rotation_test('./data/Rotation_continue/JA_S3_larger_space/experiment_config.json',"B")
-    # rotation_test('./data/Rotation_continue/JA_S3_larger_space_new_weight/experiment_config.json',"B")
-    # rotation_test('./data/Mothra_Rotation/JA_S3/experiment_config.json',"B_B")
-    # rotation_test('./data/Mothra_Rotation/FTP_S1/experiment_config.json',"A")
-    # rotation_test('./data/Mothra_Rotation/JA_S2/experiment_config.json',"A_A")
-    # rotation_test('./data/Mothra_Rotation/JA_S2/experiment_config.json',"B_B")
-    # rotation_test('./data/Rotation_continue/JA_S3_larger_space_new_weight_contact/experiment_config.json',"B")
-    # sub_names = ['FTP_S1','FTP_S2','FTP_S3','JA_S1','JA_S2','JA_S3']
-    # top_names = ['Sliding_B']
+    # replay('./data/mslide/JA_S3/experiment_config.json','./data/mslide/JA_S3/Ast_A/Episode_0.pkl')
+    sub_names = ['FTP_S1','FTP_S2','FTP_S3','JA_S1','JA_S2','JA_S3']
+    top_names = ['N_HPC_slide_rerun','N_mothra_slide_rerun','J_HPC_rerun']
     # for uname in top_names:
     #     for lname in sub_names:
     #         # rotation_test('./data/'+uname+'/'+lname+"/experiment_config.json","A_A")
     #         # rotation_test('./data/'+uname+'/'+lname+"/experiment_config.json","B_B")
-    #         asterisk_test('./data/'+uname+'/'+lname+"/experiment_config.json","A")
-    #         asterisk_test('./data/'+uname+'/'+lname+"/experiment_config.json","B")
+    #         # asterisk_test('./data/'+uname+'/'+lname+"/experiment_config.json","A")
+    #         # asterisk_test('./data/'+uname+'/'+lname+"/experiment_config.json","B")
     #         print(uname, lname)
 
-    # for uname in top_names:
-    #     for lname in sub_names:
-    #         multiprocess_evaluate_loaded('./data/'+uname+'/'+lname+"/experiment_config.json","A")
-    #         multiprocess_evaluate_loaded('./data/'+uname+'/'+lname+"/experiment_config.json","B")
-    #         print(uname, lname)
+    for uname in top_names:
+        for lname in sub_names:
+            # multiprocess_evaluate_loaded('./data/'+uname+'/'+lname+"/experiment_config.json","A")
+            
+            # multiprocess_evaluate_loaded('./data/'+uname+'/'+lname+"/experiment_config.json","B")
+            multiprocess_evaluate_loaded('./data/'+uname+'/'+lname+"/experiment_config.json","C")
+            print(uname, lname)
+
+
+
