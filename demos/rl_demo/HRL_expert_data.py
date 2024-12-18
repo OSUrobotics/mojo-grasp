@@ -25,11 +25,13 @@ def collect_expert(env,poses):
     # start small
     
     pose_orders = []
-    for i in range(int(len(poses[0])/100)-4):
-        goal_poses = poses[0][i:i+5].tolist()
-        start_point = poses[0][np.random.randint(len(poses[0]))]
+    for i in range(int(len(poses[0]))-4):
+        goal_poses = poses[0][i].tolist()
+        # print(goal_poses)
+        goal_poses = np.reshape(goal_poses,(2,2)).tolist()
+        start_point = np.array([0,0])
         order = [start_point.tolist()]
-        for _ in range(5):
+        for _ in range(2):
             dists = np.linalg.norm(start_point - np.array(goal_poses),axis=1)
             # print(dists, start_point, np.array(goal_poses))
             next_ind = np.argmin(dists)
@@ -38,20 +40,23 @@ def collect_expert(env,poses):
             goal_poses.pop(next_ind)
         pose_orders.append(order)
 
-    buffer = RolloutBuffer(25*len(pose_orders),env.observation_space('manager'),env.action_space('manager'))
+    buffer = RolloutBuffer(40*len(pose_orders),env.observation_space('manager'),env.action_space('manager'))
     just_goals = {'goals':[],'actions':[], 'start':[]}
     for order in pose_orders:
         # go through each of the orders we made earlier and set the simulator to those points
         # using 5 steps per spot as the goal point, starting the object at the desired point
         # and interpolating from that spot
         env.reset({'start_pos':order[0],'finger_angs':[-np.pi/2,0,np.pi/2,0]})
-        goals=[order[int(i/5)+1] for i in range(25)]
+        goals=[order[int(i/20)+1] for i in range(40)]
         order_array = np.array(order)
-        object_poses = [np.linspace(order_array[i],order_array[i+1],5) for i in range(len(order_array)-1)]
+        object_poses = [np.linspace(order_array[i],order_array[i+1],20) for i in range(len(order_array)-1)]
         object_poses = np.array(object_poses)
-        object_poses = object_poses.reshape(25,2)
-
-        for i in range(25):
+        # print(object_poses)
+        object_poses = object_poses.reshape(40,2)
+        print('about to get episode')
+        done = False
+        i=0
+        while not done:
             env.step(np.array(goals[i]))
             env.step(np.array([0,0,0,0]),direct_control=[[object_poses[i][0],object_poses[i][1]+0.1],[0,0,0,1]])
             observation = env.observations['manager']
@@ -67,6 +72,8 @@ def collect_expert(env,poses):
             just_goals['goals'].append(goals)
             just_goals['start'].append(order[0])
             buffer.add(observation,action,reward,i==0,values,log_probs)
+            done = env.manipulation_phase.exit_condition()
+            i+=1
     env.train()
     return buffer, just_goals
 
@@ -198,6 +205,7 @@ def train_expert_multiprocess(filepath, learn_type='run', num_cpu=16):
     if args['model']== "PPO":
         if 'mims' in args['manager_state_list']:
             model = model_type('CnnPolicy', env, tensorboard_log=args['tname']+'/manager')
+            assert 1==0
         else:
             model = model_type("MlpPolicy", env, tensorboard_log=args['tname']+'/manager')
     elif args['model'] == "PPO_Expert":
@@ -361,6 +369,14 @@ def test_expert_data(filepath):
 if __name__ == '__main__':
     # train_expert_multiprocess('./data/HRL_image_pretrained_frozen/experiment_config.json',num_cpu=16)
     # train_expert('./data/HRL_image_pretrained_expert/experiment_config.json')
-    test_expert_data('./data/HRL_image_pretrained_expert/experiment_config.json')
+    # test_expert_data('./data/HRL_image_pretrained_expert/experiment_config.json')
     # train_expert('./data/HRL_froze_pretrained_worker_expert/experiment_config.json')
     # [[0.03,0.024],[-0.05,0.0367],[-0.06,-0.023],[0.02,-0.05],[0.05,0.02],[-0.003,0.05]]
+    # train_expert('./data/HRL_simplified_pretrained_expert/experiment_config.json')
+    train_expert('./data/HRL_simplified_expert_no_pretrained/experiment_config.json')
+    # train_expert('./data/HRL_simplified_none/experiment_config.json')
+    # train_expert('./data/HRL_simplified_no_expert/experiment_config.json')
+    
+    # TODOs
+    # try the thing with pretraining and all that
+    # try without the fucking stuff

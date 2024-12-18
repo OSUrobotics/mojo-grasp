@@ -7,7 +7,7 @@ from demos.rl_demo import multiprocess_manipulation_phase
 from demos.rl_demo import multiprocess_multigoal_phase
 # import rl_env
 from demos.rl_demo.multiprocess_state import MultiprocessState
-from mojograsp.simcore.goal_holder import  GoalHolder, RandomGoalHolder, SingleGoalHolder, HRLGoalHolder, HRLMultigoalHolder, HRLMultigoalFixed
+from mojograsp.simcore.goal_holder import  GoalHolder, RandomGoalHolder, SingleGoalHolder, HRLGoalHolder, HRLMultigoalHolder, HRLMultigoalFixed,HRLMultigoalFixedPaired
 from demos.rl_demo import rl_action
 from demos.rl_demo import multiprocess_reward
 from demos.rl_demo import multiproccess_gym_wrapper_her
@@ -28,7 +28,7 @@ import multiprocessing
 from demos.rl_demo.pkl_merger import merge_from_folder
 from scipy.spatial.transform import Rotation as R
 from stable_baselines3.common.noise import NormalActionNoise
-# import supersuit as ss    
+# import supersuit as ss
 from pantheonrl.envs.pettingzoo import PettingZooAECWrapper
 from pantheonrl.common.agents import OnPolicyAgent, StaticPolicyAgent
 
@@ -43,66 +43,99 @@ def make_env(arg_dict=None,rank=0,hand_info=None):
 def load_set(args):
     # print(args['points_path'])
     # print(args['test_path'])
-    if args['points_path'] =='':
-        x = [0.0]
-        y = [0.0]
-    else:
+    if args['task'] == 'MultigoalFixed':
         df = pd.read_csv(args['points_path'], index_col=False)
-        x = df['x']
-        y = df['y']
-        if 'ang' in df.keys():
-            orientations=df['ang']
-        else:
-            print('NO RANDOM ORIENTATIONS')
-            orientations= np.zeros(len(x))
+        x1 = df['x1']
+        y1 = df['y1']
+        x2 = df['x2']
+        y2 = df['y2']
+        orientations= np.zeros(len(x1))
         if 'f1y' in df.keys():
             f1y = df['f1y']
             f2y= df['f2y']
         else:
             f1y = np.random.uniform(-0.01,0.01, len(x))
             f2y = np.random.uniform(-0.01,0.01, len(y))
-
-    if 'test_path' in args.keys():
-        df2 = pd.read_csv(args['test_path'],index_col=False)
-        xeval = df2['x']
-        yeval = df2['y']
-        if 'ang' in df2.keys():
-            eval_orientations=df2['ang']
-        else:
-            print('NO RANDOM ORIENTATIONS')
-            eval_orientations= np.zeros(len(xeval))
-        if 'f1y' in df.keys():
-            ef1y = df['f1y']
-            ef2y= df['f2y']
-        else:
-            ef1y = np.random.uniform(-0.01,0.01, len(xeval))
-            ef2y = np.random.uniform(-0.01,0.01, len(yeval))
-    else:
-        xeval = x.copy()
-        yeval = y.copy()
         eval_orientations = orientations.copy()
         ef1y = f1y.copy()
-        ef2y=f2y.copy()
-
-    if 'contact' in args['task']:
-        finger_ys = np.random.uniform( 0.10778391676312778-0.02, 0.10778391676312778+0.02,(len(y),2))
-        finger_contacts = np.ones((len(y),4))
-        finger_contacts[:,0] = x + 0.026749999999999996
-        finger_contacts[:,1] = y + finger_ys[:,0]
-        finger_contacts[:,2] = x + -0.026749999999999996
-        finger_contacts[:,3] = y + finger_ys[:,1]
-        eval_finger_ys = np.random.uniform( 0.10778391676312778-0.02, 0.10778391676312778+0.02,(len(yeval),2))
-        eval_finger_contacts = np.ones((len(yeval),4))
-        eval_finger_contacts[:,0] = xeval + 0.026749999999999996
-        eval_finger_contacts[:,1] = yeval + eval_finger_ys[:,0]
-        eval_finger_contacts[:,2] = xeval + -0.026749999999999996
-        eval_finger_contacts[:,3] = yeval + eval_finger_ys[:,1]
-    else:
+        ef2y=f2y.copy()            
         finger_contacts = None
         eval_finger_contacts = None
+    else:
+        if args['points_path'] == '':
+            x = [0.0]
+            y = [0.0]
+        else:
+            df = pd.read_csv(args['points_path'], index_col=False)
+            x = df['x']
+            y = df['y']
+            if 'ang' in df.keys():
+                orientations=df['ang']
+            else:
+                print('NO RANDOM ORIENTATIONS')
+                orientations= np.zeros(len(x))
+            if 'f1y' in df.keys():
+                f1y = df['f1y']
+                f2y= df['f2y']
+            else:
+                f1y = np.random.uniform(-0.01,0.01, len(x))
+                f2y = np.random.uniform(-0.01,0.01, len(y))
 
-    pose_list = np.array([[i,j] for i,j in zip(x,y)])
-    eval_pose_list = [[i,j] for i,j in zip(xeval,yeval)]
+        if 'test_path' in args.keys():
+            df2 = pd.read_csv(args['test_path'],index_col=False)
+            xeval = df2['x']
+            yeval = df2['y']
+            if 'ang' in df2.keys():
+                eval_orientations=df2['ang']
+            else:
+                print('NO RANDOM ORIENTATIONS')
+                eval_orientations= np.zeros(len(xeval))
+            if 'f1y' in df.keys():
+                ef1y = df['f1y']
+                ef2y= df['f2y']
+            else:
+                ef1y = np.random.uniform(-0.01,0.01, len(xeval))
+                ef2y = np.random.uniform(-0.01,0.01, len(yeval))
+        else:
+            xeval = x.copy()
+            yeval = y.copy()
+            eval_orientations = orientations.copy()
+            ef1y = f1y.copy()
+            ef2y=f2y.copy()
+
+        if 'contact' in args['task']:
+            finger_ys = np.random.uniform( 0.10778391676312778-0.02, 0.10778391676312778+0.02,(len(y),2))
+            finger_contacts = np.ones((len(y),4))
+            finger_contacts[:,0] = x + 0.026749999999999996
+            finger_contacts[:,1] = y + finger_ys[:,0]
+            finger_contacts[:,2] = x + -0.026749999999999996
+            finger_contacts[:,3] = y + finger_ys[:,1]
+            eval_finger_ys = np.random.uniform( 0.10778391676312778-0.02, 0.10778391676312778+0.02,(len(yeval),2))
+            eval_finger_contacts = np.ones((len(yeval),4))
+            eval_finger_contacts[:,0] = xeval + 0.026749999999999996
+            eval_finger_contacts[:,1] = yeval + eval_finger_ys[:,0]
+            eval_finger_contacts[:,2] = xeval + -0.026749999999999996
+            eval_finger_contacts[:,3] = yeval + eval_finger_ys[:,1]
+        else:
+            finger_contacts = None
+            eval_finger_contacts = None
+
+    if args['task'] == 'MultigoalFixed':
+        pose_list = []
+        eval_pose_list = []
+        for i,j,k,l in zip(x1,y1,x2,y2):
+            if np.random.rand() > 0.5:
+                pose_list.append([i,j,k,l])
+            else:
+                pose_list.append([k,l,i,j])
+            if np.random.rand() > 0.5:
+                eval_pose_list.append([i,j,k,l])
+            else:
+                eval_pose_list.append([k,l,i,j])
+        pose_list = np.array(pose_list)
+    else:
+        pose_list = np.array([[i,j] for i,j in zip(x,y)])
+        eval_pose_list = [[i,j] for i,j in zip(xeval,yeval)]
     orientations = [ i for i in orientations]
     eval_orientations = [i for i in eval_orientations]
     f1y = [ i for i in f1y]
@@ -143,8 +176,8 @@ def make_pybullet(arg_dict, pybullet_instance, rank, hand_info, viz=False):
         goal_poses = HRLMultigoalHolder(pose_list, np.array(finger_starts[0:2]),mix_orientation=True, mix_finger=True, goals_smoothed=5, num_goals_present=args['manager goals'],radius=0.01)
         eval_goal_poses = HRLMultigoalHolder(eval_pose_list, np.array(eval_finger_starts),goals_smoothed=5, num_goals_present=args['manager goals'],radius=0.01)
     elif args['task'] == 'MultigoalFixed':
-        goal_poses = HRLMultigoalFixed(pose_list, np.array(finger_starts[0:2]),mix_orientation=True, mix_finger=True, goals_smoothed=5, num_goals_present=args['manager goals'],radius=0.01)
-        eval_goal_poses = HRLMultigoalFixed(eval_pose_list, np.array(eval_finger_starts),goals_smoothed=5, num_goals_present=args['manager goals'],radius=0.01)
+        goal_poses = HRLMultigoalFixedPaired(pose_list, np.array(finger_starts[0:2]), num_goals_present=args['manager goals'],radius=0.01)
+        eval_goal_poses = HRLMultigoalFixedPaired(eval_pose_list, np.array(eval_finger_starts), num_goals_present=args['manager goals'],radius=0.01)
     elif finger_contacts is not None:
         print('we are shuffling the angle and fingertip for the training set WITH A FINGER GOAL')
         eval_finger_contacts = np.array(eval_finger_contacts[int(num_eval*rank[0]/rank[1]):int(num_eval*(rank[0]+1)/rank[1])])
