@@ -448,7 +448,7 @@ def multiprocess_evaluate_loaded(filepath, aorb):
         args['hand_file_list'] = ["2v2_65.35_65.35_1.1_53/hand/2v2_65.35_65.35_1.1_53.urdf"]
         ht = aorb
     elif aorb =='C':
-        args['hand_file_list'] = ["2v2_35.65_35.65_1.1_53/hand/2v2_35.65_35.65_1.1_53.urdf"]
+        args['hand_file_list'] = ["2v2_65.35_50.50_1.1_53/hand/2v2_65.35_50.50_1.1_53.urdf"]
         ht = aorb
     else:
         print('not going to evaluate, aorb is wrong')
@@ -594,7 +594,6 @@ def asterisk_test(filepath,hand_type,frictionList = None, contactList = None):
                     while not done:
                         action, _ = model.predict(obs,deterministic=True)
                         obs, _, done, _ = eval_env.step(action,hand_type=hand_type)
-
 
     else:
         for i in asterisk_thing:
@@ -908,7 +907,7 @@ def replay(argpath, episode_path):
     f2_poses = [s['state']['f2_pos'] for s in data['timestep_list']]
     joint_angles = [s['state']['two_finger_gripper']['joint_angles'] for s in data['timestep_list']]
     import pybullet as p2
-    # args['hand_file_list'] = ["2v2_65.35_65.35_1.1_53/hand/2v2_65.35_65.35_1.1_53.urdf"]
+    args['hand_file_list'] = ["2v2_65.35_50.50_1.1_53/hand/2v2_65.35_50.50_1.1_53.urdf"]
     eval_env , _, poses= make_pybullet(args,p2, [1,3], hand_params,viz=True)
     eval_env.evaluate()
     temp = [joint_angles[0]['finger0_segment0_joint'],joint_angles[0]['finger0_segment1_joint'],joint_angles[0]['finger1_segment0_joint'],joint_angles[0]['finger1_segment1_joint']]
@@ -1127,7 +1126,7 @@ if __name__ == '__main__':
     import csv
     # replay('./data/mslide/JA_S3/experiment_config.json','./data/mslide/JA_S3/Ast_A/Episode_0.pkl')
     sub_names = ['FTP_S1','FTP_S2','FTP_S3','JA_S1','JA_S2','JA_S3']
-    top_names = ['N_HPC_slide_rerun','N_mothra_slide_rerun','J_HPC_rerun']
+    top_names = ['N_mothra_slide_rerun','J_HPC_rerun'] # 'N_HPC_slide_rerun',
     # for uname in top_names:
     #     for lname in sub_names:
     #         # rotation_test('./data/'+uname+'/'+lname+"/experiment_config.json","A_A")
@@ -1135,14 +1134,14 @@ if __name__ == '__main__':
     #         # asterisk_test('./data/'+uname+'/'+lname+"/experiment_config.json","A")
     #         # asterisk_test('./data/'+uname+'/'+lname+"/experiment_config.json","B")
     #         print(uname, lname)
-
-    for uname in top_names:
-        for lname in sub_names:
-            # multiprocess_evaluate_loaded('./data/'+uname+'/'+lname+"/experiment_config.json","A")
+    # multiprocess_evaluate_loaded("./data/N_HPC_slide_rerun/JA_S3/experiment_config.json","A")
+    # for uname in top_names:
+    #     for lname in sub_names:
+    #         multiprocess_evaluate_loaded('./data/'+uname+'/'+lname+"/experiment_config.json","A")
             
-            # multiprocess_evaluate_loaded('./data/'+uname+'/'+lname+"/experiment_config.json","B")
-            multiprocess_evaluate_loaded('./data/'+uname+'/'+lname+"/experiment_config.json","C")
-            print(uname, lname)
+    #         # multiprocess_evaluate_loaded('./data/'+uname+'/'+lname+"/experiment_config.json","B")
+    #         # multiprocess_evaluate_loaded('./data/'+uname+'/'+lname+"/experiment_config.json","C")
+    #         print(uname, lname)
 
 
 

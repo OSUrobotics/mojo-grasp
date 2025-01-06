@@ -2782,31 +2782,7 @@ class PlotBackend():
         print(f"full success: {len(success_matrix['full success'])}, distance success: {len(success_matrix['distance success'])}, angle success:{len(success_matrix['angle success'])}, full failure: {len(success_matrix['full failure'])}")
         short = []
         long = []
-        # distance_threshold_for_grouping = np.average(start_distances)
-        # for d, s in zip(start_distances,s_f):
-        #     if d < distance_threshold_for_grouping:
-        #         short.append(s)
-        #     else:
-        #         long.append(s)
 
-        # print('short success rate', np.average(short))
-        # print('long success rate', np.average(long))
-        # print('pivot point', distance_threshold_for_grouping)
-
-        #alternative
-        # short = []
-        # long = []
-        # distance_threshold_for_grouping = np.median(radius)#0.05
-        # #np.average(radius)
-        # for d, s in zip(radius,s_f):
-        #     if d < distance_threshold_for_grouping:
-        #         short.append(s)
-        #     else:
-        #         long.append(s)
-        # print('radius style', len(short),len(long))
-        # print('short success rate', np.average(short))
-        # print('long success rate', np.average(long))
-        # print('pivot point', distance_threshold_for_grouping)
 
         full_success = np.array(success_matrix['full success'])
         distance_success = np.array(success_matrix['distance success'])
@@ -4205,11 +4181,12 @@ class PlotBackend():
         self.build_beefy(folder)
         if self.clear_plots:
             self.clear_axes()
-        goals_reached = moving_average(self.point_dictionary['Num Goals Reached'].to_list(),self.moving_avg)
+        goals_reached = moving_average(self.point_dictionary['Num Goals Reached'].to_list()[:36000],self.moving_avg)
         a = self.ax.plot(range(len(goals_reached)),goals_reached)
-        self.ax.set_ylim((0.5,1.8))
-        self.ax.set_xlim((0,14400))
-        self.ax.legend(['Expert Manager + Pretrained Worker','Training Manager + Pretrianed Worker','Training Both Worker and Manager'])
+        # self.ax.set_ylim((0.5,1.8))
+        # self.ax.set_xlim((0,14400))
+        self.ax.legend(['Expert Manager + Pretrained Worker','Expert Manager + Training Worker',
+                        'Training Manager + Pretrained Worker','Training Manager + Training Worker'])
         self.ax.set_aspect('auto',adjustable='box')
 
     def draw_uppers(self, folder):
