@@ -13,7 +13,7 @@ from mojograsp.simobjects.two_finger_gripper import TwoFingerGripper
 from mojograsp.simcore.goal_holder import *
 # from point_generator import slice_obj_at_y_level, calculate_outer_perimeter, find_intersection_points
 from mojograsp.simcore.image_maker import ImageGenerator
-# import demos.rl_demo.point_generator as pg
+import demos.rl_demo.point_generator as pg
         
 class DictHolder():
     def __init__(self,list_size):
@@ -56,7 +56,7 @@ class MultiprocessState(StateDefault):
         self.objects = objects 
         obj_path = self.objects[1].get_path()
         #print('OBJ PATH', obj_path)
-        # self.slice = pg.get_slice(obj_path)
+        self.slice = pg.get_slice(obj_path)
         for object in self.objects:
             if type(object) == TwoFingerGripper:
                 temp = object.link_lengths
@@ -182,7 +182,7 @@ class MultiprocessState(StateDefault):
             unreached_goals = [[self.current_state['goal_pose']['upper_goal_position'][2*i],self.current_state['goal_pose']['upper_goal_position'][i*2+1]] for i,v in enumerate(self.current_state['goal_pose']['goals_open']) if v]
             self.current_state['image'] = self.image_gen.draw_stamp(self.current_state['obj_2']['pose'],
                                                                 unreached_goals)
-        # self.current_state['slice'] = self.slice
+        self.current_state['slice'] = self.slice
 
         #self.current_state['f1_contact_distance'] = self.calc_distance(self.current_state['f1_contact_pos'],self.current_state['obj_2']['pose'][0][0:2])
         #self.current_state['f2_contact_distance'] = self.calc_distance(self.current_state['f2_contact_pos'],self.current_state['obj_2']['pose'][0][0:2])
@@ -226,7 +226,7 @@ class MultiprocessState(StateDefault):
 
             self.current_state['image'] = self.image_gen.draw_stamp(self.current_state['obj_2']['pose'],
                                                                     unreached_goals)
-        # self.current_state['slice'] = self.slice
+        self.current_state['slice'] = self.slice
         # self.current_state['f1_contact_distance'] = self.calc_distance(self.current_state['f1_contact_pos'], self.current_state['obj_2']['pose'][0][0:2])
         # self.current_state['f2_contact_distance'] = self.calc_distance(self.current_state['f2_contact_pos'], self.current_state['obj_2']['pose'][0][0:2]) 
         # self.current_state['f1_contact_angle'], self.current_state['f2_contact_angle'] = self.calc_contact_angle()

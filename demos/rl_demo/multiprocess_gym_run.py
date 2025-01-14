@@ -1131,7 +1131,7 @@ def main(filepath = None,learn_type='run', num_cpu=16, j_test=False):
 if __name__ == '__main__':
     import csv
 
-    main('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/Long_Slice_Improved/Static_Dec3/experiment_config.json','run',j_test=True)
+    main('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/Long_Slice_Improved/Static_Dec3/experiment_config.json','run',j_test=False)
     #multiprocess_evaluate_loaded('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/Random_Shape_Test/Regular/experiment_config.json','A')
     #multiprocess_evaluate_loaded('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/Random_Shape_Test/Slice/experiment_config.json','A')
     #multiprocess_evaluate_loaded('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/Long_Slice/Static_Long_Nov20/experiment_config.json','A')
