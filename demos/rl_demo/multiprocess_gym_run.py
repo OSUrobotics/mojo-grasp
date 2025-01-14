@@ -33,6 +33,7 @@ import multiprocessing
 from demos.rl_demo.pkl_merger import merge_from_folder
 from scipy.spatial.transform import Rotation as R
 from stable_baselines3.common.noise import NormalActionNoise
+from torch import nn
 
 
 def make_env(arg_dict=None,rank=0,hand_info=None):
@@ -458,6 +459,7 @@ def multiprocess_evaluate_loaded(filepath, aorb):
         args['test_path'] = "./resources/Solo_rotation_test.csv"
     vec_env = SubprocVecEnv([make_env(args,[i,num_cpu],hand_info=hand_params) for i in range(num_cpu)])
     vec_env.env_method('set_reduced_save_type', False)
+    # Change to nn.ReLu in kwargs
     model = model_type("MlpPolicy", vec_env, tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-2.3}).load(args['save_path']+'best_model', env=vec_env)
     
     if 'Rotation' in args['task']:
@@ -1042,7 +1044,7 @@ def replay(argpath, episode_path):
         # joints.append()
     p2.disconnect()
 
-def main(filepath = None,learn_type='run', num_cpu=16):
+def main(filepath = None,learn_type='run', num_cpu=16, j_test=False):
     # Create the vectorized environment
     print('cuda y/n?', get_device())
     if filepath is None:
@@ -1106,7 +1108,11 @@ def main(filepath = None,learn_type='run', num_cpu=16):
                         batch_size=256,
                         tensorboard_log=args['tname'])
             print('DDPG MODEL INITIALIZED')
+        elif j_test:
+            model = model_type("MlpPolicy", vec_env,tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-0.69,'activation_fn': nn.ReLU})
+            print('J_TEST MODEL INITIALIZED')
         else:
+            # use ReLu in Kwargs and log_std_init = -.69 
             model = model_type("MlpPolicy", vec_env,tensorboard_log=args['tname'])
 
     try:
@@ -1124,9 +1130,66 @@ def main(filepath = None,learn_type='run', num_cpu=16):
 
 if __name__ == '__main__':
     import csv
-    # replay('./data/mslide/JA_S3/experiment_config.json','./data/mslide/JA_S3/Ast_A/Episode_0.pkl')
-    sub_names = ['FTP_S1','FTP_S2','FTP_S3','JA_S1','JA_S2','JA_S3']
-    top_names = ['N_mothra_slide_rerun','J_HPC_rerun'] # 'N_HPC_slide_rerun',
+
+    main('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/Long_Slice_Improved/Static_Dec3/experiment_config.json','run',j_test=True)
+    #multiprocess_evaluate_loaded('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/Random_Shape_Test/Regular/experiment_config.json','A')
+    #multiprocess_evaluate_loaded('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/Random_Shape_Test/Slice/experiment_config.json','A')
+    #multiprocess_evaluate_loaded('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/Long_Slice/Static_Long_Nov20/experiment_config.json','A')
+    # multiprocess_evaluate_loaded('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/The_last_run/JA_S3/experiment_config.json',"A")
+    # replay('./data/Bogo/JA_S3/experiment_config.json', './data/Bogo/JA_S3/Eval_A/Episode_96.pkl')
+    # replay('./data/New_Fric2/low_c/experiment_config.json', './data/The_last_run/JA_S3/Ast_A/Episode_4.pkl')
+    # replay('./data/Collision_Test/Test2/experiment_config.json', './data/Collision_Test/Test2/Eval_A/Episode_170.pkl')
+
+    # multiprocess_evaluate_loaded('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/Slice_Test/Full/experiment_config.json',"A")
+    # multiprocess_evaluate_loaded('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/Slice_Test/Partial/experiment_config.json',"A")
+    # multiprocess_evaluate_loaded('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/Slice_Test/Double_Partial/experiment_config.json',"A")
+
+    #multiprocess_evaluate_loaded('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/The_last_run/JA_S3/experiment_config.json',"A")
+    # multiprocess_evaluate_loaded('./data/HPC_Slide/FTP_S1/experiment_config.json',"B")
+    # multiprocess_evaluate_loaded('./data/HPC_Slide/FTP_S2/experiment_config.json',"A")
+    # multiprocess_evaluate_loaded('./data/HPC_Slide/FTP_S2/experiment_config.json',"B")
+
+    # multiprocess_evaluate_loaded('./data/HPC_Slide/JA_S1/experiment_config.json',"A")
+    # multiprocess_evaluate_loaded('./data/HPC_Slide/JA_S1/experiment_config.json',"B")
+    # multiprocess_evaluate_loaded('./data/HPC_Slide/JA_S2/experiment_config.json',"A")
+    # multiprocess_evaluate_loaded('./data/HPC_Slide/JA_S2/experiment_config.json',"B")
+
+    # multiprocess_evaluate_loaded('./data/HPC_Slide/JA_S3/experiment_config.json',"A")
+    # multiprocess_evaluate_loaded('./data/HPC_Slide/JA_S3/experiment_config.json',"B")
+    # multiprocess_evaluate_loaded('./data/HPC_Slide/FTP_S3/experiment_config.json',"A")
+    # multiprocess_evaluate_loaded('./data/HPC_Slide/FTP_S3/experiment_config.json',"B")
+    # contactList = [9, 6, 0.05]
+    # frictionList = [0.05 ,0.01 ,0.04 ,0.20 ,0.01 ,0.05, 1, 0.001, 0.001]
+    # asterisk_test('./data/The_last_run/JA_S3/experiment_config.json','A')
+    # full_test('./data/Mothra_Full_Continue_New_weight/JA_S3/experiment_config.json','A')
+    # full_test('./data/Mothra_Full_Continue_New_weight/JA_S3/experiment_config.json','B')
+
+    # multiprocess_evaluate_loaded('./data/Mothra_Full_Continue_New_weight/JA_S3/experiment_config.json','A')
+    # multiprocess_evaluate_loaded('./data/Mothra_Full_Continue_New_weight/JA_S3/experiment_config.json','B')
+    # multiprocess_evaluate_loaded('./data/HPC_Rotation/FTP_S1/experiment_config.json',"A")
+    # multiprocess_evaluate_loaded('./data/HPC_Rotation/FTP_S1/experiment_config.json',"B")
+    # multiprocess_evaluate_loaded('./data/HPC_Rotation/FTP_S2/experiment_config.json',"A")
+    # multiprocess_evaluate_loaded('./data/HPC_Rotation/FTP_S2/experiment_config.json',"B")
+    # multiprocess_evaluate_loaded('./data/HPC_Rotation/FTP_S3/experiment_config.json',"A")
+    # multiprocess_evaluate_loaded('./data/HPC_Rotation/FTP_S3/experiment_config.json',"B")
+
+    # multiprocess_evaluate_loaded('./data/HPC_Full/FTP_S1/experiment_config.json',"A")
+    # multiprocess_evaluate_loaded('./data/HPC_Full/FTP_S1/experiment_config.json',"B")
+
+    # rotation_test('./data/Rotation_continue/JA_S3_new_weight_same_space/experiment_config.json',"A")
+    # multiprocess_evaluate_loaded('./data/Rotation_continue/JA_S3_larger_space/experiment_config.json',"A")
+    # rotation_test('./data/Mothra_Rotation/JA_S3/experiment_config.json',"A")
+    # rotation_test('./data/Rotation_continue/JA_S3_larger_space_new_weight/experiment_config.json',"A")
+    # rotation_test('./data/Rotation_continue/JA_S3_larger_space_new_weight_contact/experiment_config.json',"A")
+    # rotation_test('./data/Rotation_continue/JA_S3_larger_space/experiment_config.json',"B")
+    # rotation_test('./data/Rotation_continue/JA_S3_larger_space_new_weight/experiment_config.json',"B")
+    # rotation_test('./data/Mothra_Rotation/JA_S3/experiment_config.json',"B_B")
+    # rotation_test('./data/Mothra_Rotation/FTP_S1/experiment_config.json',"A")
+    # rotation_test('./data/Mothra_Rotation/JA_S2/experiment_config.json',"A_A")
+    # rotation_test('./data/Mothra_Rotation/JA_S2/experiment_config.json',"B_B")
+    # rotation_test('./data/Rotation_continue/JA_S3_larger_space_new_weight_contact/experiment_config.json',"B")
+    # sub_names = ['FTP_S1','FTP_S2','FTP_S3','JA_S1','JA_S2','JA_S3']
+    # top_names = ['Sliding_B']
     # for uname in top_names:
     #     for lname in sub_names:
     #         # rotation_test('./data/'+uname+'/'+lname+"/experiment_config.json","A_A")
