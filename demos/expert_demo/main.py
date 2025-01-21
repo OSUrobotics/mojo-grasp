@@ -9,13 +9,14 @@ import pandas as pd
 from mojograsp.simcore.sim_manager import SimManagerDefault
 from mojograsp.simcore.state import StateDefault
 from mojograsp.simcore.reward import RewardDefault
-from mojograsp.simcore.record_data import RecordDataJSON
+from mojograsp.simcore.record_data import RecordDataJSON, RecordDataPKL
 from mojograsp.simobjects.two_finger_gripper import TwoFingerGripper
 from mojograsp.simobjects.object_base import ObjectBase
+from demos.rl_demo.rl_state import StateRL
 
 # resource paths
 current_path = str(pathlib.Path().resolve())
-hand_path = current_path+"/resources/2v2_nosensors/2v2_nosensors.urdf"
+hand_path = current_path+"/resources/2v2_Hand_A/hand/2v2_50.50_50.50_1.1_53.urdf"
 cube_path = current_path + \
     "/resources/object_models/2v2_mod/2v2_mod_cuboid_small.urdf"
 data_path = current_path+"/data/"
@@ -26,6 +27,8 @@ df = pd.read_csv(points_path, index_col=False)
 x = df["x"]
 y = df["y"]
 
+# x = [0,0.055, 0.055, 0.055, 0, -0.055, -0.055, -0.055]
+# y = [0.055, 0.055, 0, -0.055, -0.055, -0.055, 0, 0.055]
 # start pybullet
 physics_client = p.connect(p.GUI)
 p.setAdditionalSearchPath(pybullet_data.getDataPath())
@@ -42,10 +45,10 @@ cube_id = p.loadURDF(cube_path, basePosition=[0.0, 0.16, .05])
 # Create TwoFingerGripper Object and set the initial joint positions
 hand = TwoFingerGripper(hand_id, path=hand_path)
 
-p.resetJointState(hand_id, 0, .75)
-p.resetJointState(hand_id, 1, -1.4)
-p.resetJointState(hand_id, 2, -.75)
-p.resetJointState(hand_id, 3, 1.4)
+p.resetJointState(hand_id, 0, -.725)
+p.resetJointState(hand_id, 1, 1.45)
+p.resetJointState(hand_id, 3, .725)
+p.resetJointState(hand_id, 4, -1.45)
 
 # Create ObjectBase for the cube object
 cube = ObjectBase(cube_id, path=cube_path)
@@ -56,22 +59,22 @@ p.changeVisualShape(hand_id, 0, rgbaColor=[1, 0.5, 0, 1])
 p.changeVisualShape(hand_id, 1, rgbaColor=[0.3, 0.3, 0.3, 1])
 p.changeVisualShape(hand_id, 2, rgbaColor=[1, 0.5, 0, 1])
 p.changeVisualShape(hand_id, 3, rgbaColor=[0.3, 0.3, 0.3, 1])
-
+# p.setTimeStep(1/2400)
 
 # state and reward
-state = StateDefault(objects=[hand, cube])
+state = StateRL(objects=[hand, cube])
 action = expert_action.ExpertAction()
 reward = expert_reward.ExpertReward()
 
 # data recording
-record_data = RecordDataJSON(
+record_data = RecordDataPKL(
     data_path=data_path, state=state, action=action, reward=reward, save_all=True)
 
 # environment and recording
 env = expert_env.ExpertEnv(hand=hand, obj=cube)
-
+print('we should do this many', len(x))
 # sim manager
-manager = SimManagerDefault(num_episodes=3, env=env, record_data=record_data)
+manager = SimManagerDefault(num_episodes=len(x), env=env, record_data=record_data)
 
 # Create phase and pass it to the sim manager
 manipulation = manipulation_phase.Manipulation(

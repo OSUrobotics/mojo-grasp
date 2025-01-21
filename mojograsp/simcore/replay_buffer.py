@@ -7,6 +7,14 @@ import logging
 from mojograsp.simcore.action import Action, ActionDefault
 from mojograsp.simcore.reward import Reward, RewardDefault
 from mojograsp.simcore.state import State, StateDefault
+import random
+import numpy as np
+from torch.utils.tensorboard import SummaryWriter
+import pandas as pd
+import pickle as pkl
+from queue import PriorityQueue, Queue
+
+# Why do we save things as timesteps when there aren't any methods? Why not save as a dictionary since we need to make it a dictionary at some point down the line?
 
 
 @dataclass
@@ -18,6 +26,8 @@ class Timestep:
     action: dict = None
     reward: dict = None
     next_state: dict = None
+    priority: float = None
+    end: bool = False
 
 
 class ReplayBuffer(ABC):
@@ -50,7 +60,7 @@ class ReplayBuffer(ABC):
 
 
 class ReplayBufferDefault:
-    def __init__(self, buffer_size: int = 10000, no_delete=False, state: State = StateDefault,
+    def __init__(self, buffer_size: int = 40000, no_delete=False, state: State = StateDefault,
                  action: Action = ActionDefault, reward: Reward = RewardDefault):
         '''
         Constructor takes in the necessary state, action, reward objects and sets the parameters of the 
@@ -59,9 +69,9 @@ class ReplayBufferDefault:
 
         :param buffer_size: Size of the deque before oldest entry is deleted.
         :param no_delete: Set if you do not wish old entries to be deleted. 
-        :param state: State objecct.
-        :param action: action objecct.
-        :param reward: Reward objecct.
+        :param state: State object.
+        :param action: action object.
+        :param reward: Reward object.
         :type buffer_size: int
         :type no_delete: bool
         :type state: :func:`~mojograsp.simcore.state.State` 
@@ -75,12 +85,8 @@ class ReplayBufferDefault:
         self.reward = reward
         self.action = action
 
-        # deque data structure deletes oldest entry in array once buffer_size is exceeded
-        if no_delete:
-            # no deletion limit
-            self.buffer = deque()
-        else:
-            self.buffer = deque(maxlen=buffer_size)
+        # Using list instead of deque for access speed and forward rollout access
+        self.buffer = list()
 
     def load_buffer_JSON(self, file_path: str):
         """
@@ -144,6 +150,9 @@ class ReplayBufferDefault:
         if self.prev_timestep:
             self.prev_timestep.next_state = tstep.state
             self.buffer.append(self.prev_timestep)
+            # List doesn't have max size, this enforces it if needed
+            if self.buffer_size:
+                self.buffer = self.buffer[-self.buffer_size:]
         # set new previous timestep to current one
         self.prev_timestep = tstep
 
@@ -157,8 +166,8 @@ class ReplayBufferDefault:
         :type episode_num: int
         :type timestep_num: int
         """
-        tstep = Timestep(episode=episode_num, timestep=timestep_num, state=self.state.get_state,
-                         action=self.action.get_action, reward=self.reward.get_reward)
+        tstep = Timestep(episode=episode_num, timestep=timestep_num, state=self.state.get_state(),
+                         action=self.action.get_action(), reward=self.reward.get_reward(), priority=0.1)
         self.backfill(tstep)
 
     def save_buffer(self, file_path: str = None):
@@ -168,7 +177,200 @@ class ReplayBufferDefault:
         :param file_path: desired destination and name of the json file.
         :type file_path: str
         """
-        with open(file_path, 'w') as fout:
-            temp_list = list(self.buffer)
-            temp_list = [asdict(x) for x in temp_list]
-            json.dump(temp_list, fout)
+        with open(file_path, 'wb') as fout:
+            # temp_list = list(self.buffer)
+            # temp_list = [asdict(x) for x in temp_list]
+            # pkl.dump(temp_list, fout)
+            pkl.dump(self.buffer, fout)
+
+    def sample(self, batch_size):
+        return random.sample(self.buffer, batch_size)
+
+    def sample_rollout(self, batch_size, rollout_size=5):
+        inds = np.random.choice(self.__len__(), batch_size)
+        sample = []
+        rewards = []
+        last_next_state = []
+        for ind in inds:
+            sample.append(self.buffer[ind])
+            temp = self.buffer[ind:ind+rollout_size]
+            ep = self.buffer[ind].episode
+            temp_rewards = []
+            for r in temp:
+                if r.episode != ep:
+                    break
+                else:
+                    temp_rewards.append(r.reward)
+                    temp_next_state = r.next_state
+            rewards.append(temp_rewards)
+            last_next_state.append(temp_next_state)
+        return sample, rewards, last_next_state
+
+    def __len__(self):
+        return(len(self.buffer))
+
+    def get_average_reward(self, num):
+        rewards = self.buffer[-num:]
+        avg_reward = 0
+        for r in rewards:
+            avg_reward += -r.reward['distance_to_goal']
+        avg_reward = avg_reward/len(rewards)
+        return avg_reward
+
+    def get_min_reward(self, num):
+        rewards = self.buffer[-num:]
+        reward2 = []
+        for r in rewards:
+            reward2.append(-r.reward['distance_to_goal'])
+        min_reward = min(reward2)
+        return min_reward
+
+    def get_max_reward(self, num):
+        rewards = self.buffer[-num:]
+        reward2 = []
+        for r in rewards:
+            reward2.append(-r.reward['distance_to_goal'])
+        max_reward = max(reward2)
+        return max_reward
+
+
+class ReplayBufferDF(ReplayBufferDefault):
+    def __init__(self, buffer_size: int = 40000, rollout_size: int = 5, state: State = StateDefault,
+                 action: Action = ActionDefault, reward: Reward = RewardDefault):
+        super(ReplayBufferDF, self).__init__(
+            buffer_size, False, state, action, reward)
+        self.df_buffer = None
+        self.df_up_to_date = False
+        self.rollout_reward = 0
+        self.rollout_size = rollout_size
+        self.last_state = []
+
+    def sample_DF(self, batch_size):
+        return self.df_buffer.sample(batch_size, weights=self.df_buffer['priority'])
+
+    def sample_rollout_DF(self, batch_size, rollout_size=5):
+        sample = self.sample_DF(batch_size)
+#        rewards.append(list(self.df_buffer.loc[index:rollout_end_ind]['reward']))
+#        last_next_state.append(list(self.df_buffer.loc[index:rollout_end_ind]['next_state']))
+        return sample
+
+    def make_DF(self):
+        self.df_buffer = pd.json_normalize(self.buffer)
+        print('made df')
+        self.df_up_to_date = True
+
+    def save_buffer(self, file_path: str = None):
+        """
+        Method saves the current replay buffer to a pkl file at the location of the given file_path.
+
+        :param file_path: desired destination and name of the pkl file.
+        :type file_path: str
+        """
+        file_path = file_path[:-4] + 'pkl'
+        self.df_buffer.to_pickle(file_path)
+
+    def backfill(self, tstep: list):
+        """
+        This method fills in the previous timestep nex_state (if it exists) with the current passed
+        timestep's state. 
+
+        :param tstep: Current Timestep dataclass object
+        :type tstep: Timestep()
+        """
+        # check if there is a previous timestep and that it is not from last episode.
+        if self.prev_timestep and self.prev_timestep['episode'] != tstep['episode']:
+            #            print('end of episode')
+            self.prev_timestep == None
+            self.rollout_reward = None
+            self.df_up_to_date = False
+        # set next state of previous timestep to state of current timestep and add it to the buffer
+        if self.prev_timestep:
+            self.rollout_reward = tstep['reward']['distance_to_goal']
+            self.prev_timestep['next_state'] = tstep['state']
+            self.buffer.append(self.prev_timestep)
+            # List doesn't have max size, this enforces it if needed
+            if self.buffer_size:
+                self.buffer = self.buffer[-self.buffer_size:]
+            for i in range(-min(self.rollout_size, self.prev_timestep['timestep']), 0):
+                self.buffer[i]['future_rewards'].append(self.rollout_reward)
+                self.buffer[i]['last_state'] = tstep['state']
+
+        # set new previous timestep to current one
+        self.prev_timestep = tstep
+
+    def add_timestep(self, episode_num: int, timestep_num: int):
+        """
+        Method adds a timestep using the state, action and reward get functions given the episode_num and
+        timestep_num from the Simmanager. 
+
+        :param episode_num: Episode number.
+        :param timestep_num: Timestep number.
+        :type episode_num: int
+        :type timestep_num: int
+        """
+        state = self.state.get_state()
+        action = self.action.get_action()
+        reward = self.reward.get_reward()
+        tstep = {'state': state, 'action': action, 'reward': reward, 'episode': episode_num,
+                 'timestep': timestep_num, 'priority': 0.1,
+                 'future_rewards': [], 'rollout_reward': None, 'last_state': {}}
+        self.backfill(tstep)
+
+    def __len__(self):
+        return(len(self.df_buffer))
+
+
+# TODO MAKE THESE ACTUALLY WORK
+    def get_average_reward(self, num):
+        rewards = self.buffer[-num:]
+        avg_reward = 0
+        for r in rewards:
+            avg_reward += -r['reward']['distance_to_goal']
+        avg_reward = avg_reward/len(rewards)
+        return avg_reward
+
+    def get_min_reward(self, num):
+        rewards = self.buffer[-num:]
+        reward2 = []
+        for r in rewards:
+            reward2.append(-r['reward']['distance_to_goal'])
+        min_reward = min(reward2)
+        return min_reward
+
+    def get_max_reward(self, num):
+        rewards = self.buffer[-num:]
+        reward2 = []
+        for r in rewards:
+            reward2.append(-r['reward']['distance_to_goal'])
+        max_reward = max(reward2)
+        return max_reward
+
+
+class ReplayBufferQ(ReplayBuffer):
+    def __init__(self, buffer_size: int = 40000, no_delete=False, state: State = StateDefault,
+                 action: Action = ActionDefault, reward: Reward = RewardDefault):
+        '''
+        Constructor takes in the necessary state, action, reward objects and sets the parameters of the 
+        replay buffer. Currently only even sampling is supported by this replay buffer (no weighted transitions)
+        but it could be added fairly easily. 
+
+        :param buffer_size: Size of the deque before oldest entry is deleted.
+        :param no_delete: Set if you do not wish old entries to be deleted. 
+        :param state: State object.
+        :param action: action object.
+        :param reward: Reward object.
+        :type buffer_size: int
+        :type no_delete: bool
+        :type state: :func:`~mojograsp.simcore.state.State` 
+        :type action: :func:`~mojograsp.simcore.action.Action` 
+        :type reward: :func:`~mojograsp.simcore.reward.Reward` 
+
+        '''
+        self.buffer_size = buffer_size
+        self.prev_timestep = None
+        self.state = state
+        self.reward = reward
+        self.action = action
+
+        # Using list instead of deque for access speed and forward rollout access
+        self.buffer = Queue()

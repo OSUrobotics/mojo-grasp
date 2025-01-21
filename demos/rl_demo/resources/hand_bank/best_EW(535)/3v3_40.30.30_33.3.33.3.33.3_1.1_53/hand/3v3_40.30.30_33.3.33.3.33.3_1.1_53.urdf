@@ -1,0 +1,150 @@
+<?xml version="1.0" ?>
+<robot name="3v3_40.30.30_33.3.33.3.33.3_1.1_53">
+
+    <link name="palm">
+        <visual>
+            <origin rpy="0 0 0" xyz="0 0 0"/>
+            <geometry>
+                <mesh filename="obj_files/palm.obj" scale="1 1 1"/>
+            </geometry>
+        </visual>
+        <collision>
+            <geometry>
+                <mesh filename="obj_files/palm_collision.obj" scale="1 1 1"/>
+            </geometry>
+        </collision>
+    </link>
+
+    <link name="finger0_segment0">
+        <visual>
+            <origin rpy="0 0 0" xyz="0 0 0"/>
+            <geometry>
+                <mesh filename="obj_files/finger0_segment0.obj" scale="1 1 1"/>
+            </geometry>
+        </visual>
+        <collision>
+            <geometry>
+                <mesh filename="obj_files/finger0_segment0_collision.obj" scale="1 1 1"/>
+            </geometry>
+        </collision>
+    </link>
+
+    <joint name="finger0_segment0_joint" type="revolute">
+        <parent link="palm"/>
+        <child link="finger0_segment0"/>
+        <origin rpy="0 0 0" xyz="0.02675 0 0.0"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="1000.0" lower="-3.14" upper="3.14" velocity="0.5"/>
+    </joint>
+
+    <link name="finger0_segment1">
+        <visual>
+            <origin rpy="0 0 0" xyz="0 0 0"/>
+            <geometry>
+                <mesh filename="obj_files/finger0_segment1.obj" scale="1 1 1"/>
+            </geometry>
+        </visual>
+        <collision>
+            <geometry>
+                <mesh filename="obj_files/finger0_segment1_collision.obj" scale="1 1 1"/>
+            </geometry>
+        </collision>
+    </link>
+
+    <joint name="finger0_segment1_joint" type="revolute">
+        <parent link="finger0_segment0"/>
+        <child link="finger0_segment1"/>
+        <origin rpy="0 0 0" xyz="0 0.0576 0"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="1000.0" lower="-3.14" upper="3.14" velocity="0.5"/>
+    </joint>
+
+    <link name="finger0_segment2">
+        <visual>
+            <origin rpy="0 0 0" xyz="0 0 0"/>
+            <geometry>
+                <mesh filename="obj_files/finger0_segment2.obj" scale="1 1 1"/>
+            </geometry>
+        </visual>
+        <collision>
+            <geometry>
+                <mesh filename="obj_files/finger0_segment2_collision.obj" scale="1 1 1"/>
+            </geometry>
+        </collision>
+    </link>
+
+    <joint name="finger0_segment2_joint" type="revolute">
+        <parent link="finger0_segment1"/>
+        <child link="finger0_segment2"/>
+        <origin rpy="0 0 0" xyz="0 0.043199999999999995 0"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="1000.0" lower="-3.14" upper="3.14" velocity="0.5"/>
+    </joint>
+
+    <link name="finger1_segment0">
+        <visual>
+            <origin rpy="0 0 0" xyz="0 0 0"/>
+            <geometry>
+                <mesh filename="obj_files/finger1_segment0.obj" scale="1 1 1"/>
+            </geometry>
+        </visual>
+        <collision>
+            <geometry>
+                <mesh filename="obj_files/finger1_segment0_collision.obj" scale="1 1 1"/>
+            </geometry>
+        </collision>
+    </link>
+
+    <joint name="finger1_segment0_joint" type="revolute">
+        <parent link="palm"/>
+        <child link="finger1_segment0"/>
+        <origin rpy="0 0 0" xyz="-0.02675 0 3.27593018771917e-18"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="1000.0" lower="-3.14" upper="3.14" velocity="0.5"/>
+    </joint>
+
+    <link name="finger1_segment1">
+        <visual>
+            <origin rpy="0 0 0" xyz="0 0 0"/>
+            <geometry>
+                <mesh filename="obj_files/finger1_segment1.obj" scale="1 1 1"/>
+            </geometry>
+        </visual>
+        <collision>
+            <geometry>
+                <mesh filename="obj_files/finger1_segment1_collision.obj" scale="1 1 1"/>
+            </geometry>
+        </collision>
+    </link>
+
+    <joint name="finger1_segment1_joint" type="revolute">
+        <parent link="finger1_segment0"/>
+        <child link="finger1_segment1"/>
+        <origin rpy="0 0 0" xyz="0 0.04795199999999999 0"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="1000.0" lower="-3.14" upper="3.14" velocity="0.5"/>
+    </joint>
+
+    <link name="finger1_segment2">
+        <visual>
+            <origin rpy="0 0 0" xyz="0 0 0"/>
+            <geometry>
+                <mesh filename="obj_files/finger1_segment2.obj" scale="1 1 1"/>
+            </geometry>
+        </visual>
+        <collision>
+            <geometry>
+                <mesh filename="obj_files/finger1_segment2_collision.obj" scale="1 1 1"/>
+            </geometry>
+        </collision>
+    </link>
+
+    <joint name="finger1_segment2_joint" type="revolute">
+        <parent link="finger1_segment1"/>
+        <child link="finger1_segment2"/>
+        <origin rpy="0 0 0" xyz="0 0.04795199999999999 0"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="1000.0" lower="-3.14" upper="3.14" velocity="0.5"/>
+    </joint>
+
+</robot>

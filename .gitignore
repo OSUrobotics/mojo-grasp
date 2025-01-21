@@ -134,3 +134,20 @@ demos/full_rl_demo/data/*
 demos/full_rl_demo/agent_replay*
 demos/full_rl_demo/expert_replay*
 demos/full_rl_demo/*weights*
+
+# saved data
+
+demos/rl_demo/data/*
+demos/expert_demo/data/*
+demos/rl_demo/runs/*
+demos/rl_demo/old_runs/*
+*pickapp
+*.pkl
+*.png
+*.prof
+*.zip
+tests/runs/*
+tests/no/*
+mojograsp/simcore/wandb/*
+demos/rl_demo/wandb/*
+distance_and_efficiency.csv

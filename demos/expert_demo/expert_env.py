@@ -16,11 +16,13 @@ class ExpertEnv(Environment):
         plane_id = p.loadURDF("plane.urdf")
         hand_id = p.loadURDF(self.hand.path, useFixedBase=True,
                              basePosition=[0.0, 0.0, 0.05])
-        p.resetJointState(hand_id, 0, .75)
-        p.resetJointState(hand_id, 1, -1.4)
-        p.resetJointState(hand_id, 2, -.75)
-        p.resetJointState(hand_id, 3, 1.4)
-        obj_id = p.loadURDF(self.obj.path, basePosition=[0.0, 0.16, .05])
+        p.resetJointState(hand_id, 0, -.725)
+        p.resetJointState(hand_id, 1, 1.45)
+        p.resetJointState(hand_id, 3, .725)
+        p.resetJointState(hand_id, 4, -1.45)
+        p.setGravity(0, 0, -10)
+
+        obj_id = p.loadURDF(self.obj.path, basePosition=[0.0, 0.1, .05])
         # Update the object id's
         self.hand.id = hand_id
         self.obj.id = obj_id

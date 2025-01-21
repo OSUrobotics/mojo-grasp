@@ -1,12 +1,12 @@
 from numpy import angle
 import pybullet as p
 import logging
-
+from pybullet_utils.bullet_client import BulletClient
 
 class ObjectBase:
     """ObjectBase Base Class"""
 
-    def __init__(self, id: int = None, path: str = None, name: str = None):
+    def __init__(self, id: int = None, path: str = None, name: str = None, physicsClientId: BulletClient = None):
         """
         Constructor takes in object id, path to urdf or sdf files (If one exists) and an object name. 
         This serves as the base class that all other object types should inherit from. 
@@ -62,6 +62,19 @@ class ObjectBase:
             orn = p.getQuaternionFromEuler(orn)
         p.resetBasePositionAndOrientation(self.id, pos, orn)
 
+    def get_curr_velocity(self) -> list:
+        """
+        Gets the current linear velocity and angular velocity, returns a list of lists: [[linear velocity],[angular velocity]]
+
+        :return: list [[linear velocity],[angular velocity]]
+        :rtype: list[list]
+        """
+        vel = []
+        linear_velocity, angular_velocity = p.getBaseVelocity(self.id)
+        vel.append(list(linear_velocity))
+        vel.append(list(angular_velocity))
+        return vel
+
 # TODO: This should be more fleshed out in the future to get all relevant data
     def get_data(self) -> dict:
         """
@@ -85,7 +98,7 @@ class ActuatedObject(ObjectBase):
     actuated objects with pybullet. Offers helper functions and keeps track of joint dictionary. 
     """
 
-    def __init__(self, id: int = None, path: str = None, name: str = None):
+    def __init__(self, id: int = None, path: str = None, name: str = None, physicsClientId: BulletClient = None):
         """
         Constructor takes in object id, path to urdf or sdf files (If one exists) and an object name. 
         This serves as the base class that all other object types should inherit from. 
@@ -98,7 +111,7 @@ class ActuatedObject(ObjectBase):
         :type name: str
         """
 
-        super().__init__(id=id, path=path, name=name)
+        super().__init__(id=id, path=path, name=name, physicsClientId=physicsClientId)
         self.joint_dict = {}
         self.create_joint_dict()
 
@@ -226,3 +239,13 @@ class ActuatedObject(ObjectBase):
             angle_dict[names[i]] = angles[i]
         data["joint_angles"] = angle_dict
         return data
+
+class FixedObject(ObjectBase):
+    def __init__(self, id: int = None, path: str = None, name: str = None, physicsClientId: BulletClient = None):
+        super().__init__(id, path, name, physicsClientId)
+        pose = p.getBasePositionAndOrientation(id)
+        self.constraint = p.createConstraint(self.id, -1, -1, -1, p.JOINT_FIXED, [0, 0, 0], [0, 0, 0], pose[0], childFrameOrientation=pose[1])
+    
+    def set_curr_pose(self, pos, orn):
+        p.changeConstraint(self.constraint,pos,orn)
+        return super().set_curr_pose(pos, orn)
