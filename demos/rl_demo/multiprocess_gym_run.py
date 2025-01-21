@@ -538,6 +538,8 @@ def asterisk_test(filepath,hand_type,frictionList = None, contactList = None):
         args['hand_file_list'] = ["2v2_50.50_50.50_1.1_53/hand/2v2_50.50_50.50_1.1_53.urdf"]
     elif hand_type == 'B':
         args['hand_file_list'] = ["2v2_65.35_65.35_1.1_53/hand/2v2_65.35_65.35_1.1_53.urdf"]    
+    elif hand_type =='C':
+        args['hand_file_list'] = ["2v2_65.35_50.50_1.1_53/hand/2v2_65.35_50.50_1.1_53.urdf"]
     else:
         print('get fucked')
         assert 1==0
@@ -552,7 +554,7 @@ def asterisk_test(filepath,hand_type,frictionList = None, contactList = None):
         assert 1==0
 
     import pybullet as p2
-    eval_env , _, poses= make_pybullet(args,p2, [0,1], hand_params, viz=True)
+    eval_env , _, poses= make_pybullet(args,p2, [0,1], hand_params, viz=False)
     eval_env.evaluate()
     eval_env.reduced_saving = False
     model = model_type("MlpPolicy", eval_env, tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-2.3}).load(args['save_path']+'best_model', env=eval_env)
@@ -568,7 +570,7 @@ def asterisk_test(filepath,hand_type,frictionList = None, contactList = None):
                 for i in asterisk_thing:
                     eval_env.manipulation_phase.state.objects[-1].set_all_pose(i)
                     obs = eval_env.reset()
-                    input('go')
+                    # input('go')
                     eval_env.manipulation_phase.state.objects[-1].set_all_pose(i)
                     done = False
 
@@ -587,7 +589,7 @@ def asterisk_test(filepath,hand_type,frictionList = None, contactList = None):
                 for i in asterisk_thing:
                     eval_env.manipulation_phase.state.objects[-1].set_all_pose(i)
                     obs = eval_env.reset()
-                    input('go')
+                    # input('go')
                     eval_env.manipulation_phase.state.objects[-1].set_all_pose(i)
                     done = False
 
@@ -601,7 +603,7 @@ def asterisk_test(filepath,hand_type,frictionList = None, contactList = None):
             obs = eval_env.reset()
             eval_env.manipulation_phase.state.objects[-1].set_all_pose(i)
             done = False
-            input('go')
+            # input('go')
             while not done:
                 action, _ = model.predict(obs,deterministic=True)
                 obs, _, done, _ = eval_env.step(action,hand_type=hand_type)
@@ -639,6 +641,7 @@ def rotation_test(filepath, hand_type):
     # print('HARDCODING THE TEST PATH TO BE THE ROTATION TEST')
     # args['test_path'] ="/home/mothra/mojo-grasp/demos/rl_demo/resources/Solo_rotation_test.csv"
     max_ang = 50/180*np.pi
+    args['contact_start'] = True
     if not('contact_start' in args.keys()):
         args['contact_start'] = True
         print('we didnt have a contact start so we set it to true')
@@ -691,13 +694,14 @@ def rotation_test(filepath, hand_type):
     model = model_type("MlpPolicy", eval_env, tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-2.3}).load(args['save_path']+'best_model', env=eval_env)
     eval_env.episode_type = 'asterisk'
     i = 0
+    print('we are about to begin testing')
     for start_pos in goal_poses:
         for go in angles:
-            # print(go)
-            eval_env.manipulation_phase.state.objects[-1].set_all_pose(start_pos,fuckdis[i])
+            print(go)
+            eval_env.manipulation_phase.state.objects[-1].set_all_pose(start_pos,go)
             s_dict = {'goal_position':start_pos}#, 'fingers':start_angs}
             obs = eval_env.reset(s_dict)
-            eval_env.manipulation_phase.state.objects[-1].set_all_pose(start_pos,fuckdis[i])
+            eval_env.manipulation_phase.state.objects[-1].set_all_pose(start_pos,go)
             done = False
             i += 1
             # input('next')
@@ -907,7 +911,7 @@ def replay(argpath, episode_path):
     f2_poses = [s['state']['f2_pos'] for s in data['timestep_list']]
     joint_angles = [s['state']['two_finger_gripper']['joint_angles'] for s in data['timestep_list']]
     import pybullet as p2
-    args['hand_file_list'] = ["2v2_65.35_50.50_1.1_53/hand/2v2_65.35_50.50_1.1_53.urdf"]
+    # args['hand_file_list'] = ["2v2_65.35_50.50_1.1_53/hand/2v2_65.35_50.50_1.1_53.urdf"]
     eval_env , _, poses= make_pybullet(args,p2, [1,3], hand_params,viz=True)
     eval_env.evaluate()
     temp = [joint_angles[0]['finger0_segment0_joint'],joint_angles[0]['finger0_segment1_joint'],joint_angles[0]['finger1_segment0_joint'],joint_angles[0]['finger1_segment1_joint']]
@@ -947,7 +951,7 @@ def replay(argpath, episode_path):
     # eval_env.env.make_viz_point(pts)
 
 
-    input('look at it')
+    # input('look at it')
     # angle = -data['timestep_list'][0]['state']['goal_pose']['goal_orientation']
 
     t= R.from_euler('z',angle)
@@ -972,14 +976,16 @@ def replay(argpath, episode_path):
                     baseOrientation =quat,
                     useMaximalCoordinates=True)
     
-    # temp_pos = obj_pose[0][0].copy()
-    # temp_pos[2] += 0.06
-    # curr_id=p2.loadURDF('./resources/object_models/2v2_mod/2v2_mod_cylinder_small_alt.urdf', flags=p2.URDF_ENABLE_CACHED_GRAPHICS_SHAPES,
-    #             globalScaling=0.2, basePosition=temp_pos, baseOrientation=[ 0.7071068, 0, 0, 0.7071068 ])
-    # p2.changeVisualShape(curr_id, -1,rgbaColor=[1, 0.5, 0, 1])
-    # cid = p2.createConstraint(2, -1, curr_id, -1, p2.JOINT_FIXED, [0, 0, 0], [0, 0, 0], [0,0,0], childFrameOrientation=[ 0.7071068, 0, 0, 0.7071068 ])
-    # p2.setCollisionFilterPair(curr_id,tting,-1,-1,0)
-    # p2.setCollisionFilterPair(curr_id,2,-1,-1,0)
+    temp_pos = obj_pose[0][0].copy()
+    temp_pos[2] += 0.06
+    curr_id=p2.loadURDF('./resources/object_models/2v2_mod/2v2_mod_cylinder_small_alt.urdf', flags=p2.URDF_ENABLE_CACHED_GRAPHICS_SHAPES,
+                globalScaling=0.2, basePosition=temp_pos, baseOrientation=[ 0.7071068, 0, 0, 0.7071068 ])
+    p2.changeVisualShape(curr_id, -1,rgbaColor=[1, 0.5, 0, 1])
+    p2.setCollisionFilterPair(curr_id,tting,-1,-1,0)
+    p2.setCollisionFilterPair(curr_id,2,-1,-1,0)
+    print(eval_env.env.obj_id)
+    cid = p2.createConstraint(curr_id, -1, eval_env.env.obj_id, -1, p2.JOINT_FIXED, [0, 0, 0], [0, 0, 0], [0,0,0.065], parentFrameOrientation=[ 0.7071068, 0, 0, 0.7071068 ])
+
     
 
     if 'contact' in args['task']:
@@ -1124,24 +1130,27 @@ def main(filepath = None,learn_type='run', num_cpu=16):
 
 if __name__ == '__main__':
     import csv
-    # replay('./data/mslide/JA_S3/experiment_config.json','./data/mslide/JA_S3/Ast_A/Episode_0.pkl')
-    sub_names = ['FTP_S1','FTP_S2','FTP_S3','JA_S1','JA_S2','JA_S3']
-    top_names = ['N_mothra_slide_rerun','J_HPC_rerun'] # 'N_HPC_slide_rerun',
+    replay('./data/Mothra_Rotation/FTP_S3/experiment_config.json','./data/Mothra_Rotation/FTP_S3/Full_Ast_B/Episode_37.pkl')
+    # sub_names = ['FTP_S3','JA_S3']
+    # top_names = ['Mothra_Rotation']#,'Jeremiah_Rotation','HPC_Rotation'] #['N_mothra_slide_rerun','N_HPC_slide_rerun','J_HPC_rerun'] # ,
     # for uname in top_names:
-    #     for lname in sub_names:
-    #         # rotation_test('./data/'+uname+'/'+lname+"/experiment_config.json","A_A")
-    #         # rotation_test('./data/'+uname+'/'+lname+"/experiment_config.json","B_B")
+        # for lname in sub_names:
+            # rotation_test('./data/'+uname+'/'+lname+"/experiment_config.json","A")
+            # rotation_test('./data/'+uname+'/'+lname+"/experiment_config.json","B_B")
+    #         assert False
     #         # asterisk_test('./data/'+uname+'/'+lname+"/experiment_config.json","A")
     #         # asterisk_test('./data/'+uname+'/'+lname+"/experiment_config.json","B")
     #         print(uname, lname)
+    # top_names = ['N_mothra_slide_rerun']#,'N_HPC_slide_rerun','J_HPC_rerun']
     # multiprocess_evaluate_loaded("./data/N_HPC_slide_rerun/JA_S3/experiment_config.json","A")
     # for uname in top_names:
     #     for lname in sub_names:
-    #         multiprocess_evaluate_loaded('./data/'+uname+'/'+lname+"/experiment_config.json","A")
-            
-    #         # multiprocess_evaluate_loaded('./data/'+uname+'/'+lname+"/experiment_config.json","B")
-    #         # multiprocess_evaluate_loaded('./data/'+uname+'/'+lname+"/experiment_config.json","C")
-    #         print(uname, lname)
-
+    #         # multiprocess_evaluate_loaded('./data/'+uname+'/'+lname+"/experiment_config.json","A")
+    #         # asterisk_test('./data/'+uname+'/'+lname+"/experiment_config.json","C")
+    #         # rotation_test('./data/'+uname+'/'+lname+"/experiment_config.json","A")
+    #         multiprocess_evaluate_loaded('./data/'+uname+'/'+lname+"/experiment_config.json","B")
+            # multiprocess_evaluate_loaded('./data/'+uname+'/'+lname+"/experiment_config.json","C")
+            # print(uname, lname)
+# # 
 
 

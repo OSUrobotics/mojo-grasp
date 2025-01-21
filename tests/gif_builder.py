@@ -65,4 +65,36 @@ def make_video(filepath):
     frame_one.save(filepath+"Episode.gif", format="GIF", append_images=frames,
                save_all=True, duration=13*8, loop=0)
 
-make_video('/home/mothra/mojo-grasp/demos/rl_demo/data/Mothra_Rotation/JA_S3/')
+def make_gif_from_video(filepath,filename):
+    cap = cv2.VideoCapture(filepath+filename)
+ 
+    # Check if camera opened successfully
+    if (cap.isOpened()== False): 
+        print("Error opening video stream or file")
+    frames = []
+    # Read until video is completed
+    frame_count = 0
+    while(cap.isOpened()):
+    # Capture frame-by-frame
+        frame_count+=1
+        ret, frame = cap.read()
+        # print('got to here', ret)
+        if ret == True:
+            if frame_count %2 == 0:
+                frames.append(Image.fromarray(frame))
+        else:
+            break
+    frame_one = frames[0]
+    print(len(frames))
+    input('make into a gif?')
+    frame_one.save(filepath+"Episode.gif", format="GIF", append_images=frames,
+               save_all=True, duration=len(frames), loop=0)
+        
+    # When everything done, release the video capture object
+    cap.release()
+    
+    # Closes all the frames
+    cv2.destroyAllWindows()
+
+# make_video('/home/mothra/mojo-grasp/demos/rl_demo/data/Mothra_Rotation/JA_S3/')
+make_gif_from_video('/home/mothra/','trimmed_video.mp4')

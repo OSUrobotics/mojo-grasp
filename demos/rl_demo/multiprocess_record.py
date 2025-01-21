@@ -63,6 +63,8 @@ class MultiprocessRecordData(RecordDataRLPKL):
                     file_path = self.data_path + "Full_Ast_A/Episode_" + str(int(self.eval_num*self.num_threads+self.my_thread)) + '.pkl'
                 elif hand_type=='B_B':
                     file_path = self.data_path + "Full_Ast_B/Episode_" + str(int(self.eval_num*self.num_threads+self.my_thread)) + '.pkl'
+                else:
+                    file_path = self.data_path + "Ast_" + hand_type+"/Episode_" + str(int(self.eval_num*self.num_threads+self.my_thread)) + '.pkl'
                 self.eval_num +=1
             else:
                 if hand_type is None:

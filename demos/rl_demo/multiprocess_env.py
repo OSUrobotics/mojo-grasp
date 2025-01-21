@@ -166,10 +166,10 @@ class MultiprocessSingleShapeEnv(Environment):
         if type(thing[0]) == list:
             for i in thing:
                 temp = self.p.loadURDF("sphere_1cm.urdf", basePosition=i, baseOrientation=[0, 0, 0, 1], globalScaling=0.25)
-                self.p.changeVisualShape(temp,-1,rgbaColor=[0,0,1,1])
+                self.p.changeVisualShape(temp,-1,rgbaColor=[0.6,0.6,1,1])
         else:
-            temp=self.p.loadURDF("sphere_1cm.urdf", basePosition=thing, baseOrientation=[0, 0, 0, 1], globalScaling=0.5)
-            self.p.changeVisualShape(temp,-1,rgbaColor=[1,0,0,1])
+            temp=self.p.loadURDF("cube.urdf", basePosition=thing, baseOrientation=[0, 0, 0, 1], globalScaling=0.005)
+            self.p.changeVisualShape(temp,-1,rgbaColor=[0.6,0,0,1])
 
 
     def reset(self, start_pos=None,finger=None,fingerys=None):
@@ -253,6 +253,8 @@ class MultiprocessSingleShapeEnv(Environment):
                 self.step()
         # print('fingertip distance')
         # f1_dist = self.p.getClosestPoints(self.obj.id, self.hand.id, 10, -1, 1, -1)
+        # print('Joint angles', np.round([f1_angs[0],f1_angs[1],f2_angs[2],f2_angs[3]],2))
+        # time.sleep(3)
         # f2_dist = self.p.getClosestPoints(self.obj.id, self.hand.id, 10, -1, 4, -1)
         # print(f1_dist[0][8],f2_dist[0][8])
             # thing = self.p.getBaseVelocity(self.obj_id)
