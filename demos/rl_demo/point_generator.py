@@ -137,6 +137,38 @@ def get_line_intersection(p1, p2, p3, p4):
         return intersection
     return None  # No intersection within the segments
 
+def transform_intersections(intersections, dx, dy, theta):
+    """
+    Transforms the given intersections by rotating around the origin and then translating them.
+
+    Parameters:
+    intersections (list of tuples): List of (x, y) intersection points.
+    dx (float): Translation amount in the x direction.
+    dy (float): Translation amount in the y direction.
+    theta (float): Rotation angle in radians.
+
+    Returns:
+    np.ndarray: Transformed intersection points.
+    """
+    transformed_intersections = []
+
+    # Create the rotation matrix
+    rotation_matrix = np.array([
+        [np.cos(theta), -np.sin(theta)],
+        [np.sin(theta), np.cos(theta)]
+    ])
+
+    for x, y in intersections:
+        # Apply rotation
+        rotated_point = np.dot(rotation_matrix, np.array([x, y]))
+
+        # Apply translation
+        translated_point = rotated_point + np.array([dx, dy])
+
+        transformed_intersections.append(translated_point)
+
+    return np.array(transformed_intersections)
+
 # Function to plot connected vertices and intersection points
 def plot_connected_vertices(vertices, intersections):
     if vertices is None:
@@ -186,9 +218,11 @@ def get_slice(urdf_file):
 #     connected_vertices = connect_vertices(vertices)
 
 #     intersections = get_intersection_points(connected_vertices)
-#     print(intersections)
+#     # print(intersections)
+
+#     transformed = transform_intersections(intersections, 0.0, 0.0, np.deg2rad(0))
 
 #     # Plot connected vertices and intersection points
-#     plot_connected_vertices(connected_vertices, intersections)
+#     plot_connected_vertices(connected_vertices, transformed)
 
-#(get_slice('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/resources/object_models/2v2_mod/2v2_mod_cuboid_small.urdf'))
+# # (get_slice('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/resources/object_models/2v2_mod/2v2_mod_cuboid_small.urdf'))
