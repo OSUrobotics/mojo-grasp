@@ -425,6 +425,7 @@ def multiprocess_evaluate_loaded(filepath, aorb):
     args['domain_randomization_object_mass'] = False
     args['domain_randomization_object_size'] = False
     args['finger_random_start'] = False
+    args['random_shapes'] = False
 
     with open(key_file,'r') as hand_file:
         hand_params = json.load(hand_file)
@@ -1131,9 +1132,9 @@ def main(filepath = None,learn_type='run', num_cpu=16, j_test=False):
 if __name__ == '__main__':
     import csv
 
-    main('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/Long_Slice_Improved/Static_Dec3/experiment_config.json','run',j_test=False)
-    #multiprocess_evaluate_loaded('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/Random_Shape_Test/Regular/experiment_config.json','A')
-    #multiprocess_evaluate_loaded('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/Random_Shape_Test/Slice/experiment_config.json','A')
+    main('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/Tilt_Test/Dynamic/experiment_config.json','run',j_test=True)
+    # multiprocess_evaluate_loaded('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/ReLu_Test/With_ReLu/experiment_config.json','A')
+    # multiprocess_evaluate_loaded('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/Random_Shape_Test/Slice/experiment_config.json','A')
     #multiprocess_evaluate_loaded('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/Long_Slice/Static_Long_Nov20/experiment_config.json','A')
     # multiprocess_evaluate_loaded('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/The_last_run/JA_S3/experiment_config.json',"A")
     # replay('./data/Bogo/JA_S3/experiment_config.json', './data/Bogo/JA_S3/Eval_A/Episode_96.pkl')
