@@ -64,7 +64,7 @@ class RNNGui():
                          [sg.Button("Browse",key='-browse-save',button_color='DarkBlue'),sg.Text("/", key='-save-path')],
                          [sg.Text('Path to Previous Policy if Transferring')],
                          [sg.Button("Browse",key='-browse-load',button_color='DarkBlue'),sg.Text("/", key='-load-path')],
-                         [sg.Text('Object'), sg.OptionMenu(values=('Cube', 'Cylinder', 'circle', 'hourglass', 'ellipse', 'square_concave', 'square', 'triangle', 'cone', 'teardrop','triple'), k='-object', default_value='Cube')],
+                         [sg.Text('Object'), sg.OptionMenu(values=('Cube', 'Cylinder', 'circle', 'hourglass', 'ellipse', 'square_concave', 'square', 'triangle', 'cone', 'teardrop','triple','aspect_ratios'), k='-object', default_value='Cube')],
                          [sg.Text('Hands Used For Training and Testing')],
                          [sg.Checkbox('2v2_50.50_50.50_43',key='2v2_50.50_50.50_1.1_43',default=False),sg.Checkbox('2v2_50.50_50.50_53',key='2v2_50.50_50.50_1.1_53', default=True),sg.Checkbox('2v2_50.50_50.50_63',key='2v2_50.50_50.50_1.1_63', default=False),sg.Checkbox('2v2_50.50_50.50_73',key='2v2_50.50_50.50_1.1_73', default=False)],
                          [sg.Checkbox('2v2_65.35_50.50_43',key='2v2_65.35_50.50_1.1_43', default=False),sg.Checkbox('2v2_65.35_50.50_53',key='2v2_65.35_50.50_1.1_53', default=False),sg.Checkbox('2v2_65.35_50.50_63',key='2v2_65.35_50.50_1.1_63', default=False),sg.Checkbox('2v2_65.35_50.50_73',key='2v2_65.35_50.50_1.1_73', default=False)],
@@ -83,7 +83,7 @@ class RNNGui():
                          [sg.Text('Rotation limits, only used by Rotation and Full Tasks'), sg.Radio('75 degrees',group_id='rots',key='-75',default=False), sg.Radio('50 degrees',group_id='rots',key='-50',default=True), sg.Radio('15 degrees',group_id='rots',key='-15',default=False)],
                          [sg.Text('Replay Buffer Sampling'), sg.OptionMenu(values=['priority', 'random','random+expert'], k='-sampling', default_value='priority')],
                          [sg.Text('Domain Randomization Options')],
-                         [sg.Checkbox('Finger Friction', default=True, k='-DRFI'),sg.Checkbox('Floor Friction', default=True, k='-DRFL'),sg.Checkbox('Object Size', default=True, k='-DROS'), sg.Checkbox('Object Mass', default=True, k='-DROM'), sg.Checkbox("Rand Shapes", key='-rs',default=False)],
+                         [sg.Checkbox('Finger Friction', default=True, k='-DRFI'),sg.Checkbox('Floor Friction', default=True, k='-DRFL'),sg.Checkbox('Object Size', default=False, k='-DROS'), sg.Checkbox('Object Mass', default=True, k='-DROM'), sg.Checkbox("Rand Shapes", key='-rs',default=False)],
                          # Jeremiah Added this
                          [sg.Text('Lateral Friction Values'), sg.Input(0.25, key='-lfl',size=(8, 2)), sg.Input(0.75, key='-lfh',size=(8, 2))],
                          [sg.Text('Spinning Friction Values'), sg.Input(0.01, key='-sfl',size=(8, 2)), sg.Input(0.0101, key='-sfh',size=(8, 2))],
@@ -113,7 +113,7 @@ class RNNGui():
                        [sg.Checkbox('Finger Object Distance', default=False, k='-fod')],
                        [sg.Checkbox('Finger Tip Angle', default=False, k='-fta')],
                        [sg.Checkbox('Goal Position', default=True, k='-gp')],
-                       [sg.Checkbox('Goal Orientation', default=True, k = '-go')],
+                       [sg.Checkbox('Goal Orientation', default=False, k = '-go')],
                        [sg.Checkbox('Goal Finger Pos', default=False, k='-gf')],
                        [sg.Checkbox('Goal Finger Separation', default=False, k='gfs')],
                        [sg.Checkbox('Eigenvalues', default=False,key='-eva')],
@@ -230,14 +230,15 @@ class RNNGui():
                 state_maxes.extend([0.108, 0.348, 0.108, 0.348])
             state_len += 4
             state_list.append('fcp')
+        #Changed to 3D
         if values['-op']:
             if not RW:
-                state_mins.extend([-0.072, 0.018])
-                state_maxes.extend([0.072, 0.172])
+                state_mins.extend([-0.072, 0.018, 0])
+                state_maxes.extend([0.072, 0.172, 0.1])
             elif RW:
-                state_mins.extend([-0.108, 0.132])
-                state_maxes.extend([0.108, 0.348])
-            state_len += 2
+                state_mins.extend([-0.108, 0.132, 0.0])
+                state_maxes.extend([0.108, 0.348, 0.1])
+            state_len += 3
             state_list.append('op')
         if values['-oo']:
             if not RW:
@@ -330,7 +331,7 @@ class RNNGui():
 
         if values['-mslice']:
             # assert True == False, 'mslice not normalized properly'
-            for i in range(48):    
+            for i in range(72):    
                 state_mins.extend([-0.100])
                 state_maxes.extend([0.100])
                 state_len +=1
@@ -360,8 +361,8 @@ class RNNGui():
 
         if values['-slice']:
             for i in range(48):    
-                state_mins.extend([-.023])
-                state_maxes.extend([.023])
+                state_mins.extend([-.03])
+                state_maxes.extend([.03])
                 state_len +=1
             state_list.append('slice')
 
@@ -495,6 +496,24 @@ class RNNGui():
                                             str(resource_path.joinpath('object_models/Jeremiah_Shapes/40x40_triangle.urdf')),
                                             str(resource_path.joinpath('object_models/Jeremiah_Shapes/small_40x40_triangle.urdf')),
                                             str(resource_path.joinpath('object_models/Jeremiah_Shapes/large_40x40_triangle.urdf'))]
+        
+        elif values['-object'] == 'aspect_ratios':
+            self.args['object_path'] = [str(resource_path.joinpath('object_models/Jeremiah_Shapes/40x40_square.urdf')),
+             str(resource_path.joinpath('object_models/Jeremiah_Shapes/40x40_square_15.urdf')),
+             str(resource_path.joinpath('object_models/Jeremiah_Shapes/40x40_square_2.urdf')),
+             str(resource_path.joinpath('object_models/Jeremiah_Shapes/40x40_square_3.urdf')),
+             str(resource_path.joinpath('object_models/Jeremiah_Shapes/20_r_circle.urdf')),
+             str(resource_path.joinpath('object_models/Jeremiah_Shapes/20_r_circle_15.urdf')),
+             str(resource_path.joinpath('object_models/Jeremiah_Shapes/20_r_circle_2.urdf')),
+             str(resource_path.joinpath('object_models/Jeremiah_Shapes/20_r_circle_3.urdf')),
+             str(resource_path.joinpath('object_models/Jeremiah_Shapes/40x40_triangle.urdf')),
+             str(resource_path.joinpath('object_models/Jeremiah_Shapes/40x40_triangle_15.urdf')),
+             str(resource_path.joinpath('object_models/Jeremiah_Shapes/40x40_triangle_2.urdf')),
+             str(resource_path.joinpath('object_models/Jeremiah_Shapes/40x40_triangle_3.urdf')),
+             str(resource_path.joinpath('object_models/Jeremiah_Shapes/50x30_teardrop.urdf')),
+             str(resource_path.joinpath('object_models/Jeremiah_Shapes/50x30_teardrop_15.urdf')),
+             str(resource_path.joinpath('object_models/Jeremiah_Shapes/50x30_teardrop_2.urdf')),
+             str(resource_path.joinpath('object_models/Jeremiah_Shapes/50x30_teardrop_3.urdf'))]
 
         
 
