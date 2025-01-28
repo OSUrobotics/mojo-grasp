@@ -85,6 +85,8 @@ class RNNGui():
                          [sg.Text('Domain Randomization Options')],
                          [sg.Checkbox('Finger Friction', default=True, k='-DRFI'),sg.Checkbox('Floor Friction', default=True, k='-DRFL'),sg.Checkbox('Object Size', default=False, k='-DROS'), sg.Checkbox('Object Mass', default=True, k='-DROM'), sg.Checkbox("Rand Shapes", key='-rs',default=False)],
                          # Jeremiah Added this
+                         [sg.Text('Starting Orientation Range'), sg.Input(0, key='-sorl', size=(8,2)), sg.Text('To'), sg.Input(0, key='-sorh', size=(8,2))],
+                         [sg.Text('Friction Randomization Values (Must check box)')],
                          [sg.Text('Lateral Friction Values'), sg.Input(0.25, key='-lfl',size=(8, 2)), sg.Input(0.75, key='-lfh',size=(8, 2))],
                          [sg.Text('Spinning Friction Values'), sg.Input(0.01, key='-sfl',size=(8, 2)), sg.Input(0.0101, key='-sfh',size=(8, 2))],
                          [sg.Text('Roll Friction Values'), sg.Input(0.04, key='-rfl',size=(8, 2)), sg.Input(0.0401, key='-rfh',size=(8, 2))]]
@@ -164,6 +166,8 @@ class RNNGui():
                      'lat_fric_high': float(values['-lfh']),
                      'rollout_size': int(values['-rollout_size']),
                      'rollout_weight': float(values['-rollout_weight']),
+                     'starting_orientation_low': float(values['-sorl']),
+                     'starting_orientation_high': float(values['-sorh']),
                      'tau': float(values['-tau']),
                      'pv': int(values['-pv']),
                      'viz': int(values['-viz']),
