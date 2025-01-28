@@ -276,7 +276,7 @@ def make_pybullet(arg_dict, pybullet_instance, rank, hand_info, frictionList = N
                 object_key = "small"
                 # print('older version of object loading, no object domain randomization used')
             else:
-                # print('normally would get object DR but not this time')
+                #print('WE ARE HERE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
                 object_path = args['object_path'][0]
                 object_key = 'small'   
 
@@ -300,7 +300,7 @@ def make_pybullet(arg_dict, pybullet_instance, rank, hand_info, frictionList = N
                 object_key = "small"
                 print('older version of object loading, no object domain randomization used')
             else:
-                # print('normally would get object DR but not this time')
+                #print('WE ARE HERE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@')
                 object_path = args['object_path'][2]
                 object_key = 'add10'   
 
@@ -910,7 +910,7 @@ def replay(argpath, episode_path):
     f2_poses = [s['state']['f2_pos'] for s in data['timestep_list']]
     joint_angles = [s['state']['two_finger_gripper']['joint_angles'] for s in data['timestep_list']]
     import pybullet as p2
-    args['hand_file_list'] = ["2v2_65.35_50.50_1.1_53/hand/2v2_65.35_50.50_1.1_53.urdf"]
+    args['hand_file_list'] = ["2v2_50.50_50.50_1.1_53/hand/2v2_50.50_50.50_1.1_53.urdf"]
     eval_env , _, poses= make_pybullet(args,p2, [1,3], hand_params,viz=True)
     eval_env.evaluate()
     temp = [joint_angles[0]['finger0_segment0_joint'],joint_angles[0]['finger0_segment1_joint'],joint_angles[0]['finger1_segment0_joint'],joint_angles[0]['finger1_segment1_joint']]
@@ -1132,12 +1132,13 @@ def main(filepath = None,learn_type='run', num_cpu=16, j_test=False):
 if __name__ == '__main__':
     import csv
 
-    main('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/Tilt_Test/Dynamic/experiment_config.json','run',j_test=True)
+    main('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/Aspect_Ratio_Test/Dynamic_Aspect/experiment_config.json','run',j_test=True)
+    # main('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/Aspect_Ratio_Test/Dynamic_Aspect/experiment_config.json','run',j_test=True)
     # multiprocess_evaluate_loaded('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/ReLu_Test/With_ReLu/experiment_config.json','A')
     # multiprocess_evaluate_loaded('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/Random_Shape_Test/Slice/experiment_config.json','A')
-    #multiprocess_evaluate_loaded('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/Long_Slice/Static_Long_Nov20/experiment_config.json','A')
+    # multiprocess_evaluate_loaded('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/Long_Slice/Static_Long_Nov20/experiment_config.json','A')
     # multiprocess_evaluate_loaded('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/The_last_run/JA_S3/experiment_config.json',"A")
-    # replay('./data/Bogo/JA_S3/experiment_config.json', './data/Bogo/JA_S3/Eval_A/Episode_96.pkl')
+    # replay('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/Tilt_Test/Dynamic/experiment_config.json', './data/Bogo/JA_S3/Eval_A/Episode_96.pkl')
     # replay('./data/New_Fric2/low_c/experiment_config.json', './data/The_last_run/JA_S3/Ast_A/Episode_4.pkl')
     # replay('./data/Collision_Test/Test2/experiment_config.json', './data/Collision_Test/Test2/Eval_A/Episode_170.pkl')
 

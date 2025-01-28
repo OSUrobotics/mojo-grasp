@@ -1,17 +1,17 @@
 <?xml version="1.0" ?>
-<robot name="20_r_circle">
+<robot name="40x40_Square">
 
-    <link name="20_r_circle">
+    <link name="40x40_Square">
         <visual>
-            <origin rpy="1.5707963267948966 0 0" xyz="0 0 -0.0525"/>
+            <origin rpy="1.5707963267948966 0 0" xyz="0 0 -0.0"/>
             <geometry>
-                <mesh filename="Shapes/20_r_circle.STL" scale=".001 .001 .001"/>
+                <mesh filename="Shapes/40x40_square.obj" scale="1.265 1 0.506"/>
             </geometry>
         </visual>
         <collision>
-            <origin rpy="1.5707963267948966 0 0" xyz="0 0 -0.0525"/>
+            <origin rpy="1.5707963267948966 0 0" xyz="0 0 -0.0"/>
             <geometry>
-                <mesh filename="Shapes/20_r_circle_divide.STL" scale=".001 .001 .001"/>
+                <mesh filename="Shapes/40x40_square.obj" scale="1.265 1 0.506"/>
             </geometry>
         </collision>
         <inertial>
