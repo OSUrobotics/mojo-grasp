@@ -16,6 +16,7 @@ from demos.rl_demo import rl_action
 from demos.rl_demo import multiprocess_reward
 from demos.rl_demo import multiproccess_gym_wrapper_her
 from demos.rl_demo import multiprocess_gym_wrapper
+from mojograsp.simcore.start_holder import StartHolder
 from stable_baselines3.common.vec_env import SubprocVecEnv
 import pandas as pd
 from demos.rl_demo.multiprocess_record import MultiprocessRecordData
@@ -34,6 +35,7 @@ from demos.rl_demo.pkl_merger import merge_from_folder
 from scipy.spatial.transform import Rotation as R
 from stable_baselines3.common.noise import NormalActionNoise
 from torch import nn
+
 
 
 def make_env(arg_dict=None,rank=0,hand_info=None):
@@ -171,25 +173,34 @@ def make_pybullet(arg_dict, pybullet_instance, rank, hand_info, frictionList = N
     if finger_contacts is not None:
         print('we are shuffling the angle and fingertip for the training set WITH A FINGER GOAL')
         eval_finger_contacts = np.array(eval_finger_contacts[int(num_eval*rank[0]/rank[1]):int(num_eval*(rank[0]+1)/rank[1])])
-        goal_poses = GoalHolder(pose_list, np.array(finger_starts[0:2]),orientations,finger_contacts, mix_orientation=True, mix_finger=True)
-        eval_goal_poses = GoalHolder(eval_pose_list, np.array(eval_finger_starts),eval_orientations,eval_finger_contacts)
+        goal_poses = GoalHolder(pose_list,orientations,finger_contacts, mix_orientation=True, mix_finger=True)
+        eval_goal_poses = GoalHolder(eval_pose_list,eval_orientations,eval_finger_contacts)
     elif orientations is not None:
         print('we are shuffling the angle and fingertip for the training set with no finger goal')
-        goal_poses = GoalHolder(pose_list, np.array(finger_starts[0:2]), orientations,mix_orientation=True, mix_finger=True)
-        eval_goal_poses = GoalHolder(eval_pose_list, np.array(eval_finger_starts), eval_orientations)
+        goal_poses = GoalHolder(pose_list, orientations,mix_orientation=True, mix_finger=True)
+        eval_goal_poses = GoalHolder(eval_pose_list, eval_orientations)
     elif args['task'] == 'unplanned_random':
         goal_poses = RandomGoalHolder([0.02,0.065])
         eval_goal_poses = GoalHolder(eval_pose_list)
     elif args['task'] == 'wall':
-        goal_poses = GoalHolder(pose_list, np.array(finger_starts[0:2]))
-        eval_goal_poses = GoalHolder(eval_pose_list, np.array(finger_starts[2:4]))
+        goal_poses = GoalHolder(pose_list)
+        eval_goal_poses = GoalHolder(eval_pose_list)
     elif args['task'] == 'wall_single':
         goal_poses = SingleGoalHolder(pose_list)
         eval_goal_poses = SingleGoalHolder(eval_pose_list)
     else:
-        goal_poses = GoalHolder(pose_list, finger_starts[0:2])
-        eval_goal_poses = GoalHolder(eval_pose_list, finger_starts[2:4])
-    
+        goal_poses = GoalHolder(pose_list)
+        eval_goal_poses = GoalHolder(eval_pose_list)
+    df = pd.read_csv('INSERTCSVHERE.csv', index_col=False)
+    x=df['x']
+    y=df['y']
+    object_orientation = df['theta']
+    object_pos = np.array([[i,j] for i,j in zip(x,y)])
+    y1= df['f1y']
+    y2= df['f2y']
+    finger_starts = np.array([[i,j] for i,j in zip(y1,y2)])
+    start_holder = StartHolder(object_pos, object_orientation, finger_ys=np.array(finger_starts[0:2]))
+    eval_start_holder = StartHolder(object_pos, object_orientation, finger_ys=np.array(finger_starts[0:2]))
     # setup pybullet client to either run with or without rendering
     if viz:
         physics_client = pybullet_instance.connect(pybullet_instance.GUI)
@@ -389,7 +400,7 @@ def make_pybullet(arg_dict, pybullet_instance, rank, hand_info, frictionList = N
     
     # Create phase
     manipulation = multiprocess_manipulation_phase.MultiprocessManipulation(
-        hand, obj, state, action, reward, env, args=arg_dict, hand_type=hand_type)
+        hand, obj, state, action, reward, env, start_holder, args=arg_dict, hand_type=hand_type)
     
     # data recording
     record_data = MultiprocessRecordData(rank,
