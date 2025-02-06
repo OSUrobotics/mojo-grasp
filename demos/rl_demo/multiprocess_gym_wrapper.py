@@ -203,7 +203,8 @@ class MultiprocessGymWrapper(gym.Env):
                 self.thing = []
             self.manipulation_phase.next_ep()
         obj_dict,finger_dict =  self.manipulation_phase.get_start_info()
-
+        # print('obj dict and finger dict from manipulation phase in gym wrapper')
+        # print(obj_dict,finger_dict)
         self.timestep=0
         self.first = False
         self.env.apply_domain_randomization(self.DOMAIN_RANDOMIZATION_FINGER,self.DOMAIN_RANDOMIZATION_FLOOR,self.DOMAIN_RANDOMIZATION_MASS)

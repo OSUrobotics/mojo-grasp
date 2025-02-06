@@ -182,6 +182,7 @@ class MultiprocessSingleShapeEnv(Environment):
         # this should accept object pos and finger pos and run from there
         # takes two dictionaries. object_pos {'translation':[x,y], 'rotation':theta}
         # finger_pos {'joint_angles':[t1,t2,t3,t4]} OR {'finger_y':[f1y,f2y]}
+        # print('entering reset function', obj_dict, finger_dict)
         if obj_dict is not None:
             obj_xy = obj_dict['translation']
             obj_theta = obj_dict['rotation']

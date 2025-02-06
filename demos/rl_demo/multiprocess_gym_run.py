@@ -16,7 +16,7 @@ from demos.rl_demo import rl_action
 from demos.rl_demo import multiprocess_reward
 from demos.rl_demo import multiproccess_gym_wrapper_her
 from demos.rl_demo import multiprocess_gym_wrapper
-from mojograsp.simcore.start_holder import StartHolder
+from mojograsp.simcore.start_holder import StartHolder,RandomStartHolder
 from stable_baselines3.common.vec_env import SubprocVecEnv
 import pandas as pd
 from demos.rl_demo.multiprocess_record import MultiprocessRecordData
@@ -149,7 +149,7 @@ def load_wall(args):
     eval_finger_contacts = None 
     return pose_list, eval_pose_list, orientations, eval_orientations, finger_contacts, eval_finger_contacts, [f1y,f2y,ef1y,ef2y]
     
-def make_pybullet(arg_dict, pybullet_instance, rank, hand_info, frictionList = None, contactList = None, viz=False):
+def make_pybullet(arg_dict, pybullet_instance, rank, hand_info, frictionList = None, contactList = None, viz=True):
     # resource paths
     this_path = os.path.abspath(__file__)
     overall_path = os.path.dirname(os.path.dirname(os.path.dirname(this_path)))
@@ -191,16 +191,31 @@ def make_pybullet(arg_dict, pybullet_instance, rank, hand_info, frictionList = N
     else:
         goal_poses = GoalHolder(pose_list)
         eval_goal_poses = GoalHolder(eval_pose_list)
-    df = pd.read_csv('INSERTCSVHERE.csv', index_col=False)
-    x=df['x']
-    y=df['y']
-    object_orientation = df['theta']
-    object_pos = np.array([[i,j] for i,j in zip(x,y)])
-    y1= df['f1y']
-    y2= df['f2y']
-    finger_starts = np.array([[i,j] for i,j in zip(y1,y2)])
-    start_holder = StartHolder(object_pos, object_orientation, finger_ys=np.array(finger_starts[0:2]))
-    eval_start_holder = StartHolder(object_pos, object_orientation, finger_ys=np.array(finger_starts[0:2]))
+    # df = pd.read_csv('INSERTCSVHERE.csv', index_col=False)
+    # x=df['x']
+    # y=df['y']
+    # object_orientation = df['theta']
+    # object_pos = np.array([[i,j] for i,j in zip(x,y)])
+    # y1= df['f1y']
+    # y2= df['f2y']
+    # finger_starts = np.array([[i,j] for i,j in zip(y1,y2)])
+    start_orientation_ranges = [args['starting_orientation_low']*np.pi/180,args['starting_orientation_high']*np.pi/180]
+    random_start_dict = {'orientation':start_orientation_ranges}
+    if 'starting_x_low' in args.keys():
+        start_x_ranges = [args['starting_x_low'], args['starting_x_high']]
+        start_y_ranges = [args['starting_y_low'], args['starting_y_high']]
+        random_start_dict['x'] = start_x_ranges
+        random_start_dict['y'] = start_y_ranges
+    elif 'starting_r_low' in args.keys():
+        start_r_ranges = [args['starting_r_low'], args['starting_r_high']]
+        start_theta_ranges = [args['starting_theta_low'], args['starting_theta_high']]
+        random_start_dict['r'] = start_r_ranges
+        random_start_dict['theta'] = start_theta_ranges
+
+    if 'starting_finger_y_low' in args.keys():
+        random_start_dict['fingery'] = [args['starting_finger_y_low'], args['starting_finger_y_high']]
+    start_holder = RandomStartHolder(random_start_dict)
+    eval_start_holder = RandomStartHolder(random_start_dict)
     # setup pybullet client to either run with or without rendering
     if viz:
         physics_client = pybullet_instance.connect(pybullet_instance.GUI)
@@ -1142,8 +1157,8 @@ def main(filepath = None,learn_type='run', num_cpu=16, j_test=False):
 
 if __name__ == '__main__':
     import csv
-
-    main('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/Aspect_Ratio_Test/Dynamic_Aspect/experiment_config.json','run',j_test=True)
+    main('./data/testing/experiment_config.json','run', num_cpu=1)
+    # main('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/Aspect_Ratio_Test/Dynamic_Aspect/experiment_config.json','run',j_test=True)
     # main('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/Aspect_Ratio_Test/Dynamic_Aspect/experiment_config.json','run',j_test=True)
     # multiprocess_evaluate_loaded('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/ReLu_Test/With_ReLu/experiment_config.json','A')
     # multiprocess_evaluate_loaded('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/Random_Shape_Test/Slice/experiment_config.json','A')
