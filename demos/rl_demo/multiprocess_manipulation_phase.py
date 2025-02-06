@@ -15,7 +15,7 @@ from PIL import Image
 
 class MultiprocessManipulation(Phase):
 
-    def __init__(self, hand: TwoFingerGripper, cube: ObjectBase, state: State, action: Action, reward: Reward, env, replay_buffer: ReplayBufferDefault = None, args: dict = None,physicsClientId = None, hand_type=None):
+    def __init__(self, hand: TwoFingerGripper, cube: ObjectBase, state: State, action: Action, reward: Reward, env, start_holder, replay_buffer: ReplayBufferDefault = None, args: dict = None,physicsClientId = None, hand_type=None):
         self.name = "manipulation"
         self.hand = hand
         self.cube = cube
@@ -25,6 +25,7 @@ class MultiprocessManipulation(Phase):
         self.eval = False
         self.env = env
         self.p = self.env.p
+        self.start_holder = start_holder
         try:
             self.terminal_step = args['tsteps']
             self.eval_terminal_step = args['eval-tsteps']
@@ -186,6 +187,7 @@ class MultiprocessManipulation(Phase):
         return False
 
     def next_phase(self) -> str:
+        input('what the hell is this?')
         # increment episode count and return next phase (None in this case)
         if not self.eval:
             self.episode += 1
@@ -196,19 +198,18 @@ class MultiprocessManipulation(Phase):
         # increment episode count and return next goal
         if not self.eval:
             self.episode += 1
-        _, fingerys = self.state.next_run()
-        return self.state.objects[-1].get_data(), fingerys
+        self.state.next_run()
+        self.start_holder.next_run()
+    
+    def get_start_info(self):
+        start_pos, fingerys = self.start_holder.get_data()
+        return start_pos, fingerys
 
     def reset(self):
-        # temp = list(range(len(self.x)))
-        
-        # shuffle(temp)
-        # self.x = [self.x[i] for i in temp]
-        # self.y = [self.y[i] for i in temp]
-        
         self.episode = 0
         
         self.state.reset()
+        self.start_holder.reset()
 
     def load_policy(self, filename):
         self.controller.load_policy(filename)

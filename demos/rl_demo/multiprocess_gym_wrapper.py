@@ -75,6 +75,8 @@ class MultiprocessGymWrapper(gym.Env):
         self.contactList = None
         
         self.OBJECT_POSE_RANDOMIZATION = args['object_random_start']
+        self.OBJECT_ORIENTATION_RANDOMIZATION = args['object_random_orientation']
+        self.FINGER_POSITION_RANDOMIZATION = args['finger_random_start']
         try:
             self.DOMAIN_RANDOMIZATION_MASS = args['domain_randomization_object_mass']
             self.DOMAIN_RANDOMIZATION_FINGER = args['domain_randomization_finger_friction']
@@ -181,13 +183,17 @@ class MultiprocessGymWrapper(gym.Env):
         Intended to speed up evaluation of trained policy by allowing
         multiprocessing'''
         print('SETTING RESET POINT', point)
-        self.eval_point = point
+        if type(point) == dict:
+            self.eval_point = point
+        else:
+            self.eval_point = {'translation':point,'rotation':0}
 
     def set_reduced_save_type(self,ting):
         self.reduced_saving = ting
 
     def reset(self,special=None):
-
+        # New changes to this will place all the randomization for object and fingers in this function rather
+        # than in the multiprocess_env class
         if not self.first:
             self.thing.append(time.time()-self.past_time)
             self.past_time = time.time()
@@ -195,11 +201,8 @@ class MultiprocessGymWrapper(gym.Env):
                 self.manipulation_phase.reset()
                 # print('average time of episode',np.average(self.thing))
                 self.thing = []
-            new_goal,fingerys = self.manipulation_phase.next_ep()
-            # print('new goal from reset', new_goal)
-        else:
-            new_goal = {'goal_position':[0,0]}
-            fingerys = [0,0]
+            self.manipulation_phase.next_ep()
+        obj_dict,finger_dict =  self.manipulation_phase.get_start_info()
 
         self.timestep=0
         self.first = False
@@ -209,37 +212,32 @@ class MultiprocessGymWrapper(gym.Env):
             self.eval_run +=1
 
         if self.eval_point is not None:
-            # print('eval point and goal ', self.eval_point, new_goal)
-            self.env.reset(self.eval_point)
+            # if the user has specified an evaluation point, ignore other reset rules
+            obj_dict = self.eval_point
+            finger_dict = None
+        elif self.ONE_FINGER:
+            obj_dict = {'translation':[0,0],'rotation':0}
+            finger_dict = {'joint_angles':[-.785,1.57,0.174533,-0.174533]}
         elif type(special) is list:
-            self.env.reset_to_pos(special[0],special[1])
-
+            raise TypeError('you passed in a list to the reset function. this is no longer supported')
         # Jeremiah shenanigans I hope this breaks nothing
         elif type(special) is dict:
-            # print('reseting with special dict', special)
-            if 'fingers' in special.keys():
-                self.env.reset(special['goal_position'], special['fingers'])
-            elif self.ONE_FINGER:
-                self.env.reset([0,0],[-.785,1.57,0.174533,-0.174533])
-            else:
-                self.env.reset(special['goal_position'])
-            
+            # allow user to reset with argument dictionary. checks for goal_dict and finger_dict sub-dictionaries
+            print('reseting with special dict', special)
+            obj_dict = None
+            finger_dict = None
+            special_keys =  special.keys()
+            if 'goal_dict' in special_keys:
+                obj_dict = special_keys['obj_dict']                
+            if 'finger_dict' in special_keys:
+                finger_dict = special_keys['finger_dict']                
+            if 'goal_position' in special_keys:
+                obj_dict = {'translation':special['goal_position'], 'rotation':0}
+            if 'fingers' in special_keys:
+                finger_dict = {'joint_angles':special['fingers']}
 
-        elif (self.TASK == 'Rotation_region') | ('contact' in self.TASK) | (self.TASK=='big_Rotation'):
-            self.env.reset(new_goal['goal_position'],fingerys=fingerys)
-        elif self.OBJECT_POSE_RANDOMIZATION:
-            random_start = np.random.uniform(0,1,2)
-            x = (1-random_start[0]**2) * np.sin(random_start[1]*2*np.pi) * 0.06
-            y = (1-random_start[0]**2) * np.cos(random_start[1]*2*np.pi) * 0.04
-            # print('x and y',x,y)
-            self.env.reset([x,y])
-        elif 'wall' in self.TASK:
-            self.env.reset([0.0463644396618753, 0.012423314164921])
-        elif self.ONE_FINGER:
-            self.env.reset([0,0],[.785,-1.57,0.174533,-0.174533])
-        else:
-            # print('reseting with NO parameters')
-            self.env.reset()
+        # Reset using parameters either from user specification OR the manipulation phase
+        self.env.reset(obj_dict,finger_dict)
         self.manipulation_phase.setup()
         
         state, _ = self.manipulation_phase.get_episode_info()
@@ -265,9 +263,7 @@ class MultiprocessGymWrapper(gym.Env):
             action = action-1
 
             # print(action)
-        # print('going to manipulation_phase')
         self.manipulation_phase.gym_pre_step(action)
-        # print('executing action')
         self.manipulation_phase.execute_action(viz=viz)
         done = self.manipulation_phase.exit_condition(self.eval)
         self.manipulation_phase.post_step()

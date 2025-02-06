@@ -14,7 +14,7 @@ from mojograsp.simcore.goal_holder import *
 # from point_generator import slice_obj_at_y_level, calculate_outer_perimeter, find_intersection_points
 from mojograsp.simcore.image_maker import ImageGenerator
 import demos.rl_demo.point_generator as pg
-        
+
 class DictHolder():
     def __init__(self,list_size):
         self.data = []
@@ -94,7 +94,14 @@ class MultiprocessState(StateDefault):
                 fingerys = thing.next_run()
                 temp = thing.get_data()
         return temp, fingerys
-        
+    
+    def get_run_start(self):
+        for thing in self.objects:
+            if (type(thing) == GoalHolder) | (type(thing) == RandomGoalHolder) | (type(thing) == SingleGoalHolder)|(type(thing) == HRLGoalHolder)|(type(thing) == HRLMultigoalHolder) |(type(thing) == HRLMultigoalFixed)| (type(thing) == HRLMultigoalFixedPaired):
+                fingerys = thing.get_finger_start()
+                temp = thing.get_data()
+        return temp, fingerys
+    
     def reset(self):
         self.run_num = 0
         for thing in self.objects:
