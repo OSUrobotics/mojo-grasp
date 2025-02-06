@@ -5,13 +5,13 @@
         <visual>
             <origin rpy="1.5707963267948966 0 0" xyz="-.0025 0 -0.0"/>
             <geometry>
-                <mesh filename="Shapes/50x30_teardrop.obj" scale="1 1 1"/>
+                <mesh filename="Shapes/50x30_teardrop.obj" scale="1.265 1 0.506"/>
             </geometry>
         </visual>
         <collision>
             <origin rpy="1.5707963267948966 0 0" xyz="-.0025 0 -0.0"/>
             <geometry>
-                <mesh filename="Shapes/50x30_teardrop.obj" scale="1 1 1"/>
+                <mesh filename="Shapes/50x30_teardrop.obj" scale="1.265 1 0.506"/>
             </geometry>
         </collision>
         <inertial>

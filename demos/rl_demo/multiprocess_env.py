@@ -273,7 +273,10 @@ class MultiprocessSingleShapeEnv(Environment):
         self.p.changeDynamics(hand_id, 3, jointLowerLimit=-1.57, jointUpperLimit=1.57, mass=mass_link)
         self.p.changeDynamics(hand_id, 4, jointLowerLimit=-2.09, jointUpperLimit=0, mass=mass_link, contactStiffness=10, contactDamping=0.1)
         
-        obj_id = self.p.loadURDF(self.obj.path, basePosition=[object_pos[0], object_pos[1], .05], useMaximalCoordinates=True,
+        noisex = np.random.normal(0, 0.0015, 2)
+        noisey = np.random.normal(0, 0.0015, 2)
+
+        obj_id = self.p.loadURDF(self.obj.path, basePosition=[object_pos[0] + noisex, object_pos[1] + noisey, .05], useMaximalCoordinates=True,
                         flags=self.p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
         # obj_id = self.p.loadSoftBody("/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/resources/object_models/Jeremiah_Shapes/Shapes/torus.obj",
         #                                   scale = 0.1,
