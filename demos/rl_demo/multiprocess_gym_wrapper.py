@@ -325,12 +325,13 @@ class MultiprocessGymWrapper(gym.Env):
         """
         angle_keys = ["finger0_segment0_joint","finger0_segment1_joint","finger1_segment0_joint","finger1_segment1_joint"]
         state = []
-        #print('state list', self.state_list)
+        #print('state list!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!', self.state_list)
         if self.PREV_VALS > 0:
             for i in range(self.PREV_VALS):
                 for key in self.state_list:
+                    #Changed This to x,y,z from x,y
                     if key == 'op':
-                        state.extend(state_container['previous_state'][i]['obj_2']['pose'][0][0:2])
+                        state.extend(state_container['previous_state'][i]['obj_2']['pose'][0][0:3])
                     elif key == 'oo':
                         state.extend(state_container['previous_state'][i]['obj_2']['pose'][1])
                     elif key == 'oa':
@@ -375,20 +376,42 @@ class MultiprocessGymWrapper(gym.Env):
                         # state.extend(state_container['previous_state'][i]['slice'].flatten())
                     elif key == 'mslice':
                         shape = state_container['previous_state'][i]['slice']
-                        x, y = state_container['previous_state'][i]['obj_2']['pose'][0][0:2]
+                        shape = np.hstack((shape, np.full((shape.shape[0], 1), 0.05)))
+                        x, y, z = state_container['previous_state'][i]['obj_2']['pose'][0][0:3]
                         a, b, c, w = state_container['previous_state'][i]['obj_2']['pose'][1]
 
-                        theta = np.arctan2(2 * (w * c + a * b), 1 - 2 * (b**2 + c**2))
+                        # theta = np.arctan2(2 * (w * c + a * b), 1 - 2 * (b**2 + c**2))
 
+                        # rotation_matrix = np.array([
+                        #     [np.cos(theta), -np.sin(theta)],
+                        #     [np.sin(theta), np.cos(theta)]
+                        # ])
+
+                        # shape = shape @ rotation_matrix.T
+                        # shape[:, 0] += x
+                        # shape[:, 1] += y
+                        # state.extend(shape.flatten())          
+                        
+                        # Normalize the quaternion to ensure proper rotation
+                        norm = np.sqrt(a**2 + b**2 + c**2 + w**2)
+                        a, b, c, w = a / norm, b / norm, c / norm, w / norm
+
+                        # Construct the 3D rotation matrix from the quaternion
                         rotation_matrix = np.array([
-                            [np.cos(theta), -np.sin(theta)],
-                            [np.sin(theta), np.cos(theta)]
+                            [1 - 2 * (b**2 + c**2), 2 * (a * b - w * c),     2 * (a * c + w * b)],
+                            [2 * (a * b + w * c),     1 - 2 * (a**2 + c**2), 2 * (b * c - w * a)],
+                            [2 * (a * c - w * b),     2 * (b * c + w * a),   1 - 2 * (a**2 + b**2)]
                         ])
 
+                        # Apply the rotation to the shape
                         shape = shape @ rotation_matrix.T
+
+                        # Apply the translation
                         shape[:, 0] += x
                         shape[:, 1] += y
-                        state.extend(shape.flatten())                      
+                        shape[:, 2] += z            
+                        shape = shape.flatten()
+                        state.extend(shape)
 
 
                     elif key == 'rad':
@@ -403,8 +426,9 @@ class MultiprocessGymWrapper(gym.Env):
                         raise Exception('key does not match list of known keys')
 
         for key in self.state_list:
+            # changed to x,y,z from x,y
             if key == 'op':
-                state.extend(state_container['obj_2']['pose'][0][0:2])
+                state.extend(state_container['obj_2']['pose'][0][0:3])
             elif key == 'oo':
                 state.extend(state_container['obj_2']['pose'][1])
             elif key == 'oa':
@@ -450,20 +474,50 @@ class MultiprocessGymWrapper(gym.Env):
                     # print(state_container)                    
                     state.extend(state_container['slice'].flatten())
             elif key == 'mslice':
+###########
+                # print(self.state_list)
+                # shape = state_container['slice']
+                # x,y,z = state_container['obj_2']['pose'][0][0:3]
+                # a,b,c,w = state_container['obj_2']['pose'][1]
+                # theta = np.arctan2(2 * (w * c + a * b), 1 - 2 * (b**2 + c**2))
+
+                # rotation_matrix = np.array([
+                #     [np.cos(theta), -np.sin(theta)],
+                #     [np.sin(theta), np.cos(theta)]
+                # ])  
+
+                # shape = shape @ rotation_matrix.T
+                # shape[:, 0] += x
+                # shape[:, 1] += y
+                # shape[:, 2] += z
+                # state.extend(shape.flatten())
+###########
                 shape = state_container['slice']
-                x,y = state_container['obj_2']['pose'][0][0:2]
-                a,b,c,w = state_container['obj_2']['pose'][1]
-                theta = np.arctan2(2 * (w * c + a * b), 1 - 2 * (b**2 + c**2))
+                shape = np.hstack((shape, np.full((shape.shape[0], 1), 0.05)))
+                x, y, z = state_container['obj_2']['pose'][0][0:3]  # Translation
+                a, b, c, w = state_container['obj_2']['pose'][1]  # Quaternion components
 
+                # Normalize the quaternion to ensure proper rotation
+                norm = np.sqrt(a**2 + b**2 + c**2 + w**2)
+                a, b, c, w = a / norm, b / norm, c / norm, w / norm
+
+                # Construct the 3D rotation matrix from the quaternion
                 rotation_matrix = np.array([
-                    [np.cos(theta), -np.sin(theta)],
-                    [np.sin(theta), np.cos(theta)]
-                ])  
+                    [1 - 2 * (b**2 + c**2), 2 * (a * b - w * c),     2 * (a * c + w * b)],
+                    [2 * (a * b + w * c),     1 - 2 * (a**2 + c**2), 2 * (b * c - w * a)],
+                    [2 * (a * c - w * b),     2 * (b * c + w * a),   1 - 2 * (a**2 + b**2)]
+                ])
 
+                # Apply the rotation to the shape
                 shape = shape @ rotation_matrix.T
+
+                # Apply the translation
                 shape[:, 0] += x
                 shape[:, 1] += y
-                state.extend(shape.flatten())
+                shape[:, 2] += z
+                shape = shape.flatten()
+                # Flatten the shape and extend the state
+                state.extend(shape)
 
             elif key == 'rad':
                 state.append(state_container['f1_contact_distance'])

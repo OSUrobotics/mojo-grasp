@@ -1,17 +1,17 @@
 <?xml version="1.0" ?>
-<robot name="50x30_Teardrop">
+<robot name="40x40_Triangle">
 
-    <link name="50x30_Teardrop">
+    <link name="40x40_Triangle">
         <visual>
-            <origin rpy="1.5707963267948966 0 0" xyz="-.0025 0 -0.0"/>
+            <origin rpy="1.5707963267948966 0 0" xyz="-0.0025 0 -0.0"/>
             <geometry>
-                <mesh filename="Shapes/50x30_teardrop.obj" scale="1 1 1"/>
+                <mesh filename="Shapes/40x40_triangle.obj" scale="0.707 1 0.3535"/>
             </geometry>
         </visual>
         <collision>
-            <origin rpy="1.5707963267948966 0 0" xyz="-.0025 0 -0.0"/>
+            <origin rpy="1.5707963267948966 0 0" xyz="-0.0025 0 -0.0"/>
             <geometry>
-                <mesh filename="Shapes/50x30_teardrop.obj" scale="1 1 1"/>
+                <mesh filename="Shapes/40x40_triangle.obj" scale="0.707 1 0.3535"/>
             </geometry>
         </collision>
         <inertial>
