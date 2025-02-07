@@ -14,7 +14,6 @@ from demos.rl_demo.multiprocess_state import MultiprocessState
 from mojograsp.simcore.goal_holder import  GoalHolder, RandomGoalHolder, SingleGoalHolder
 from demos.rl_demo import rl_action
 from demos.rl_demo import multiprocess_reward
-from demos.rl_demo import multiproccess_gym_wrapper_her
 from demos.rl_demo import multiprocess_gym_wrapper
 from mojograsp.simcore.start_holder import StartHolder,RandomStartHolder
 from stable_baselines3.common.vec_env import SubprocVecEnv
@@ -1157,7 +1156,7 @@ def main(filepath = None,learn_type='run', num_cpu=16, j_test=True):
 
 if __name__ == '__main__':
     import csv
-    main('./data/testing/experiment_config.json','run')
+    main('./data/Full_Domain_Test/Static/experiment_config.json','run')
     # main('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/Aspect_Ratio_Test/Dynamic_Aspect/experiment_config.json','run',j_test=True)
     # main('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/Aspect_Ratio_Test/Dynamic_Aspect/experiment_config.json','run',j_test=True)
     # multiprocess_evaluate_loaded('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/ReLu_Test/With_ReLu/experiment_config.json','A')
