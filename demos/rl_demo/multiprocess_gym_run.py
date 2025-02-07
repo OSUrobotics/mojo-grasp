@@ -423,8 +423,8 @@ def make_pybullet(arg_dict, pybullet_instance, rank, hand_info, frictionList = N
     # gym wrapper around pybullet environment
     if args['model'] == 'PPO':
         gym_env = multiprocess_gym_wrapper.MultiprocessGymWrapper(env, manipulation, record_data, args)
-    elif 'DDPG' in args['model']:
-        gym_env = multiproccess_gym_wrapper_her.MultiprocessGymWrapper(env, manipulation, record_data, args)
+    #elif 'DDPG' in args['model']:
+        #gym_env = multiproccess_gym_wrapper_her.MultiprocessGymWrapper(env, manipulation, record_data, args)
     return gym_env, args, [pose_list,eval_pose_list]
 
 
