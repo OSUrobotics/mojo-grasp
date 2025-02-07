@@ -19,7 +19,7 @@
     "tau": "Float",
     "pv": "Int",
     "viz": "Bool",
-    "sr": "Int","
+    "sr": "Int",
     "success_reward": "Float",
     "state_noise": "Float",
     "start_noise": "Float",
