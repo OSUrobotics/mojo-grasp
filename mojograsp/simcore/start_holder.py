@@ -109,5 +109,5 @@ class RandomStartHolder():
         self.finger_dict = {'finger_y':fingerys}
 
     def get_data(self):
-        print('getting data from the start dict', self.obj_dict, self.finger_dict)
+        # print('getting data from the start dict', self.obj_dict, self.finger_dict)
         return self.obj_dict, self.finger_dict
