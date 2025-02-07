@@ -1071,7 +1071,7 @@ def replay(argpath, episode_path):
         # joints.append()
     p2.disconnect()
 
-def main(filepath = None,learn_type='run', num_cpu=16, j_test=False):
+def main(filepath = None,learn_type='run', num_cpu=16, j_test=True):
     # Create the vectorized environment
     print('cuda y/n?', get_device())
     if filepath is None:
@@ -1157,7 +1157,7 @@ def main(filepath = None,learn_type='run', num_cpu=16, j_test=False):
 
 if __name__ == '__main__':
     import csv
-    main('./data/testing/experiment_config.json','run', num_cpu=1)
+    main('./data/testing/experiment_config.json','run')
     # main('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/Aspect_Ratio_Test/Dynamic_Aspect/experiment_config.json','run',j_test=True)
     # main('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/Aspect_Ratio_Test/Dynamic_Aspect/experiment_config.json','run',j_test=True)
     # multiprocess_evaluate_loaded('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/ReLu_Test/With_ReLu/experiment_config.json','A')
