@@ -149,7 +149,7 @@ def load_wall(args):
     eval_finger_contacts = None 
     return pose_list, eval_pose_list, orientations, eval_orientations, finger_contacts, eval_finger_contacts, [f1y,f2y,ef1y,ef2y]
     
-def make_pybullet(arg_dict, pybullet_instance, rank, hand_info, frictionList = None, contactList = None, viz=False):
+def make_pybullet(arg_dict, pybullet_instance, rank, hand_info, frictionList = None, contactList = None, viz=True):
     # resource paths
     this_path = os.path.abspath(__file__)
     overall_path = os.path.dirname(os.path.dirname(os.path.dirname(this_path)))
