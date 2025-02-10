@@ -65,11 +65,6 @@ class GoalHolder():
             np.random.shuffle(self.orientation)
         else:
             self.orientation = self.orientation[inds]
-        if self.mix_finger:
-            np.random.shuffle(self.finger_start)
-        else:
-            self.finger_start[0]=self.finger_start[0][inds]
-            self.finger_start[1]=self.finger_start[1][inds]
         self.finger = self.finger[inds]
         print('shuffling the pose order')
     
