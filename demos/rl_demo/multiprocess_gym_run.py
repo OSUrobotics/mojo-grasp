@@ -14,7 +14,6 @@ from demos.rl_demo.multiprocess_state import MultiprocessState
 from mojograsp.simcore.goal_holder import  GoalHolder, RandomGoalHolder, SingleGoalHolder
 from demos.rl_demo import rl_action
 from demos.rl_demo import multiprocess_reward
-from demos.rl_demo import multiproccess_gym_wrapper_her
 from demos.rl_demo import multiprocess_gym_wrapper
 from mojograsp.simcore.start_holder import StartHolder,RandomStartHolder
 from stable_baselines3.common.vec_env import SubprocVecEnv
@@ -424,8 +423,8 @@ def make_pybullet(arg_dict, pybullet_instance, rank, hand_info, frictionList = N
     # gym wrapper around pybullet environment
     if args['model'] == 'PPO':
         gym_env = multiprocess_gym_wrapper.MultiprocessGymWrapper(env, manipulation, record_data, args)
-    elif 'DDPG' in args['model']:
-        gym_env = multiproccess_gym_wrapper_her.MultiprocessGymWrapper(env, manipulation, record_data, args)
+    #elif 'DDPG' in args['model']:
+        #gym_env = multiproccess_gym_wrapper_her.MultiprocessGymWrapper(env, manipulation, record_data, args)
     return gym_env, args, [pose_list,eval_pose_list]
 
 
@@ -1071,7 +1070,7 @@ def replay(argpath, episode_path):
         # joints.append()
     p2.disconnect()
 
-def main(filepath = None,learn_type='run', num_cpu=16, j_test=False):
+def main(filepath = None,learn_type='run', num_cpu=16, j_test=True):
     # Create the vectorized environment
     print('cuda y/n?', get_device())
     if filepath is None:
@@ -1157,7 +1156,7 @@ def main(filepath = None,learn_type='run', num_cpu=16, j_test=False):
 
 if __name__ == '__main__':
     import csv
-    main('./data/testing/experiment_config.json','run', num_cpu=1)
+    main('./data/Full_Domain_Test/Static/experiment_config.json','run')
     # main('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/Aspect_Ratio_Test/Dynamic_Aspect/experiment_config.json','run',j_test=True)
     # main('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/Aspect_Ratio_Test/Dynamic_Aspect/experiment_config.json','run',j_test=True)
     # multiprocess_evaluate_loaded('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/ReLu_Test/With_ReLu/experiment_config.json','A')
