@@ -175,7 +175,7 @@ class MultiprocessSingleShapeEnv(Environment):
     def reset(self, obj_dict=None,finger_dict=None):
         # reset the simulator
         # self.p.resetSimulation()
-
+        print('Reset just got called')
         # self.p.setPhysicsEngineParameter(enableFileCaching=1)
 
         # Goal of this redesign is to shift all the randomization to outside of this function
@@ -183,15 +183,24 @@ class MultiprocessSingleShapeEnv(Environment):
         # takes two dictionaries. object_pos {'translation':[x,y], 'rotation':theta}
         # finger_pos {'joint_angles':[t1,t2,t3,t4]} OR {'finger_y':[f1y,f2y]}
         # print('entering reset function', obj_dict, finger_dict)
+        self.p.resetJointState(self.hand.id, 0, self.hand.starting_angles[0])
+        self.p.resetJointState(self.hand.id, 1, self.hand.starting_angles[1])
+        self.p.resetJointState(self.hand.id, 3, self.hand.starting_angles[2])
+        self.p.resetJointState(self.hand.id, 4, self.hand.starting_angles[3])
         if obj_dict is not None:
             obj_xy = obj_dict['translation']
             obj_theta = obj_dict['rotation']
         else:
             obj_xy = np.array([0,0])
             obj_theta = 0
-
+        # print(finger_dict, obj_xy)
         if finger_dict is None:
-            angles = []
+            f1_pos = [link1_pose[0]+obj_xy[0], link1_pose[1] + obj_xy[1], 0.05]
+            f2_pos = [link2_pose[0]+obj_xy[0], link2_pose[1] + obj_xy[1], 0.05]
+            f1_angs = self.p.calculateInverseKinematics(self.hand_id, 2, f1_pos, maxNumIterations=3000)
+            f2_angs = self.p.calculateInverseKinematics(self.hand_id, 5, f2_pos, maxNumIterations=3000)
+            angles = [f1_angs[0],f1_angs[1],f2_angs[2],f2_angs[3]]
+            # print('anglessssss')
         elif 'joint_angles' in finger_dict.keys():
             angles = finger_dict['joint_angles']
         elif 'finger_y' in finger_dict.keys():
@@ -227,6 +236,8 @@ class MultiprocessSingleShapeEnv(Environment):
                                         controlMode=self.p.POSITION_CONTROL, targetPositions=action_to_execute,
                                         positionGains=[0.8,0.8,0.8,0.8], forces=[0.4,0.4,0.4,0.4])
             self.step()
+            # print('stepping in reset')
+            # time.sleep(0.1)
 
     def apply_domain_randomization(self, finger_friction, floor_friction, object_mass):
         # print('dr terms',finger_friction, floor_friction, object_mass)
