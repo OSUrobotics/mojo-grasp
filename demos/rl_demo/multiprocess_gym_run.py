@@ -148,7 +148,7 @@ def load_wall(args):
     eval_finger_contacts = None 
     return pose_list, eval_pose_list, orientations, eval_orientations, finger_contacts, eval_finger_contacts, [f1y,f2y,ef1y,ef2y]
     
-def make_pybullet(arg_dict, pybullet_instance, rank, hand_info, frictionList = None, contactList = None, viz=True):
+def make_pybullet(arg_dict, pybullet_instance, rank, hand_info, frictionList = None, contactList = None, viz=False):
     # resource paths
     this_path = os.path.abspath(__file__)
     overall_path = os.path.dirname(os.path.dirname(os.path.dirname(this_path)))
@@ -1156,7 +1156,7 @@ def main(filepath = None,learn_type='run', num_cpu=16, j_test=True):
 
 if __name__ == '__main__':
     import csv
-    main('./data/Full_Domain_Test/Static/experiment_config.json','run')
+    main('./data/testing/experiment_config.json','run')
     # main('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/Aspect_Ratio_Test/Dynamic_Aspect/experiment_config.json','run',j_test=True)
     # main('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/Aspect_Ratio_Test/Dynamic_Aspect/experiment_config.json','run',j_test=True)
     # multiprocess_evaluate_loaded('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/ReLu_Test/With_ReLu/experiment_config.json','A')
