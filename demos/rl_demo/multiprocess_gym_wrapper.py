@@ -192,6 +192,7 @@ class MultiprocessGymWrapper(gym.Env):
         self.reduced_saving = ting
 
     def reset(self,special=None):
+        # print('RESET IN THE GYM WRAPPER WAS CALLED')
         # New changes to this will place all the randomization for object and fingers in this function rather
         # than in the multiprocess_env class
         if not self.first:
@@ -272,6 +273,8 @@ class MultiprocessGymWrapper(gym.Env):
         if self.eval or self.small_enough:
             self.record.record_timestep()
         # print('recorded timesteps')
+        # time.sleep(0.1)
+        
         state, reward_container = self.manipulation_phase.get_episode_info()
         
         info = {}
@@ -307,8 +310,9 @@ class MultiprocessGymWrapper(gym.Env):
                         self.record.save_episode(self.episode_type, hand_type=self.hand_type)
                 else:
                     self.record.save_episode(self.episode_type)
-
+        # print(f'timestep {self.timestep}')
         self.timestep +=1
+
         return state, reward, done, info
         
     def disconnect(self):
