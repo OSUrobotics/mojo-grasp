@@ -175,7 +175,7 @@ class MultiprocessSingleShapeEnv(Environment):
     def reset(self, obj_dict=None,finger_dict=None):
         # reset the simulator
         # self.p.resetSimulation()
-        print('Reset just got called')
+        # print('Reset just got called')
         # self.p.setPhysicsEngineParameter(enableFileCaching=1)
 
         # Goal of this redesign is to shift all the randomization to outside of this function
