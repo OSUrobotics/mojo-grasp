@@ -29,8 +29,6 @@ class MultiprocessRecordData(RecordDataRLPKL):
         super().record_episode(episode_type)
         self.current_episode["frictionList"] = frictionList
         self.current_episode["contactList"] = contactList
-        # print('calling record episode')
-        # print("Friction list in record is :", frictionList)
 
     def set_folder(self,folder_name):
         self.folder_name = folder_name
@@ -45,38 +43,10 @@ class MultiprocessRecordData(RecordDataRLPKL):
         Method called by :func:`~mojograsp.simcore.sim_manager.SimManager` after every episode. Saves the most recent
         episode dictionary to a pkl file. 
         """
-        # print(self.eval_num,self.num_threads, self.my_thread)
-        # print('saving the episode')
-        # print(int(self.eval_num*self.num_threads+self.my_thread))
         if self.save_episode_flag and self.data_path != None:
             if self.folder_name != '':
                 file_path = self.data_path + self.folder_name+ "/Episode_" + str(int(self.eval_num*self.num_threads+self.my_thread)) + '.pkl'
                 self.eval_num +=1
-
-            # if evaluated == 'test':
-            #     if hand_type is None:
-            #         file_path = self.data_path + "Test/Episode_" + str(int(self.eval_num*self.num_threads+self.my_thread)) + '.pkl'
-            #     elif hand_type=='A':
-            #         file_path = self.data_path + "Eval_A/Episode_" + str(int(self.eval_num*self.num_threads+self.my_thread)) + '.pkl'
-            #     elif hand_type=='B':
-            #         file_path = self.data_path + "Eval_B/Episode_" + str(int(self.eval_num*self.num_threads+self.my_thread)) + '.pkl'
-            #     else:
-            #         file_path = self.data_path + "Eval_" + hand_type+"/Episode_" + str(int(self.eval_num*self.num_threads+self.my_thread)) + '.pkl'
-            #     self.eval_num +=1
-            #     # print('save episode evaluated', self.eval_num*self.num_threads+self.my_thread, hand_type)
-            # elif evaluated == 'asterisk':
-            #     # print('hu')
-            #     if hand_type is None:
-            #         file_path = self.data_path + "Test/Episode_" + str(int(self.eval_num*self.num_threads+self.my_thread)) + '.pkl'
-            #     elif hand_type=='A':
-            #         file_path = self.data_path + "Ast_A/Episode_" + str(int(self.eval_num*self.num_threads+self.my_thread)) + '.pkl'
-            #     elif hand_type=='B':
-            #         file_path = self.data_path + "Ast_B/Episode_" + str(int(self.eval_num*self.num_threads+self.my_thread)) + '.pkl'
-            #     elif hand_type=='A_A':
-            #         file_path = self.data_path + "Full_Ast_A/Episode_" + str(int(self.eval_num*self.num_threads+self.my_thread)) + '.pkl'
-            #     elif hand_type=='B_B':
-            #         file_path = self.data_path + "Full_Ast_B/Episode_" + str(int(self.eval_num*self.num_threads+self.my_thread)) + '.pkl'
-            #     self.eval_num +=1
             else:
                 if hand_type is None:
                     file_path = self.data_path + 'Train/' + \
@@ -85,8 +55,6 @@ class MultiprocessRecordData(RecordDataRLPKL):
                     file_path = self.data_path + 'Train/' + filename + ".pkl"
             
             with open(file_path, 'wb') as fout:
-                # print('writing the thing at this filepath')
-                # print(file_path)
                 pkl.dump(self.current_episode, fout)
         self.current_episode = {}
 
