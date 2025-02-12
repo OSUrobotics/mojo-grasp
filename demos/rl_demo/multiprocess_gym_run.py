@@ -429,12 +429,12 @@ def make_pybullet(arg_dict, pybullet_instance, rank, hand_info, frictionList = N
 
 
 
-def multiprocess_evaluate_loaded(filepath, aorb):
+def multiprocess_evaluate_loaded(filepath, shape_path=None, hand='A', eval_set='full'):
     # load a trained model and test it on its test set
     print('Evaluating on hands A or B')
     print('Hand A: 2v2_50.50_50.50_53')
     print('Hand B: 2v2_65.35_65.35_53')
-    num_cpu =16
+    num_cpu = 16
 
     with open(filepath, 'r') as argfile:
         args = json.load(argfile)
@@ -468,19 +468,23 @@ def multiprocess_evaluate_loaded(filepath, aorb):
     if not('contact_start' in args.keys()):
         args['contact_start'] = True
         print('we didnt have a contact start so we set it to true')
-    if aorb =='A':
+    if hand =='A':
         args['hand_file_list'] = ["2v2_50.50_50.50_1.1_53/hand/2v2_50.50_50.50_1.1_53.urdf"]
-        ht = aorb
-    elif aorb =='B':
+        ht = hand
+    elif hand =='B':
         args['hand_file_list'] = ["2v2_65.35_65.35_1.1_53/hand/2v2_65.35_65.35_1.1_53.urdf"]
-        ht = aorb
-    elif aorb =='C':
+        ht = hand
+    elif hand =='C':
         args['hand_file_list'] = ["2v2_65.35_50.50_1.1_53/hand/2v2_65.35_50.50_1.1_53.urdf"]
-        ht = aorb
+        ht = hand
     else:
-        print('not going to evaluate, aorb is wrong')
-        return
-
+        print('not going to evaluate, hand is wrong')
+    if shape_path is None:
+        print('no shape parameter provided, using the 1st shape in the config file')
+        print('to evaluate multiple shapes, call the function multiple times with different shapes each time')
+        args['object_path'] = [args['object_path'][0]]
+    else:
+        args['object_path'] = [shape_path]
     if 'Rotation' in args['task']:
         args['test_path'] = "./resources/Solo_rotation_test.csv"
     vec_env = SubprocVecEnv([make_env(args,[i,num_cpu],hand_info=hand_params) for i in range(num_cpu)])
@@ -493,7 +497,7 @@ def multiprocess_evaluate_loaded(filepath, aorb):
         x_start = df['x']
         y_start = df['y']
 
-        vec_env.env_method('evaluate', aorb)
+        vec_env.env_method('evaluate', ht)
         for x,y in zip(x_start,y_start):
             vec_env.env_method('set_goal_holder_pos',[x,y])
             for _ in range(int(128/16)):
@@ -510,7 +514,10 @@ def multiprocess_evaluate_loaded(filepath, aorb):
         x_start = df['x']
         y_start = df['y']
         # input(len(x_start))
-        vec_env.env_method('evaluate', aorb)
+        vec_env.env_method('evaluate', ht)
+        if eval_set =='single':
+            x_start = [x_start[0]]
+            y_start = [y_start[0]]
         for x,y in zip(x_start, y_start):
             tihng = {'goal_position':[x,y]}
             print('THING', tihng)
@@ -734,7 +741,6 @@ def rotation_test(filepath, hand_type):
                 obs, _, done, _ = eval_env.step(action,hand_type=hand_type)
     p2.disconnect()
 
-
 def full_test(filepath, hand_type):
     # load a trained model and test it on its test set
     print('Evaluating on hands A or B')
@@ -802,41 +808,6 @@ def full_test(filepath, hand_type):
             action, _ = model.predict(obs,deterministic=True)
             obs, _, done, _ = eval_env.step(action,hand_type=hand_type)
     p2.disconnect()
-
-def multiprocess_evaluate(model, vec_env, rotate=False):
-    # vec_env.evaluate()
-    # tech_start = time.time()
-    vec_env.env_method('set_reduced_save_type', False)
-    if rotate:
-        for _ in range(int(1200/16)):
-            # print('about to reset')
-            obs = vec_env.reset()
-            # vec_env.env_method()
-            done = [False, False]
-            while not all(done):
-                action, _ = model.predict(obs,deterministic=True)
-                vec_env.step_async(action)
-                obs, _, done, _ = vec_env.step_wait()
-    else:
-        df = pd.read_csv('./resources/start_poses.csv', index_col=False)
-        x_start = df['x']
-        y_start = df['y']
-        vec_env.env_method('evaluate', 'A')
-        for x,y in zip(x_start, y_start):
-            tihng = {'goal_position':[x,y]}
-            print('THING', tihng)
-            vec_env.env_method('set_reset_point', tihng['goal_position'])
-            for _ in range(int(1200/16)):
-                # print('about to reset')
-                obs = vec_env.reset()
-                # vec_env.env_method()
-                done = [False, False]
-                while not all(done):
-                    action, _ = model.predict(obs,deterministic=True)
-                    vec_env.step_async(action)
-                    obs, _, done, _ = vec_env.step_wait()
-                # print(obs,done)
-    # end = time.time()
 
 def evaluate(filepath=None,aorb = 'A'):
     # load a trained model and test it on its test set
@@ -1000,16 +971,6 @@ def replay(argpath, episode_path):
                     baseOrientation =quat,
                     useMaximalCoordinates=True)
     
-    # temp_pos = obj_pose[0][0].copy()
-    # temp_pos[2] += 0.06
-    # curr_id=p2.loadURDF('./resources/object_models/2v2_mod/2v2_mod_cylinder_small_alt.urdf', flags=p2.URDF_ENABLE_CACHED_GRAPHICS_SHAPES,
-    #             globalScaling=0.2, basePosition=temp_pos, baseOrientation=[ 0.7071068, 0, 0, 0.7071068 ])
-    # p2.changeVisualShape(curr_id, -1,rgbaColor=[1, 0.5, 0, 1])
-    # cid = p2.createConstraint(2, -1, curr_id, -1, p2.JOINT_FIXED, [0, 0, 0], [0, 0, 0], [0,0,0], childFrameOrientation=[ 0.7071068, 0, 0, 0.7071068 ])
-    # p2.setCollisionFilterPair(curr_id,tting,-1,-1,0)
-    # p2.setCollisionFilterPair(curr_id,2,-1,-1,0)
-    
-
     if 'contact' in args['task']:
         temp = data['timestep_list'][0]['state']['goal_pose']['goal_finger'][0:2]
         visualShapeId = p2.createVisualShape(shapeType=p2.GEOM_SPHERE,
@@ -1156,7 +1117,26 @@ def main(filepath = None,learn_type='run', num_cpu=16, j_test=True):
 
 if __name__ == '__main__':
     import csv
-    main('./data/testing/experiment_config.json','run')
+    import os
+    demo_path = os.path.dirname(os.path.realpath(__file__))
+    print(demo_path)
+    shape_dict = {'square':demo_path+"/resources/object_models/Jeremiah_Shapes/40x40_square.urdf",
+        'square15':demo_path+"/resources/object_models/Jeremiah_Shapes/40x40_square_15.urdf",
+        'square2':demo_path+"/resources/object_models/Jeremiah_Shapes/40x40_square_2.urdf",
+        'square3':demo_path+"/resources/object_models/Jeremiah_Shapes/40x40_square_3.urdf",
+        'circle':demo_path+"/resources/object_models/Jeremiah_Shapes/20_r_circle.urdf",
+        'circle15':demo_path+"/resources/object_models/Jeremiah_Shapes/20_r_circle_15.urdf",
+        'circle2':demo_path+"/resources/object_models/Jeremiah_Shapes/20_r_circle_2.urdf",
+        'circle3':demo_path+"/resources/object_models/Jeremiah_Shapes/20_r_circle_3.urdf",
+        'triangle':demo_path+"/resources/object_models/Jeremiah_Shapes/40x40_triangle.urdf",
+        'triangle15':demo_path+"/resources/object_models/Jeremiah_Shapes/40x40_triangle_15.urdf",
+        'triangle2':demo_path+"/resources/object_models/Jeremiah_Shapes/40x40_triangle_2.urdf",
+        'triangle3':demo_path+"/resources/object_models/Jeremiah_Shapes/40x40_triangle_3.urdf",
+        'teardrop':demo_path+"/resources/object_models/Jeremiah_Shapes/50x30_teardrop.urdf",
+        'teardrop15':demo_path+"/resources/object_models/Jeremiah_Shapes/50x30_teardrop_15.urdf",
+        'teardrop2':demo_path+"/resources/object_models/Jeremiah_Shapes/50x30_teardrop_2.urdf",
+        'teardrop3':demo_path+"/resources/object_models/Jeremiah_Shapes/50x30_teardrop_3.urdf"}
+    # main('./data/testing/experiment_config.json','run')
     # main('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/Aspect_Ratio_Test/Dynamic_Aspect/experiment_config.json','run',j_test=True)
     # main('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/Aspect_Ratio_Test/Dynamic_Aspect/experiment_config.json','run',j_test=True)
     # multiprocess_evaluate_loaded('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/ReLu_Test/With_ReLu/experiment_config.json','A')
@@ -1181,7 +1161,7 @@ if __name__ == '__main__':
     # multiprocess_evaluate_loaded('./data/HPC_Slide/JA_S2/experiment_config.json',"A")
     # multiprocess_evaluate_loaded('./data/HPC_Slide/JA_S2/experiment_config.json',"B")
 
-    # multiprocess_evaluate_loaded('./data/HPC_Slide/JA_S3/experiment_config.json',"A")
+    multiprocess_evaluate_loaded('./data/testing/experiment_config.json',shape_path=shape_dict['teardrop'],hand="A", eval_set='single')
     # multiprocess_evaluate_loaded('./data/HPC_Slide/JA_S3/experiment_config.json',"B")
     # multiprocess_evaluate_loaded('./data/HPC_Slide/FTP_S3/experiment_config.json',"A")
     # multiprocess_evaluate_loaded('./data/HPC_Slide/FTP_S3/experiment_config.json',"B")
