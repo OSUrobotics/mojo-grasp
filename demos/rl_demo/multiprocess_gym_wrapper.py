@@ -627,7 +627,11 @@ class MultiprocessGymWrapper(gym.Env):
         self.record.clear()
         self.episode_type = 'test'
         self.hand_type = ht
-        
+        self.record.set_folder('Test')
+
+    def set_record_folder(self,folder):
+        self.record.set_folder(folder)
+
     def train(self):
         self.eval = False
         self.manipulation_phase.eval = False
@@ -636,6 +640,7 @@ class MultiprocessGymWrapper(gym.Env):
         self.reset()
         self.episode_type = 'train'
         self.hand_type = None
+        self.record.set_folder('Train')
 
     def set_goal(self,goal):
         self.env.set_goal(goal)

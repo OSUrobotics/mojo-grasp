@@ -429,8 +429,27 @@ def make_pybullet(arg_dict, pybullet_instance, rank, hand_info, frictionList = N
 
 
 
-def multiprocess_evaluate_loaded(filepath, shape_path=None, hand='A', eval_set='full'):
+def multiprocess_evaluate_loaded(filepath, shape_key=None, hand='A', eval_set='full'):
     # load a trained model and test it on its test set
+    import os
+    demo_path = os.path.dirname(os.path.realpath(__file__))
+    shape_dict = {'square':demo_path+"/resources/object_models/Jeremiah_Shapes/40x40_square.urdf",
+        'square15':demo_path+"/resources/object_models/Jeremiah_Shapes/40x40_square_15.urdf",
+        'square2':demo_path+"/resources/object_models/Jeremiah_Shapes/40x40_square_2.urdf",
+        'square3':demo_path+"/resources/object_models/Jeremiah_Shapes/40x40_square_3.urdf",
+        'circle':demo_path+"/resources/object_models/Jeremiah_Shapes/20_r_circle.urdf",
+        'circle15':demo_path+"/resources/object_models/Jeremiah_Shapes/20_r_circle_15.urdf",
+        'circle2':demo_path+"/resources/object_models/Jeremiah_Shapes/20_r_circle_2.urdf",
+        'circle3':demo_path+"/resources/object_models/Jeremiah_Shapes/20_r_circle_3.urdf",
+        'triangle':demo_path+"/resources/object_models/Jeremiah_Shapes/40x40_triangle.urdf",
+        'triangle15':demo_path+"/resources/object_models/Jeremiah_Shapes/40x40_triangle_15.urdf",
+        'triangle2':demo_path+"/resources/object_models/Jeremiah_Shapes/40x40_triangle_2.urdf",
+        'triangle3':demo_path+"/resources/object_models/Jeremiah_Shapes/40x40_triangle_3.urdf",
+        'teardrop':demo_path+"/resources/object_models/Jeremiah_Shapes/50x30_teardrop.urdf",
+        'teardrop15':demo_path+"/resources/object_models/Jeremiah_Shapes/50x30_teardrop_15.urdf",
+        'teardrop2':demo_path+"/resources/object_models/Jeremiah_Shapes/50x30_teardrop_2.urdf",
+        'teardrop3':demo_path+"/resources/object_models/Jeremiah_Shapes/50x30_teardrop_3.urdf"}
+    
     print('Evaluating on hands A or B')
     print('Hand A: 2v2_50.50_50.50_53')
     print('Hand B: 2v2_65.35_65.35_53')
@@ -479,11 +498,13 @@ def multiprocess_evaluate_loaded(filepath, shape_path=None, hand='A', eval_set='
         ht = hand
     else:
         print('not going to evaluate, hand is wrong')
-    if shape_path is None:
+    if shape_key is None:
         print('no shape parameter provided, using the 1st shape in the config file')
         print('to evaluate multiple shapes, call the function multiple times with different shapes each time')
         args['object_path'] = [args['object_path'][0]]
+        shape_key = 'Eval_'
     else:
+        shape_path = shape_dict[shape_key]
         args['object_path'] = [shape_path]
     if 'Rotation' in args['task']:
         args['test_path'] = "./resources/Solo_rotation_test.csv"
@@ -491,7 +512,6 @@ def multiprocess_evaluate_loaded(filepath, shape_path=None, hand='A', eval_set='
     vec_env.env_method('set_reduced_save_type', False)
     # Change to nn.ReLu in kwargs
     model = model_type("MlpPolicy", vec_env, tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-2.3}).load(args['save_path']+'best_model', env=vec_env)
-    
     if 'Rotation' in args['task']:
         df = pd.read_csv('./resources/start_poses.csv', index_col=False)
         x_start = df['x']
@@ -515,6 +535,8 @@ def multiprocess_evaluate_loaded(filepath, shape_path=None, hand='A', eval_set='
         y_start = df['y']
         # input(len(x_start))
         vec_env.env_method('evaluate', ht)
+        vec_env.env_method('set_record_folder',shape_key+'_'+ht)
+
         if eval_set =='single':
             x_start = [x_start[0]]
             y_start = [y_start[0]]
@@ -589,6 +611,7 @@ def asterisk_test(filepath,hand_type,frictionList = None, contactList = None):
     import pybullet as p2
     eval_env , _, poses= make_pybullet(args,p2, [0,1], hand_params, viz=True)
     eval_env.evaluate()
+    eval_env.set_record_folder('Ast_'+hand_type)
     eval_env.reduced_saving = False
     model = model_type("MlpPolicy", eval_env, tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-2.3}).load(args['save_path']+'best_model', env=eval_env)
     eval_env.episode_type = 'asterisk'
@@ -722,6 +745,7 @@ def rotation_test(filepath, hand_type):
     import pybullet as p2
     eval_env , _, poses= make_pybullet(args,p2, [0,1], hand_params, viz=False)
     eval_env.evaluate()
+    eval_env.set_record_folder('Ast_'+hand_type)
     eval_env.reduced_saving = False
     model = model_type("MlpPolicy", eval_env, tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-2.3}).load(args['save_path']+'best_model', env=eval_env)
     eval_env.episode_type = 'asterisk'
@@ -796,6 +820,7 @@ def full_test(filepath, hand_type):
     # input(len(asterisk_thing))
     eval_env , _, poses= make_pybullet(args,p2, [0,1], hand_params, viz=False)
     eval_env.evaluate()
+    eval_env.set_record_folder('Ast_'+hand_type)
     eval_env.reduced_saving = False
     model = model_type("MlpPolicy", eval_env, tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-2.3}).load(args['save_path']+'best_model', env=eval_env)
     eval_env.episode_type = 'asterisk'
@@ -853,6 +878,7 @@ def evaluate(filepath=None,aorb = 'A'):
     import pybullet as p2
     eval_env , _, poses= make_pybullet(args,p2, [0,1], hand_params, viz=False)
     eval_env.evaluate()
+    # eval_env.set_record_folder()
     eval_env.reduced_saving = False
     model = model_type("MlpPolicy", eval_env, tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-2.3}).load(args['save_path']+'best_model', env=eval_env)
 
@@ -1117,101 +1143,7 @@ def main(filepath = None,learn_type='run', num_cpu=16, j_test=True):
 
 if __name__ == '__main__':
     import csv
-    import os
-    demo_path = os.path.dirname(os.path.realpath(__file__))
-    print(demo_path)
-    shape_dict = {'square':demo_path+"/resources/object_models/Jeremiah_Shapes/40x40_square.urdf",
-        'square15':demo_path+"/resources/object_models/Jeremiah_Shapes/40x40_square_15.urdf",
-        'square2':demo_path+"/resources/object_models/Jeremiah_Shapes/40x40_square_2.urdf",
-        'square3':demo_path+"/resources/object_models/Jeremiah_Shapes/40x40_square_3.urdf",
-        'circle':demo_path+"/resources/object_models/Jeremiah_Shapes/20_r_circle.urdf",
-        'circle15':demo_path+"/resources/object_models/Jeremiah_Shapes/20_r_circle_15.urdf",
-        'circle2':demo_path+"/resources/object_models/Jeremiah_Shapes/20_r_circle_2.urdf",
-        'circle3':demo_path+"/resources/object_models/Jeremiah_Shapes/20_r_circle_3.urdf",
-        'triangle':demo_path+"/resources/object_models/Jeremiah_Shapes/40x40_triangle.urdf",
-        'triangle15':demo_path+"/resources/object_models/Jeremiah_Shapes/40x40_triangle_15.urdf",
-        'triangle2':demo_path+"/resources/object_models/Jeremiah_Shapes/40x40_triangle_2.urdf",
-        'triangle3':demo_path+"/resources/object_models/Jeremiah_Shapes/40x40_triangle_3.urdf",
-        'teardrop':demo_path+"/resources/object_models/Jeremiah_Shapes/50x30_teardrop.urdf",
-        'teardrop15':demo_path+"/resources/object_models/Jeremiah_Shapes/50x30_teardrop_15.urdf",
-        'teardrop2':demo_path+"/resources/object_models/Jeremiah_Shapes/50x30_teardrop_2.urdf",
-        'teardrop3':demo_path+"/resources/object_models/Jeremiah_Shapes/50x30_teardrop_3.urdf"}
-    # main('./data/testing/experiment_config.json','run')
-    # main('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/Aspect_Ratio_Test/Dynamic_Aspect/experiment_config.json','run',j_test=True)
-    # main('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/Aspect_Ratio_Test/Dynamic_Aspect/experiment_config.json','run',j_test=True)
-    # multiprocess_evaluate_loaded('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/ReLu_Test/With_ReLu/experiment_config.json','A')
-    # multiprocess_evaluate_loaded('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/Random_Shape_Test/Slice/experiment_config.json','A')
-    # multiprocess_evaluate_loaded('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/Long_Slice/Static_Long_Nov20/experiment_config.json','A')
-    # multiprocess_evaluate_loaded('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/The_last_run/JA_S3/experiment_config.json',"A")
-    # replay('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/Tilt_Test/Dynamic/experiment_config.json', './data/Bogo/JA_S3/Eval_A/Episode_96.pkl')
-    # replay('./data/New_Fric2/low_c/experiment_config.json', './data/The_last_run/JA_S3/Ast_A/Episode_4.pkl')
-    # replay('./data/Collision_Test/Test2/experiment_config.json', './data/Collision_Test/Test2/Eval_A/Episode_170.pkl')
 
-    # multiprocess_evaluate_loaded('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/Slice_Test/Full/experiment_config.json',"A")
-    # multiprocess_evaluate_loaded('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/Slice_Test/Partial/experiment_config.json',"A")
-    # multiprocess_evaluate_loaded('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/Slice_Test/Double_Partial/experiment_config.json',"A")
+    # multiprocess_evaluate_loaded('./data/testing/experiment_config.json',shape_key='teardrop',hand="A", eval_set='single')
 
-    #multiprocess_evaluate_loaded('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/The_last_run/JA_S3/experiment_config.json',"A")
-    # multiprocess_evaluate_loaded('./data/HPC_Slide/FTP_S1/experiment_config.json',"B")
-    # multiprocess_evaluate_loaded('./data/HPC_Slide/FTP_S2/experiment_config.json',"A")
-    # multiprocess_evaluate_loaded('./data/HPC_Slide/FTP_S2/experiment_config.json',"B")
-
-    # multiprocess_evaluate_loaded('./data/HPC_Slide/JA_S1/experiment_config.json',"A")
-    # multiprocess_evaluate_loaded('./data/HPC_Slide/JA_S1/experiment_config.json',"B")
-    # multiprocess_evaluate_loaded('./data/HPC_Slide/JA_S2/experiment_config.json',"A")
-    # multiprocess_evaluate_loaded('./data/HPC_Slide/JA_S2/experiment_config.json',"B")
-
-    multiprocess_evaluate_loaded('./data/testing/experiment_config.json',shape_path=shape_dict['teardrop'],hand="A", eval_set='single')
-    # multiprocess_evaluate_loaded('./data/HPC_Slide/JA_S3/experiment_config.json',"B")
-    # multiprocess_evaluate_loaded('./data/HPC_Slide/FTP_S3/experiment_config.json',"A")
-    # multiprocess_evaluate_loaded('./data/HPC_Slide/FTP_S3/experiment_config.json',"B")
-    # contactList = [9, 6, 0.05]
-    # frictionList = [0.05 ,0.01 ,0.04 ,0.20 ,0.01 ,0.05, 1, 0.001, 0.001]
-    # asterisk_test('./data/The_last_run/JA_S3/experiment_config.json','A')
-    # full_test('./data/Mothra_Full_Continue_New_weight/JA_S3/experiment_config.json','A')
-    # full_test('./data/Mothra_Full_Continue_New_weight/JA_S3/experiment_config.json','B')
-
-    # multiprocess_evaluate_loaded('./data/Mothra_Full_Continue_New_weight/JA_S3/experiment_config.json','A')
-    # multiprocess_evaluate_loaded('./data/Mothra_Full_Continue_New_weight/JA_S3/experiment_config.json','B')
-    # multiprocess_evaluate_loaded('./data/HPC_Rotation/FTP_S1/experiment_config.json',"A")
-    # multiprocess_evaluate_loaded('./data/HPC_Rotation/FTP_S1/experiment_config.json',"B")
-    # multiprocess_evaluate_loaded('./data/HPC_Rotation/FTP_S2/experiment_config.json',"A")
-    # multiprocess_evaluate_loaded('./data/HPC_Rotation/FTP_S2/experiment_config.json',"B")
-    # multiprocess_evaluate_loaded('./data/HPC_Rotation/FTP_S3/experiment_config.json',"A")
-    # multiprocess_evaluate_loaded('./data/HPC_Rotation/FTP_S3/experiment_config.json',"B")
-
-    # multiprocess_evaluate_loaded('./data/HPC_Full/FTP_S1/experiment_config.json',"A")
-    # multiprocess_evaluate_loaded('./data/HPC_Full/FTP_S1/experiment_config.json',"B")
-
-    # rotation_test('./data/Rotation_continue/JA_S3_new_weight_same_space/experiment_config.json',"A")
-    # multiprocess_evaluate_loaded('./data/Rotation_continue/JA_S3_larger_space/experiment_config.json',"A")
-    # rotation_test('./data/Mothra_Rotation/JA_S3/experiment_config.json',"A")
-    # rotation_test('./data/Rotation_continue/JA_S3_larger_space_new_weight/experiment_config.json',"A")
-    # rotation_test('./data/Rotation_continue/JA_S3_larger_space_new_weight_contact/experiment_config.json',"A")
-    # rotation_test('./data/Rotation_continue/JA_S3_larger_space/experiment_config.json',"B")
-    # rotation_test('./data/Rotation_continue/JA_S3_larger_space_new_weight/experiment_config.json',"B")
-    # rotation_test('./data/Mothra_Rotation/JA_S3/experiment_config.json',"B_B")
-    # rotation_test('./data/Mothra_Rotation/FTP_S1/experiment_config.json',"A")
-    # rotation_test('./data/Mothra_Rotation/JA_S2/experiment_config.json',"A_A")
-    # rotation_test('./data/Mothra_Rotation/JA_S2/experiment_config.json',"B_B")
-    # rotation_test('./data/Rotation_continue/JA_S3_larger_space_new_weight_contact/experiment_config.json',"B")
-    # sub_names = ['FTP_S1','FTP_S2','FTP_S3','JA_S1','JA_S2','JA_S3']
-    # top_names = ['Sliding_B']
-    # for uname in top_names:
-    #     for lname in sub_names:
-    #         # rotation_test('./data/'+uname+'/'+lname+"/experiment_config.json","A_A")
-    #         # rotation_test('./data/'+uname+'/'+lname+"/experiment_config.json","B_B")
-    #         # asterisk_test('./data/'+uname+'/'+lname+"/experiment_config.json","A")
-    #         # asterisk_test('./data/'+uname+'/'+lname+"/experiment_config.json","B")
-    #         print(uname, lname)
-    # multiprocess_evaluate_loaded("./data/N_HPC_slide_rerun/JA_S3/experiment_config.json","A")
-    # for uname in top_names:
-    #     for lname in sub_names:
-    #         multiprocess_evaluate_loaded('./data/'+uname+'/'+lname+"/experiment_config.json","A")
-            
-    #         # multiprocess_evaluate_loaded('./data/'+uname+'/'+lname+"/experiment_config.json","B")
-    #         # multiprocess_evaluate_loaded('./data/'+uname+'/'+lname+"/experiment_config.json","C")
-    #         print(uname, lname)
-
-
-
+    main('./data/testing/experiment_config.json',j_test=False)
