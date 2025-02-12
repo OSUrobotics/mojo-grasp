@@ -195,6 +195,8 @@ class MultiprocessSingleShapeEnv(Environment):
             obj_theta = 0
         # print(finger_dict, obj_xy)
         if finger_dict is None:
+            link1_pose = self.p.getLinkState(self.hand_id, 2)[0]
+            link2_pose = self.p.getLinkState(self.hand_id, 5)[0]
             f1_pos = [link1_pose[0]+obj_xy[0], link1_pose[1] + obj_xy[1], 0.05]
             f2_pos = [link2_pose[0]+obj_xy[0], link2_pose[1] + obj_xy[1], 0.05]
             f1_angs = self.p.calculateInverseKinematics(self.hand_id, 2, f1_pos, maxNumIterations=3000)
