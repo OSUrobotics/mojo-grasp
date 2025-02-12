@@ -1144,6 +1144,6 @@ def main(filepath = None,learn_type='run', num_cpu=16, j_test=True):
 if __name__ == '__main__':
     import csv
 
-    # multiprocess_evaluate_loaded('./data/testing/experiment_config.json',shape_key='teardrop',hand="A", eval_set='single')
+    multiprocess_evaluate_loaded('./data/testing/experiment_config.json',shape_key='teardrop',hand="A", eval_set='single')
 
-    main('./data/testing/experiment_config.json',j_test=False)
+    # main('./data/testing/experiment_config.json',j_test=False)
