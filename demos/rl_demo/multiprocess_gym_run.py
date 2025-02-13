@@ -34,6 +34,7 @@ from demos.rl_demo.pkl_merger import merge_from_folder
 from scipy.spatial.transform import Rotation as R
 from stable_baselines3.common.noise import NormalActionNoise
 from torch import nn
+import math
 
 
 
@@ -436,19 +437,27 @@ def multiprocess_evaluate_loaded(filepath, shape_key=None, hand='A', eval_set='f
     shape_dict = {'square':demo_path+"/resources/object_models/Jeremiah_Shapes/40x40_square.urdf",
         'square15':demo_path+"/resources/object_models/Jeremiah_Shapes/40x40_square_15.urdf",
         'square2':demo_path+"/resources/object_models/Jeremiah_Shapes/40x40_square_2.urdf",
+        'square25':demo_path+"/resources/object_models/Jeremiah_Shapes/40x40_square_25.urdf",
         'square3':demo_path+"/resources/object_models/Jeremiah_Shapes/40x40_square_3.urdf",
         'circle':demo_path+"/resources/object_models/Jeremiah_Shapes/20_r_circle.urdf",
         'circle15':demo_path+"/resources/object_models/Jeremiah_Shapes/20_r_circle_15.urdf",
         'circle2':demo_path+"/resources/object_models/Jeremiah_Shapes/20_r_circle_2.urdf",
+        'circle25':demo_path+"/resources/object_models/Jeremiah_Shapes/20_r_circle_25.urdf",
         'circle3':demo_path+"/resources/object_models/Jeremiah_Shapes/20_r_circle_3.urdf",
         'triangle':demo_path+"/resources/object_models/Jeremiah_Shapes/40x40_triangle.urdf",
         'triangle15':demo_path+"/resources/object_models/Jeremiah_Shapes/40x40_triangle_15.urdf",
         'triangle2':demo_path+"/resources/object_models/Jeremiah_Shapes/40x40_triangle_2.urdf",
+        'triangle25':demo_path+"/resources/object_models/Jeremiah_Shapes/40x40_triangle_25.urdf",
         'triangle3':demo_path+"/resources/object_models/Jeremiah_Shapes/40x40_triangle_3.urdf",
         'teardrop':demo_path+"/resources/object_models/Jeremiah_Shapes/50x30_teardrop.urdf",
         'teardrop15':demo_path+"/resources/object_models/Jeremiah_Shapes/50x30_teardrop_15.urdf",
         'teardrop2':demo_path+"/resources/object_models/Jeremiah_Shapes/50x30_teardrop_2.urdf",
-        'teardrop3':demo_path+"/resources/object_models/Jeremiah_Shapes/50x30_teardrop_3.urdf"}
+        'teardrop25':demo_path+"/resources/object_models/Jeremiah_Shapes/50x30_teardrop_25.urdf",
+        'teardrop3':demo_path+"/resources/object_models/Jeremiah_Shapes/50x30_teardrop_3.urdf",
+        'trapazoid':demo_path+"/resources/object_models/Jeremiah_Shapes/trapazoid.urdf",
+        'pentagon':demo_path+"/resources/object_models/Jeremiah_Shapes/pentagon.urdf",
+        'square_circle' :demo_path+"/resources/object_models/Jeremiah_Shapes/square_circle.urdf"
+        }
     
     print('Evaluating on hands A or B')
     print('Hand A: 2v2_50.50_50.50_53')
@@ -1057,7 +1066,16 @@ def replay(argpath, episode_path):
         # joints.append()
     p2.disconnect()
 
-def main(filepath = None,learn_type='run', num_cpu=16, j_test=True):
+def cosine_annealing_with_restarts(initial_lr, min_lr=3e-5, t_initial=1e5, mult_factor=2.0):
+    def schedule(progress):
+        total_timesteps = progress * t_initial * (mult_factor ** math.floor(math.log(progress + 1, mult_factor)))
+        cycle_length = t_initial * (mult_factor ** math.floor(math.log(progress + 1, mult_factor)))
+        t_mod = total_timesteps % cycle_length
+        cosine_decay = 0.5 * (1 + math.cos(math.pi * t_mod / cycle_length))
+        return min_lr + (initial_lr - min_lr) * cosine_decay
+    return schedule
+
+def main(filepath = None,learn_type='run', num_cpu=16, j_test='base'):
     # Create the vectorized environment
     print('cuda y/n?', get_device())
     if filepath is None:
@@ -1121,9 +1139,17 @@ def main(filepath = None,learn_type='run', num_cpu=16, j_test=True):
                         batch_size=256,
                         tensorboard_log=args['tname'])
             print('DDPG MODEL INITIALIZED')
-        elif j_test:
+
+        elif j_test == 'base':
             model = model_type("MlpPolicy", vec_env,tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-0.69,'activation_fn': nn.ReLU})
             print('J_TEST MODEL INITIALIZED')
+        elif j_test == 'warm_restart':
+            model = PPO(
+                "MlpPolicy",
+                vec_env,
+                learning_rate=cosine_annealing_with_restarts(initial_lr=3e-4, min_lr=3e-5, t_initial=1e5, mult_factor=2.0),
+                tensorboard_log=args['tname'],
+                policy_kwargs={'log_std_init': -0.69, 'activation_fn': nn.ReLU})
         else:
             # use ReLu in Kwargs and log_std_init = -.69 
             model = model_type("MlpPolicy", vec_env,tensorboard_log=args['tname'])
@@ -1144,6 +1170,9 @@ def main(filepath = None,learn_type='run', num_cpu=16, j_test=True):
 if __name__ == '__main__':
     import csv
 
-    multiprocess_evaluate_loaded('./data/testing/experiment_config.json',shape_key='teardrop',hand="A", eval_set='single')
+    # test_shape_list = ['square','square25','circle','circle25','triangle','triangle25','trapazoid','square_circle','pentagon']
 
-    # main('./data/testing/experiment_config.json',j_test=False)
+    # for item in test_shape_list:
+    #     multiprocess_evaluate_loaded('./data/Full_Domain_Test/Dynamic/experiment_config.json',shape_key=item,hand="A", eval_set='single')
+
+    main('./data/Warm_Restart_Test/Static/experiment_config.json', j_test='warm_restart')
