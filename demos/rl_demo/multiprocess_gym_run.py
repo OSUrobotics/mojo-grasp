@@ -34,6 +34,7 @@ from demos.rl_demo.pkl_merger import merge_from_folder
 from scipy.spatial.transform import Rotation as R
 from stable_baselines3.common.noise import NormalActionNoise
 from torch import nn
+from stable_baselines3.common.policies import ActorCriticPolicy
 
 
 
@@ -1089,12 +1090,11 @@ def main(filepath = None,learn_type='run', num_cpu=16, j_test=True):
         model_type = TD3
 
     vec_env = SubprocVecEnv([make_env(args,[i,num_cpu],hand_info=hand_params) for i in range(num_cpu)])
-
     train_timesteps = int(args['evaluate']*(args['tsteps']+1)/num_cpu)
     callback = multiprocess_gym_wrapper.MultiEvaluateCallback(vec_env,n_eval_episodes=int(1200), eval_freq=train_timesteps, best_model_save_path=args['save_path'])
 
     if learn_type == 'transfer':
-        model = model_type("MlpPolicy", vec_env, tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-2.3}).load(args['load_path']+'best_model', env=vec_env,tensorboard_log=args['tname'])
+        model = model_type("MlpPolicy", vec_env, tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-2.3}).load(args['load_path']+'best_model', env=vec_env,tensorboard_log=args['tname'],)
         print('LOADING A MODEL')
     elif learn_type == 'run':
         if 'DDPG' in args['model']:
@@ -1122,7 +1122,8 @@ def main(filepath = None,learn_type='run', num_cpu=16, j_test=True):
                         tensorboard_log=args['tname'])
             print('DDPG MODEL INITIALIZED')
         elif j_test:
-            model = model_type("MlpPolicy", vec_env,tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-0.69,'activation_fn': nn.ReLU})
+            model = model_type("MlpPolicy", vec_env,tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-0.69,'activation_fn': nn.ReLU,
+                                                                                                   'net_arch': dict(pi=[64, 64, 64], vf=[64, 64, 64])})
             print('J_TEST MODEL INITIALIZED')
         else:
             # use ReLu in Kwargs and log_std_init = -.69 
@@ -1144,6 +1145,6 @@ def main(filepath = None,learn_type='run', num_cpu=16, j_test=True):
 if __name__ == '__main__':
     import csv
 
-    multiprocess_evaluate_loaded('./data/testing/experiment_config.json',shape_key='teardrop',hand="A", eval_set='single')
+    # multiprocess_evaluate_loaded('./data/testing/experiment_config.json',shape_key='teardrop',hand="A", eval_set='single')
 
-    # main('./data/testing/experiment_config.json',j_test=False)
+    main('./data/Testing_Layers/Static/experiment_config.json',j_test=True)

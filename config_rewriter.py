@@ -9,7 +9,7 @@ import json
 import os
 import pathlib
 
-folder_path = './demos/rl_demo/data/J_HPC_rerun/'
+folder_path = './demos/rl_demo/data/Testing_Layers/'
 
 
 overall_path = pathlib.Path(__file__).parent.resolve()
