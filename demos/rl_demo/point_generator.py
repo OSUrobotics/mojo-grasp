@@ -106,8 +106,10 @@ def get_intersection_points(vertices, center=(0, 0), angle_step=15):
             intersection = get_line_intersection((center[0], center[1]), (x_end, y_end), p1, p2)
             if intersection is not None:
                 intersections.append(intersection)
-
-    return np.array(intersections)
+    intersections = np.array(intersections)
+    # print(len(intersections))
+    # print(np.unique(intersections,axis=1),intersections)
+    return intersections
 
 # Function to calculate intersection between two line segments
 def get_line_intersection(p1, p2, p3, p4):
@@ -224,47 +226,48 @@ def save_slices_to_file(urdf_files, output_filename):
         json.dump(data, f, indent=4)
 
 # # List of URDF files
-# urdf_files = [
-#     '/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/resources/object_models/Jeremiah_Shapes/40x40_triangle.urdf',
-#     '/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/resources/object_models/Jeremiah_Shapes/40x40_triangle_3.urdf',
-#     #'/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/resources/object_models/Jeremiah_Shapes/40x40_triangle_25.urdf',
-#     '/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/resources/object_models/Jeremiah_Shapes/40x40_triangle_2.urdf',
-#     '/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/resources/object_models/Jeremiah_Shapes/40x40_triangle_15.urdf',
-#     '/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/resources/object_models/Jeremiah_Shapes/50x30_teardrop.urdf',
-#     '/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/resources/object_models/Jeremiah_Shapes/50x30_teardrop_3.urdf',
-#     #'/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/resources/object_models/Jeremiah_Shapes/50x30_teardrop_25.urdf',
-#     '/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/resources/object_models/Jeremiah_Shapes/50x30_teardrop_2.urdf',
-#     '/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/resources/object_models/Jeremiah_Shapes/50x30_teardrop_15.urdf',
-#     '/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/resources/object_models/Jeremiah_Shapes/40x40_square.urdf',
-#     '/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/resources/object_models/Jeremiah_Shapes/40x40_square_3.urdf',
-#     #'/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/resources/object_models/Jeremiah_Shapes/40x40_square_25.urdf',
-#     '/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/resources/object_models/Jeremiah_Shapes/40x40_square_2.urdf',
-#     '/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/resources/object_models/Jeremiah_Shapes/40x40_square_15.urdf',
-#     '/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/resources/object_models/Jeremiah_Shapes/20_r_circle.urdf',
-#     '/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/resources/object_models/Jeremiah_Shapes/20_r_circle_3.urdf',
-#     #'/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/resources/object_models/Jeremiah_Shapes/20_r_circle_25.urdf',
-#     '/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/resources/object_models/Jeremiah_Shapes/20_r_circle_2.urdf',
-#     '/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/resources/object_models/Jeremiah_Shapes/20_r_circle_15.urdf'
-# ]
+urdf_files = [
+    './resources/object_models/Jeremiah_Shapes/40x40_triangle.urdf',
+    './resources/object_models/Jeremiah_Shapes/40x40_triangle_3.urdf',
+    #'./resources/object_models/Jeremiah_Shapes/40x40_triangle_25.urdf',
+    './resources/object_models/Jeremiah_Shapes/40x40_triangle_2.urdf',
+    './resources/object_models/Jeremiah_Shapes/40x40_triangle_15.urdf',
+    './resources/object_models/Jeremiah_Shapes/50x30_teardrop.urdf',
+    './resources/object_models/Jeremiah_Shapes/50x30_teardrop_3.urdf',
+    #'./resources/object_models/Jeremiah_Shapes/50x30_teardrop_25.urdf',
+    './resources/object_models/Jeremiah_Shapes/50x30_teardrop_2.urdf',
+    './resources/object_models/Jeremiah_Shapes/50x30_teardrop_15.urdf',
+    './resources/object_models/Jeremiah_Shapes/40x40_square.urdf',
+    './resources/object_models/Jeremiah_Shapes/40x40_square_3.urdf',
+    #'./resources/object_models/Jeremiah_Shapes/40x40_square_25.urdf',
+    './resources/object_models/Jeremiah_Shapes/40x40_square_2.urdf',
+    './resources/object_models/Jeremiah_Shapes/40x40_square_15.urdf',
+    './resources/object_models/Jeremiah_Shapes/20_r_circle.urdf',
+    './resources/object_models/Jeremiah_Shapes/20_r_circle_3.urdf',
+    #'./resources/object_models/Jeremiah_Shapes/20_r_circle_25.urdf',
+    './resources/object_models/Jeremiah_Shapes/20_r_circle_2.urdf',
+    './resources/object_models/Jeremiah_Shapes/20_r_circle_15.urdf'
+]
 
 # save_slices_to_file(urdf_files, 'slices.json')
 
-# # Example usage with a URDF file
-# urdf_file = '/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/resources/object_models/Jeremiah_Shapes/40x40_triangle_25.urdf'
-# mesh_file, scale = get_mesh_from_urdf(urdf_file)
-# # print(scale)
-# if mesh_file:
-#     y_layer = 0.05
-#     vertices = get_sliced_points(mesh_file, y_layer, scale)
-#     connected_vertices = connect_vertices(vertices)
+# Example usage with a URDF file
+# for urdf_file in urdf_files:
+#     # urdf_file = './resources/object_models/Jeremiah_Shapes/40x40_triangle_25.urdf'
+#     mesh_file, scale = get_mesh_from_urdf(urdf_file)
+#     # print(scale)
+#     if mesh_file:
+#         y_layer = 0.05
+#         vertices = get_sliced_points(mesh_file, y_layer, scale)
+#         connected_vertices = connect_vertices(vertices)
 
-#     intersections = get_intersection_points(connected_vertices)
-#     # print(intersections)
+#         intersections = get_intersection_points(connected_vertices)
+#         # print(intersections)
 
-#     transformed = transform_intersections(intersections, 0.0, 0.0, np.deg2rad(0))
+#         transformed = transform_intersections(intersections, 0.0, 0.0, np.deg2rad(0))
 
-#     # Plot connected vertices and intersection points
-#     plot_connected_vertices(connected_vertices, transformed)
+#         # Plot connected vertices and intersection points
+#         plot_connected_vertices(connected_vertices, transformed)
 
 # print(get_slice('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/resources/object_models/Jeremiah_Shapes/40x40_triangle.urdf'))
 # print(get_slice('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/resources/object_models/Jeremiah_Shapes/40x40_triangle_3.urdf'))

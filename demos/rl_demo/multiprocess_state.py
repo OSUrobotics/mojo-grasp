@@ -57,6 +57,7 @@ class MultiprocessState(StateDefault):
         obj_path = self.objects[1].get_path()
         #print('OBJ PATH', obj_path)
         self.slice = pg.get_slice(obj_path)
+        print(len(self.slice))
         for object in self.objects:
             if type(object) == TwoFingerGripper:
                 temp = object.link_lengths
