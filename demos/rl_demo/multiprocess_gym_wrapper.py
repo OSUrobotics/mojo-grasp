@@ -465,7 +465,7 @@ class MultiprocessGymWrapper(gym.Env):
                 state.extend(state_container['hand_params'])
             elif key == 'gp':
                 state.extend(state_container['goal_pose']['goal_position'])
-                # print(state)
+                # print(state_container['goal_pose']['goal_position'])
             elif key == 'go':
                 state.append(state_container['goal_pose']['goal_orientation'])
             elif key == 'gf':
@@ -476,7 +476,7 @@ class MultiprocessGymWrapper(gym.Env):
                 
             # What Jeremiah Added
             elif key == 'slice':
-                    # print(state_container)                    
+                    # print(state_container)
                     state.extend(state_container['slice'].flatten())
             elif key == 'mslice':
 ###########
