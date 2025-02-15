@@ -1175,4 +1175,4 @@ if __name__ == '__main__':
     # for item in test_shape_list:
     #     multiprocess_evaluate_loaded('./data/Full_Domain_Test/Dynamic/experiment_config.json',shape_key=item,hand="A", eval_set='single')
 
-    main('./data/NTestLayer/Static/experiment_config.json', j_test='base')
+    main('./data/NTestLayer/Dynamic/experiment_config.json', j_test='base')
