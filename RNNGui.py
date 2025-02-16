@@ -350,6 +350,13 @@ class RNNGui():
                 state_len +=1
             state_list.append('mslice')
 
+        if values['-latent']:
+            for i in range(16):    
+                state_mins.extend([0])
+                state_maxes.extend([1])
+                state_len +=1
+            state_list.append('latent')
+
         if values['-rad']:
             state_mins.extend([0,0,0,0])
             state_maxes.extend([10,10,1,1])
@@ -362,7 +369,7 @@ class RNNGui():
             state_len += 2
             state_list.append('ra')
 
-        # Anything before is duplicated
+        # Anything before is duplicated !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         if self.args['pv'] > 0:
             state_len += state_len * self.args['pv']
             temp_mins = state_mins.copy()
@@ -370,7 +377,8 @@ class RNNGui():
             for i in range(self.args['pv']):
                 state_mins.extend(temp_mins)
                 state_maxes.extend(temp_maxes)
-        # Anything after is not duplicated
+
+        # Anything after is not duplicated !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
         if values['-slice']:
             for i in range(48):    
@@ -378,13 +386,6 @@ class RNNGui():
                 state_maxes.extend([.03])
                 state_len +=1
             state_list.append('slice')
-
-        if values['-latent']:
-            for i in range(16):    
-                state_mins.extend([0])
-                state_maxes.extend([1])
-                state_len +=1
-            state_list.append('latent')
 
         if state_len == 0:
             print('No selected state space')

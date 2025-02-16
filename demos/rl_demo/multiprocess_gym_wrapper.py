@@ -405,7 +405,7 @@ class MultiprocessGymWrapper(gym.Env):
                         # shape = shape.flatten()
                         # state.extend(shape)
                         state.extend(state_container['previous_state'][i]['dynamic'].flatten())
-                    elif key == 'lat':
+                    elif key == 'latent':
                         state.extend(state_container['previous_state'][i]['latent'])
                     elif key == 'rad':
                         state.append(state_container['previous_state'][i]['f1_contact_distance'])
@@ -494,7 +494,7 @@ class MultiprocessGymWrapper(gym.Env):
                 # # Flatten the shape and extend the state
                 # state.extend(shape)
                 state.extend(state_container['dynamic'].flatten())
-            elif key == 'lat':
+            elif key == 'latent':
                 state.extend(state_container['latent'])
 
             elif key == 'rad':
