@@ -14,6 +14,11 @@ from mojograsp.simcore.goal_holder import *
 # from point_generator import slice_obj_at_y_level, calculate_outer_perimeter, find_intersection_points
 from mojograsp.simcore.image_maker import ImageGenerator
 import demos.rl_demo.point_generator as pg
+import torch
+import torch.nn as nn
+import pandas as pd
+from sklearn.preprocessing import MinMaxScaler
+from autoencoder import Autoencoder, load_trained_model
 
 class DictHolder():
     def __init__(self,list_size):
@@ -53,6 +58,7 @@ class MultiprocessState(StateDefault):
         """
         super().__init__()
         self.p = pybullet_instance
+        self.encoder = load_trained_model('untrained_autoencoder.pth',72,16,54)
         self.objects = objects 
         obj_path = self.objects[1].get_path()
         #print('OBJ PATH', obj_path)
@@ -123,7 +129,6 @@ class MultiprocessState(StateDefault):
             angle = angle - 2*np.pi
         return angle
 
-
     def calc_contact_angle(self):
         obj_angle = self.current_state['obj_2']['pose'][1][2] + np.pi/2 #Get yaw
         #print('START F1 CONTACT POS \n')
@@ -145,6 +150,35 @@ class MultiprocessState(StateDefault):
             f2 = 1
         else : f2 = 0
         return f1,f2
+    
+    def get_dynamic(self, shape, pose, orientation):
+        """
+        Method that takes in the slice and the object pose and orientation and returns the dynamic state of the object
+        """
+        shape = np.hstack((shape, np.full((shape.shape[0], 1), 0.05)))
+        x, y, z = pose
+        a, b, c, w = orientation
+
+        # Normalize the quaternion to ensure proper rotation
+        norm = np.sqrt(a**2 + b**2 + c**2 + w**2)
+        a, b, c, w = a / norm, b / norm, c / norm, w / norm
+
+        # Construct the 3D rotation matrix from the quaternion
+        rotation_matrix = np.array([
+            [1 - 2 * (b**2 + c**2), 2 * (a * b - w * c),     2 * (a * c + w * b)],
+            [2 * (a * b + w * c),     1 - 2 * (a**2 + c**2), 2 * (b * c - w * a)],
+            [2 * (a * c - w * b),     2 * (b * c + w * a),   1 - 2 * (a**2 + b**2)]
+        ])
+
+        # Apply the rotation to the shape
+        shape = shape @ rotation_matrix.T
+
+        # Apply the translation
+        shape[:, 0] += x
+        shape[:, 1] += y
+        shape[:, 2] += z
+
+        return shape
 
 
     def set_state(self):
@@ -187,7 +221,10 @@ class MultiprocessState(StateDefault):
                                                                 unreached_goals)
         #What Jeremiah Is Adding
         self.current_state['slice'] = self.slice
-        # self.current_state['mslice'] = 0
+        self.current_state['dynamic'] = self.get_dynamic(self.slice,self.current_state['obj_2']['pose'][0][0:3],self.current_state['obj_2']['pose'][1])
+        normalized_state = torch.sigmoid(torch.tensor(self.current_state['dynamic'].flatten(), dtype=torch.float32))
+        encoder_state, _ = self.encoder(normalized_state)
+        self.current_state['latent'] = encoder_state.detach().numpy()
 
         #self.current_state['f1_contact_distance'] = self.calc_distance(self.current_state['f1_contact_pos'],self.current_state['obj_2']['pose'][0][0:2])
         #self.current_state['f2_contact_distance'] = self.calc_distance(self.current_state['f2_contact_pos'],self.current_state['obj_2']['pose'][0][0:2])
@@ -227,6 +264,14 @@ class MultiprocessState(StateDefault):
             self.current_state['image'] = self.image_gen.draw_stamp(self.current_state['obj_2']['pose'],
                                                                     unreached_goals)
         self.current_state['slice'] = self.slice
+
+        self.current_state['dynamic'] = self.get_dynamic(self.slice,self.current_state['obj_2']['pose'][0][0:3],self.current_state['obj_2']['pose'][1])
+
+        normalized_state = torch.sigmoid(torch.tensor(self.current_state['dynamic'].flatten(), dtype=torch.float32))
+        encoder_state, _ = self.encoder(normalized_state)
+        self.current_state['latent'] = encoder_state.detach().numpy()
+        #print('LATENT STATE', self.current_state['latent'])
+
         # self.current_state['mslice'] = 0
         # self.current_state['f1_contact_distance'] = self.calc_distance(self.current_state['f1_contact_pos'], self.current_state['obj_2']['pose'][0][0:2])
         # self.current_state['f2_contact_distance'] = self.calc_distance(self.current_state['f2_contact_pos'], self.current_state['obj_2']['pose'][0][0:2]) 
