@@ -18,7 +18,7 @@ import torch
 import torch.nn as nn
 import pandas as pd
 from sklearn.preprocessing import MinMaxScaler
-from autoencoder import Autoencoder, load_trained_model
+from demos.rl_demo.autoencoder import Autoencoder, load_trained_model
 
 class DictHolder():
     def __init__(self,list_size):
@@ -58,7 +58,7 @@ class MultiprocessState(StateDefault):
         """
         super().__init__()
         self.p = pybullet_instance
-        self.encoder = load_trained_model('untrained_autoencoder.pth',72,16,54)
+        self.encoder = load_trained_model('best_autoencoder.pth',72,16,54)
         self.objects = objects 
         obj_path = self.objects[1].get_path()
         #print('OBJ PATH', obj_path)
