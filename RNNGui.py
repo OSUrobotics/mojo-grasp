@@ -64,7 +64,7 @@ class RNNGui():
                          [sg.Button("Browse",key='-browse-save',button_color='DarkBlue'),sg.Text("/", key='-save-path')],
                          [sg.Text('Path to Previous Policy if Transferring')],
                          [sg.Button("Browse",key='-browse-load',button_color='DarkBlue'),sg.Text("/", key='-load-path')],
-                         [sg.Text('Object'), sg.OptionMenu(values=('Cube', 'Cylinder', 'circle', 'hourglass', 'ellipse', 'square_concave', 'square', 'triangle', 'cone', 'teardrop','triple','aspect_ratios'), k='-object', default_value='Cube')],
+                         [sg.Text('Object'), sg.OptionMenu(values=('Cube', 'Cylinder', 'circle', 'hourglass', 'ellipse', 'square_concave', 'square', 'triangle', 'cone', 'teardrop','triple','aspect_ratios','aspect_ratios2'), k='-object', default_value='Cube')],
                          [sg.Text('Hands Used For Training and Testing')],
                          [sg.Checkbox('2v2_50.50_50.50_43',key='2v2_50.50_50.50_1.1_43',default=False),sg.Checkbox('2v2_50.50_50.50_53',key='2v2_50.50_50.50_1.1_53', default=True),sg.Checkbox('2v2_50.50_50.50_63',key='2v2_50.50_50.50_1.1_63', default=False),sg.Checkbox('2v2_50.50_50.50_73',key='2v2_50.50_50.50_1.1_73', default=False)],
                          [sg.Checkbox('2v2_65.35_50.50_43',key='2v2_65.35_50.50_1.1_43', default=False),sg.Checkbox('2v2_65.35_50.50_53',key='2v2_65.35_50.50_1.1_53', default=False),sg.Checkbox('2v2_65.35_50.50_63',key='2v2_65.35_50.50_1.1_63', default=False),sg.Checkbox('2v2_65.35_50.50_73',key='2v2_65.35_50.50_1.1_73', default=False)],
@@ -535,6 +535,24 @@ class RNNGui():
              str(resource_path.joinpath('object_models/Jeremiah_Shapes/50x30_teardrop_15.urdf')),
              str(resource_path.joinpath('object_models/Jeremiah_Shapes/50x30_teardrop_2.urdf')),
              str(resource_path.joinpath('object_models/Jeremiah_Shapes/50x30_teardrop_3.urdf'))]
+            
+        elif values['-object'] == 'aspect_ratios_2':
+            self.args['object_path'] = [str(resource_path.joinpath('object_models/Jeremiah_Shapes/40x40_square.urdf')),
+             str(resource_path.joinpath('object_models/Jeremiah_Shapes/40x40_square_15.urdf')),
+             str(resource_path.joinpath('object_models/Jeremiah_Shapes/40x40_square_2.urdf')),
+             str(resource_path.joinpath('object_models/Jeremiah_Shapes/40x40_square_3.urdf')),
+             str(resource_path.joinpath('object_models/Jeremiah_Shapes/20_r_circle.urdf')),
+             str(resource_path.joinpath('object_models/Jeremiah_Shapes/20_r_circle_15.urdf')),
+             str(resource_path.joinpath('object_models/Jeremiah_Shapes/20_r_circle_2.urdf')),
+             str(resource_path.joinpath('object_models/Jeremiah_Shapes/20_r_circle_3.urdf')),
+             str(resource_path.joinpath('object_models/Jeremiah_Shapes/50x30_teardrop.urdf')),
+             str(resource_path.joinpath('object_models/Jeremiah_Shapes/50x30_teardrop_15.urdf')),
+             str(resource_path.joinpath('object_models/Jeremiah_Shapes/50x30_teardrop_2.urdf')),
+             str(resource_path.joinpath('object_models/Jeremiah_Shapes/50x30_teardrop_3.urdf')),
+             str(resource_path.joinpath('object_models/Jeremiah_Shapes/pentagon.urdf')),
+             str(resource_path.joinpath('object_models/Jeremiah_Shapes/pentagon_15.urdf')),
+             str(resource_path.joinpath('object_models/Jeremiah_Shapes/pentagon_2.urdf')),
+             str(resource_path.joinpath('object_models/Jeremiah_Shapes/pentagon_3.urdf'))]
 
         
 
