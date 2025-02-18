@@ -536,7 +536,7 @@ class RNNGui():
              str(resource_path.joinpath('object_models/Jeremiah_Shapes/50x30_teardrop_2.urdf')),
              str(resource_path.joinpath('object_models/Jeremiah_Shapes/50x30_teardrop_3.urdf'))]
             
-        elif values['-object'] == 'aspect_ratios_2':
+        elif values['-object'] == 'aspect_ratios2':
             self.args['object_path'] = [str(resource_path.joinpath('object_models/Jeremiah_Shapes/40x40_square.urdf')),
              str(resource_path.joinpath('object_models/Jeremiah_Shapes/40x40_square_15.urdf')),
              str(resource_path.joinpath('object_models/Jeremiah_Shapes/40x40_square_2.urdf')),
