@@ -68,7 +68,7 @@ def evaluate_model(model, data_loader, criterion):
     total_loss = 0
     with torch.no_grad():
         for batch_x, batch_y in data_loader:
-            reconstructed = model(batch_x)
+            _, reconstructed = model(batch_x)
             loss = criterion(reconstructed, batch_y)
             total_loss += loss.item()
     return total_loss / len(data_loader)

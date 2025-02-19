@@ -12,14 +12,14 @@ def generate_euler_angles(x_range, y_range, z_range, num_samples):
     return euler_angles
 
 # Parameters
-num_points = 100
+num_points = 100_000
 square_width = 0.75
 square_height = 0.75
 center_x = 0.0
 center_y = 0.1
 x_rot_range = (-np.pi/8, np.pi/8)
-y_rot_range = (0, 2 * np.pi)
-z_rot_range = (-np.pi/8, np.pi/8)
+y_rot_range = (-np.pi/8, np.pi/8)
+z_rot_range = (0, 2 * np.pi)
 output_file = "flattened_autoencoder_training_data_with_noise.csv"
 
 # Generate random coordinates and Euler angles
@@ -35,26 +35,27 @@ quaternions = np.array([R.from_euler('xyz', angle).as_quat() for angle in angles
 
 rotated_x, rotated_y, rotated_z = [], [], []
 for i in range(num_points):
-    point = np.array([x[i], 0.05, y[i]])
+    # Create the point with x and y from the random sample, and 0.05 as the z (height)
+    point = np.array([x[i], y[i], 0.05])
     rotation = R.from_quat(quaternions[i])
-    local_point = point - np.array([x[i], 0, y[i]])
+    # Subtract the base (x, y) to isolate the height offset
+    local_point = point - np.array([x[i], y[i], 0])
     rotated_local_point = rotation.apply(local_point)
-    rotated_point = rotated_local_point + np.array([x[i], 0, y[i]])
+    # Add the base translation back
+    rotated_point = rotated_local_point + np.array([x[i], y[i], 0])
     rotated_x.append(rotated_point[0])
     rotated_y.append(rotated_point[1])
     rotated_z.append(rotated_point[2])
 
-    # print("This is the loop", i, "this is the point generated", point, "this is the rotated point", rotated_point)
-
-print(np.max(rotated_x), np.min(rotated_x))
-print(np.max(rotated_z), np.min(rotated_z))
-print(np.max(rotated_y), np.min(rotated_y))
+# print(np.max(rotated_x), np.min(rotated_x))
+# print(np.max(rotated_y), np.min(rotated_y))
+# print(np.max(rotated_z), np.min(rotated_z))
 
 # Create the initial DataFrame
 df = pd.DataFrame({
     'x': rotated_x,
-    'y': rotated_z,
-    'z': rotated_y,
+    'y': rotated_y,
+    'z': rotated_z,
     'qx': quaternions[:, 0],
     'qy': quaternions[:, 1],
     'qz': quaternions[:, 2],
