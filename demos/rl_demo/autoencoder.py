@@ -12,7 +12,7 @@ def init_wandb():
         project="autoencoder-project",
         config={
             "input_dim": 72,
-            "latent_dim": 16,
+            "latent_dim": 48,
             "output_dim": 54,
             "learning_rate": 0.001,
             "epochs": 100,
@@ -96,7 +96,7 @@ def train_model(model, train_loader, test_loader, criterion, optimizer, config):
         # Save the best model
         if avg_test_loss < best_loss:
             best_loss = avg_test_loss
-            torch.save(model.state_dict(), "best_autoencoder.pth")
+            torch.save(model.state_dict(), "best_autoencoder_32.pth")
             print(f"Best model saved with test loss: {best_loss:.4f}")
 
 def load_trained_model(model_path, input_dim, latent_dim, output_dim):
