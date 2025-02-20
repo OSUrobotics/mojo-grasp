@@ -58,7 +58,7 @@ class MultiprocessState(StateDefault):
         """
         super().__init__()
         self.p = pybullet_instance
-        self.encoder = load_trained_model('best_autoencoder.pth',72,16,54)
+        self.encoder = load_trained_model('best_autoencoder_48.pth',72,48,54)
         self.objects = objects 
         obj_path = self.objects[1].get_path()
         #print('OBJ PATH', obj_path)
