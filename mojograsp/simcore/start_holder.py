@@ -93,7 +93,7 @@ class RandomStartHolder():
     
     def rthetaRandom(self,size=1):
         r = np.random.uniform(0,1,size=size)
-        theta = np.random.uniform(self.thetalim[0],self.thetalim[1],size=size)
+        theta = np.random.uniform(self.thetalim[0],self.thetalim[1],size=size) * np.pi/180
         x = ((1-r**2) * (self.rlim[1]-self.rlim[0]) + self.rlim[0]) * np.sin(theta)
         y = ((1-r**2) * (self.rlim[1]-self.rlim[0]) + self.rlim[0]) * np.cos(theta)
         return x[0],y[0]
@@ -104,7 +104,7 @@ class RandomStartHolder():
     def next_run(self):
         x,y = self.position_randomization()
         fingerys = np.random.uniform(self.fingerlim[0], self.fingerlim[1], 2)
-        orientation = np.random.uniform(self.orientationlim[0], self.orientationlim[1])
+        orientation = np.random.uniform(self.orientationlim[0], self.orientationlim[1]) * np.pi/180
         self.obj_dict = {'translation':[x,y], 'rotation':orientation}
         self.finger_dict = {'finger_y':fingerys}
 

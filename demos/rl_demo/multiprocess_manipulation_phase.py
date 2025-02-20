@@ -35,7 +35,7 @@ class MultiprocessManipulation(Phase):
         self.episode = 0
         self.use_ik = args['ik_flag']
         print('ARE WE USING IK', self.use_ik)
-        self.image_path = args['save_path'] + 'Videos/'
+        self.image_path = args['save_path'] + '/Videos/'
         self.target = None
         # create controller
         self.interp_ratio = int(240/args['freq'])
