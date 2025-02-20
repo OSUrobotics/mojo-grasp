@@ -13,8 +13,8 @@ def generate_euler_angles(x_range, y_range, z_range, num_samples):
 
 # Parameters
 num_points = 100_000
-square_width = 0.75
-square_height = 0.75
+square_width = 0.1
+square_height = 0.1
 center_x = 0.0
 center_y = 0.1
 x_rot_range = (-np.pi/8, np.pi/8)
