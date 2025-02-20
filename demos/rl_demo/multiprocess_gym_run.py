@@ -1185,6 +1185,6 @@ if __name__ == '__main__':
     #     multiprocess_evaluate_loaded('./data/J_HPC_rerun/JA_S3/experiment_config.json',shape_key=item,hand="A", eval_set='single')
         # multiprocess_evaluate_loaded('./data/NTestLayer/Static/experiment_config.json',shape_key=item,hand="A", eval_set='single')
 
-    # main('./data/NTestLayer/Dynamic/experiment_config.json', j_test='base')
+    main('./data/NTestLayer/Dynamic/experiment_config.json', j_test='base')
     # replay('./data/ReLu_Dynamic/experiment_config.json', './data/ReLu_Dynamic/Eval_A_Triangle/Episode_1080.pkl')
-    replay('./data/NTestLayer/Dynamic/experiment_config.json', './data/NTestLayer/Dynamic/triangle_A/Episode_787.pkl')
+    # replay('./data/NTestLayer/Dynamic/experiment_config.json', './data/NTestLayer/Dynamic/triangle_A/Episode_787.pkl')
