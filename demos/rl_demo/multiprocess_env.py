@@ -193,7 +193,6 @@ class MultiprocessSingleShapeEnv(Environment):
         else:
             obj_xy = np.array([0,0])
             obj_theta = 0
-        # print(finger_dict, obj_xy)
         if finger_dict is None:
             link1_pose = self.p.getLinkState(self.hand_id, 2)[0]
             link2_pose = self.p.getLinkState(self.hand_id, 5)[0]

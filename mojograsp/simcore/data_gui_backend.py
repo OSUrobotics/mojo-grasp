@@ -35,12 +35,6 @@ def getitem_for(d, key):
         d = d[level]
     return d
 
-def autoencoder_pool_process(episode_file):
-    with open(episode_file, 'rb') as ef:
-        tempdata = pkl.load(ef)
-    data = tempdata ['timestep_list']
-    return {'dynamic': [i for i in data['dynamic']], 'static':[j for j in data['static']]}
-
 def HRL_pool_process(episode_file):
     with open(episode_file, 'rb') as ef:
         tempdata = pkl.load(ef)
@@ -4238,49 +4232,3 @@ class PlotBackend():
         print(np.shape(thing2))
         self.ax.plot(range(len(thing2)),thing2)
         self.ax.set_aspect('auto',adjustable='box')
-
-    def print_autoencoder_ranges(self, folder_path):
-
-        if type(folder_path) is str:
-            tempepisode_files = [os.path.join(folder_path, f) for f in os.listdir(folder_path) if f.lower().endswith('.pkl')]
-            episode_files = [e for e in tempepisode_files if '2v2' not in e]
-            filenames_only_temp = [f for f in os.listdir(folder_path) if f.lower().endswith('.pkl')]
-            filenames_only = [f for f in filenames_only_temp if '2v2' not in f]
-            filenums = [re.findall('\d+',f) for f in filenames_only]
-            final_filenums = []
-            for i in filenums:
-                if len(i) > 0 :
-                    final_filenums.append(int(i[0]))
-
-            sorted_inds = np.argsort(final_filenums)
-            episode_files = np.array(episode_files)
-            episode_files = episode_files[sorted_inds].tolist()
-        elif type(folder_path) is list:
-            episode_files = []
-            filenames_only = []
-            for path in folder_path:
-                tempepisode_files = [os.path.join(path, f) for f in os.listdir(path) if f.lower().endswith('.pkl')]
-                ef = [e for e in tempepisode_files if '2v2' not in e]
-
-                filenames_only_temp = [f for f in os.listdir(path) if f.lower().endswith('.pkl')]
-                fo = [f for f in filenames_only_temp if '2v2' not in f]
-                filenums = [re.findall('\d+',f) for f in fo]
-                final_filenums = []
-                for i in filenums:
-                    if len(i) > 0 :
-                        final_filenums.append(int(i[0]))
-                sorted_inds = np.argsort(final_filenums)
-                ef = np.array(ef)
-                ef = ef[sorted_inds].tolist()
-                episode_files.extend(ef)
-
-        try:
-            pool = multiprocessing.Pool()
-            data_list = pool.map(autoencoder_pool_process,episode_files)
-            pool.close()
-            pool.join()
-            
-        except:
-            print('Ha, get rekt')
-
-        
