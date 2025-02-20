@@ -934,6 +934,7 @@ def replay(argpath, episode_path):
     args['domain_randomization_object_mass'] = False
     args['domain_randomization_object_size'] = False
     args['finger_random_start'] = False    
+    args['object_path'] = ["/home/mothra/mojo-grasp/demos/rl_demo/resources/object_models/Jeremiah_Shapes/40x40_triangle.urdf"]
     key_file = os.path.abspath(__file__)
     key_file = os.path.dirname(key_file)
     key_file = os.path.join(key_file,'resources','hand_bank','hand_params.json')
@@ -1178,10 +1179,12 @@ def main(filepath = None,learn_type='run', num_cpu=16, j_test='base'):
 if __name__ == '__main__':
     import csv
 
-    test_shape_list = ['square','square25','circle','circle25','triangle','triangle25','trapazoid','square_circle','pentagon']
+    # test_shape_list = ['square','square25','circle','circle25','triangle','triangle25','trapazoid','square_circle','pentagon']
 
-    for item in test_shape_list:
-        multiprocess_evaluate_loaded('./data/J_HPC_rerun/JA_S3/experiment_config.json',shape_key=item,hand="A", eval_set='single')
+    # for item in test_shape_list:
+    #     multiprocess_evaluate_loaded('./data/J_HPC_rerun/JA_S3/experiment_config.json',shape_key=item,hand="A", eval_set='single')
         # multiprocess_evaluate_loaded('./data/NTestLayer/Static/experiment_config.json',shape_key=item,hand="A", eval_set='single')
 
     # main('./data/NTestLayer/Dynamic/experiment_config.json', j_test='base')
+    # replay('./data/ReLu_Dynamic/experiment_config.json', './data/ReLu_Dynamic/Eval_A_Triangle/Episode_1080.pkl')
+    replay('./data/NTestLayer/Dynamic/experiment_config.json', './data/NTestLayer/Dynamic/triangle_A/Episode_787.pkl')
