@@ -341,8 +341,6 @@ class MultiprocessSingleShapeEnv(Environment):
         current_obj_pose = self.p.getBasePositionAndOrientation(self.obj_id)
         self.p.resetBasePositionAndOrientation(self.obj_id, posObj=[pose[0][0],pose[0][1],current_obj_pose[0][2]], ornObj=pose[1])
 
-
-
 class MultiprocessMazeEnv(MultiprocessSingleShapeEnv):
     def __init__(self, pybulletInstance, hand: TwoFingerGripper, obj: ObjectBase, wall: ObjectBase, goal_block, hand_type, args=None, finger_points=None):
         super().__init__(pybulletInstance, hand, obj, hand_type, args, finger_points)

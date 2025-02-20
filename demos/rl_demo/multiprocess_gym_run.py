@@ -201,7 +201,7 @@ def make_pybullet(arg_dict, pybullet_instance, rank, hand_info, frictionList = N
     # y2= df['f2y']
     # finger_starts = np.array([[i,j] for i,j in zip(y1,y2)])
     try:
-        start_orientation_ranges = [args['starting_orientation_low']*np.pi/180,args['starting_orientation_high']*np.pi/180]
+        start_orientation_ranges = [args['starting_orientation_low'],args['starting_orientation_high']]
     except:
         start_orientation_ranges = [0,0]
     random_start_dict = {'orientation':start_orientation_ranges}
