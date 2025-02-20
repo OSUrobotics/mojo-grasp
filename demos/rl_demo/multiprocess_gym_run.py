@@ -200,7 +200,10 @@ def make_pybullet(arg_dict, pybullet_instance, rank, hand_info, frictionList = N
     # y1= df['f1y']
     # y2= df['f2y']
     # finger_starts = np.array([[i,j] for i,j in zip(y1,y2)])
-    start_orientation_ranges = [args['starting_orientation_low']*np.pi/180,args['starting_orientation_high']*np.pi/180]
+    try:
+        start_orientation_ranges = [args['starting_orientation_low']*np.pi/180,args['starting_orientation_high']*np.pi/180]
+    except:
+        start_orientation_ranges = [0,0]
     random_start_dict = {'orientation':start_orientation_ranges}
     if 'starting_x_low' in args.keys():
         start_x_ranges = [args['starting_x_low'], args['starting_x_high']]
@@ -210,6 +213,11 @@ def make_pybullet(arg_dict, pybullet_instance, rank, hand_info, frictionList = N
     elif 'starting_r_low' in args.keys():
         start_r_ranges = [args['starting_r_low'], args['starting_r_high']]
         start_theta_ranges = [args['starting_theta_low'], args['starting_theta_high']]
+        random_start_dict['r'] = start_r_ranges
+        random_start_dict['theta'] = start_theta_ranges
+    else:
+        start_r_ranges = [0, 0]
+        start_theta_ranges = [0,0]
         random_start_dict['r'] = start_r_ranges
         random_start_dict['theta'] = start_theta_ranges
 
@@ -926,6 +934,7 @@ def replay(argpath, episode_path):
     args['domain_randomization_object_mass'] = False
     args['domain_randomization_object_size'] = False
     args['finger_random_start'] = False    
+    args['object_path'] = ["/home/mothra/mojo-grasp/demos/rl_demo/resources/object_models/Jeremiah_Shapes/40x40_triangle.urdf"]
     key_file = os.path.abspath(__file__)
     key_file = os.path.dirname(key_file)
     key_file = os.path.join(key_file,'resources','hand_bank','hand_params.json')
@@ -1173,6 +1182,9 @@ if __name__ == '__main__':
     # test_shape_list = ['square','square25','circle','circle25','triangle','triangle25','trapazoid','square_circle','pentagon']
 
     # for item in test_shape_list:
-    #     multiprocess_evaluate_loaded('./data/Full_Domain_Test/Dynamic/experiment_config.json',shape_key=item,hand="A", eval_set='single')
+    #     multiprocess_evaluate_loaded('./data/J_HPC_rerun/JA_S3/experiment_config.json',shape_key=item,hand="A", eval_set='single')
+        # multiprocess_evaluate_loaded('./data/NTestLayer/Static/experiment_config.json',shape_key=item,hand="A", eval_set='single')
 
-    main('./data/NTestLayer/Static/experiment_config.json', j_test='base')
+    # main('./data/NTestLayer/Dynamic/experiment_config.json', j_test='base')
+    # replay('./data/ReLu_Dynamic/experiment_config.json', './data/ReLu_Dynamic/Eval_A_Triangle/Episode_1080.pkl')
+    replay('./data/NTestLayer/Dynamic/experiment_config.json', './data/NTestLayer/Dynamic/triangle_A/Episode_787.pkl')

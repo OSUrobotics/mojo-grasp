@@ -336,7 +336,7 @@ class MultiprocessGymWrapper(gym.Env):
                 for key in self.state_list:
                     #Changed This to x,y,z from x,y
                     if key == 'op':
-                        state.extend(state_container['previous_state'][i]['obj_2']['pose'][0][0:3])
+                        state.extend(state_container['previous_state'][i]['obj_2']['pose'][0][0:2])
                     elif key == 'oo':
                         state.extend(state_container['previous_state'][i]['obj_2']['pose'][1])
                     elif key == 'oa':
@@ -421,7 +421,7 @@ class MultiprocessGymWrapper(gym.Env):
         for key in self.state_list:
             # changed to x,y,z from x,y
             if key == 'op':
-                state.extend(state_container['obj_2']['pose'][0][0:3])
+                state.extend(state_container['obj_2']['pose'][0][0:2])
             elif key == 'oo':
                 state.extend(state_container['obj_2']['pose'][1])
             elif key == 'oa':
