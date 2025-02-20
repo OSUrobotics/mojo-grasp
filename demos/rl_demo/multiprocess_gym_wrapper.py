@@ -380,45 +380,33 @@ class MultiprocessGymWrapper(gym.Env):
                         pass
                         # state.extend(state_container['previous_state'][i]['slice'].flatten())
                     elif key == 'mslice':
-                        shape = state_container['previous_state'][i]['slice']
-                        shape = np.hstack((shape, np.full((shape.shape[0], 1), 0.05)))
-                        x, y, z = state_container['previous_state'][i]['obj_2']['pose'][0][0:3]
-                        a, b, c, w = state_container['previous_state'][i]['obj_2']['pose'][1]
+                        # shape = state_container['previous_state'][i]['slice']
+                        # shape = np.hstack((shape, np.full((shape.shape[0], 1), 0.05)))
+                        # x, y, z = state_container['previous_state'][i]['obj_2']['pose'][0][0:3]
+                        # a, b, c, w = state_container['previous_state'][i]['obj_2']['pose'][1]
 
-                        # theta = np.arctan2(2 * (w * c + a * b), 1 - 2 * (b**2 + c**2))
+                        # norm = np.sqrt(a**2 + b**2 + c**2 + w**2)
+                        # a, b, c, w = a / norm, b / norm, c / norm, w / norm
 
+                        # # Construct the 3D rotation matrix from the quaternion
                         # rotation_matrix = np.array([
-                        #     [np.cos(theta), -np.sin(theta)],
-                        #     [np.sin(theta), np.cos(theta)]
+                        #     [1 - 2 * (b**2 + c**2), 2 * (a * b - w * c),     2 * (a * c + w * b)],
+                        #     [2 * (a * b + w * c),     1 - 2 * (a**2 + c**2), 2 * (b * c - w * a)],
+                        #     [2 * (a * c - w * b),     2 * (b * c + w * a),   1 - 2 * (a**2 + b**2)]
                         # ])
 
+                        # # Apply the rotation to the shape
                         # shape = shape @ rotation_matrix.T
+
+                        # # Apply the translation
                         # shape[:, 0] += x
                         # shape[:, 1] += y
-                        # state.extend(shape.flatten())          
-                        
-                        # Normalize the quaternion to ensure proper rotation
-                        norm = np.sqrt(a**2 + b**2 + c**2 + w**2)
-                        a, b, c, w = a / norm, b / norm, c / norm, w / norm
-
-                        # Construct the 3D rotation matrix from the quaternion
-                        rotation_matrix = np.array([
-                            [1 - 2 * (b**2 + c**2), 2 * (a * b - w * c),     2 * (a * c + w * b)],
-                            [2 * (a * b + w * c),     1 - 2 * (a**2 + c**2), 2 * (b * c - w * a)],
-                            [2 * (a * c - w * b),     2 * (b * c + w * a),   1 - 2 * (a**2 + b**2)]
-                        ])
-
-                        # Apply the rotation to the shape
-                        shape = shape @ rotation_matrix.T
-
-                        # Apply the translation
-                        shape[:, 0] += x
-                        shape[:, 1] += y
-                        shape[:, 2] += z            
-                        shape = shape.flatten()
-                        state.extend(shape)
-
-
+                        # shape[:, 2] += z            
+                        # shape = shape.flatten()
+                        # state.extend(shape)
+                        state.extend(state_container['previous_state'][i]['dynamic'].flatten())
+                    elif key == 'latent':
+                        state.extend(state_container['previous_state'][i]['latent'])
                     elif key == 'rad':
                         state.append(state_container['previous_state'][i]['f1_contact_distance'])
                         state.append(state_container['previous_state'][i]['f2_contact_distance'])
@@ -479,50 +467,35 @@ class MultiprocessGymWrapper(gym.Env):
                     # print(state_container)
                     state.extend(state_container['slice'].flatten())
             elif key == 'mslice':
-###########
-                # print(self.state_list)
                 # shape = state_container['slice']
-                # x,y,z = state_container['obj_2']['pose'][0][0:3]
-                # a,b,c,w = state_container['obj_2']['pose'][1]
-                # theta = np.arctan2(2 * (w * c + a * b), 1 - 2 * (b**2 + c**2))
+                # shape = np.hstack((shape, np.full((shape.shape[0], 1), 0.05)))
+                # x, y, z = state_container['obj_2']['pose'][0][0:3]  # Translation
+                # a, b, c, w = state_container['obj_2']['pose'][1]  # Quaternion components
 
+                # # Normalize the quaternion to ensure proper rotation
+                # norm = np.sqrt(a**2 + b**2 + c**2 + w**2)
+                # a, b, c, w = a / norm, b / norm, c / norm, w / norm
+
+                # # Construct the 3D rotation matrix from the quaternion
                 # rotation_matrix = np.array([
-                #     [np.cos(theta), -np.sin(theta)],
-                #     [np.sin(theta), np.cos(theta)]
-                # ])  
+                #     [1 - 2 * (b**2 + c**2), 2 * (a * b - w * c),     2 * (a * c + w * b)],
+                #     [2 * (a * b + w * c),     1 - 2 * (a**2 + c**2), 2 * (b * c - w * a)],
+                #     [2 * (a * c - w * b),     2 * (b * c + w * a),   1 - 2 * (a**2 + b**2)]
+                # ])
 
+                # # Apply the rotation to the shape
                 # shape = shape @ rotation_matrix.T
+
+                # # Apply the translation
                 # shape[:, 0] += x
                 # shape[:, 1] += y
                 # shape[:, 2] += z
-                # state.extend(shape.flatten())
-###########
-                shape = state_container['slice']
-                shape = np.hstack((shape, np.full((shape.shape[0], 1), 0.05)))
-                x, y, z = state_container['obj_2']['pose'][0][0:3]  # Translation
-                a, b, c, w = state_container['obj_2']['pose'][1]  # Quaternion components
-
-                # Normalize the quaternion to ensure proper rotation
-                norm = np.sqrt(a**2 + b**2 + c**2 + w**2)
-                a, b, c, w = a / norm, b / norm, c / norm, w / norm
-
-                # Construct the 3D rotation matrix from the quaternion
-                rotation_matrix = np.array([
-                    [1 - 2 * (b**2 + c**2), 2 * (a * b - w * c),     2 * (a * c + w * b)],
-                    [2 * (a * b + w * c),     1 - 2 * (a**2 + c**2), 2 * (b * c - w * a)],
-                    [2 * (a * c - w * b),     2 * (b * c + w * a),   1 - 2 * (a**2 + b**2)]
-                ])
-
-                # Apply the rotation to the shape
-                shape = shape @ rotation_matrix.T
-
-                # Apply the translation
-                shape[:, 0] += x
-                shape[:, 1] += y
-                shape[:, 2] += z
-                shape = shape.flatten()
-                # Flatten the shape and extend the state
-                state.extend(shape)
+                # shape = shape.flatten()
+                # # Flatten the shape and extend the state
+                # state.extend(shape)
+                state.extend(state_container['dynamic'].flatten())
+            elif key == 'latent':
+                state.extend(state_container['latent'])
 
             elif key == 'rad':
                 state.append(state_container['f1_contact_distance'])

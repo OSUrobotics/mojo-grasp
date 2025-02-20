@@ -64,7 +64,7 @@ class RNNGui():
                          [sg.Button("Browse",key='-browse-save',button_color='DarkBlue'),sg.Text("/", key='-save-path')],
                          [sg.Text('Path to Previous Policy if Transferring')],
                          [sg.Button("Browse",key='-browse-load',button_color='DarkBlue'),sg.Text("/", key='-load-path')],
-                         [sg.Text('Object'), sg.OptionMenu(values=('Cube', 'Cylinder', 'circle', 'hourglass', 'ellipse', 'square_concave', 'square', 'triangle', 'cone', 'teardrop','triple','aspect_ratios'), k='-object', default_value='Cube')],
+                         [sg.Text('Object'), sg.OptionMenu(values=('Cube', 'Cylinder', 'circle', 'hourglass', 'ellipse', 'square_concave', 'square', 'triangle', 'cone', 'teardrop','triple','aspect_ratios','aspect_ratios2'), k='-object', default_value='Cube')],
                          [sg.Text('Hands Used For Training and Testing')],
                          [sg.Checkbox('2v2_50.50_50.50_43',key='2v2_50.50_50.50_1.1_43',default=False),sg.Checkbox('2v2_50.50_50.50_53',key='2v2_50.50_50.50_1.1_53', default=True),sg.Checkbox('2v2_50.50_50.50_63',key='2v2_50.50_50.50_1.1_63', default=False),sg.Checkbox('2v2_50.50_50.50_73',key='2v2_50.50_50.50_1.1_73', default=False)],
                          [sg.Checkbox('2v2_65.35_50.50_43',key='2v2_65.35_50.50_1.1_43', default=False),sg.Checkbox('2v2_65.35_50.50_53',key='2v2_65.35_50.50_1.1_53', default=False),sg.Checkbox('2v2_65.35_50.50_63',key='2v2_65.35_50.50_1.1_63', default=False),sg.Checkbox('2v2_65.35_50.50_73',key='2v2_65.35_50.50_1.1_73', default=False)],
@@ -131,6 +131,7 @@ class RNNGui():
                        [sg.Checkbox("Contact Angle", default=False, k='-ra')],
                        [sg.Checkbox("Radius Representation", default=False, k='-slice')],
                        [sg.Checkbox("Moving Radius Representation", default=False, k='-mslice')],
+                       [sg.Checkbox("Latent Representation", default=False, k='-latent')],
                        [sg.Text('Num Previous States'), sg.Input(2, k='-pv',size=(8, 2)), sg.Text('Success Radius (mm)'), sg.Input(2, key='-sr',size=(8, 2))],
                        [sg.Text("Distance Scale"),  sg.Input(1,key='-distance_scale',size=(8, 2)), sg.Text('Contact Scale'),  sg.Input(0.2,key='-contact_scale',size=(8, 2)), sg.Text('Success Reward'), sg.Input(1,key='-success_reward',size=(8, 2)), sg.Text('Rotation Scale'), sg.Input(0,key='-rotation_scale',size=(8, 2))],
                        [sg.Text("Action"), sg.OptionMenu(values=('Joint Velocity','Finger Tip Position','Object Pose'), k='-action',default_value='Joint Velocity')],
@@ -349,6 +350,13 @@ class RNNGui():
                 state_len +=1
             state_list.append('mslice')
 
+        if values['-latent']:
+            for i in range(16):    
+                state_mins.extend([0])
+                state_maxes.extend([1])
+                state_len +=1
+            state_list.append('latent')
+
         if values['-rad']:
             state_mins.extend([0,0,0,0])
             state_maxes.extend([10,10,1,1])
@@ -361,7 +369,7 @@ class RNNGui():
             state_len += 2
             state_list.append('ra')
 
-        # Anything before is duplicated
+        # Anything before is duplicated !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         if self.args['pv'] > 0:
             state_len += state_len * self.args['pv']
             temp_mins = state_mins.copy()
@@ -369,7 +377,8 @@ class RNNGui():
             for i in range(self.args['pv']):
                 state_mins.extend(temp_mins)
                 state_maxes.extend(temp_maxes)
-        # Anything after is not duplicated
+
+        # Anything after is not duplicated !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
         if values['-slice']:
             for i in range(48):    
@@ -526,6 +535,24 @@ class RNNGui():
              str(resource_path.joinpath('object_models/Jeremiah_Shapes/50x30_teardrop_15.urdf')),
              str(resource_path.joinpath('object_models/Jeremiah_Shapes/50x30_teardrop_2.urdf')),
              str(resource_path.joinpath('object_models/Jeremiah_Shapes/50x30_teardrop_3.urdf'))]
+            
+        elif values['-object'] == 'aspect_ratios2':
+            self.args['object_path'] = [str(resource_path.joinpath('object_models/Jeremiah_Shapes/40x40_square.urdf')),
+             str(resource_path.joinpath('object_models/Jeremiah_Shapes/40x40_square_15.urdf')),
+             str(resource_path.joinpath('object_models/Jeremiah_Shapes/40x40_square_2.urdf')),
+             str(resource_path.joinpath('object_models/Jeremiah_Shapes/40x40_square_3.urdf')),
+             str(resource_path.joinpath('object_models/Jeremiah_Shapes/20_r_circle.urdf')),
+             str(resource_path.joinpath('object_models/Jeremiah_Shapes/20_r_circle_15.urdf')),
+             str(resource_path.joinpath('object_models/Jeremiah_Shapes/20_r_circle_2.urdf')),
+             str(resource_path.joinpath('object_models/Jeremiah_Shapes/20_r_circle_3.urdf')),
+             str(resource_path.joinpath('object_models/Jeremiah_Shapes/50x30_teardrop.urdf')),
+             str(resource_path.joinpath('object_models/Jeremiah_Shapes/50x30_teardrop_15.urdf')),
+             str(resource_path.joinpath('object_models/Jeremiah_Shapes/50x30_teardrop_2.urdf')),
+             str(resource_path.joinpath('object_models/Jeremiah_Shapes/50x30_teardrop_3.urdf')),
+             str(resource_path.joinpath('object_models/Jeremiah_Shapes/pentagon.urdf')),
+             str(resource_path.joinpath('object_models/Jeremiah_Shapes/pentagon_15.urdf')),
+             str(resource_path.joinpath('object_models/Jeremiah_Shapes/pentagon_2.urdf')),
+             str(resource_path.joinpath('object_models/Jeremiah_Shapes/pentagon_3.urdf'))]
 
         
 

@@ -1,17 +1,17 @@
 <?xml version="1.0" ?>
 <robot name="pentagon">
 
-    <link concave="yes" name="pentagon">
+    <link name="pentagon">
         <visual>
-            <origin rpy="1.5707963267948966 0 -1.5707963267948966" xyz="0 0 0"/>
+            <origin rpy="1.5707963267948966 0 -1.5707963267948966" xyz="-0.00 0 -0.0"/>
             <geometry>
-                <mesh filename="Shapes/pentagon.obj" scale=".1 .1 .1"/>
+                <mesh filename="Shapes/pentagon.obj" scale="0.0385 .1 0.11546"/>
             </geometry>
         </visual>
-        <collision concave="yes">
-            <origin rpy="1.5707963267948966 0 -1.5707963267948966" xyz="0 0 0"/>
+        <collision>
+            <origin rpy="1.5707963267948966 0 -1.5707963267948966" xyz="-0.00 0 -0.0"/>
             <geometry>
-                <mesh filename="Shapes/pentagon.obj" scale=".1 .1 .1"/>
+                <mesh filename="Shapes/pentagon.obj" scale="0.0385 .1 0.11546"/>
             </geometry>
         </collision>
         <inertial>
