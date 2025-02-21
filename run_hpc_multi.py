@@ -17,8 +17,8 @@ from demos.rl_demo import multiprocess_gym_run
 
 def main(run_id,num_cpu):
     print(run_id)
-    run_path_names = ['Rotation_continue']
-    folder_names = ['JA_S3_new_weight_same_space','JA_S3_large_space_long_train']
+    run_path_names = ['']
+    folder_names = ['Dynamic_1','Static_1','Dynamic_2']
     overall_path = pathlib.Path(__file__).parent.resolve()
     run_path = overall_path.joinpath('demos/rl_demo/data/')
     final_path = run_path.joinpath(run_path_names[0])
