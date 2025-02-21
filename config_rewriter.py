@@ -9,7 +9,7 @@ import json
 import os
 import pathlib
 
-folder_path = './demos/rl_demo/data/ReLu_Static/'
+folder_path = './demos/rl_demo/data/Static_1/'
 
 
 overall_path = pathlib.Path(__file__).parent.resolve()
@@ -32,7 +32,7 @@ if 'experiment_config.json' in subfolders:
     for k in config.keys():
         if k == 'save_path':
             print('old',k,config[k])
-            config[k] = config[k].replace(config[k], str(batch_run_folder))
+            config[k] = config[k].replace(config[k], str(batch_run_folder)+'/')
             print('new',k,config[k])
         elif type(config[k]) == str:
             print('old',k,config[k])
