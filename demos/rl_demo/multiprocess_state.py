@@ -20,6 +20,7 @@ import pandas as pd
 from sklearn.preprocessing import MinMaxScaler
 from demos.rl_demo.autoencoder import Autoencoder, load_trained_model
 import pickle as pkl
+import os
 
 class DictHolder():
     def __init__(self,list_size):
@@ -59,8 +60,10 @@ class MultiprocessState(StateDefault):
         """
         super().__init__()
         self.p = pybullet_instance
-        self.encoder = load_trained_model('best_autoencoder_16.pth',72,16,54)
-        with open("scaler.pkl", "rb") as f:
+        dirname, filename = os.path.split(os.path.abspath(__file__))
+        # print(dirname)e
+        self.encoder = load_trained_model(dirname+'/best_autoencoder_16.pth',72,16,54)
+        with open(dirname+"/scaler.pkl", "rb") as f:
             self.loaded_scaler = pkl.load(f)
         self.objects = objects 
         obj_path = self.objects[1].get_path()
