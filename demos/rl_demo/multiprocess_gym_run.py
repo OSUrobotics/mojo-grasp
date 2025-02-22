@@ -1179,7 +1179,7 @@ def main(filepath = None,learn_type='run', num_cpu=16, j_test='base'):
 if __name__ == '__main__':
     import csv
 
-    # test_shape_list = ['square','square25','circle','circle25','triangle','triangle25','trapazoid','square_circle','pentagon']
+    test = ['square','square25','circle','circle25','triangle','triangle25','trapazoid','square_circle','pentagon']
     # test2 = ['square15', 'square2', 'square3', 'circle15', 'circle2','circle3', 'triangle15','triangle2','triangle3','teardrop',
     #          'teardrop15', 'teardrop2','teardrop3']
         # 'square':demo_path+"/resources/object_models/Jeremiah_Shapes/40x40_square.urdf",
@@ -1205,10 +1205,10 @@ if __name__ == '__main__':
         # 'trapazoid':demo_path+"/resources/object_models/Jeremiah_Shapes/trapazoid.urdf",
         # 'pentagon':demo_path+"/resources/object_models/Jeremiah_Shapes/pentagon.urdf",
         # 'square_circle' :demo_path+"/resources/object_models/Jeremiah_Shapes/square_circle.urdf"
-    # for item in test2:
-        # multiprocess_evaluate_loaded('./data/Static_1/experiment_config.json',shape_key=item,hand="A", eval_set='single')
+    for item in test:
+        multiprocess_evaluate_loaded('./data/Static_2/experiment_config.json',shape_key=item,hand="A", eval_set='single')
         # multiprocess_evaluate_loaded('./data/Dynamic_2/experiment_config.json',shape_key=item,hand="A", eval_set='single')
 
-    main('./data/Static_1/experiment_config.json', j_test='base')
+    main('./data/Static_2/experiment_config.json', j_test='base')
     # replay('./data/Dynamic_2/experiment_config.json', './data/Dynamic_2/square25_A/Episode_778.pkl')
     # replay('./data/NTestLayer/Dynamic/experiment_config.json', './data/NTestLayer/Dynamic/triangle_A/Episode_787.pkl')

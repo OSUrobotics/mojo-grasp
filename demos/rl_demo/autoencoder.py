@@ -6,7 +6,7 @@ import wandb
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import MinMaxScaler
-import pickle
+import pickle 
 
 def init_wandb():
     wandb.init(
@@ -155,6 +155,23 @@ def test_single_row(model, df, input_scaler, input_dim, output_dim, row_index=No
     # Optionally, you can print the reconstructed output:
     # print("Reconstructed Output:", reconstruction)
 
+def test_pickle_file(model, pkl_path, input_scaler, output_scaler):
+    with open(pkl_path,'rb') as file:
+        data = pickle.load(file)
+    
+    data = data['timestep_list']
+    for state_stuff in data:
+        sample_input = state_stuff['mslice']
+        scaled_sample_input = input_scaler.transform(sample_input)
+        
+        sample_tensor = torch.tensor(scaled_sample_input, dtype=torch.float32)
+        latent, reconstruction = model(sample_tensor)
+        print("Latent Representation:", latent)
+        autoencoder_output = output_scaler.transform(reconstruction)
+        print(autoencoder_output)
+        print(data['slice'])
+        input('go?')
+
 def main():
     """
     # Load CSV file
@@ -179,24 +196,27 @@ def main():
     # Uncomment the following block to run training instead:
     """
     config = init_wandb()
-    df = load_csv("final_data.csv")
+    # df = load_csv("final_data.csv")
     
-    train_dataset, test_dataset, input_scaler, output_scaler = preprocess_data(df, config.input_dim, config.output_dim)
-    train_loader = DataLoader(train_dataset, batch_size=config.batch_size, shuffle=True)
-    test_loader = DataLoader(test_dataset, batch_size=config.batch_size, shuffle=False)
+    # train_dataset, test_dataset, input_scaler, output_scaler = preprocess_data(df, config.input_dim, config.output_dim)
+    # train_loader = DataLoader(train_dataset, batch_size=config.batch_size, shuffle=True)
+    # test_loader = DataLoader(test_dataset, batch_size=config.batch_size, shuffle=False)
     
-    model = Autoencoder(config.input_dim, config.latent_dim, config.output_dim)
-    save_model(model)  # Save the untrained model if desired
-    save_scalers(input_scaler, output_scaler)
+    # model = Autoencoder(config.input_dim, config.latent_dim, config.output_dim)
+    # save_model(model)  # Save the untrained model if desired
+    # save_scalers(input_scaler, output_scaler)
     
-    criterion = nn.MSELoss()
-    optimizer = optim.Adam(model.parameters(), lr=config.learning_rate)
-    wandb.watch(model, log="all")
+    # criterion = nn.MSELoss()
+    # optimizer = optim.Adam(model.parameters(), lr=config.learning_rate)
+    # wandb.watch(model, log="all")
     
-    train_model(model, train_loader, test_loader, criterion, optimizer, config)
+    # train_model(model, train_loader, test_loader, criterion, optimizer, config)
     
-    wandb.finish()
-    print("Training complete!")
+    # wandb.finish()
+    # print("Training complete!")
+    model = load_trained_model('./best_autoencoder_16.pth',config.input_dim, config.latent_dim, config.output_dim)
+    input_scalar, output_scalar = load_scalers('scaler.pkl')
+    test_pickle_file(model, './data/Static_2/square_A/Episode_775.pkl', input_scalar, output_scalar)
     
 
 if __name__ == "__main__":
