@@ -220,7 +220,7 @@ class MultiprocessState(StateDefault):
         self.current_state['hand_params'] = self.hand_params.copy()
         # if self.pflag:
         #     self.state_holder.append(self.current_state.copy())
-        
+        print('OBJECT POSITION',self.current_state['obj_2']['pose'][0])
         if 'upper_goal_position' in self.current_state['goal_pose'].keys():
             unreached_goals = [[self.current_state['goal_pose']['upper_goal_position'][2*i],self.current_state['goal_pose']['upper_goal_position'][i*2+1]] for i,v in enumerate(self.current_state['goal_pose']['goals_open']) if v]
             self.current_state['image'] = self.image_gen.draw_stamp(self.current_state['obj_2']['pose'],

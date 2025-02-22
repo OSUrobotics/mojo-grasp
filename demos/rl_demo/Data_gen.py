@@ -12,7 +12,7 @@ def generate_euler_angles(x_range, y_range, z_range, num_samples):
     return euler_angles
 
 # Parameters
-num_points = 100_000
+num_points = 100
 square_width = 0.1
 square_height = 0.1
 center_x = 0.0
@@ -92,7 +92,7 @@ final_df = pd.concat([df, points_df], axis=1)
 print(f"Flattened data with noisy x and y points saved to {output_file}")
 
 def manipulate_row(row):
-    print("This is the row", row)
+    # print("This is the row", row)
     # Extract quaternion and normalize it
     a, b, c, w = row['qx'], row['qy'], row['qz'], row['qw']
     norm = np.sqrt(a**2 + b**2 + c**2 + w**2)

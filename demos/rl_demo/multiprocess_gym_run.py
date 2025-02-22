@@ -934,7 +934,7 @@ def replay(argpath, episode_path):
     args['domain_randomization_object_mass'] = False
     args['domain_randomization_object_size'] = False
     args['finger_random_start'] = False    
-    args['object_path'] = ["/home/mothra/mojo-grasp/demos/rl_demo/resources/object_models/Jeremiah_Shapes/40x40_square_25.urdf"]
+    args['object_path'] = ["/home/mothra/mojo-grasp/demos/rl_demo/resources/object_models/2v2_mod/2v2_mod_cuboid_small.urdf"]
     key_file = os.path.abspath(__file__)
     key_file = os.path.dirname(key_file)
     key_file = os.path.join(key_file,'resources','hand_bank','hand_params.json')
@@ -1061,13 +1061,13 @@ def replay(argpath, episode_path):
 
     for i,act in enumerate(actions):
         # print('action vs mirrored:', actions[i],act)
-        print('joints in pkl file',joint_angles[i])
-        print(f'step {i}')
-        print(act)
+        # print('joints in pkl file',joint_angles[i])
+        # print(f'step {i}')
+        # print(act)
         eval_env.step(np.array(act),viz=True)
         step_num +=1
-        print('reward from pickle', data['timestep_list'][i]['reward'])
-        print(p2.getBasePositionAndOrientation(eval_env.env.obj.id))
+        # print('reward from pickle', data['timestep_list'][i]['reward'])
+        # print(p2.getBasePositionAndOrientation(eval_env.env.obj.id))
         # input('next step?')
         # time.sleep(0.5)
         # print(f'finger poses in pkl file, {f1_poses[i]}, {f2_poses[i]}')
@@ -1205,10 +1205,10 @@ if __name__ == '__main__':
         # 'trapazoid':demo_path+"/resources/object_models/Jeremiah_Shapes/trapazoid.urdf",
         # 'pentagon':demo_path+"/resources/object_models/Jeremiah_Shapes/pentagon.urdf",
         # 'square_circle' :demo_path+"/resources/object_models/Jeremiah_Shapes/square_circle.urdf"
-    for item in test:
-        multiprocess_evaluate_loaded('./data/Static_2/experiment_config.json',shape_key=item,hand="A", eval_set='single')
+    # for item in test:
+    #     multiprocess_evaluate_loaded('./data/Static_2/experiment_config.json',shape_key=item,hand="A", eval_set='single')
         # multiprocess_evaluate_loaded('./data/Dynamic_2/experiment_config.json',shape_key=item,hand="A", eval_set='single')
 
-    main('./data/Static_2/experiment_config.json', j_test='base')
-    # replay('./data/Dynamic_2/experiment_config.json', './data/Dynamic_2/square25_A/Episode_778.pkl')
+    # main('./data/Static_2/experiment_config.json', j_test='base')
+    replay('./data/Static_2/experiment_config.json', './data/Static_2/square_A/Episode_775.pkl')
     # replay('./data/NTestLayer/Dynamic/experiment_config.json', './data/NTestLayer/Dynamic/triangle_A/Episode_787.pkl')

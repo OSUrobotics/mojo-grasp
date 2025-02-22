@@ -7,7 +7,7 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import MinMaxScaler
 import pickle 
-
+import numpy as np
 def init_wandb():
     wandb.init(
         project="autoencoder-project",
@@ -161,15 +161,26 @@ def test_pickle_file(model, pkl_path, input_scaler, output_scaler):
     
     data = data['timestep_list']
     for state_stuff in data:
-        sample_input = state_stuff['mslice']
-        scaled_sample_input = input_scaler.transform(sample_input)
+        
+        state_stuff = state_stuff['state']
+        sample_input = state_stuff['dynamic']
+        # sample_input[:,2] += 0.05
+
+        print(sample_input)
+        print(state_stuff['obj_2']['pose'])
+        scaled_sample_input = input_scaler.transform(np.reshape(sample_input,(1,72)))
         
         sample_tensor = torch.tensor(scaled_sample_input, dtype=torch.float32)
         latent, reconstruction = model(sample_tensor)
-        print("Latent Representation:", latent)
-        autoencoder_output = output_scaler.transform(reconstruction)
-        print(autoencoder_output)
-        print(data['slice'])
+        print("reconstruction:", np.shape(reconstruction))
+        autoencoder_output = output_scaler.transform(reconstruction.detach())
+        print(np.shape(autoencoder_output))
+        print('autoencoder position',autoencoder_output[0][0:3])
+        print('recon position      ', reconstruction[0][0:3])
+        print('pickle file position',state_stuff['obj_2']['pose'][0])
+        print('autoencoder orientation',autoencoder_output[0][3:7])
+        print('recon orientation      ', reconstruction[0][3:7])
+        print('pickle file orientation',state_stuff['obj_2']['pose'][1])
         input('go?')
 
 def main():
@@ -195,7 +206,7 @@ def main():
 
     # Uncomment the following block to run training instead:
     """
-    config = init_wandb()
+    # config = init_wandb()
     # df = load_csv("final_data.csv")
     
     # train_dataset, test_dataset, input_scaler, output_scaler = preprocess_data(df, config.input_dim, config.output_dim)
@@ -214,7 +225,15 @@ def main():
     
     # wandb.finish()
     # print("Training complete!")
-    model = load_trained_model('./best_autoencoder_16.pth',config.input_dim, config.latent_dim, config.output_dim)
+    config={
+            "input_dim": 72,
+            "latent_dim": 16,
+            "output_dim": 54,
+            "learning_rate": 0.001,
+            "epochs": 100,
+            "batch_size": 64,
+        }
+    model = load_trained_model('./best_autoencoder_16.pth',config['input_dim'], config['latent_dim'], config['output_dim'])
     input_scalar, output_scalar = load_scalers('scaler.pkl')
     test_pickle_file(model, './data/Static_2/square_A/Episode_775.pkl', input_scalar, output_scalar)
     
