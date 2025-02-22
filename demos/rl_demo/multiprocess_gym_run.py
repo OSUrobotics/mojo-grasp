@@ -934,7 +934,7 @@ def replay(argpath, episode_path):
     args['domain_randomization_object_mass'] = False
     args['domain_randomization_object_size'] = False
     args['finger_random_start'] = False    
-    args['object_path'] = ["/home/mothra/mojo-grasp/demos/rl_demo/resources/object_models/Jeremiah_Shapes/40x40_triangle.urdf"]
+    args['object_path'] = ["/home/mothra/mojo-grasp/demos/rl_demo/resources/object_models/Jeremiah_Shapes/40x40_square_25.urdf"]
     key_file = os.path.abspath(__file__)
     key_file = os.path.dirname(key_file)
     key_file = os.path.join(key_file,'resources','hand_bank','hand_params.json')
@@ -1179,12 +1179,36 @@ def main(filepath = None,learn_type='run', num_cpu=16, j_test='base'):
 if __name__ == '__main__':
     import csv
 
-    test_shape_list = ['square','square25','circle','circle25','triangle','triangle25','trapazoid','square_circle','pentagon']
+    # test_shape_list = ['square','square25','circle','circle25','triangle','triangle25','trapazoid','square_circle','pentagon']
+    test2 = ['square15', 'square2', 'square3', 'circle15', 'circle2','circle3', 'triangle15','triangle2','triangle3','teardrop',
+             'teardrop15', 'teardrop2','teardrop3']
+        # 'square':demo_path+"/resources/object_models/Jeremiah_Shapes/40x40_square.urdf",
+        # 'square15':demo_path+"/resources/object_models/Jeremiah_Shapes/40x40_square_15.urdf",
+        # 'square2':demo_path+"/resources/object_models/Jeremiah_Shapes/40x40_square_2.urdf",
+        # 'square25':demo_path+"/resources/object_models/Jeremiah_Shapes/40x40_square_25.urdf",
+        # 'square3':demo_path+"/resources/object_models/Jeremiah_Shapes/40x40_square_3.urdf",
+        # 'circle':demo_path+"/resources/object_models/Jeremiah_Shapes/20_r_circle.urdf",
+        # 'circle15':demo_path+"/resources/object_models/Jeremiah_Shapes/20_r_circle_15.urdf",
+        # 'circle2':demo_path+"/resources/object_models/Jeremiah_Shapes/20_r_circle_2.urdf",
+        # 'circle25':demo_path+"/resources/object_models/Jeremiah_Shapes/20_r_circle_25.urdf",
+        # 'circle3':demo_path+"/resources/object_models/Jeremiah_Shapes/20_r_circle_3.urdf",
+        # 'triangle':demo_path+"/resources/object_models/Jeremiah_Shapes/40x40_triangle.urdf",
+        # 'triangle15':demo_path+"/resources/object_models/Jeremiah_Shapes/40x40_triangle_15.urdf",
+        # 'triangle2':demo_path+"/resources/object_models/Jeremiah_Shapes/40x40_triangle_2.urdf",
+        # 'triangle25':demo_path+"/resources/object_models/Jeremiah_Shapes/40x40_triangle_25.urdf",
+        # 'triangle3':demo_path+"/resources/object_models/Jeremiah_Shapes/40x40_triangle_3.urdf",
+        # 'teardrop':demo_path+"/resources/object_models/Jeremiah_Shapes/50x30_teardrop.urdf",
+        # 'teardrop15':demo_path+"/resources/object_models/Jeremiah_Shapes/50x30_teardrop_15.urdf",
+        # 'teardrop2':demo_path+"/resources/object_models/Jeremiah_Shapes/50x30_teardrop_2.urdf",
+        # 'teardrop25':demo_path+"/resources/object_models/Jeremiah_Shapes/50x30_teardrop_25.urdf",
+        # 'teardrop3':demo_path+"/resources/object_models/Jeremiah_Shapes/50x30_teardrop_3.urdf",
+        # 'trapazoid':demo_path+"/resources/object_models/Jeremiah_Shapes/trapazoid.urdf",
+        # 'pentagon':demo_path+"/resources/object_models/Jeremiah_Shapes/pentagon.urdf",
+        # 'square_circle' :demo_path+"/resources/object_models/Jeremiah_Shapes/square_circle.urdf"
+    for item in test2:
+        # multiprocess_evaluate_loaded('./data/Static_1/experiment_config.json',shape_key=item,hand="A", eval_set='single')
+        multiprocess_evaluate_loaded('./data/Dynamic_2/experiment_config.json',shape_key=item,hand="A", eval_set='single')
 
-    # for item in test_shape_list:
-    #     multiprocess_evaluate_loaded('./data/ReLu_Static/experiment_config.json',shape_key=item,hand="A", eval_set='single')
-        # multiprocess_evaluate_loaded('./data/ReLu_Dynamic/experiment_config.json',shape_key=item,hand="A", eval_set='single')
-
-    main('./data/Static_2/experiment_config.json', j_test='base')
-    # replay('./data/ReLu_Dynamic/experiment_config.json', './data/ReLu_Dynamic/Eval_A_Triangle/Episode_1080.pkl')
+    # main('./data/Static_2/experiment_config.json', j_test='base')
+    replay('./data/Dynamic_2/experiment_config.json', './data/Dynamic_2/square25_A/Episode_778.pkl')
     # replay('./data/NTestLayer/Dynamic/experiment_config.json', './data/NTestLayer/Dynamic/triangle_A/Episode_787.pkl')
