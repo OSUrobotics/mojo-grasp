@@ -61,7 +61,7 @@ class MultiprocessRecordData(RecordDataRLPKL):
     def record_test_round(self):
         '''
         records a reduced test data. assumes you aren't saving training data'''
-        print('TESTING RECORD TEST ROUND')
+        # print('TESTING RECORD TEST ROUND')
         save_dict = {"number":self.episode_num+1}
         for key,sequence in MultiprocessRecordData.reduced_keys.items():
             if type(sequence[0]) is int:
@@ -70,13 +70,13 @@ class MultiprocessRecordData(RecordDataRLPKL):
                 save_dict[key] = max([getitem_for(i,sequence[1:]) for i in self.timesteps])
             elif sequence[0] == 'sum':
                 save_dict[key] = sum([getitem_for(i,sequence[1:]) for i in self.timesteps])
-                print('sum thing', key)
+                # print('sum thing', key)
             elif sequence[0] == 'abssum':
                 save_dict[key] = sum([abs(getitem_for(i,sequence[1]) - getitem_for(i,sequence[2]) )for i in self.timesteps])
-                print('abs sum thing', key)
+                # print('abs sum thing', key)
             elif sequence[0] == 'maxsum':
                 save_dict[key] = sum([max(getitem_for(i,sequence[1]),getitem_for(i,sequence[2])) for i in self.timesteps])
-                print('max sum thing', key)
+                # print('max sum thing', key)
             else:
                 raise NotImplemented('unknown keyworkd')
         self.current_episode = save_dict
