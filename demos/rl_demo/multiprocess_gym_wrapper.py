@@ -590,7 +590,7 @@ class MultiprocessGymWrapper(gym.Env):
         self.p.disconnect()
         
     def evaluate(self, ht=None):
-        # print('EVALUATE TRIGGERED')
+        # print('EVALUATE TRIGGERED ', self.env.obj.path)
         self.eval = True
         self.eval_run = 0
         self.manipulation_phase.state.evaluate()
@@ -606,6 +606,7 @@ class MultiprocessGymWrapper(gym.Env):
         self.record.set_folder(folder)
 
     def train(self):
+        # print('Train TRIGGERED ', self.env.obj.path)
         self.eval = False
         self.manipulation_phase.eval = False
         self.manipulation_phase.state.train()
