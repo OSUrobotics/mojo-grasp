@@ -131,7 +131,7 @@ def load_scalers(input_filename="input_scaler.pkl", output_filename="output_scal
     print(f"Input scaler loaded from {input_filename} and output scaler loaded from {output_filename}")
     return input_scaler, output_scaler
 
-def test_single_row(model, df, input_scaler, input_dim, output_dim, row_index=None):
+def test_single_row(model, df, input_scaler, input_dim, output_scaler, output_dim, row_index=None):
     """
     Tests a single row from the dataframe:
     - If row_index is None, a random row is chosen.
@@ -151,9 +151,16 @@ def test_single_row(model, df, input_scaler, input_dim, output_dim, row_index=No
     
     sample_tensor = torch.tensor(scaled_sample_input, dtype=torch.float32)
     latent, reconstruction = model(sample_tensor)
-    print("Latent Representation:", latent)
+    # print("Latent Representation:", latent)
     # Optionally, you can print the reconstructed output:
     # print("Reconstructed Output:", reconstruction)
+    autoencoder_output = output_scaler.inverse_transform(reconstruction.detach())
+    print('autoencoder position',autoencoder_output[0][0:3])
+    print('recon position      ', reconstruction[0][0:3])
+    print('pickle file position', sample_df['x'],sample_df['y'],sample_df['z'])
+    print('autoencoder orientation',autoencoder_output[0][3:7])
+    print('recon orientation      ', reconstruction[0][3:7])
+    print('pickle file orientation', sample_df['qx'], sample_df['qy'], sample_df['qz'], sample_df['qw'])
 
 def test_pickle_file(model, pkl_path, input_scaler, output_scaler):
     with open(pkl_path,'rb') as file:
@@ -173,13 +180,13 @@ def test_pickle_file(model, pkl_path, input_scaler, output_scaler):
         sample_tensor = torch.tensor(scaled_sample_input, dtype=torch.float32)
         latent, reconstruction = model(sample_tensor)
         print("reconstruction:", np.shape(reconstruction))
-        autoencoder_output = output_scaler.transform(reconstruction.detach())
+        autoencoder_output = output_scaler.inverse_transform(reconstruction.detach())
         print(np.shape(autoencoder_output))
         print('autoencoder position',autoencoder_output[0][0:3])
-        print('recon position      ', reconstruction[0][0:3])
+        # print('recon position      ', reconstruction[0][0:3])
         print('pickle file position',state_stuff['obj_2']['pose'][0])
         print('autoencoder orientation',autoencoder_output[0][3:7])
-        print('recon orientation      ', reconstruction[0][3:7])
+        # print('recon orientation      ', reconstruction[0][3:7])
         print('pickle file orientation',state_stuff['obj_2']['pose'][1])
         input('go?')
 
@@ -236,7 +243,7 @@ def main():
     model = load_trained_model('./best_autoencoder_16.pth',config['input_dim'], config['latent_dim'], config['output_dim'])
     input_scalar, output_scalar = load_scalers('scaler.pkl')
     test_pickle_file(model, './data/Static_2/square_A/Episode_775.pkl', input_scalar, output_scalar)
-    
+    # test_single_row(model, df, input_scalar, config['input_dim'], output_scalar, config['output_dim'])
 
 if __name__ == "__main__":
     main()

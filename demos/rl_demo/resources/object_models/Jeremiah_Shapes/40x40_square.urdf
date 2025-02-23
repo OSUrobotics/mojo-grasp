@@ -3,13 +3,13 @@
 
     <link name="40x40_Square">
         <visual>
-            <origin rpy="1.5707963267948966 0 0" xyz="0 0 -0.0"/>
+            <origin rpy="1.5707963267948966 0 0" xyz="0 0 0.0"/>
             <geometry>
                 <mesh filename="Shapes/40x40_square.obj" scale="1 1 1"/>
             </geometry>
         </visual>
         <collision>
-            <origin rpy="1.5707963267948966 0 0" xyz="0 0 -0.0"/>
+            <origin rpy="1.5707963267948966 0 0" xyz="0 0 0.0"/>
             <geometry>
                 <mesh filename="Shapes/40x40_square.obj" scale="1 1 1"/>
             </geometry>

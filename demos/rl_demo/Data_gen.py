@@ -12,7 +12,7 @@ def generate_euler_angles(x_range, y_range, z_range, num_samples):
     return euler_angles
 
 # Parameters
-num_points = 100
+num_points = 10000
 square_width = 0.1
 square_height = 0.1
 center_x = 0.0
