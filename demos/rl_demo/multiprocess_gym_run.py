@@ -558,19 +558,34 @@ def multiprocess_evaluate_loaded(filepath, shape_key=None, hand='A', eval_set='f
         if eval_set =='single':
             x_start = [x_start[0]]
             y_start = [y_start[0]]
-        for x,y in zip(x_start, y_start):
-            tihng = {'goal_position':[x,y]}
-            print('THING', tihng)
-            vec_env.env_method('set_reset_point', tihng['goal_position'])
-            for _ in range(int(1200/16)):
-                # print('about to reset')
-                obs = vec_env.reset()
-                # vec_env.env_method()
-                done = [False, False]
-                while not all(done):
-                    action, _ = model.predict(obs,deterministic=True)
-                    vec_env.step_async(action)
-                    obs, _, done, _ = vec_env.step_wait()
+        elif eval_set == 'ori':
+            for x,y in zip(x_start, y_start):
+                tihng = {'goal_position':[x,y]}
+                print('THING', tihng)
+                vec_env.env_method('set_reset_ori', tihng['goal_position'])
+                for _ in range(int(1200/16)):
+                    # print('about to reset')
+                    obs = vec_env.reset()
+                    # vec_env.env_method()
+                    done = [False, False]
+                    while not all(done):
+                        action, _ = model.predict(obs,deterministic=True)
+                        vec_env.step_async(action)
+                        obs, _, done, _ = vec_env.step_wait()
+        else:
+            for x,y in zip(x_start, y_start):
+                tihng = {'goal_position':[x,y]}
+                print('THING', tihng)
+                vec_env.env_method('set_reset_point', tihng['goal_position'])
+                for _ in range(int(1200/16)):
+                    # print('about to reset')
+                    obs = vec_env.reset()
+                    # vec_env.env_method()
+                    done = [False, False]
+                    while not all(done):
+                        action, _ = model.predict(obs,deterministic=True)
+                        vec_env.step_async(action)
+                        obs, _, done, _ = vec_env.step_wait()
     vec_env.env_method('disconnect')
 
 def asterisk_test(filepath,hand_type,frictionList = None, contactList = None):
@@ -917,7 +932,7 @@ def mirror_action(filename):
                for a in episode_data['timestep_list']]
     return actions   
         
-def replay(argpath, episode_path):
+def replay(argpath, episode_path, object_path):
     # replays the exact behavior contained in a pkl file without any learning agent running
     # images are saved in videos folder associated with the argfile
     # get parameters from argpath such as action type/size
@@ -934,7 +949,7 @@ def replay(argpath, episode_path):
     args['domain_randomization_object_mass'] = False
     args['domain_randomization_object_size'] = False
     args['finger_random_start'] = False    
-    args['object_path'] = ["/home/mothra/mojo-grasp/demos/rl_demo/resources/object_models/Jeremiah_Shapes/40x40_square_25.urdf"]
+    args['object_path'] = object_path
     key_file = os.path.abspath(__file__)
     key_file = os.path.dirname(key_file)
     key_file = os.path.join(key_file,'resources','hand_bank','hand_params.json')
@@ -1209,6 +1224,6 @@ if __name__ == '__main__':
         # multiprocess_evaluate_loaded('./data/Static_1/experiment_config.json',shape_key=item,hand="A", eval_set='single')
         # multiprocess_evaluate_loaded('./data/Dynamic_2/experiment_config.json',shape_key=item,hand="A", eval_set='single')
 
-    main('./data/Static_1/experiment_config.json', j_test='base')
-    # replay('./data/Dynamic_2/experiment_config.json', './data/Dynamic_2/square25_A/Episode_778.pkl')
+    # main('./data/Static_1/experiment_config.json', j_test='base')
+    replay('./data/Full_Domain_Test/Dynamic/experiment_config.json', './data/Full_Domain_Test/Dynamic/pentagon_A/Episode_778.pkl', '/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/resources/object_models/Jeremiah_Shapes/40x40_triangle.urdf')
     # replay('./data/NTestLayer/Dynamic/experiment_config.json', './data/NTestLayer/Dynamic/triangle_A/Episode_787.pkl')

@@ -188,6 +188,18 @@ class MultiprocessGymWrapper(gym.Env):
         else:
             self.eval_point = {'translation':point,'rotation':0}
 
+    def set_reset_ori(self,point):
+        '''
+        Function to set a reset start point for all subsequent resets
+        Intended to speed up evaluation of trained policy by allowing
+        multiprocessing'''
+        print('SETTING RESET POINT', point)
+        if type(point) == dict:
+            self.eval_point = point
+        else:
+            orientation = np.random.uniform(-np.pi,np.pi)
+            self.eval_point = {'translation':point,'rotation':orientation}
+
     def set_reduced_save_type(self,ting):
         self.reduced_saving = ting
 
