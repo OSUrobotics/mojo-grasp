@@ -248,6 +248,8 @@ class MultiprocessGymWrapper(gym.Env):
             self.env.set_finger_contact_goal(state['goal_pose']['goal_finger'])
 
         state = self.build_state(state)
+        if self.eval or self.small_enough:
+            self.record.record_start_state()
         return state
 
     def step(self, action, mirror=False, viz=False,hand_type=None):

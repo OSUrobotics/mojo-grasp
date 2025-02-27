@@ -7,7 +7,11 @@ from scipy.interpolate import interp2d
 import torch 
 from stable_baselines3.common.buffers import ReplayBuffer, RolloutBuffer
 from demos.rl_demo.policies import PPOExpertData
-
+from copy import deepcopy
+import re
+from multiprocessing import pool
+from stable_baselines3.common.utils import obs_as_tensor
+import torch as th
 
 def make_env(arg_dict=None,rank=0,hand_info=None,previous_policy=None):
     def _init():
@@ -76,6 +80,135 @@ def collect_expert(env,poses):
             i+=1
     env.train()
     return buffer, just_goals
+
+def pool_data_extraction(episode_file, build_state, key_list, reward_function, weights):
+    '''
+    This takes a given episode file, a build state function and a set of keys and returns a list
+    of all the data from that episode processed into data that can be fed directly into the network.
+    Designed to be used with Pool.starmap on a folder 
+    full of data
+    '''
+    with open(episode_file, 'rb') as ef:
+        tempdata = pkl.load(ef)
+    data = tempdata['timestep_list']
+    next_state = []
+    state = []
+    action = []
+    reward = []
+    done = []
+    start_state = tempdata['start_state']
+    for i in range(len(data)):
+        data[len(data)-1-i]['state']['previous_state'] = []
+        for j in range(4):
+            if len(data)-1-i-4+j < 0:
+                print('too soon, just using the first one')
+                data[len(data)-1-i]['state']['previous_state'].append(deepcopy(start_state))
+            else:
+                data[len(data)-1-i]['state']['previous_state'].append(deepcopy(data[len(data)-1-i-4+j]['state']))
+        next_state.append(build_state(data[i]['state'], key_list))
+        if i != 0:
+            state.append(build_state(data[i]['state'], key_list))
+        reward.append(reward_function(data[i]['reward'], weights))
+        action.append(data[i]['action']['actor_output'])
+        done.append(i==0)
+    state_1 = deepcopy(start_state)
+    state_1['previous_state'] = []
+    for i in range(4):
+        state_1['previous_state'].append(deepcopy(start_state))
+    state.append(build_state(state_1, key_list))
+    state.reverse()
+    next_state.reverse()
+    action.reverse()
+    reward.reverse()
+    done.reverse()
+    return {'observation':state,'action':action,'reward':reward,'next_state':next_state,'done':done}
+
+def load_expert_translation(folder, build_state, key_list, reward_function, reward_weights, n_rollout_steps) -> bool:
+    # Make a list of offline observations, actions and trees
+    print("INFO: Making offline rollouts")
+    n_steps = 0
+    # TODO: Do we need callbacks in offline rollouts?
+    # callback.update_locals(locals())
+    # callback.on_rollout_start()observation_space, action_space,
+
+    episode_files = [os.path.join(folder, f) for f in os.listdir(folder) if f.lower().endswith('.pkl')]
+    filenames_only = [f for f in os.listdir(folder) if f.lower().endswith('.pkl')]
+    
+    filenums = [re.findall('\d+',f) for f in filenames_only]
+    final_filenums = []
+    for i in filenums:
+        if len(i) > 0 :
+            final_filenums.append(int(i[0]))
+    
+    sorted_inds = np.argsort(final_filenums)
+    final_filenums = np.array(final_filenums)
+    temp = final_filenums[sorted_inds]
+    episode_files = np.array(episode_files)
+    filenames_only = np.array(filenames_only)
+
+    episode_files = episode_files[sorted_inds].tolist()
+    thing = [[ef, build_state, key_list, reward_function, reward_weights] for ef in episode_files]
+    print('applying async')
+    data_list = pool.starmap(pool_data_extraction,thing)
+    data_dict = {'observation':[],'action':[],'reward':[],'next_state':[],'done':[]}
+    # Sample expert episode
+    for episode_dict in data_list:
+        data_dict['observation'].extend(episode_dict['observation'])
+        data_dict['action'].extend(episode_dict['action'])
+        data_dict['reward'].extend(episode_dict['reward'])
+        data_dict['next_state'].extend(episode_dict['next_state'])
+        data_dict['done'].extend(episode_dict['done'])
+    
+    data_dict['observation'] = np.array(data_dict['observation'])
+
+    data_dict['action'] = np.array(data_dict['observation'])
+    data_dict['reward'] = np.array(data_dict['reward'])
+    data_dict['next_state'] = np.array(data_dict['next_state'])
+    data_dict['done'] = np.array(data_dict['done'])
+    new_inds = np.random.shuffle(list(range(len(data_dict['observation']))))
+    data_dict['observation'] = data_dict['observation'][new_inds]
+    data_dict['action'] = data_dict['action'][new_inds]
+    data_dict['reward'] = data_dict['reward'][new_inds]
+    data_dict['next_state'] = data_dict['next_state'][new_inds]
+    data_dict['done'] = data_dict['done'][new_inds]
+    expert_buffer = RolloutBuffer(n_rollout_steps,observation_space,action_space)
+    while n_steps < n_rollout_steps:
+        with th.no_grad():
+            # Convert to pytorch tensor or to TensorDict
+            obs_tensor = obs_as_tensor(data_dict['observation'][n_steps], 'cuda')
+            actions = obs_as_tensor(data_dict['action'][n_steps], 'cuda')
+            next_state = th.tensor(data_dict['next_state'][n_steps], dtype=th.float32, device='cuda')
+            actions, values, log_probs = self.policy.forward_expert(obs_tensor, actions)
+            rewards = data_dict['reward']
+
+        actions = obs_as_tensor(data_dict['reward'][n_steps], 'cuda')
+
+        expert_buffer.add(
+            obs_tensor,
+            actions,
+            rewards,
+            next_state,
+            values,
+            log_probs,
+        )
+
+        self._last_episode_starts_expert = dones
+
+    next_obs = self._flatten_obs(batch['next_observation'],
+                                    self.observation_space)  # Get the next observation to calculate the values
+
+    with th.no_grad():
+        # Compute value for the last timestep
+        episode_starts = th.tensor(dones, dtype=th.float32, device=self.device)
+        values = self.policy.predict_values(
+            obs_as_tensor(next_obs, self.device))  # pylint: disable=unexpected-keyword-arg
+    expert_buffer.compute_returns_and_advantage(last_values=values, dones=dones)
+
+    if self.verbose > 0:
+        print("INFO: Finished making offline rollouts")
+    # callback.on_rollout_end()
+    # callback.update_locals(locals())
+    return True
 
 
 def train_expert(filepath, learn_type='run', num_cpu=16):

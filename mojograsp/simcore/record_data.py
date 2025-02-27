@@ -198,6 +198,7 @@ class RecordDataPKL(RecordData):
         self.episode_data = []
         self.current_episode = None
         self.episodes = {}
+        self.start_state = []
         self.eval_num = 0
 
     def record_timestep(self):
@@ -321,3 +322,11 @@ class RecordDataRLPKL(RecordDataPKL):
         self.timesteps.append(timestep_dict)
         self.timestep_num += 1
         
+    def record_start_state(self):
+        """
+        Method called by :func:`~mojograsp.simcore.sim_manager.SimManager` upon reset. Records the user defined state at the start of the episode.
+        Saves the result to a timestep dictionary which is later used to form an episode.
+        """
+        temp = self.state.get_state()
+        exclude_keys = ['previous_state', 'image']
+        self.start_state = {k: temp[k] for k in set(list(temp.keys())) - set(exclude_keys)}

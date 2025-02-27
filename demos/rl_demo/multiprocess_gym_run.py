@@ -36,7 +36,7 @@ from stable_baselines3.common.noise import NormalActionNoise
 from torch import nn
 from stable_baselines3.common.policies import ActorCriticPolicy
 import math
-
+from mojograsp.simcore.reward_functions import triple_scaled_slide_j as RewardFunc
 
 
 def make_env(arg_dict=None,rank=0,hand_info=None):
@@ -1176,6 +1176,45 @@ def main(filepath = None,learn_type='run', num_cpu=16, j_test='base'):
         filename = os.path.dirname(filepath)
         model.save(filename+'/canceled_model')
 
+def expert_data_test(filepath = None, num_cpu=16):
+    # Create the vectorized environment
+    print('cuda y/n?', get_device())
+    if filepath is None:
+        filename = 'FTP_full_53'
+        filepath = './data/' + filename +'/experiment_config.json'
+   
+    with open(filepath, 'r') as argfile:
+        args = json.load(argfile)
+
+    if num_cpu%len(args['hand_file_list'])!= 0:
+        num_cpu = int(int(num_cpu/len(args['hand_file_list']))*len(args['hand_file_list']))
+    
+    key_file = os.path.abspath(__file__)
+    key_file = os.path.dirname(key_file)
+    key_file = os.path.join(key_file,'resources','hand_bank','hand_params.json')
+    with open(key_file,'r') as hand_file:
+        hand_params = json.load(hand_file)
+    from ppo_expert import PPOExpert, simple_build_state
+    model_type = PPOExpert
+    vec_env = SubprocVecEnv([make_env(args,[i,num_cpu],hand_info=hand_params) for i in range(num_cpu)])
+    train_timesteps = int(args['evaluate']*(args['tsteps']+1)/num_cpu)
+    callback = multiprocess_gym_wrapper.MultiEvaluateCallback(vec_env,n_eval_episodes=int(1200), eval_freq=train_timesteps, best_model_save_path=args['save_path'])
+    model = model_type("MlpPolicy", vec_env, n_steps=15000,tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-0.69,'activation_fn': nn.ReLU,
+                                                                                                   'net_arch':dict(pi=(64,64,64),vf=(64,64,64))})
+    model.load_expert_translation('./data/bunch_of_expert_trials/',simple_build_state,args['state_list'],RewardFunc,
+                                  {'DISTANCE_SCALING':args['distance_scaling'],'CONTACT_SCALING':args['contact_scaling'],
+                                   'ROTATION_SCALING':args['rotation_scaling']}, 240000)
+    try:
+        print('starting the training using', get_device())
+        model.learn(total_timesteps=args['epochs']*(args['tsteps']+1), callback=callback)
+        filename = os.path.dirname(filepath)
+        model.save(filename+'/last_model')
+        merge_from_folder(args['save_path']+'Test/')
+
+        # multiprocess_evaluate(model,vec_env)
+    except KeyboardInterrupt:
+        filename = os.path.dirname(filepath)
+        model.save(filename+'/canceled_model')
 if __name__ == '__main__':
     import csv
 
@@ -1206,9 +1245,10 @@ if __name__ == '__main__':
         # 'pentagon':demo_path+"/resources/object_models/Jeremiah_Shapes/pentagon.urdf",
         # 'square_circle' :demo_path+"/resources/object_models/Jeremiah_Shapes/square_circle.urdf"
     # for item in test:
-    multiprocess_evaluate_loaded('./data/Static_2/experiment_config.json',shape_key='square',hand="A", eval_set='single')
+    #     multiprocess_evaluate_loaded('./data/Static_3/experiment_config.json',shape_key=item,hand="A", eval_set='single')
         # multiprocess_evaluate_loaded('./data/Dynamic_2/experiment_config.json',shape_key=item,hand="A", eval_set='single')
 
-    # main('./data/Static_2/experiment_config.json', j_test='base')
+    # main('./data/Static_3/experiment_config.json', j_test='base')
+    expert_data_test('./data/Static_1/experiment_config.json')
     # replay('./data/Static_2/experiment_config.json', './data/Static_2/square_A/Episode_775.pkl')
     # replay('./data/NTestLayer/Dynamic/experiment_config.json', './data/NTestLayer/Dynamic/triangle_A/Episode_787.pkl')

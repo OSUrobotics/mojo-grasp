@@ -29,6 +29,7 @@ class MultiprocessRecordData(RecordDataRLPKL):
         super().record_episode(episode_type)
         self.current_episode["frictionList"] = frictionList
         self.current_episode["contactList"] = contactList
+        self.current_episode['start_state'] = self.start_state
 
     def set_folder(self,folder_name):
         self.folder_name = folder_name
