@@ -81,7 +81,7 @@ def main():
                     [sg.Button('Finger Goal Path',size=(8,2)),sg.Button('Sampled Poses', size=(8,2)),sg.Button('draw_scatter_max_end',size=(8,2)),sg.Button('Both Errors',size=(8,2)),sg.Button('draw_newshit',size=(8,2))],
                     [sg.Button('draw_fuckery',size=(8,2)), sg.Button('draw_z',size=(8,2)), sg.Button('draw_boxen',size=(8,2)), sg.Button('b2',size=(8,2)),sg.Button('draw_HRL_path',size=(8,2))],
                     [sg.Button('draw_HRL_orientation',size=(8,2)), sg.Button('worker_rewards',size=(8,2)), sg.Button('draw_manager_worker_comparison',size=(8,2)),sg.Button('draw_dxdy',size=(8,2))],
-                    [sg.Button('draw_number_achieved', size=(8,2)),sg.Button('draw_average_reward_hrl', size=(8,2)),sg.Button('draw_uppers',size=(8,2))]]
+                    [sg.Button('draw_number_achieved', size=(8,2)),sg.Button('draw_average_reward_hrl', size=(8,2)),sg.Button('draw_uppers',size=(8,2)),sg.Button('draw_XY',size=(8,2)), sg.Button('draw_Q_bins',size=(8,2))]]
 
     # define layout, show and read the window
     col = [[sg.Text(episode_files[0], size=(80, 3), key='-FILENAME-')],
@@ -447,6 +447,12 @@ def main():
             figure_canvas_agg.draw()
         elif event =='draw_uppers':
             backend.draw_uppers(folder)
+            figure_canvas_agg.draw()
+        elif event == 'draw_XY':
+            backend.draw_XY(folder)
+            figure_canvas_agg.draw()
+        elif event == 'draw_Q_bins':
+            backend.draw_Q_bins(folder)
             figure_canvas_agg.draw()
         elif event == 'Both Errors':
             backend.draw_both_errors(folder)

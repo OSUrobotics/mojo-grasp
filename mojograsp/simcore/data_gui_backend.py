@@ -126,6 +126,24 @@ def beefy_pool_process(episode_file):
         # print('episode keys are wrong. check pool_process in data_gui_backend.py with your state and reward keys')
     return point_list
 
+def slim_pool_process(episode_file):
+    with open(episode_file, 'rb') as ef:
+        tempdata = pkl.load(ef)
+
+    data = tempdata['timestep_list']
+    point_list = []
+
+    for timestep in data: 
+        row = [
+            timestep['state']['obj_2']['pose'][0][0], 
+            timestep['state']['obj_2']['pose'][0][1] - 0.1,  
+            timestep['state']['obj_2']['pose'][0][2],  
+            *timestep['state']['obj_2']['pose'][1][0:4]  
+        ]
+        point_list.append(row)
+
+    return point_list
+
 def real_world_beefy(episode_file):
     with open(episode_file, 'rb') as ef:
         tempdata = pkl.load(ef)
@@ -3813,6 +3831,81 @@ class PlotBackend():
             self.point_dictionary['Orientation Error'] = self.point_dictionary['Goal Orientation'] - self.point_dictionary['End Orientation']
             self.point_dictionary['Policy'] = self.point_dictionary['Path'].str.split('/').str[5]
             # print(self.point_dictionary['Policy'][0])
+
+    def build_slim(self, folder_path):
+        if not isinstance(folder_path, str):
+            raise ValueError('folder path must be a string')
+
+        episode_files = [
+            os.path.join(folder_path, f) for f in os.listdir(folder_path)
+            if f.lower().endswith('.pkl') and '2v2' not in f
+        ]
+        filenames_only = [os.path.basename(f) for f in episode_files]
+        filenums = [re.findall(r'\d+', f) for f in filenames_only]
+        final_filenums = [int(i[0]) for i in filenums if i]
+        sorted_inds = np.argsort(final_filenums)
+        episode_files = np.array(episode_files)[sorted_inds].tolist()
+
+
+        with multiprocessing.Pool() as pool:
+            data_list = pool.map(slim_pool_process, episode_files)
+
+        flattened_data = [row for episode in data_list for row in episode]
+        column_key = ['X', 'Y', 'Z', 'x_q', 'y_q', 'z_q', 'w_q']
+
+        # Store as DataFrame
+        self.point_dictionary = pd.DataFrame(flattened_data, columns=column_key)
+        # self.point_dictionary['Rounded X'] = self.point_dictionary['X'].apply(lambda x:np.round(x,3))
+        # self.point_dictionary['Rounded Y'] = self.point_dictionary['Y'].apply(lambda x:np.round(x,3))
+        # self.point_dictionary['Rounded Z'] = self.point_dictionary['Z'].apply(lambda x:np.round(x,3))
+
+    def draw_XY(self, folder_path):
+        if self.point_dictionary is None:
+            self.build_slim(folder_path)
+
+        self.clear_axes()
+        x = self.point_dictionary['X']
+        y = self.point_dictionary['Y']
+        
+        self.ax.scatter(x,y,s=2)
+        self.ax.set_xlabel('X position (cm)')
+        self.ax.set_ylabel('Y position (cm)')
+        self.ax.set_title('X-Y Map')
+
+    def draw_Q_bins(self, folder_path):
+        if self.point_dictionary is None:
+            self.build_slim(folder_path)
+
+        self.clear_axes()
+        qx = self.point_dictionary['x_q']
+        qy = self.point_dictionary['y_q']
+        qz = self.point_dictionary['z_q']
+        qw = self.point_dictionary['w_q']
+
+        # Convert quaternion to Euler angles
+        euler_angles = np.array([R.from_quat([qx[i], qy[i], qz[i], qw[i]]).as_euler('xyz', degrees=True) for i in range(len(qx))])
+        pitch = euler_angles[:, 0]
+        roll = euler_angles[:, 1]
+        yaw = euler_angles[:, 2]
+
+        # Create bins
+        pitch_bins = np.linspace(-180, 180, 40)
+        roll_bins = np.linspace(-180, 180, 40)
+        yaw_bins = np.linspace(-180, 180, 40)
+
+        pitch_hist, _ = np.histogram(pitch, bins=pitch_bins)
+        roll_hist, _ = np.histogram(roll, bins=roll_bins)
+        yaw_hist, _ = np.histogram(yaw, bins=yaw_bins)
+
+        # Plot histograms
+        self.ax.hist(pitch_bins[:-1], bins=pitch_bins, weights=pitch_hist, alpha=0.5, label='Pitch')
+        self.ax.hist(roll_bins[:-1], bins=roll_bins, weights=roll_hist, alpha=0.5, label='Roll')
+        self.ax.hist(yaw_bins[:-1], bins=yaw_bins, weights=yaw_hist, alpha=0.5, label='Yaw')
+        self.ax.set_xlabel('Angle (degrees)')
+        self.ax.set_ylabel('Frequency')
+        self.ax.set_title('Orientation Bins')
+        self.ax.legend()
+
 
     def draw_manager_worker_comparison(self, folder_path, tholds):
         if type(folder_path) is str:
