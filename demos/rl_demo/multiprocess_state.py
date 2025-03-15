@@ -20,6 +20,7 @@ import pandas as pd
 from sklearn.preprocessing import MinMaxScaler
 from demos.rl_demo.autoencoder import Autoencoder, load_trained_model
 import pickle as pkl
+from scipy.spatial.transform import Rotation as R
 import os
 
 class DictHolder():
@@ -69,7 +70,7 @@ class MultiprocessState(StateDefault):
         obj_path = self.objects[1].get_path()
         #print('OBJ PATH', obj_path)
         self.slice = pg.get_slice(obj_path)
-        print(len(self.slice))
+        #print(len(self.slice))
         for object in self.objects:
             if type(object) == TwoFingerGripper:
                 temp = object.link_lengths
@@ -157,35 +158,54 @@ class MultiprocessState(StateDefault):
         else : f2 = 0
         return f1,f2
     
+    # def get_dynamic(self, shape, pose, orientation):
+    #     """
+    #     Method that takes in the slice and the object pose and orientation and returns the dynamic state of the object
+    #     """
+    #     shape = np.hstack((shape, np.full((shape.shape[0], 1), 0.05)))
+    #     x, y, z = pose
+    #     a, b, c, w = orientation
+
+    #     # Normalize the quaternion to ensure proper rotation
+    #     norm = np.sqrt(a**2 + b**2 + c**2 + w**2)
+    #     a, b, c, w = a / norm, b / norm, c / norm, w / norm
+
+    #     # Construct the 3D rotation matrix from the quaternion
+    #     rotation_matrix = np.array([
+    #         [1 - 2 * (b**2 + c**2), 2 * (a * b - w * c),     2 * (a * c + w * b)],
+    #         [2 * (a * b + w * c),     1 - 2 * (a**2 + c**2), 2 * (b * c - w * a)],
+    #         [2 * (a * c - w * b),     2 * (b * c + w * a),   1 - 2 * (a**2 + b**2)]
+    #     ])
+
+    #     # Apply the rotation to the shape
+    #     shape = shape @ rotation_matrix.T
+
+    #     # Apply the translation
+    #     shape[:, 0] += x
+    #     shape[:, 1] += y
+    #     shape[:, 2] += z
+
+    #     return shape
+
     def get_dynamic(self, shape, pose, orientation):
         """
-        Method that takes in the slice and the object pose and orientation and returns the dynamic state of the object
+        Computes the dynamic state of the object by applying a quaternion rotation 
+        and translation to the input shape.
         """
-        shape = np.hstack((shape, np.full((shape.shape[0], 1), 0.05)))
+        shape = np.hstack((shape, np.full((shape.shape[0], 1), 0.0)))
+
         x, y, z = pose
-        a, b, c, w = orientation
+        quaternion = np.array(orientation)
 
-        # Normalize the quaternion to ensure proper rotation
-        norm = np.sqrt(a**2 + b**2 + c**2 + w**2)
-        a, b, c, w = a / norm, b / norm, c / norm, w / norm
+        rotation_matrix = R.from_quat(quaternion).as_matrix()
 
-        # Construct the 3D rotation matrix from the quaternion
-        rotation_matrix = np.array([
-            [1 - 2 * (b**2 + c**2), 2 * (a * b - w * c),     2 * (a * c + w * b)],
-            [2 * (a * b + w * c),     1 - 2 * (a**2 + c**2), 2 * (b * c - w * a)],
-            [2 * (a * c - w * b),     2 * (b * c + w * a),   1 - 2 * (a**2 + b**2)]
-        ])
-
-        # Apply the rotation to the shape
         shape = shape @ rotation_matrix.T
 
-        # Apply the translation
         shape[:, 0] += x
         shape[:, 1] += y
         shape[:, 2] += z
 
         return shape
-
 
     def set_state(self):
         """

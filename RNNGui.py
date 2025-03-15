@@ -344,10 +344,10 @@ class RNNGui():
 
         if values['-mslice']:
             # assert True == False, 'mslice not normalized properly'
-            for i in range(72):    
-                state_mins.extend([-0.100])
-                state_maxes.extend([0.100])
-                state_len +=1
+            for i in range(24):    
+                state_mins.extend([-0.1,0,0])
+                state_maxes.extend([0.1,0.2,0.1])
+                state_len +=3
             state_list.append('mslice')
 
         if values['-latent']:
@@ -370,6 +370,9 @@ class RNNGui():
             state_list.append('ra')
 
         # Anything before is duplicated !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+###################################################################################################################
+        # Anything after is not duplicated !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
         if self.args['pv'] > 0:
             state_len += state_len * self.args['pv']
             temp_mins = state_mins.copy()
@@ -378,7 +381,7 @@ class RNNGui():
                 state_mins.extend(temp_mins)
                 state_maxes.extend(temp_maxes)
 
-        # Anything after is not duplicated !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
 
         if values['-slice']:
             for i in range(48):    

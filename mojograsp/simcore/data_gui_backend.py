@@ -136,7 +136,7 @@ def slim_pool_process(episode_file):
     for timestep in data: 
         row = [
             timestep['state']['obj_2']['pose'][0][0], 
-            timestep['state']['obj_2']['pose'][0][1] - 0.1,  
+            timestep['state']['obj_2']['pose'][0][1],  
             timestep['state']['obj_2']['pose'][0][2],  
             *timestep['state']['obj_2']['pose'][1][0:4]  
         ]
