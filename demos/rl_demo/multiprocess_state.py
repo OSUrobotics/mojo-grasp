@@ -63,7 +63,7 @@ class MultiprocessState(StateDefault):
         self.p = pybullet_instance
         dirname, filename = os.path.split(os.path.abspath(__file__))
         # print(dirname)e
-        self.encoder = load_trained_model(dirname+'/best_autoencoder_16.pth',72,16,54)
+        self.encoder = load_trained_model(dirname+'/test_best_autoencoder_16.pth',72,16,55)
         with open(dirname+"/scaler.pkl", "rb") as f:
             self.loaded_scaler = pkl.load(f)
         self.objects = objects 
@@ -249,11 +249,16 @@ class MultiprocessState(StateDefault):
         self.current_state['slice'] = self.slice
         self.current_state['dynamic'] = self.get_dynamic(self.slice,self.current_state['obj_2']['pose'][0][0:3],self.current_state['obj_2']['pose'][1])
 
+        print('dynamic state', self.current_state['dynamic'].shape)
         # Latent Set Up
         dynamic_np = np.array(self.current_state['dynamic'].flatten()).reshape(1, -1)
+        print('dynamic_np', dynamic_np.shape)
         normalized_np = self.loaded_scaler.transform(dynamic_np)
-        normalized_state = torch.tensor(normalized_np.flatten(), dtype=torch.float32)
+        print("Shape after scaling:", normalized_np.shape)
+        normalized_state = torch.tensor(normalized_np, dtype=torch.float32).reshape(1, -1)
         encoder_state, _ = self.encoder(normalized_state)
+        print("Shape of encoder_state:", encoder_state.shape)
+        #print('normalized state', normalized_state)
         self.current_state['latent'] = encoder_state.detach().numpy()
 
         #self.current_state['f1_contact_distance'] = self.calc_distance(self.current_state['f1_contact_pos'],self.current_state['obj_2']['pose'][0][0:2])
@@ -298,9 +303,14 @@ class MultiprocessState(StateDefault):
         self.current_state['dynamic'] = self.get_dynamic(self.slice,self.current_state['obj_2']['pose'][0][0:3],self.current_state['obj_2']['pose'][1])
 
         dynamic_np = np.array(self.current_state['dynamic'].flatten()).reshape(1, -1)
+        #print("Shape of self.current_state['dynamic']:", np.array(self.current_state['dynamic'], dtype=object).shape)
+        #print("Shape after flattening:", dynamic_np.shape) 
         normalized_np = self.loaded_scaler.transform(dynamic_np)
-        normalized_state = torch.tensor(normalized_np.flatten(), dtype=torch.float32)
+        #print("Shape after scaling:", normalized_np.shape)
+        normalized_state = torch.tensor(normalized_np, dtype=torch.float32).reshape(1, -1)
+        #print('shape normalized state', normalized_state.shape)
         encoder_state, _ = self.encoder(normalized_state)
+        #print("Shape of encoder_state:", encoder_state.shape)
         self.current_state['latent'] = encoder_state.detach().numpy()
         #print('LATENT STATE', self.current_state['latent'])
 

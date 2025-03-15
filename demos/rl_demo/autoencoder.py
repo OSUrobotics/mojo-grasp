@@ -275,8 +275,8 @@ def main():
     print("Training complete with Weighted MSELoss!")
     """
 
-if __name__ == "__main__":
-    main()
+# if __name__ == "__main__":
+#     main()
 
 
 

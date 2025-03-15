@@ -418,7 +418,7 @@ class MultiprocessGymWrapper(gym.Env):
                         # state.extend(shape)
                         state.extend(state_container['previous_state'][i]['dynamic'].flatten())
                     elif key == 'latent':
-                        state.extend(state_container['previous_state'][i]['latent'])
+                        state.extend(state_container['previous_state'][i]['latent'].tolist()[0])
                     elif key == 'rad':
                         state.append(state_container['previous_state'][i]['f1_contact_distance'])
                         state.append(state_container['previous_state'][i]['f2_contact_distance'])
@@ -507,7 +507,7 @@ class MultiprocessGymWrapper(gym.Env):
                 # state.extend(shape)
                 state.extend(state_container['dynamic'].flatten())
             elif key == 'latent':
-                state.extend(state_container['latent'])
+                state.extend(state_container['latent'].tolist()[0])
 
             elif key == 'rad':
                 state.append(state_container['f1_contact_distance'])
@@ -520,7 +520,7 @@ class MultiprocessGymWrapper(gym.Env):
 
             else:
                 raise Exception('key does not match list of known keys')
-            
+        print('state list!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!', state)
         return state
     
     def build_mirror_state(self, state_container: State):
@@ -593,6 +593,7 @@ class MultiprocessGymWrapper(gym.Env):
                 state.extend([-temp[0],temp[1]])
             else:
                 raise Exception('key does not match list of known keys')
+
         return state
     
     def render(self):
