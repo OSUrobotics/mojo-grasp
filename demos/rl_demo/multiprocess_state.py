@@ -63,9 +63,11 @@ class MultiprocessState(StateDefault):
         self.p = pybullet_instance
         dirname, filename = os.path.split(os.path.abspath(__file__))
         # print(dirname)e
-        self.encoder = load_trained_model(dirname+'/test_best_autoencoder_16.pth',72,16,55)
+        self.encoder = load_trained_model(dirname+'/best_autoencoder_16.pth',72,16,55)
         with open(dirname+"/scaler.pkl", "rb") as f:
             self.loaded_scaler = pkl.load(f)
+        with open(dirname+"/output_scaler.pkl", "rb") as f:
+            self.output_scaler = pkl.load(f)
         with open(dirname+"/output_scaler.pkl", "rb") as f:
             self.output_scaler = pkl.load(f)
         self.objects = objects 
@@ -189,6 +191,27 @@ class MultiprocessState(StateDefault):
 
     #     return shape
 
+
+    def get_dynamic(self, shape, pose, orientation):
+        """
+        Computes the dynamic state of the object by applying a quaternion rotation 
+        and translation to the input shape.
+        """
+        shape = np.hstack((shape, np.full((shape.shape[0], 1), 0.0)))
+
+        x, y, z = pose
+        quaternion = np.array(orientation)
+
+        rotation_matrix = R.from_quat(quaternion).as_matrix()
+
+        shape = shape @ rotation_matrix.T
+
+        shape[:, 0] += x
+        shape[:, 1] += y
+        shape[:, 2] += z
+
+        return shape
+    
     def decode_latent(self, model, latent_vector, output_scaler):
         """
         Decodes a given latent space representation and scales the output back to its original scale.
@@ -227,26 +250,6 @@ class MultiprocessState(StateDefault):
         part_3 = reconstruction_unscaled[7:].reshape(-1, 2).tolist()  # 24 (x, y) pairs
         
         return (part_1, part_2, part_3)
-
-    def get_dynamic(self, shape, pose, orientation):
-        """
-        Computes the dynamic state of the object by applying a quaternion rotation 
-        and translation to the input shape.
-        """
-        shape = np.hstack((shape, np.full((shape.shape[0], 1), 0.0)))
-
-        x, y, z = pose
-        quaternion = np.array(orientation)
-
-        rotation_matrix = R.from_quat(quaternion).as_matrix()
-
-        shape = shape @ rotation_matrix.T
-
-        shape[:, 0] += x
-        shape[:, 1] += y
-        shape[:, 2] += z
-
-        return shape
 
     def set_state(self):
         """
@@ -289,28 +292,12 @@ class MultiprocessState(StateDefault):
         #What Jeremiah Is Adding
         self.current_state['slice'] = self.slice
         self.current_state['dynamic'] = self.get_dynamic(self.slice,self.current_state['obj_2']['pose'][0][0:3],self.current_state['obj_2']['pose'][1])
-
-        #print('dynamic state', self.current_state['dynamic'].shape)
-        # Latent Set Up
         dynamic_np = np.array(self.current_state['dynamic'].flatten()).reshape(1, -1)
-        #print('dynamic_np', dynamic_np.shape)
         normalized_np = self.loaded_scaler.transform(dynamic_np)
-        #print("Shape after scaling:", normalized_np.shape)
         normalized_state = torch.tensor(normalized_np, dtype=torch.float32).reshape(1, -1)
         encoder_state, _ = self.encoder(normalized_state)
-        #print("Shape of encoder_state:", encoder_state.shape)
-        #print('normalized state', normalized_state)
         self.current_state['latent'] = encoder_state.detach().numpy()
         self.current_state['remade'] = self.decode_latent(self.encoder, self.current_state['latent'], self.output_scaler)
-
-        #self.current_state['f1_contact_distance'] = self.calc_distance(self.current_state['f1_contact_pos'],self.current_state['obj_2']['pose'][0][0:2])
-        #self.current_state['f2_contact_distance'] = self.calc_distance(self.current_state['f2_contact_pos'],self.current_state['obj_2']['pose'][0][0:2])
-        #self.current_state['f1_contact_flag'], self.current_state['f2_contact_flag'] = self.check_contact() 
-        #self.current_state['f1_contact_angle'], self.current_state['f2_contact_angle'] = self.calc_contact_angle()
-
-        # print('object pose', self.current_state['obj_2']['pose'][0][0:2])
-        # print('sim state', self.current_state['two_finger_gripper']['joint_angles'])
-        # print('joint state', self.p.getJointState(self.objects[0].id,0))
         
     def init_state(self):
         """
@@ -345,26 +332,12 @@ class MultiprocessState(StateDefault):
         self.current_state['dynamic'] = self.get_dynamic(self.slice,self.current_state['obj_2']['pose'][0][0:3],self.current_state['obj_2']['pose'][1])
 
         dynamic_np = np.array(self.current_state['dynamic'].flatten()).reshape(1, -1)
-        #print("Shape of self.current_state['dynamic']:", np.array(self.current_state['dynamic'], dtype=object).shape)
-        #print("Shape after flattening:", dynamic_np.shape) 
         normalized_np = self.loaded_scaler.transform(dynamic_np)
-        #print("Shape after scaling:", normalized_np.shape)
         normalized_state = torch.tensor(normalized_np, dtype=torch.float32).reshape(1, -1)
-        #print('shape normalized state', normalized_state.shape)
         encoder_state, _ = self.encoder(normalized_state)
-        #print("Shape of encoder_state:", encoder_state.shape)
         self.current_state['latent'] = encoder_state.detach().numpy()
-        #print('LATENT STATE', self.current_state['latent'])
         self.current_state['remade'] = self.decode_latent(self.encoder, self.current_state['latent'], self.output_scaler)
 
-        # self.current_state['mslice'] = 0
-        # self.current_state['f1_contact_distance'] = self.calc_distance(self.current_state['f1_contact_pos'], self.current_state['obj_2']['pose'][0][0:2])
-        # self.current_state['f2_contact_distance'] = self.calc_distance(self.current_state['f2_contact_pos'], self.current_state['obj_2']['pose'][0][0:2]) 
-        # self.current_state['f1_contact_angle'], self.current_state['f2_contact_angle'] = self.calc_contact_angle()
-        # self.current_state['f1_contact_flag'], self.current_state['f2_contact_flag'] = self.check_contact()
-
-        # print('LENGTH OF CURRENT STATE')
-        # print(len(self.current_state))
 
         if self.pflag:
             for i in range(len(self.previous_states)):

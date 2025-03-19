@@ -16,7 +16,7 @@ def init_wandb():
             "input_dim": 72,
             "latent_dim": 16,
             "output_dim": 55,
-            "learning_rate": 0.001,
+            "learning_rate": 0.002,
             "epochs": 50,
             "batch_size": 64,
         }
@@ -135,7 +135,7 @@ def train_model(model, train_loader, test_loader, criterion, optimizer, config):
         # Save the best model
         if avg_test_loss < best_loss:
             best_loss = avg_test_loss
-            torch.save(model.state_dict(), "test_best_autoencoder_16.pth")
+            torch.save(model.state_dict(), "/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/best_autoencoder_16.pth")
             print(f"Best model saved with test loss: {best_loss:.5f}")
 
 def load_trained_model(model_path, input_dim, latent_dim, output_dim):
@@ -144,14 +144,14 @@ def load_trained_model(model_path, input_dim, latent_dim, output_dim):
     model.eval()  
     return model
 
-def save_scalers(input_scaler, output_scaler, input_filename="input_scaler.pkl", output_filename="output_scaler.pkl"):
+def save_scalers(input_scaler, output_scaler, input_filename="/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/input_scaler.pkl", output_filename="/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/output_scaler.pkl"):
     with open(input_filename, "wb") as f:
         pickle.dump(input_scaler, f)
     with open(output_filename, "wb") as f:
         pickle.dump(output_scaler, f)
     print(f"Input scaler saved as {input_filename} and output scaler saved as {output_filename}")
 
-def load_scalers(input_filename="input_scaler.pkl", output_filename="output_scaler.pkl"):
+def load_scalers(input_filename="/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/input_scaler.pkl", output_filename="/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/output_scaler.pkl"):
     with open(input_filename, "rb") as f:
         input_scaler = pickle.load(f)
     with open(output_filename, "rb") as f:
@@ -185,7 +185,7 @@ def test_single_row(model, df, input_scaler, output_scaler, input_dim, output_di
     # 4) Run the model
     input_tensor = torch.tensor(scaled_row_input, dtype=torch.float32)
     with torch.no_grad():
-        _, reconstruction = model(input_tensor)  # shape: (1, output_dim)
+        latent, reconstruction = model(input_tensor)  # shape: (1, output_dim)
 
     # 5) Inverse-scale reconstruction so it's comparable to ground truth in original scale
     reconstruction_np = reconstruction.cpu().numpy()  # still scaled, shape: (1, output_dim)
@@ -193,6 +193,7 @@ def test_single_row(model, df, input_scaler, output_scaler, input_dim, output_di
 
     # 6) Print results
     print("Row Index Used:", actual_index)
+    print("Latent :", latent[0].detach().numpy().round(4))
     print("Ground Truth (Original Scale):\n", ground_truth[0][:7].round(4))  
     print("Reconstructed Output (Original Scale):\n", reconstruction_unscaled[0][:7].round(4))  
 
@@ -231,11 +232,11 @@ def main():
     
     df = load_csv("final_data.csv")
     loaded_input_scaler, loaded_output_scaler = load_scalers("/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/input_scaler.pkl", "/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/output_scaler.pkl")
-    loaded_model = load_trained_model("/home/ubuntu/Mojograsp/mojo-grasp/test_best_autoencoder_16.pth", 72, 16, 55)
+    loaded_model = load_trained_model("/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/best_autoencoder_16.pth", 72, 16, 55)
     
     # Test a single (random) row from the original dataframe multiple times
-    # for i in range(10):
-    test_single_row(loaded_model, df, loaded_input_scaler, loaded_output_scaler,72, 55)
+    for i in range(10):
+        test_single_row(loaded_model, df, loaded_input_scaler, loaded_output_scaler,72, 55)
     
     """
 
@@ -252,7 +253,7 @@ def main():
     
     # Create autoencoder model
     model = Autoencoder(config.input_dim, config.latent_dim, config.output_dim)
-    save_model(model, "untrained_autoencoder.pth")
+    #save_model(model, "untrained_autoencoder.pth")
     
     # Save input and output scalers
     save_scalers(input_scaler, output_scaler)
@@ -280,8 +281,8 @@ def main():
     print("Training complete with Weighted MSELoss!")
     """
 
-# if __name__ == "__main__":
-#     main()
+if __name__ == "__main__":
+    main()
 
 
 

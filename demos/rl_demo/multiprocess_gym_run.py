@@ -36,6 +36,7 @@ from stable_baselines3.common.noise import NormalActionNoise
 from torch import nn
 from stable_baselines3.common.policies import ActorCriticPolicy
 import math
+import demos.rl_demo.point_generator as pg
 
 
 
@@ -921,6 +922,62 @@ def mirror_action(filename):
     actions = [[-a['action']['actor_output'][2],-a['action']['actor_output'][3],-a['action']['actor_output'][0],-a['action']['actor_output'][1]] 
                for a in episode_data['timestep_list']]
     return actions   
+
+def get_dynamic(shape, pose, orientation):
+    """
+    Computes the dynamic state of the object by applying a quaternion rotation 
+    and translation (only in x and y) to the input shape.
+    """
+    x, y, z = pose
+    quaternion = np.array(orientation)
+    shape = np.hstack((shape, np.full((shape.shape[0], 1), 0.0)))
+
+    rotation_matrix = R.from_quat(quaternion).as_matrix()
+
+    shape = shape @ rotation_matrix.T
+
+
+    #print(shape)
+    shape[:, 0] += x
+    shape[:, 1] += y
+    shape[:, 2] += z
+    # print('############################################')
+    # print(shape)
+    # print('############################################')
+    # print(shape.flatten())
+    #input('look at it?')
+
+    return shape
+
+# def get_dynamic(shape, pose, orientation):
+#     """
+#     Method that takes in the slice and the object pose and orientation and returns the dynamic state of the object
+#     """
+#     shape = np.hstack((shape, np.full((shape.shape[0], 1), 0.00)))
+#     x, y, z = pose
+#     a, b, c, w = orientation
+
+#     # Normalize the quaternion to ensure proper rotation
+#     norm = np.sqrt(a**2 + b**2 + c**2 + w**2)
+#     a, b, c, w = a / norm, b / norm, c / norm, w / norm
+
+#     # Construct the 3D rotation matrix from the quaternion
+#     rotation_matrix = np.array([
+#         [1 - 2 * (b**2 + c**2), 2 * (a * b - w * c),     2 * (a * c + w * b)],
+#         [2 * (a * b + w * c),     1 - 2 * (a**2 + c**2), 2 * (b * c - w * a)],
+#         [2 * (a * c - w * b),     2 * (b * c + w * a),   1 - 2 * (a**2 + b**2)]
+#     ])
+
+#     # Apply the rotation to the shape
+#     shape = shape @ rotation_matrix.T
+
+#     # Apply the translation
+#     shape[:, 0] += x
+#     shape[:, 1] += y
+#     shape[:, 2] += z
+
+#     return shape
+
         
 def replay(argpath, episode_path, object_path):
     # replays the exact behavior contained in a pkl file without any learning agent running
@@ -975,11 +1032,14 @@ def replay(argpath, episode_path, object_path):
     else:
         start_position = {'goal_position':[0,0]} #, 'fingers':temp}
         _ = eval_env.reset(start_position)
-    print(data['timestep_list'][0]['state']['goal_pose'])
+    #print(data['timestep_list'][0]['state']['goal_pose'])
     #print(data['timestep_list'][0]['state']['obj_2'])
     temp = data['timestep_list'][0]['state']['goal_pose']['goal_position']
     angle = data['timestep_list'][0]['state']['goal_pose']['goal_orientation']
     
+    visual_list = pg.get_slice(object_path)
+
+
     # for i in visual_list:
     #     eval_env.env.make_viz_point([i[0],i[1],0.0005])
 
@@ -1058,22 +1118,34 @@ def replay(argpath, episode_path, object_path):
 
     p2.configureDebugVisualizer(p2.COV_ENABLE_RENDERING,1)
     step_num = 0
-    print('starting position', f1_poses[0],f2_poses[0], joint_angles[0])
+    #print('starting position', f1_poses[0],f2_poses[0], joint_angles[0])
     # input('start')
     joints = []
     print("INITIAL")
-    print(p2.getBasePositionAndOrientation(eval_env.env.obj.id))
+    #print(p2.getBasePositionAndOrientation(eval_env.env.obj.id))
 
     for i,act in enumerate(actions):
         # print('action vs mirrored:', actions[i],act)
-        print('joints in pkl file',joint_angles[i])
+        #print('joints in pkl file',joint_angles[i])
         print(f'step {i}')
-        print(act)
+        #print(act)
         eval_env.step(np.array(act),viz=True)
         step_num +=1
-        print('reward from pickle', data['timestep_list'][i]['reward'])
-        print(p2.getBasePositionAndOrientation(eval_env.env.obj.id))
-        # input('next step?')
+        #print('reward from pickle', data['timestep_list'][i]['reward'])
+        pose, ori = p2.getBasePositionAndOrientation(eval_env.env.obj.id) 
+        print('position', pose)
+        x,y,z = pose
+        visual_list_2 = get_dynamic(visual_list,pose,ori)
+        print(max(visual_list_2[:,2]))
+        p = []
+        for i in visual_list_2:
+            pt = eval_env.env.make_viz_point([i[0],i[1],i[2]])
+            p.append(pt)
+            #print(p)
+        #input('clear?')
+        for pt in p:
+            eval_env.env.remove_viz_point(pt)
+        #input('next step?')
         # time.sleep(0.5)
         # print(f'finger poses in pkl file, {f1_poses[i]}, {f2_poses[i]}')
         # print(data['timestep_list'][i]['action'])
@@ -1214,6 +1286,6 @@ if __name__ == '__main__':
     #     multiprocess_evaluate_loaded('./data/Easy_Test/Latent_Easy/experiment_config.json',shape_key=item,hand="A", eval_set='single')
         # multiprocess_evaluate_loaded('./data/Dynamic_2/experiment_config.json',shape_key=item,hand="A", eval_set='single')
 
-    main('./data/Latent_Rot/Latent_10_Fixed/experiment_config.json', j_test='base')
-    #replay('./data/Full_Domain_Test/Dynamic/experiment_config.json', './data/Full_Domain_Test/Dynamic/pentagon_A/Episode_778.pkl', '/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/resources/object_models/Jeremiah_Shapes/40x40_triangle.urdf')
+    main('./data/Easy_Latent/experiment_config.json', j_test='base')
+    #replay('./data/Full_Domain_Test/Dynamic/experiment_config.json', './data/Full_Domain_Test/Dynamic/square_A/Episode_1180.pkl', '/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/resources/object_models/Jeremiah_Shapes/40x40_square.urdf')
     # replay('./data/NTestLayer/Dynamic/experiment_config.json', './data/NTestLayer/Dynamic/triangle_A/Episode_787.pkl')

@@ -170,6 +170,10 @@ class MultiprocessSingleShapeEnv(Environment):
         else:
             temp=self.p.loadURDF("sphere_1cm.urdf", basePosition=thing, baseOrientation=[0, 0, 0, 1], globalScaling=0.5)
             self.p.changeVisualShape(temp,-1,rgbaColor=[1,0,0,1])
+            return temp
+        
+    def remove_viz_point(self,point):
+        self.p.removeBody(point)
 
 
     def reset(self, obj_dict=None,finger_dict=None):
