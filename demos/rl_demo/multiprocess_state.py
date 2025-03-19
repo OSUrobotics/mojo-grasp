@@ -66,6 +66,8 @@ class MultiprocessState(StateDefault):
         self.encoder = load_trained_model(dirname+'/test_best_autoencoder_16.pth',72,16,55)
         with open(dirname+"/scaler.pkl", "rb") as f:
             self.loaded_scaler = pkl.load(f)
+        with open(dirname+"/output_scaler.pkl", "rb") as f:
+            self.output_scaler = pkl.load(f)
         self.objects = objects 
         obj_path = self.objects[1].get_path()
         #print('OBJ PATH', obj_path)
@@ -187,6 +189,45 @@ class MultiprocessState(StateDefault):
 
     #     return shape
 
+    def decode_latent(self, model, latent_vector, output_scaler):
+        """
+        Decodes a given latent space representation and scales the output back to its original scale.
+        
+        Parameters:
+        - model: The trained autoencoder model
+        - latent_vector: A tensor or numpy array representing the latent space input
+        - output_scaler: Scaler used to inverse transform the output back to original scale
+        - output_dim: Number of output dimensions (static representation size)
+        
+        Returns:
+        - A tuple containing:
+            - A list of 3 elements
+            - A list of 4 elements
+            - A list of 24 (x, y) coordinate pairs
+        """
+        # Ensure the input is a PyTorch tensor
+        if not isinstance(latent_vector, torch.Tensor):
+            latent_vector = torch.tensor(latent_vector, dtype=torch.float32)
+        
+        # Ensure correct shape (batch size of 1)
+        if latent_vector.dim() == 1:
+            latent_vector = latent_vector.unsqueeze(0)  # Shape: (1, latent_dim)
+        
+        # Decode the latent vector
+        with torch.no_grad():
+            reconstruction = model.decode(latent_vector)  # shape: (1, output_dim)
+        
+        # Convert to numpy and inverse transform
+        reconstruction_np = reconstruction.cpu().numpy()
+        reconstruction_unscaled = output_scaler.inverse_transform(reconstruction_np)[0]
+        
+        # Reshape the output into the required tuple format
+        part_1 = reconstruction_unscaled[:3].tolist()  # 3 elements
+        part_2 = reconstruction_unscaled[3:7].tolist()  # 4 elements
+        part_3 = reconstruction_unscaled[7:].reshape(-1, 2).tolist()  # 24 (x, y) pairs
+        
+        return (part_1, part_2, part_3)
+
     def get_dynamic(self, shape, pose, orientation):
         """
         Computes the dynamic state of the object by applying a quaternion rotation 
@@ -249,17 +290,18 @@ class MultiprocessState(StateDefault):
         self.current_state['slice'] = self.slice
         self.current_state['dynamic'] = self.get_dynamic(self.slice,self.current_state['obj_2']['pose'][0][0:3],self.current_state['obj_2']['pose'][1])
 
-        print('dynamic state', self.current_state['dynamic'].shape)
+        #print('dynamic state', self.current_state['dynamic'].shape)
         # Latent Set Up
         dynamic_np = np.array(self.current_state['dynamic'].flatten()).reshape(1, -1)
-        print('dynamic_np', dynamic_np.shape)
+        #print('dynamic_np', dynamic_np.shape)
         normalized_np = self.loaded_scaler.transform(dynamic_np)
-        print("Shape after scaling:", normalized_np.shape)
+        #print("Shape after scaling:", normalized_np.shape)
         normalized_state = torch.tensor(normalized_np, dtype=torch.float32).reshape(1, -1)
         encoder_state, _ = self.encoder(normalized_state)
-        print("Shape of encoder_state:", encoder_state.shape)
+        #print("Shape of encoder_state:", encoder_state.shape)
         #print('normalized state', normalized_state)
         self.current_state['latent'] = encoder_state.detach().numpy()
+        self.current_state['remade'] = self.decode_latent(self.encoder, self.current_state['latent'], self.output_scaler)
 
         #self.current_state['f1_contact_distance'] = self.calc_distance(self.current_state['f1_contact_pos'],self.current_state['obj_2']['pose'][0][0:2])
         #self.current_state['f2_contact_distance'] = self.calc_distance(self.current_state['f2_contact_pos'],self.current_state['obj_2']['pose'][0][0:2])
@@ -313,6 +355,7 @@ class MultiprocessState(StateDefault):
         #print("Shape of encoder_state:", encoder_state.shape)
         self.current_state['latent'] = encoder_state.detach().numpy()
         #print('LATENT STATE', self.current_state['latent'])
+        self.current_state['remade'] = self.decode_latent(self.encoder, self.current_state['latent'], self.output_scaler)
 
         # self.current_state['mslice'] = 0
         # self.current_state['f1_contact_distance'] = self.calc_distance(self.current_state['f1_contact_pos'], self.current_state['obj_2']['pose'][0][0:2])

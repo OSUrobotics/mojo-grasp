@@ -352,7 +352,7 @@ class RNNGui():
 
         if values['-latent']:
             for i in range(16):    
-                state_mins.extend([0])
+                state_mins.extend([-1])
                 state_maxes.extend([1])
                 state_len +=1
             state_list.append('latent')

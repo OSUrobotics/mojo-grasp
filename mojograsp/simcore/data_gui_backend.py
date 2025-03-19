@@ -1523,6 +1523,49 @@ class PlotBackend():
         self.ax.set_aspect('equal',adjustable='box')
         self.curr_graph = 'path'
 
+    def draw_reconstruction_error(self, data_dict):
+        data = data_dict['timestep_list']
+        episode_number = data_dict['number']
+
+        # Assuming 'data' is already defined and contains the appropriate structure
+        position_list = [f['state']['obj_2']['pose'][0] for f in data]
+        ori_list = [f['state']['obj_2']['pose'][1] for f in data]
+        shape_list = [f['state']['slice'] for f in data]  # shape_list should be a list of numerical values
+        remade = [f['state']['remade'] for f in data]
+
+        # Unpack remade into remade_pose, remade_ori, and remade_shape
+        remade_pose, remade_ori, remade_shape = zip(*remade)
+
+        # Convert the lists into NumPy arrays
+        remade_pose = np.array(remade_pose)
+        remade_ori = np.array(remade_ori)
+        remade_shape = np.array(remade_shape)
+        position_list = np.array(position_list)
+        ori_list = np.array(ori_list)
+        shape_list = np.array(shape_list)
+
+        # Function to calculate Euclidean distance using NumPy
+        def euclidean_distance_np(a, b):
+            return np.linalg.norm(a - b, axis=-1)
+
+        # Calculate the Euclidean distances for each corresponding pair
+        distance_position = euclidean_distance_np(position_list, remade_pose)
+        distance_ori = euclidean_distance_np(ori_list, remade_ori)
+
+        # Average the shape values at each iteration
+        # Here, we assume `shape_list` contains lists or numerical values for each iteration
+        # If it's a list of lists (e.g., 2D shape), we can average each list's elements
+        average_shape = np.mean(shape_list, axis=1)  # axis=1 averages over each iteration (each row)
+        distance_shape = euclidean_distance_np(average_shape, remade_shape)
+
+        # Print the distances and average shape values
+        print("Position Distances:", distance_position)
+        print("Orientation Distances:", distance_ori)
+        # print("Shape Distances:", distance_shape)
+        print("Average Shape at each iteration:", average_shape)
+
+
+
     def draw_obj_contacts(self, data_dict):
         episode_number = data_dict['number']
 

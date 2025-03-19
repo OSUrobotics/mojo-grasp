@@ -45,6 +45,11 @@ class Autoencoder(nn.Module):
         latent = self.encoder(x)
         reconstructed = self.decoder(latent)
         return latent, reconstructed
+    
+    def decode(self, latent):
+        """Decodes the latent representation back to the original space."""
+        reconstructed = self.decoder(latent)
+        return reconstructed
 
 
 ### Weighted MSE Loss ###

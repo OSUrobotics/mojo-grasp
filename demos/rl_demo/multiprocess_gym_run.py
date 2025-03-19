@@ -555,37 +555,27 @@ def multiprocess_evaluate_loaded(filepath, shape_key=None, hand='A', eval_set='f
         vec_env.env_method('evaluate', ht)
         vec_env.env_method('set_record_folder',shape_key+'_'+ht)
 
-        if eval_set =='single':
+        if eval_set == 'single':
             x_start = [x_start[0]]
             y_start = [y_start[0]]
-        elif eval_set == 'ori':
-            for x,y in zip(x_start, y_start):
-                tihng = {'goal_position':[x,y]}
-                print('THING', tihng)
+
+        for x, y in zip(x_start, y_start):
+            tihng = {'goal_position': [x, y]}
+            print('THING', tihng)
+
+            if eval_set == 'ori':
                 vec_env.env_method('set_reset_ori', tihng['goal_position'])
-                for _ in range(int(1200/16)):
-                    # print('about to reset')
-                    obs = vec_env.reset()
-                    # vec_env.env_method()
-                    done = [False, False]
-                    while not all(done):
-                        action, _ = model.predict(obs,deterministic=True)
-                        vec_env.step_async(action)
-                        obs, _, done, _ = vec_env.step_wait()
-        else:
-            for x,y in zip(x_start, y_start):
-                tihng = {'goal_position':[x,y]}
-                print('THING', tihng)
+            else:
                 vec_env.env_method('set_reset_point', tihng['goal_position'])
-                for _ in range(int(1200/16)):
-                    # print('about to reset')
-                    obs = vec_env.reset()
-                    # vec_env.env_method()
-                    done = [False, False]
-                    while not all(done):
-                        action, _ = model.predict(obs,deterministic=True)
-                        vec_env.step_async(action)
-                        obs, _, done, _ = vec_env.step_wait()
+
+            for _ in range(int(1200 / 16)):
+                obs = vec_env.reset()
+                done = [False, False]
+                while not all(done):
+                    action, _ = model.predict(obs, deterministic=True)
+                    vec_env.step_async(action)
+                    obs, _, done, _ = vec_env.step_wait()
+
     vec_env.env_method('disconnect')
 
 def asterisk_test(filepath,hand_type,frictionList = None, contactList = None):
@@ -1194,7 +1184,7 @@ def main(filepath = None,learn_type='run', num_cpu=16, j_test='base'):
 if __name__ == '__main__':
     import csv
 
-    # test_shape_list = ['square','square25','circle','circle25','triangle','triangle25','trapazoid','square_circle','pentagon']
+    test_shape_list = ['square']#,'square25','circle','circle25','triangle','triangle25','trapazoid','square_circle','pentagon']
     # test2 = ['square15', 'square2', 'square3', 'circle15', 'circle2','circle3', 'triangle15','triangle2','triangle3','teardrop',
     #          'teardrop15', 'teardrop2','teardrop3']
         # 'square':demo_path+"/resources/object_models/Jeremiah_Shapes/40x40_square.urdf",
@@ -1220,10 +1210,10 @@ if __name__ == '__main__':
         # 'trapazoid':demo_path+"/resources/object_models/Jeremiah_Shapes/trapazoid.urdf",
         # 'pentagon':demo_path+"/resources/object_models/Jeremiah_Shapes/pentagon.urdf",
         # 'square_circle' :demo_path+"/resources/object_models/Jeremiah_Shapes/square_circle.urdf"
-    # for item in test2:
-        # multiprocess_evaluate_loaded('./data/Static_1/experiment_config.json',shape_key=item,hand="A", eval_set='single')
+    # for item in test_shape_list:
+    #     multiprocess_evaluate_loaded('./data/Easy_Test/Latent_Easy/experiment_config.json',shape_key=item,hand="A", eval_set='single')
         # multiprocess_evaluate_loaded('./data/Dynamic_2/experiment_config.json',shape_key=item,hand="A", eval_set='single')
 
-    # main('./data/Static_1/experiment_config.json', j_test='base')
-    replay('./data/Full_Domain_Test/Dynamic/experiment_config.json', './data/Full_Domain_Test/Dynamic/pentagon_A/Episode_778.pkl', '/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/resources/object_models/Jeremiah_Shapes/40x40_triangle.urdf')
+    main('./data/Latent_Rot/Latent_10_Fixed/experiment_config.json', j_test='base')
+    #replay('./data/Full_Domain_Test/Dynamic/experiment_config.json', './data/Full_Domain_Test/Dynamic/pentagon_A/Episode_778.pkl', '/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/resources/object_models/Jeremiah_Shapes/40x40_triangle.urdf')
     # replay('./data/NTestLayer/Dynamic/experiment_config.json', './data/NTestLayer/Dynamic/triangle_A/Episode_787.pkl')
