@@ -1232,8 +1232,12 @@ def expert_data_test(filepath = None, num_cpu=16):
         model.save(filename+'/canceled_model')
 if __name__ == '__main__':
     import csv
-
-    test = ['square','square25','circle','circle25','triangle','triangle25','trapazoid','square_circle','pentagon']
+    folder_names = ['JA_S1','JA_S2','JA_S3','FTP_S1','FTP_S2','FTP_S3']
+    for i in folder_names:
+        multiprocess_evaluate_loaded('./data/N_HPC_slide_rerun/'+i+'/experiment_config.json',hand='A')
+        multiprocess_evaluate_loaded('./data/N_HPC_slide_rerun/'+i+'/experiment_config.json',hand='C')
+        
+    # test = ['square','square25','circle','circle25','triangle','triangle25','trapazoid','square_circle','pentagon']
     # test2 = ['square15', 'square2', 'square3', 'circle15', 'circle2','circle3', 'triangle15','triangle2','triangle3','teardrop',
     #          'teardrop15', 'teardrop2','teardrop3']
         # 'square':demo_path+"/resources/object_models/Jeremiah_Shapes/40x40_square.urdf",
@@ -1264,5 +1268,5 @@ if __name__ == '__main__':
         # multiprocess_evaluate_loaded('./data/Dynamic_2/experiment_config.json',shape_key=item,hand="A", eval_set='single')
 
     # main('./data/Static_1/experiment_config.json', j_test='base')
-    replay('./data/Full_Domain_Test/Dynamic/experiment_config.json', './data/Full_Domain_Test/Dynamic/pentagon_A/Episode_778.pkl', '/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/resources/object_models/Jeremiah_Shapes/40x40_triangle.urdf')
+    # replay('./data/Full_Domain_Test/Dynamic/experiment_config.json', './data/Full_Domain_Test/Dynamic/pentagon_A/Episode_778.pkl', '/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/resources/object_models/Jeremiah_Shapes/40x40_triangle.urdf')
     # replay('./data/NTestLayer/Dynamic/experiment_config.json', './data/NTestLayer/Dynamic/triangle_A/Episode_787.pkl')

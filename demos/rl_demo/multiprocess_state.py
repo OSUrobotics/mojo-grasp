@@ -68,7 +68,9 @@ class MultiprocessState(StateDefault):
         self.objects = objects 
         obj_path = self.objects[1].get_path()
         #print('OBJ PATH', obj_path)
-        self.slice = pg.get_slice(obj_path)
+        # NIGEL COMMENTED THIS OUT TO GET ONE LAST TEST RUN
+        # self.slice = pg.get_slice(obj_path)
+
         # print(len(self.slice))
         for object in self.objects:
             if type(object) == TwoFingerGripper:
@@ -226,15 +228,15 @@ class MultiprocessState(StateDefault):
             self.current_state['image'] = self.image_gen.draw_stamp(self.current_state['obj_2']['pose'],
                                                                 unreached_goals)
         #What Jeremiah Is Adding
-        self.current_state['slice'] = self.slice
-        self.current_state['dynamic'] = self.get_dynamic(self.slice,self.current_state['obj_2']['pose'][0][0:3],self.current_state['obj_2']['pose'][1])
+        # self.current_state['slice'] = self.slice
+        # self.current_state['dynamic'] = self.get_dynamic(self.slice,self.current_state['obj_2']['pose'][0][0:3],self.current_state['obj_2']['pose'][1])
 
         # Latent Set Up
-        dynamic_np = np.array(self.current_state['dynamic'].flatten()).reshape(1, -1)
-        normalized_np = self.loaded_scaler.transform(dynamic_np)
-        normalized_state = torch.tensor(normalized_np.flatten(), dtype=torch.float32)
-        encoder_state, _ = self.encoder(normalized_state)
-        self.current_state['latent'] = encoder_state.detach().numpy()
+        # dynamic_np = np.array(self.current_state['dynamic'].flatten()).reshape(1, -1)
+        # normalized_np = self.loaded_scaler.transform(dynamic_np)
+        # normalized_state = torch.tensor(normalized_np.flatten(), dtype=torch.float32)
+        # encoder_state, _ = self.encoder(normalized_state)
+        # self.current_state['latent'] = encoder_state.detach().numpy()
 
         #self.current_state['f1_contact_distance'] = self.calc_distance(self.current_state['f1_contact_pos'],self.current_state['obj_2']['pose'][0][0:2])
         #self.current_state['f2_contact_distance'] = self.calc_distance(self.current_state['f2_contact_pos'],self.current_state['obj_2']['pose'][0][0:2])
@@ -268,20 +270,22 @@ class MultiprocessState(StateDefault):
         #self.current_state['f2_contact_pos'] = list(temp2[6])
         self.current_state['hand_params'] = self.hand_params.copy()
         #What Jeremiah Is Adding
-        if 'upper_goal_position' in self.current_state['goal_pose'].keys():
-            unreached_goals = [[self.current_state['goal_pose']['upper_goal_position'][2*i],self.current_state['goal_pose']['upper_goal_position'][i*2+1]] for i,v in enumerate(self.current_state['goal_pose']['goals_open']) if v]
 
-            self.current_state['image'] = self.image_gen.draw_stamp(self.current_state['obj_2']['pose'],
-                                                                    unreached_goals)
-        self.current_state['slice'] = self.slice
+        # if 'upper_goal_position' in self.current_state['goal_pose'].keys():
+        #     unreached_goals = [[self.current_state['goal_pose']['upper_goal_position'][2*i],self.current_state['goal_pose']['upper_goal_position'][i*2+1]] for i,v in enumerate(self.current_state['goal_pose']['goals_open']) if v]
 
-        self.current_state['dynamic'] = self.get_dynamic(self.slice,self.current_state['obj_2']['pose'][0][0:3],self.current_state['obj_2']['pose'][1])
+        #     self.current_state['image'] = self.image_gen.draw_stamp(self.current_state['obj_2']['pose'],
+        #                                                             unreached_goals)
+        # self.current_state['slice'] = self.slice
 
-        dynamic_np = np.array(self.current_state['dynamic'].flatten()).reshape(1, -1)
-        normalized_np = self.loaded_scaler.transform(dynamic_np)
-        normalized_state = torch.tensor(normalized_np.flatten(), dtype=torch.float32)
-        encoder_state, _ = self.encoder(normalized_state)
-        self.current_state['latent'] = encoder_state.detach().numpy()
+        # self.current_state['dynamic'] = self.get_dynamic(self.slice,self.current_state['obj_2']['pose'][0][0:3],self.current_state['obj_2']['pose'][1])
+
+        # dynamic_np = np.array(self.current_state['dynamic'].flatten()).reshape(1, -1)
+        # normalized_np = self.loaded_scaler.transform(dynamic_np)
+        # normalized_state = torch.tensor(normalized_np.flatten(), dtype=torch.float32)
+        # encoder_state, _ = self.encoder(normalized_state)
+        # self.current_state['latent'] = encoder_state.detach().numpy()
+
         #print('LATENT STATE', self.current_state['latent'])
 
         # self.current_state['mslice'] = 0

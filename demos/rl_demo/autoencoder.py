@@ -8,6 +8,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import MinMaxScaler
 import pickle 
 import numpy as np
+import csv
 def init_wandb():
     wandb.init(
         project="autoencoder-project",
@@ -165,7 +166,8 @@ def test_single_row(model, df, input_scaler, input_dim, output_scaler, output_di
 def test_pickle_file(model, pkl_path, input_scaler, output_scaler):
     with open(pkl_path,'rb') as file:
         data = pickle.load(file)
-    
+    save_dict = {'autoencoder position':[], 'pickle file position':[],
+                 'autoencoder orientation':[], 'pickle file orientation':[]}
     data = data['timestep_list']
     for state_stuff in data:
         
@@ -173,22 +175,28 @@ def test_pickle_file(model, pkl_path, input_scaler, output_scaler):
         sample_input = state_stuff['dynamic']
         # sample_input[:,2] += 0.05
 
-        print(sample_input)
-        print(state_stuff['obj_2']['pose'])
+        # print(sample_input)
+        # print(state_stuff['obj_2']['pose'])
         scaled_sample_input = input_scaler.transform(np.reshape(sample_input,(1,72)))
         
         sample_tensor = torch.tensor(scaled_sample_input, dtype=torch.float32)
         latent, reconstruction = model(sample_tensor)
-        print("reconstruction:", np.shape(reconstruction))
+        # print("reconstruction:", np.shape(reconstruction))
         autoencoder_output = output_scaler.inverse_transform(reconstruction.detach())
-        print(np.shape(autoencoder_output))
-        print('autoencoder position',autoencoder_output[0][0:3])
+        # print(np.shape(autoencoder_output))
+        # print('autoencoder position',autoencoder_output[0][0:3])
         # print('recon position      ', reconstruction[0][0:3])
-        print('pickle file position',state_stuff['obj_2']['pose'][0])
-        print('autoencoder orientation',autoencoder_output[0][3:7])
+        # print('pickle file position',state_stuff['obj_2']['pose'][0])
+        # print('autoencoder orientation',autoencoder_output[0][3:7])
         # print('recon orientation      ', reconstruction[0][3:7])
-        print('pickle file orientation',state_stuff['obj_2']['pose'][1])
-        input('go?')
+        # print('pickle file orientation',state_stuff['obj_2']['pose'][1])
+        # input('go?')
+        save_dict['autoencoder position'].append(autoencoder_output[0][0:3])
+        save_dict['pickle file position'].append(state_stuff['obj_2']['pose'][0])
+        save_dict['autoencoder orientation'].append(autoencoder_output[0][3:7])
+        save_dict['pickle file orientation'].append(state_stuff['obj_2']['pose'][1])
+    thing = pd.DataFrame(save_dict)
+    thing.to_csv('reconstruction_stuff.csv')
 
 def main():
     """
