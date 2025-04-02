@@ -479,32 +479,6 @@ class MultiprocessGymWrapper(gym.Env):
                     # print(state_container)
                     state.extend(state_container['slice'].flatten())
             elif key == 'mslice':
-                # shape = state_container['slice']
-                # shape = np.hstack((shape, np.full((shape.shape[0], 1), 0.05)))
-                # x, y, z = state_container['obj_2']['pose'][0][0:3]  # Translation
-                # a, b, c, w = state_container['obj_2']['pose'][1]  # Quaternion components
-
-                # # Normalize the quaternion to ensure proper rotation
-                # norm = np.sqrt(a**2 + b**2 + c**2 + w**2)
-                # a, b, c, w = a / norm, b / norm, c / norm, w / norm
-
-                # # Construct the 3D rotation matrix from the quaternion
-                # rotation_matrix = np.array([
-                #     [1 - 2 * (b**2 + c**2), 2 * (a * b - w * c),     2 * (a * c + w * b)],
-                #     [2 * (a * b + w * c),     1 - 2 * (a**2 + c**2), 2 * (b * c - w * a)],
-                #     [2 * (a * c - w * b),     2 * (b * c + w * a),   1 - 2 * (a**2 + b**2)]
-                # ])
-
-                # # Apply the rotation to the shape
-                # shape = shape @ rotation_matrix.T
-
-                # # Apply the translation
-                # shape[:, 0] += x
-                # shape[:, 1] += y
-                # shape[:, 2] += z
-                # shape = shape.flatten()
-                # # Flatten the shape and extend the state
-                # state.extend(shape)
                 state.extend(state_container['dynamic'].flatten())
             elif key == 'latent':
                 state.extend(state_container['latent'].tolist()[0])

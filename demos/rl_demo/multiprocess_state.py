@@ -63,12 +63,10 @@ class MultiprocessState(StateDefault):
         self.p = pybullet_instance
         dirname, filename = os.path.split(os.path.abspath(__file__))
         # print(dirname)e
-        self.encoder = load_trained_model(dirname+'/best_autoencoder_16.pth',72,16,55)
-        with open(dirname+"/scaler.pkl", "rb") as f:
+        self.encoder = load_trained_model(dirname+'/test_best_autoencoder_16.pth',72,16,55)
+        with open(dirname+"/test_input_scaler.pkl", "rb") as f:
             self.loaded_scaler = pkl.load(f)
-        with open(dirname+"/output_scaler.pkl", "rb") as f:
-            self.output_scaler = pkl.load(f)
-        with open(dirname+"/output_scaler.pkl", "rb") as f:
+        with open(dirname+"/test_output_scaler.pkl", "rb") as f:
             self.output_scaler = pkl.load(f)
         self.objects = objects 
         obj_path = self.objects[1].get_path()
@@ -297,6 +295,7 @@ class MultiprocessState(StateDefault):
         normalized_state = torch.tensor(normalized_np, dtype=torch.float32).reshape(1, -1)
         encoder_state, _ = self.encoder(normalized_state)
         self.current_state['latent'] = encoder_state.detach().numpy()
+        #print(np.mean(self.current_state['latent']))
         self.current_state['remade'] = self.decode_latent(self.encoder, self.current_state['latent'], self.output_scaler)
         
     def init_state(self):
