@@ -392,31 +392,9 @@ class MultiprocessGymWrapper(gym.Env):
                         pass
                         # state.extend(state_container['previous_state'][i]['slice'].flatten())
                     elif key == 'mslice':
-                        # shape = state_container['previous_state'][i]['slice']
-                        # shape = np.hstack((shape, np.full((shape.shape[0], 1), 0.05)))
-                        # x, y, z = state_container['previous_state'][i]['obj_2']['pose'][0][0:3]
-                        # a, b, c, w = state_container['previous_state'][i]['obj_2']['pose'][1]
-
-                        # norm = np.sqrt(a**2 + b**2 + c**2 + w**2)
-                        # a, b, c, w = a / norm, b / norm, c / norm, w / norm
-
-                        # # Construct the 3D rotation matrix from the quaternion
-                        # rotation_matrix = np.array([
-                        #     [1 - 2 * (b**2 + c**2), 2 * (a * b - w * c),     2 * (a * c + w * b)],
-                        #     [2 * (a * b + w * c),     1 - 2 * (a**2 + c**2), 2 * (b * c - w * a)],
-                        #     [2 * (a * c - w * b),     2 * (b * c + w * a),   1 - 2 * (a**2 + b**2)]
-                        # ])
-
-                        # # Apply the rotation to the shape
-                        # shape = shape @ rotation_matrix.T
-
-                        # # Apply the translation
-                        # shape[:, 0] += x
-                        # shape[:, 1] += y
-                        # shape[:, 2] += z            
-                        # shape = shape.flatten()
-                        # state.extend(shape)
                         state.extend(state_container['previous_state'][i]['dynamic'].flatten())
+                    elif key == 'mat_comp':
+                        state.extend(state_container['previous_state'][i]['mat_comp'])
                     elif key == 'latent':
                         state.extend(state_container['previous_state'][i]['latent'].tolist()[0])
                     elif key == 'rad':
@@ -480,6 +458,8 @@ class MultiprocessGymWrapper(gym.Env):
                     state.extend(state_container['slice'].flatten())
             elif key == 'mslice':
                 state.extend(state_container['dynamic'].flatten())
+            elif key == 'mat_comp':
+                    state.extend(state_container['mat_comp'])
             elif key == 'latent':
                 state.extend(state_container['latent'].tolist()[0])
 

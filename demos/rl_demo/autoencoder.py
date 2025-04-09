@@ -10,80 +10,73 @@ import pickle
 import matplotlib.pyplot as plt
 import numpy as np
 from mpl_toolkits.mplot3d import Axes3D
-np.set_printoptions(suppress=True, precision=5, floatmode='fixed')
+import torch.nn.functional as F
+
+np.set_printoptions(suppress=True, precision=6, floatmode='fixed')
 
 def init_wandb():
     wandb.init(
-        project="autoencoder-project",
+        project="autoencoder_last-project",
         config={
             "input_dim": 72,     
             "latent_dim": 16,
-            "output_dim": 55,   
+            "output_dim": 72,   
             "learning_rate": 0.001,
-            "epochs": 100,
-            "batch_size": 4096,
-            "plane_loss_weight": 0.000
+            "epochs": 200,
+            "batch_size": 1024,
         }
     )
     return wandb.config
 
 class Autoencoder(nn.Module):
-    def __init__(self, input_dim, latent_dim, output_dim, dropout_prob=0.0):
+    def __init__(self, input_dim, latent_dim, output_dim):
         super(Autoencoder, self).__init__()
 
-        self.encoder = nn.Sequential(
-            nn.Linear(input_dim, 128),
-            nn.ReLU(),
-            nn.BatchNorm1d(128),
-            nn.Dropout(dropout_prob),
-            nn.Linear(128, 128),
-            nn.ReLU(),
-            nn.BatchNorm1d(128),
-            nn.Dropout(dropout_prob),
-            nn.Linear(128, latent_dim),
-            nn.Tanh()
-        )
-        self.decoder = nn.Sequential(
-            nn.Linear(latent_dim, 128),
-            nn.ReLU(),
-            nn.BatchNorm1d(128),
-            nn.Dropout(dropout_prob),
-            nn.Linear(128, 128),
-            nn.ReLU(),
-            nn.BatchNorm1d(128),
-            nn.Dropout(dropout_prob),
-            nn.Linear(128, output_dim),
-            nn.Tanh()
-        )
+        # Encoder layers
+        self.enc1 = nn.Linear(input_dim, 32)
+        self.bn1 = nn.BatchNorm1d(32)
+
+        self.enc2 = nn.Linear(32, 32)
+        self.bn2 = nn.BatchNorm1d(32)
+
+        self.enc3 = nn.Linear(32, 32)
+        self.bn3 = nn.BatchNorm1d(32)
+
+        self.enc4 = nn.Linear(32, latent_dim)  
+
+        # Decoder layers
+        self.dec1 = nn.Linear(latent_dim, 32)
+        self.dbn1 = nn.BatchNorm1d(32)
+
+        self.dec2 = nn.Linear(32, 32)
+        self.dbn2 = nn.BatchNorm1d(32)
+
+        self.dec3 = nn.Linear(32, 32)
+        self.dbn3 = nn.BatchNorm1d(32)
+
+        self.dec4 = nn.Linear(32, output_dim)
 
     def forward(self, x):
-        latent = self.encoder(x)
-        reconstructed = self.decoder(latent)
+        # Encoder
+        x1 = F.relu(self.bn1(self.enc1(x)))  
+        x2 = F.relu(self.bn2(self.enc2(x1)))
+        x3 = F.relu(self.bn3(self.enc3(x2)))
+        latent = torch.tanh(self.enc4(x3))   
+
+        # Decoder with skip connections
+        d1 = F.relu(self.dbn1(self.dec1(latent)))          
+        d2 = F.relu(self.dbn2(self.dec2(d1 + x3)))       
+        d3 = F.relu(self.dbn3(self.dec3(d2 + x2)))         
+        reconstructed = torch.tanh(self.dec4(d3 + x1))     
+
         return latent, reconstructed
 
     def decode(self, latent):
-        return self.decoder(latent)
-
-class WeightedMSELoss(nn.Module):
-    def __init__(self, weight_tensor):
-        super(WeightedMSELoss, self).__init__()
-        self.weight_tensor = weight_tensor
-
-    def forward(self, pred, target):
-        loss = (self.weight_tensor * (pred - target) ** 2).mean()
-        return loss
-
-def distance_from_plane_loss(recon, target):
-    target = target.view(-1, 24, 3)
-    recon = recon.view(-1, 24, 3)
-
-    centroid = target.mean(dim=1, keepdim=True)
-    centered = target - centroid
-    _, _, v = torch.linalg.svd(centered)
-    normal = v[:, -1, :].unsqueeze(1)  # shape: (B, 1, 3)
-
-    distances = torch.abs(torch.sum((recon - centroid) * normal, dim=2))
-    return distances.mean()
+        d1 = F.relu(self.dbn1(self.dec1(latent)))
+        d2 = F.relu(self.dbn2(self.dec2(d1)))  # No skip in decode-only
+        d3 = F.relu(self.dbn3(self.dec3(d2)))
+        reconstructed = torch.tanh(self.dec4(d3))
+        return reconstructed
 
 def evaluate_model(model, data_loader, criterion):
     model.eval()
@@ -118,8 +111,8 @@ def train_model(model, train_loader, test_loader, criterion, optimizer, config):
         })
 
         print(
-            f"Epoch {epoch + 1} | Train Loss: {avg_train_loss:.4f} | "
-            f"Test Loss: {avg_test_loss:.4f} | "
+            f"Epoch {epoch + 1} | Train Loss: {avg_train_loss:.5f} | "
+            f"Test Loss: {avg_test_loss:.5f} | "
         )
 
         if avg_test_loss < best_loss:
@@ -138,9 +131,6 @@ def test_single_row(model, df, input_scaler, output_scaler, input_dim, output_di
     # Get input (dynamic = last 72 columns)
     row_input = sample_df.iloc[:, -input_dim:].values
 
-    # Get ground truth quaternion (columns 3 to 6 inclusive)
-    ground_truth = sample_df.iloc[:, 3:7].values
-
     # Scale input and convert to tensor
     scaled_row_input = input_scaler.transform(row_input)
     input_tensor = torch.tensor(scaled_row_input, dtype=torch.float32)
@@ -149,29 +139,27 @@ def test_single_row(model, df, input_scaler, output_scaler, input_dim, output_di
     with torch.no_grad():
         _, reconstruction = model(input_tensor)
 
-    # Unscale output (predicted quaternion)
+    # Unscale output (reconstructed XYZ)
     reconstruction_np = reconstruction.cpu().numpy()
     reconstruction_unscaled = output_scaler.inverse_transform(reconstruction_np)
 
-    ground_truth_quat = ground_truth[0]
-    reconstructed_quat = reconstruction_unscaled[0]
+    # Reshape both ground truth and reconstruction to (24, 3)
+    gt_points = row_input.reshape(24, 3)
+    pred_points = reconstruction_unscaled.reshape(24, 3)
 
-    # Normalize quaternions (to compare orientation properly)
-    gt_norm = ground_truth_quat / np.linalg.norm(ground_truth_quat)
-    pred_norm = reconstructed_quat / np.linalg.norm(reconstructed_quat)
+    # Plot both sets of points on the same 3D scatter plot
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    ax.scatter(gt_points[:, 0], gt_points[:, 1], gt_points[:, 2], label='Ground Truth', marker='o')
+    ax.scatter(pred_points[:, 0], pred_points[:, 1], pred_points[:, 2], label='Reconstruction', marker='^')
 
-    # Dot product similarity (-1 to 1)
-    quat_dot = np.dot(gt_norm, pred_norm)
 
-    # Angular distance (in degrees)
-    quat_dot = np.clip(quat_dot, -1.0, 1.0)  # ensure within acos domain
-    angular_distance_deg = 2 * np.arccos(abs(quat_dot)) * 180 / np.pi
+    ax.set_zlim([0.025, 0.075])
 
-    print(f"\n[Row {actual_index}]")
-    print("Ground Truth Quaternion:     ", np.round(gt_norm, 5))
-    print("Reconstructed Quaternion:    ", np.round(pred_norm, 5))
-    print(f"Dot Product Similarity:      {quat_dot:.5f}")
-    print(f"Angular Distance (degrees):  {angular_distance_deg:.3f}°\n")
+    ax.set_title(f"3D Shape Reconstruction - Row {actual_index}")
+    ax.legend()
+    plt.show()
+
 
 def save_model(model, filename="untrained_autoencoder.pth"):
     torch.save(model.state_dict(), filename)
@@ -189,9 +177,7 @@ def load_csv(file_path):
 def preprocess_data(df, input_dim, output_dim, test_size=0.25):
     # Dynamic input (last 72 columns)
     data_x = df.iloc[:, -input_dim:].values
-
-    # Static output (first 55 columns)
-    data_y = df.iloc[:, :output_dim].values
+    data_y = df.iloc[:, -input_dim:].values
 
     input_scaler = MinMaxScaler()
     output_scaler = MinMaxScaler()
@@ -226,17 +212,17 @@ def load_scalers(input_filename="/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo
 
 def main():
 
+
     # Use this block only if you want to load and test an already trained model:
 
     df = load_csv("test_final_data.csv")
     loaded_input_scaler, loaded_output_scaler = load_scalers("/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/test_input_scaler.pkl", "/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/test_output_scaler.pkl")
-    loaded_model = load_trained_model("/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/test_best_autoencoder_16.pth", 72, 16, 55)
+    loaded_model = load_trained_model("/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/test_best_autoencoder_16.pth", 72, 16, 72)
     
     # Test a single (random) row from the original dataframe multiple times
-    for i in range(5):
-        test_single_row(loaded_model, df, loaded_input_scaler, loaded_output_scaler,72, 55)
+    for i in range(15):
+        test_single_row(loaded_model, df, loaded_input_scaler, loaded_output_scaler,72, 72)
     """
-
 
     config = init_wandb()
     df = load_csv("/home/ubuntu/Mojograsp/mojo-grasp/test_final_data.csv")
@@ -251,10 +237,7 @@ def main():
 
     save_scalers(input_scaler, output_scaler)
 
-    weights = torch.ones(config.output_dim, dtype=torch.float32)
-    weights[3:7] = 10.0  
-
-    criterion = WeightedMSELoss(weights)
+    criterion = nn.MSELoss()
     optimizer = optim.Adam(model.parameters(), lr=config.learning_rate)
 
     wandb.watch(model, log="all")

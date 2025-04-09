@@ -62,8 +62,9 @@ class MultiprocessState(StateDefault):
         super().__init__()
         self.p = pybullet_instance
         dirname, filename = os.path.split(os.path.abspath(__file__))
-        # print(dirname)e
-        self.encoder = load_trained_model(dirname+'/test_best_autoencoder_16.pth',72,16,55)
+        # print(dirname)
+        self.encoder = load_trained_model(dirname+'/test_best_autoencoder_16.pth',72,16,72)
+        self.encoder.eval()
         with open(dirname+"/test_input_scaler.pkl", "rb") as f:
             self.loaded_scaler = pkl.load(f)
         with open(dirname+"/test_output_scaler.pkl", "rb") as f:
@@ -208,7 +209,7 @@ class MultiprocessState(StateDefault):
         shape[:, 1] += y
         shape[:, 2] += z
 
-        return shape
+        return shape, rotation_matrix[:2, :].flatten().tolist()
     
     def decode_latent(self, model, latent_vector, output_scaler):
         """
@@ -289,14 +290,14 @@ class MultiprocessState(StateDefault):
                                                                 unreached_goals)
         #What Jeremiah Is Adding
         self.current_state['slice'] = self.slice
-        self.current_state['dynamic'] = self.get_dynamic(self.slice,self.current_state['obj_2']['pose'][0][0:3],self.current_state['obj_2']['pose'][1])
+        self.current_state['dynamic'], self.current_state['mat_comp'] = self.get_dynamic(self.slice,self.current_state['obj_2']['pose'][0][0:3],self.current_state['obj_2']['pose'][1])
         dynamic_np = np.array(self.current_state['dynamic'].flatten()).reshape(1, -1)
         normalized_np = self.loaded_scaler.transform(dynamic_np)
         normalized_state = torch.tensor(normalized_np, dtype=torch.float32).reshape(1, -1)
         encoder_state, _ = self.encoder(normalized_state)
         self.current_state['latent'] = encoder_state.detach().numpy()
         #print(np.mean(self.current_state['latent']))
-        self.current_state['remade'] = self.decode_latent(self.encoder, self.current_state['latent'], self.output_scaler)
+        #self.current_state['remade'] = self.decode_latent(self.encoder, self.current_state['latent'], self.output_scaler)
         
     def init_state(self):
         """
@@ -328,14 +329,14 @@ class MultiprocessState(StateDefault):
                                                                     unreached_goals)
         self.current_state['slice'] = self.slice
 
-        self.current_state['dynamic'] = self.get_dynamic(self.slice,self.current_state['obj_2']['pose'][0][0:3],self.current_state['obj_2']['pose'][1])
+        self.current_state['dynamic'], self.current_state['mat_comp'] = self.get_dynamic(self.slice,self.current_state['obj_2']['pose'][0][0:3],self.current_state['obj_2']['pose'][1])
 
         dynamic_np = np.array(self.current_state['dynamic'].flatten()).reshape(1, -1)
         normalized_np = self.loaded_scaler.transform(dynamic_np)
         normalized_state = torch.tensor(normalized_np, dtype=torch.float32).reshape(1, -1)
         encoder_state, _ = self.encoder(normalized_state)
         self.current_state['latent'] = encoder_state.detach().numpy()
-        self.current_state['remade'] = self.decode_latent(self.encoder, self.current_state['latent'], self.output_scaler)
+        #self.current_state['remade'] = self.decode_latent(self.encoder, self.current_state['latent'], self.output_scaler)
 
 
         if self.pflag:
