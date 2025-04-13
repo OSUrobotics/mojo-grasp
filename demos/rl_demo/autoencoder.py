@@ -22,7 +22,7 @@ def init_wandb():
             "latent_dim": 16,
             "output_dim": 72,   
             "learning_rate": 0.001,
-            "epochs": 200,
+            "epochs": 400,
             "batch_size": 1024,
         }
     )
@@ -32,7 +32,7 @@ class Autoencoder(nn.Module):
     def __init__(self, input_dim, latent_dim, output_dim):
         super(Autoencoder, self).__init__()
 
-        # Encoder layers
+        # Encoder
         self.enc1 = nn.Linear(input_dim, 32)
         self.bn1 = nn.BatchNorm1d(32)
 
@@ -42,9 +42,9 @@ class Autoencoder(nn.Module):
         self.enc3 = nn.Linear(32, 32)
         self.bn3 = nn.BatchNorm1d(32)
 
-        self.enc4 = nn.Linear(32, latent_dim)  
+        self.enc4 = nn.Linear(32, latent_dim)
 
-        # Decoder layers
+        # Decoder
         self.dec1 = nn.Linear(latent_dim, 32)
         self.dbn1 = nn.BatchNorm1d(32)
 
@@ -58,24 +58,24 @@ class Autoencoder(nn.Module):
 
     def forward(self, x):
         # Encoder
-        x1 = F.relu(self.bn1(self.enc1(x)))  
-        x2 = F.relu(self.bn2(self.enc2(x1)))
-        x3 = F.relu(self.bn3(self.enc3(x2)))
-        latent = torch.tanh(self.enc4(x3))   
+        x = F.relu(self.bn1(self.enc1(x)))
+        x = F.relu(self.bn2(self.enc2(x)))
+        x = F.relu(self.bn3(self.enc3(x)))
+        latent = torch.tanh(self.enc4(x))
 
-        # Decoder with skip connections
-        d1 = F.relu(self.dbn1(self.dec1(latent)))          
-        d2 = F.relu(self.dbn2(self.dec2(d1 + x3)))       
-        d3 = F.relu(self.dbn3(self.dec3(d2 + x2)))         
-        reconstructed = torch.tanh(self.dec4(d3 + x1))     
+        # Decoder (no skips)
+        x = F.relu(self.dbn1(self.dec1(latent)))
+        x = F.relu(self.dbn2(self.dec2(x)))
+        x = F.relu(self.dbn3(self.dec3(x)))
+        reconstructed = torch.tanh(self.dec4(x))
 
         return latent, reconstructed
 
     def decode(self, latent):
-        d1 = F.relu(self.dbn1(self.dec1(latent)))
-        d2 = F.relu(self.dbn2(self.dec2(d1)))  # No skip in decode-only
-        d3 = F.relu(self.dbn3(self.dec3(d2)))
-        reconstructed = torch.tanh(self.dec4(d3))
+        x = F.relu(self.dbn1(self.dec1(latent)))
+        x = F.relu(self.dbn2(self.dec2(x)))
+        x = F.relu(self.dbn3(self.dec3(x)))
+        reconstructed = torch.tanh(self.dec4(x))
         return reconstructed
 
 def evaluate_model(model, data_loader, criterion):
@@ -212,7 +212,7 @@ def load_scalers(input_filename="/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo
 
 def main():
 
-
+    """
     # Use this block only if you want to load and test an already trained model:
 
     df = load_csv("test_final_data.csv")
@@ -244,7 +244,7 @@ def main():
     train_model(model, train_loader, test_loader, criterion, optimizer, config)
     wandb.finish()
     print("Training complete with Weighted MSELoss!")
-    """
+
 
 if __name__ == "__main__":
     main()
