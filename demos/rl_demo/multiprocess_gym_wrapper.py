@@ -481,7 +481,7 @@ class MultiprocessGymWrapper(gym.Env):
 
             else:
                 raise Exception('key does not match list of known keys')
-        print('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!', 'Cor_ori ',state_container['corrected_orientation'], 'Ori', state_container['obj_2']['pose'][1])
+        #print('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!', 'Cor_ori ',state_container['corrected_orientation'], 'Ori', state_container['obj_2']['pose'][1])
         #print('state list!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!', state)
         return state
     

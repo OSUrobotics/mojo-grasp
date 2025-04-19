@@ -1162,7 +1162,7 @@ def cosine_annealing_with_restarts(initial_lr, min_lr=3e-5, t_initial=1e5, mult_
         return min_lr + (initial_lr - min_lr) * cosine_decay
     return schedule
 
-def main(filepath = None,learn_type='run', num_cpu=1, j_test='base'):
+def main(filepath = None,learn_type='run', num_cpu=16, j_test='base'):
     # Create the vectorized environment
     print('cuda y/n?', get_device())
     if filepath is None:
