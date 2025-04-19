@@ -71,8 +71,10 @@ class MultiprocessState(StateDefault):
             self.output_scaler = pkl.load(f)
         self.objects = objects 
         obj_path = self.objects[1].get_path()
+        self.ori_corrector = [0,0,0,0]
         #print('OBJ PATH', obj_path)
         self.slice = pg.get_slice(obj_path)
+        self.rotated_static = self.slice
         #print(len(self.slice))
         for object in self.objects:
             if type(object) == TwoFingerGripper:
@@ -160,36 +162,6 @@ class MultiprocessState(StateDefault):
             f2 = 1
         else : f2 = 0
         return f1,f2
-    
-    # def get_dynamic(self, shape, pose, orientation):
-    #     """
-    #     Method that takes in the slice and the object pose and orientation and returns the dynamic state of the object
-    #     """
-    #     shape = np.hstack((shape, np.full((shape.shape[0], 1), 0.05)))
-    #     x, y, z = pose
-    #     a, b, c, w = orientation
-
-    #     # Normalize the quaternion to ensure proper rotation
-    #     norm = np.sqrt(a**2 + b**2 + c**2 + w**2)
-    #     a, b, c, w = a / norm, b / norm, c / norm, w / norm
-
-    #     # Construct the 3D rotation matrix from the quaternion
-    #     rotation_matrix = np.array([
-    #         [1 - 2 * (b**2 + c**2), 2 * (a * b - w * c),     2 * (a * c + w * b)],
-    #         [2 * (a * b + w * c),     1 - 2 * (a**2 + c**2), 2 * (b * c - w * a)],
-    #         [2 * (a * c - w * b),     2 * (b * c + w * a),   1 - 2 * (a**2 + b**2)]
-    #     ])
-
-    #     # Apply the rotation to the shape
-    #     shape = shape @ rotation_matrix.T
-
-    #     # Apply the translation
-    #     shape[:, 0] += x
-    #     shape[:, 1] += y
-    #     shape[:, 2] += z
-
-    #     return shape
-
 
     def get_dynamic(self, shape, pose, orientation):
         """
@@ -249,6 +221,28 @@ class MultiprocessState(StateDefault):
         part_3 = reconstruction_unscaled[7:].reshape(-1, 2).tolist()  # 24 (x, y) pairs
         
         return (part_1, part_2, part_3)
+    
+    def correct_ori(self, corrector, current_orientation):
+        """
+        Corrects the orientation of the object based on the given corrector and current orientation.
+        
+        Parameters:
+        - corrector: The corrector quaternion
+        - current_orientation: The current orientation quaternion
+        
+        Returns:
+        - A list containing the corrected orientation
+        """
+        # Convert to numpy arrays
+        corrector = np.array(corrector)
+        current_orientation = np.array(current_orientation)
+        
+        # Perform quaternion multiplication
+        corrected_orientation = R.from_quat(corrector) * R.from_quat(current_orientation)
+        
+        # Return the corrected orientation as a list
+        return corrected_orientation.as_quat().tolist()
+
 
     def set_state(self):
         """
@@ -296,6 +290,10 @@ class MultiprocessState(StateDefault):
         normalized_state = torch.tensor(normalized_np, dtype=torch.float32).reshape(1, -1)
         encoder_state, _ = self.encoder(normalized_state)
         self.current_state['latent'] = encoder_state.detach().numpy()
+
+        #ADDED April 19th
+        self.current_state['corrected_orientation'] = self.correct_ori(self.ori_corrector,self.current_state['obj_2']['pose'][1])
+        self.current_state['rotated_static'] = self.rotated_static
         #print(np.mean(self.current_state['latent']))
         #self.current_state['remade'] = self.decode_latent(self.encoder, self.current_state['latent'], self.output_scaler)
         
@@ -336,8 +334,14 @@ class MultiprocessState(StateDefault):
         normalized_state = torch.tensor(normalized_np, dtype=torch.float32).reshape(1, -1)
         encoder_state, _ = self.encoder(normalized_state)
         self.current_state['latent'] = encoder_state.detach().numpy()
+        #ADDED April 19th
+        self.ori_corrector = self.current_state['obj_2']['pose'][1]
+        self.current_state['corrected_orientation'] = self.correct_ori(self.ori_corrector,self.current_state['obj_2']['pose'][1])
+        temp_shape = self.current_state['dynamic'].reshape(24,3)
+        self.rotated_static = temp_shape[:,:2]
+        self.current_state['rotated_static'] = self.rotated_static
+        ##################
         #self.current_state['remade'] = self.decode_latent(self.encoder, self.current_state['latent'], self.output_scaler)
-
 
         if self.pflag:
             for i in range(len(self.previous_states)):

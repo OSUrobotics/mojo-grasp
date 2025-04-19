@@ -1162,7 +1162,7 @@ def cosine_annealing_with_restarts(initial_lr, min_lr=3e-5, t_initial=1e5, mult_
         return min_lr + (initial_lr - min_lr) * cosine_decay
     return schedule
 
-def main(filepath = None,learn_type='run', num_cpu=16, j_test='base'):
+def main(filepath = None,learn_type='run', num_cpu=1, j_test='base'):
     # Create the vectorized environment
     print('cuda y/n?', get_device())
     if filepath is None:
@@ -1286,6 +1286,6 @@ if __name__ == '__main__':
     #     multiprocess_evaluate_loaded('./data/Easy_Test/Latent_Easy/experiment_config.json',shape_key=item,hand="A", eval_set='single')
         # multiprocess_evaluate_loaded('./data/Dynamic_2/experiment_config.json',shape_key=item,hand="A", eval_set='single')
 
-    main('./data/Easy_Latent/experiment_config.json', j_test='base')
+    main('./data/Rot_Slice_Test/experiment_config.json', j_test='base')
     #replay('./data/Full_Domain_Test/Dynamic/experiment_config.json', './data/Full_Domain_Test/Dynamic/square_A/Episode_1180.pkl', '/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/resources/object_models/Jeremiah_Shapes/40x40_square.urdf')
     # replay('./data/NTestLayer/Dynamic/experiment_config.json', './data/NTestLayer/Dynamic/triangle_A/Episode_787.pkl')

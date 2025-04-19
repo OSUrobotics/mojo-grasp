@@ -351,6 +351,8 @@ class MultiprocessGymWrapper(gym.Env):
                         state.extend(state_container['previous_state'][i]['obj_2']['pose'][0][0:3])
                     elif key == 'oo':
                         state.extend(state_container['previous_state'][i]['obj_2']['pose'][1])
+                    elif key == 'coo':
+                        state.extend(state_container['previous_state'][i]['corrected_orientation'])
                     elif key == 'oa':
                         state.extend([np.sin(state_container['previous_state'][i]['obj_2']['z_angle']),np.cos(state_container['previous_state'][i]['obj_2']['z_angle'])])
                     elif key == 'ftp':
@@ -391,6 +393,8 @@ class MultiprocessGymWrapper(gym.Env):
                     elif key == 'slice':
                         pass
                         # state.extend(state_container['previous_state'][i]['slice'].flatten())
+                    elif key == 'rslice':
+                        pass
                     elif key == 'mslice':
                         state.extend(state_container['previous_state'][i]['dynamic'].flatten())
                     elif key == 'mat_comp':
@@ -462,7 +466,10 @@ class MultiprocessGymWrapper(gym.Env):
                     state.extend(state_container['mat_comp'])
             elif key == 'latent':
                 state.extend(state_container['latent'].tolist()[0])
-
+            elif key == 'coo':
+                state.extend(state_container['corrected_orientation'])
+            elif key == 'rslice':
+                state.extend(state_container['rotated_static'].flatten())
             elif key == 'rad':
                 state.append(state_container['f1_contact_distance'])
                 state.append(state_container['f2_contact_distance'])
@@ -474,6 +481,7 @@ class MultiprocessGymWrapper(gym.Env):
 
             else:
                 raise Exception('key does not match list of known keys')
+        print('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!', 'Cor_ori ',state_container['corrected_orientation'], 'Ori', state_container['obj_2']['pose'][1])
         #print('state list!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!', state)
         return state
     

@@ -115,6 +115,7 @@ class RNNGui():
                        [sg.Checkbox('Joint Angle', default=False, k='-ja')],
                        [sg.Checkbox('Object Position', default=True, k='-op')],
                        [sg.Checkbox('Object Orientation', default=True, k='-oo')],
+                       [sg.Checkbox('Corrected Object Orientation', default=False, k='-coo')],
                        [sg.Checkbox('Object Angle', default=False,k='-oa')],
                        [sg.Checkbox('Finger Object Distance', default=False, k='-fod')],
                        [sg.Checkbox('Finger Tip Angle', default=False, k='-fta')],
@@ -130,6 +131,7 @@ class RNNGui():
                        [sg.Checkbox("Contact Distance", default=False, k='-rad')],
                        [sg.Checkbox("Contact Angle", default=False, k='-ra')],
                        [sg.Checkbox("Radius Representation", default=False, k='-slice')],
+                       [sg.Checkbox("Rotated Radius Representation", default=False, k='-rslice')],
                        [sg.Checkbox("Moving Radius Representation", default=False, k='-mslice')],
                        [sg.Checkbox("Latent Representation", default=False, k='-latent')],
                        [sg.Text('Num Previous States'), sg.Input(2, k='-pv',size=(8, 2)), sg.Text('Success Radius (mm)'), sg.Input(2, key='-sr',size=(8, 2))],
@@ -341,6 +343,11 @@ class RNNGui():
 
         #What Jereimah added
         #print('state list', state_list)
+        if values['-coo']:
+            state_mins.extend([-1,-1,-1,-1])
+            state_maxes.extend([1,1,1,1])
+            state_len += 4
+            state_list.append('coo')
 
         if values['-mslice']:
             # assert True == False, 'mslice not normalized properly'
@@ -389,6 +396,13 @@ class RNNGui():
                 state_maxes.extend([.03])
                 state_len +=1
             state_list.append('slice')
+
+        if values['-rslice']:
+            for i in range(48):    
+                state_mins.extend([-0.03])
+                state_maxes.extend([0.03])
+                state_len +=1
+            state_list.append('rslice')
 
         if state_len == 0:
             print('No selected state space')
