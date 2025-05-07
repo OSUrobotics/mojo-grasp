@@ -30,13 +30,23 @@ class MultiprocessRecordData(RecordDataRLPKL):
         self.current_episode["frictionList"] = frictionList
         self.current_episode["contactList"] = contactList
 
-    def set_folder(self,folder_name):
-        self.folder_name = folder_name
-        if not os.path.isdir(self.data_path+folder_name):
-            try:
-                os.mkdir(self.data_path+folder_name)
-            except:
-                print('threading shit')
+    def set_folder(self, folder_name, top_folder=None):
+        """
+        Sets self.folder_name to either folder_name or top_folder/folder_name,
+        and ensures that the directory exists under self.data_path.
+        """
+        if top_folder:
+            self.folder_name = os.path.join(top_folder, folder_name)
+        else:
+            self.folder_name = folder_name
+
+        folder_path = os.path.join(self.data_path, self.folder_name)
+
+        try:
+            os.makedirs(folder_path, exist_ok=True)
+        except Exception as e:
+            print(f"Failed to create folder {folder_path!r}: {e}")
+
 
     def save_episode(self,evaluated='train', filename=False, hand_type=None):
         """

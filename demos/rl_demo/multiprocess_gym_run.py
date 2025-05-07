@@ -440,7 +440,7 @@ def make_pybullet(arg_dict, pybullet_instance, rank, hand_info, frictionList = N
 
 
 
-def multiprocess_evaluate_loaded(filepath, shape_key=None, hand='A', eval_set='full'):
+def multiprocess_evaluate_loaded(filepath, shape_key=None, hand='A', ori=0, eval_set='full'):
     # load a trained model and test it on its test set
     import os
     demo_path = os.path.dirname(os.path.realpath(__file__))
@@ -554,9 +554,9 @@ def multiprocess_evaluate_loaded(filepath, shape_key=None, hand='A', eval_set='f
         y_start = df['y']
         # input(len(x_start))
         vec_env.env_method('evaluate', ht)
-        vec_env.env_method('set_record_folder',shape_key+'_'+ht)
+        vec_env.env_method('set_record_folder',shape_key+'_'+ht+'_'+str(ori), top_folder = 'Eval_Tests')
 
-        if eval_set == 'single':
+        if eval_set == 'single' or 'single_ori':
             x_start = [x_start[0]]
             y_start = [y_start[0]]
 
@@ -566,6 +566,8 @@ def multiprocess_evaluate_loaded(filepath, shape_key=None, hand='A', eval_set='f
 
             if eval_set == 'ori':
                 vec_env.env_method('set_reset_ori', tihng['goal_position'])
+            elif eval_set == 'single_ori':
+                vec_env.env_method('set_reset_single_ori', tihng['goal_position'], ori)
             else:
                 vec_env.env_method('set_reset_point', tihng['goal_position'])
 
@@ -579,7 +581,8 @@ def multiprocess_evaluate_loaded(filepath, shape_key=None, hand='A', eval_set='f
 
     vec_env.env_method('disconnect')
 
-def asterisk_test(filepath,hand_type,frictionList = None, contactList = None):
+def asterisk_test(filepath,hand_type,frictionList = None, contactList = None, shape=None, iteration = None):
+
     # load a trained model and test it on its test set
     print('Evaluating on hands A or B')
     print('Hand A: 2v2_50.50_50.50_53')
@@ -609,8 +612,44 @@ def asterisk_test(filepath,hand_type,frictionList = None, contactList = None):
         model_type = TD3
     print('LOADING A MODEL')
 
+    demo_path = os.path.dirname(os.path.realpath(__file__))
+
+    shape_dict = {'square':demo_path+"/resources/object_models/Jeremiah_Shapes/40x40_square.urdf",
+        'square15':demo_path+"/resources/object_models/Jeremiah_Shapes/40x40_square_15.urdf",
+        'square2':demo_path+"/resources/object_models/Jeremiah_Shapes/40x40_square_2.urdf",
+        'square25':demo_path+"/resources/object_models/Jeremiah_Shapes/40x40_square_25.urdf",
+        'square3':demo_path+"/resources/object_models/Jeremiah_Shapes/40x40_square_3.urdf",
+        'circle':demo_path+"/resources/object_models/Jeremiah_Shapes/20_r_circle.urdf",
+        'circle15':demo_path+"/resources/object_models/Jeremiah_Shapes/20_r_circle_15.urdf",
+        'circle2':demo_path+"/resources/object_models/Jeremiah_Shapes/20_r_circle_2.urdf",
+        'circle25':demo_path+"/resources/object_models/Jeremiah_Shapes/20_r_circle_25.urdf",
+        'circle3':demo_path+"/resources/object_models/Jeremiah_Shapes/20_r_circle_3.urdf",
+        'triangle':demo_path+"/resources/object_models/Jeremiah_Shapes/40x40_triangle.urdf",
+        'triangle15':demo_path+"/resources/object_models/Jeremiah_Shapes/40x40_triangle_15.urdf",
+        'triangle2':demo_path+"/resources/object_models/Jeremiah_Shapes/40x40_triangle_2.urdf",
+        'triangle25':demo_path+"/resources/object_models/Jeremiah_Shapes/40x40_triangle_25.urdf",
+        'triangle3':demo_path+"/resources/object_models/Jeremiah_Shapes/40x40_triangle_3.urdf",
+        'teardrop':demo_path+"/resources/object_models/Jeremiah_Shapes/50x30_teardrop.urdf",
+        'teardrop15':demo_path+"/resources/object_models/Jeremiah_Shapes/50x30_teardrop_15.urdf",
+        'teardrop2':demo_path+"/resources/object_models/Jeremiah_Shapes/50x30_teardrop_2.urdf",
+        'teardrop25':demo_path+"/resources/object_models/Jeremiah_Shapes/50x30_teardrop_25.urdf",
+        'teardrop3':demo_path+"/resources/object_models/Jeremiah_Shapes/50x30_teardrop_3.urdf",
+        'trapazoid':demo_path+"/resources/object_models/Jeremiah_Shapes/trapazoid.urdf",
+        'pentagon':demo_path+"/resources/object_models/Jeremiah_Shapes/pentagon.urdf",
+        'square_circle' :demo_path+"/resources/object_models/Jeremiah_Shapes/square_circle.urdf"
+        }
+
     # print('HARDCODING THE TEST PATH TO BE THE ROTATION TEST')
     # args['test_path'] ="/home/mothra/mojo-grasp/demos/rl_demo/resources/Solo_rotation_test.csv"
+    shape_key = shape
+    if shape_key is None:
+        print('no shape parameter provided, using the 1st shape in the config file')
+        print('to evaluate multiple shapes, call the function multiple times with different shapes each time')
+        args['object_path'] = [args['object_path'][0]]
+        shape_key = 'Ast_'
+    else:
+        shape_path = shape_dict[shape_key]
+        args['object_path'] = [shape_path]
 
     if not('contact_start' in args.keys()):
         args['contact_start'] = True
@@ -633,9 +672,9 @@ def asterisk_test(filepath,hand_type,frictionList = None, contactList = None):
         assert 1==0
 
     import pybullet as p2
-    eval_env , _, poses= make_pybullet(args,p2, [0,1], hand_params, viz=True)
+    eval_env , _, poses= make_pybullet(args,p2, [0,1], hand_params, viz=False)
     eval_env.evaluate()
-    eval_env.set_record_folder('Ast_'+hand_type)
+    eval_env.set_record_folder('Ast_' + hand_type + '_' + shape + '_' + str(iteration), top_folder = 'Ast_Tests')
     eval_env.reduced_saving = False
     model = model_type("MlpPolicy", eval_env, tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-2.3}).load(args['save_path']+'best_model', env=eval_env)
     eval_env.episode_type = 'asterisk'
@@ -683,7 +722,7 @@ def asterisk_test(filepath,hand_type,frictionList = None, contactList = None):
             obs = eval_env.reset()
             eval_env.manipulation_phase.state.objects[-1].set_all_pose(i)
             done = False
-            input('go')
+            #input('go')
             while not done:
                 action, _ = model.predict(obs,deterministic=True)
                 obs, _, done, _ = eval_env.step(action,hand_type=hand_type)
@@ -1256,36 +1295,60 @@ def main(filepath = None,learn_type='run', num_cpu=16, j_test='base'):
 if __name__ == '__main__':
     import csv
 
-    test_shape_list = ['square']#,'square25','circle','circle25','triangle','triangle25','trapazoid','square_circle','pentagon']
-    # test2 = ['square15', 'square2', 'square3', 'circle15', 'circle2','circle3', 'triangle15','triangle2','triangle3','teardrop',
-    #          'teardrop15', 'teardrop2','teardrop3']
-        # 'square':demo_path+"/resources/object_models/Jeremiah_Shapes/40x40_square.urdf",
-        # 'square15':demo_path+"/resources/object_models/Jeremiah_Shapes/40x40_square_15.urdf",
-        # 'square2':demo_path+"/resources/object_models/Jeremiah_Shapes/40x40_square_2.urdf",
-        # 'square25':demo_path+"/resources/object_models/Jeremiah_Shapes/40x40_square_25.urdf",
-        # 'square3':demo_path+"/resources/object_models/Jeremiah_Shapes/40x40_square_3.urdf",
-        # 'circle':demo_path+"/resources/object_models/Jeremiah_Shapes/20_r_circle.urdf",
-        # 'circle15':demo_path+"/resources/object_models/Jeremiah_Shapes/20_r_circle_15.urdf",
-        # 'circle2':demo_path+"/resources/object_models/Jeremiah_Shapes/20_r_circle_2.urdf",
-        # 'circle25':demo_path+"/resources/object_models/Jeremiah_Shapes/20_r_circle_25.urdf",
-        # 'circle3':demo_path+"/resources/object_models/Jeremiah_Shapes/20_r_circle_3.urdf",
-        # 'triangle':demo_path+"/resources/object_models/Jeremiah_Shapes/40x40_triangle.urdf",
-        # 'triangle15':demo_path+"/resources/object_models/Jeremiah_Shapes/40x40_triangle_15.urdf",
-        # 'triangle2':demo_path+"/resources/object_models/Jeremiah_Shapes/40x40_triangle_2.urdf",
-        # 'triangle25':demo_path+"/resources/object_models/Jeremiah_Shapes/40x40_triangle_25.urdf",
-        # 'triangle3':demo_path+"/resources/object_models/Jeremiah_Shapes/40x40_triangle_3.urdf",
-        # 'teardrop':demo_path+"/resources/object_models/Jeremiah_Shapes/50x30_teardrop.urdf",
-        # 'teardrop15':demo_path+"/resources/object_models/Jeremiah_Shapes/50x30_teardrop_15.urdf",
-        # 'teardrop2':demo_path+"/resources/object_models/Jeremiah_Shapes/50x30_teardrop_2.urdf",
-        # 'teardrop25':demo_path+"/resources/object_models/Jeremiah_Shapes/50x30_teardrop_25.urdf",
-        # 'teardrop3':demo_path+"/resources/object_models/Jeremiah_Shapes/50x30_teardrop_3.urdf",
-        # 'trapazoid':demo_path+"/resources/object_models/Jeremiah_Shapes/trapazoid.urdf",
-        # 'pentagon':demo_path+"/resources/object_models/Jeremiah_Shapes/pentagon.urdf",
-        # 'square_circle' :demo_path+"/resources/object_models/Jeremiah_Shapes/square_circle.urdf"
-    # for item in test_shape_list:
-    #     multiprocess_evaluate_loaded('./data/Easy_Test/Latent_Easy/experiment_config.json',shape_key=item,hand="A", eval_set='single')
-        # multiprocess_evaluate_loaded('./data/Dynamic_2/experiment_config.json',shape_key=item,hand="A", eval_set='single')
+    test_shape_list = ['square','square25','circle','circle25','triangle','triangle25','trapazoid','square_circle','pentagon']
 
-    main('./data/Rot_Slice_Test/experiment_config.json', j_test='base')
+    
+    # angle = 0 #(in radians)
+    # for item in test_shape_list:
+    #     multiprocess_evaluate_loaded('./data/Full_90_2/SD_90_1/experiment_config.json',shape_key=item,hand="A", eval_set='single_ori', ori=angle)
+    #     multiprocess_evaluate_loaded('./data/Full_90_2/SD_90_2/experiment_config.json',shape_key=item,hand="A", eval_set='single_ori', ori=angle)
+    #     multiprocess_evaluate_loaded('./data/Full_90_2/SL_90_1/experiment_config.json',shape_key=item,hand="A", eval_set='single_ori', ori=angle)
+    #     multiprocess_evaluate_loaded('./data/Full_90_2/SL_90_2/experiment_config.json',shape_key=item,hand="A", eval_set='single_ori', ori=angle)
+
+    angle_list = [1.21538, 0.21243, 0.53392, 0.28959, -0.87162, -1.50185, 0.83918, -0.14781, -0.48328, -1.0089] # RADIANS
+    # angle_list_2 = [round((num * 180 / np.pi),2) for num in angle_list]
+    # print(sorted(angle_list_2))
+    start_i = 6   # resume from i=6
+    errors = []   # to record any failures
+
+    for i, rad in enumerate(angle_list[start_i:], start=start_i):
+        print(f"\n=== Starting iteration {i} (rad={rad}) ===")
+        for shape in test_shape_list:
+            for path in [
+                './data/Full_Set_90/Static90/experiment_config.json',
+                './data/Full_Set_90/Dynamic90/experiment_config.json',
+                './data/Full_Set_90/Latent90/experiment_config.json',
+                './data/Full_Set_90/SD90/experiment_config.json',
+                './data/Full_Set_90/SL90/experiment_config.json',
+                './data/New_Static_90/experiment_config.json',
+                './data/Full_90_2/Dynamic_90_1/experiment_config.json',
+                './data/Full_90_2/Dynamic_90_2/experiment_config.json',
+                './data/Full_90_2/Static_90_1/experiment_config.json',
+                './data/Full_90_2/Static_90_2/experiment_config.json',
+                './data/Full_90_2/Latent_90_1/experiment_config.json',
+                './data/Full_90_2/Latent_90_2/experiment_config.json',
+                './data/Full_90_2/SD_90_1/experiment_config.json',
+                './data/Full_90_2/SD_90_2/experiment_config.json',
+                './data/Full_90_2/SL_90_1/experiment_config.json',
+                './data/Full_90_2/SL_90_2/experiment_config.json',
+                './data/Corrected_Static_Runs/Corrected_Static_90_1/experiment_config.json'
+            ]:
+                try:
+                    asterisk_test(
+                        filepath=path,
+                        hand_type="A",
+                        shape=shape,
+                        iteration=i
+                    )
+                except Exception as e:
+                    # record the failure but keep going
+                    errors.append((i, rad, shape, path, str(e)))
+                    print(f"  ✗ Error at i={i}, shape={shape}, path={path}: {e}")
+
+        print(f"=== Finished iteration {i} ===")
+
+    #multiprocess_evaluate_loaded('./data/New_Static_90/experiment_config.json', shape_key='square', eval_set='single_ori', ori=45)
+
+    #main('./data/Corrected_Static_Runs/Corrected_Static_90_2/experiment_config.json', j_test='base')
     #replay('./data/Full_Domain_Test/Dynamic/experiment_config.json', './data/Full_Domain_Test/Dynamic/square_A/Episode_1180.pkl', '/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/resources/object_models/Jeremiah_Shapes/40x40_square.urdf')
     # replay('./data/NTestLayer/Dynamic/experiment_config.json', './data/NTestLayer/Dynamic/triangle_A/Episode_787.pkl')

@@ -2202,7 +2202,7 @@ class PlotBackend():
         self.ax.set_ylim([0.0,0.2])
         self.ax.set_aspect('equal',adjustable='box')
 
-    def draw_radar(self,folder_list,legend_thing):
+    def draw_radar(self,folder_list,legend_thing=None):
         # folder list should be 3 asterisk test folders from the same configuration but different random seeds
         episode_files = []
         for folder_or_data_dict in folder_list:
@@ -2290,7 +2290,7 @@ class PlotBackend():
                 pass
         finals.append(finals[0])
         finals = np.array(finals)
-        print(legend_thing)
+        #print(legend_thing)
         print(f'net efficiency: {np.average(net_efficiency)}, {np.std(net_efficiency)}')
         # print('total distance from the avg',np.sum(np.linalg.norm(finals[0:8],axis=1)))
         print(f'what we need. mean: {np.average(alls)*8}, {np.std(alls)}')
@@ -2305,7 +2305,7 @@ class PlotBackend():
         self.ax.set_ylim([0.02,0.18])
         self.ax.set_xlabel('X pos (m)')
         self.ax.set_ylabel('Y pos (m)')
-        self.legend.append(legend_thing)
+        #self.legend.append(legend_thing)
         # self.ax.legend(self.legend)
         self.ax.set_aspect('equal',adjustable='box')
         if self.counter ==0:
@@ -2904,6 +2904,24 @@ class PlotBackend():
         print(f'average end distance {mean} +/- {std}')
         self.click_spell = None
         return [mean, std]
+    
+    def end_distance_return(self, folder_path):
+        if self.point_dictionary is None:
+            self.build_beefy(folder_path)
+        return self.point_dictionary['End Distance']
+    
+    def ast_return(self, folder_path):
+        if self.point_dictionary is None:
+            self.build_beefy(folder_path)
+            Sx = self.point_dictionary['Start X']
+            Sy = self.point_dictionary['Start Y']
+            Gx = self.point_dictionary['Goal X']
+            Gy = self.point_dictionary['Goal Y']
+            Ex = self.point_dictionary['End X']
+            Ey = self.point_dictionary['End Y']
+        return [Sx, Sy, Gx, Gy, Ex, Ey]
+
+
 
     def draw_scatter_spell(self, clicks, cmap='plasma'):
         if self.point_dictionary is None:

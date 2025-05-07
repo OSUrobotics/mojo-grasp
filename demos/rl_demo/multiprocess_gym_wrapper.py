@@ -200,6 +200,10 @@ class MultiprocessGymWrapper(gym.Env):
             orientation = np.random.uniform(-np.pi,np.pi)
             self.eval_point = {'translation':point,'rotation':orientation}
 
+    def set_reset_single_ori(self, point ,ori):
+        print('Setting starting ori to :', ori)
+        self.eval_point = {'translation':point,'rotation':ori}
+
     def set_reduced_save_type(self,ting):
         self.reduced_saving = ting
 
@@ -577,8 +581,8 @@ class MultiprocessGymWrapper(gym.Env):
         self.hand_type = ht
         self.record.set_folder('Test')
 
-    def set_record_folder(self,folder):
-        self.record.set_folder(folder)
+    def set_record_folder(self,folder,top_folder = None):
+        self.record.set_folder(folder, top_folder)
 
     def train(self):
         # print('Train TRIGGERED ', self.env.obj.path)
