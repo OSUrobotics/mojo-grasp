@@ -72,13 +72,16 @@ def main():
                         [sg.Button('Orientation Wizard', size=(8,2)), sg.Button('Orientation Scatter Spell', size=(8,2)), sg.Button('Orientation Multi', key='Orientation Multi',size=(8, 2)), sg.Button('Rotation Sliding Error', size=(8,2)), sg.Button('Orientation Spell',size=(8,2))],
                         [sg.Button('OR bucket', size=(8,2)), sg.Button('Orientation Single Region', size=(8, 2)), sg.Button('Success Scatter',size=(8,2)), sg.Button('Shenanigans',size=(8,2)), sg.Button('Contact Spell',size = (8,2))],
                         [sg.Button('Explored Region', size=(8,2)), sg.Button('Reward Comparison', size=(8,2)), sg.Button('Timestep Best',size=(8,2)), sg.Button('Finger Object Avg', size=(8,2)),sg.Button('Scatter Scaled',size=(8,2))],
-                        [sg.Button('End Region', size=(8,2)), sg.Button('Max Percent', size=(8,2)),sg.Button('Timestep End',size=(8,2)), sg.Button('Finger Object Max', size=(8,2)), sg.Button('Success Rate', size=(8,2))]]
+                        [sg.Button('End Region', size=(8,2)), sg.Button('Max Percent', size=(8,2)),sg.Button('Timestep End',size=(8,2)), sg.Button('Finger Object Max', size=(8,2)), sg.Button('Success Rate', size=(8,2))],
+                        [sg.Button('draw_start_end_bins',size=(8,2))]]
 
     plot_buttons = [[sg.Button('Object Path', size=(8, 2)), sg.Button('Finger Angles', size=(8, 2)), sg.Button('Finger Contact Distance',size=(8, 2)), sg.Button('Rewards', size=(8, 2)),sg.Button('BINGO',size=(8,2))],
                     [sg.Button('Fingertip Path', size=(8,2)), sg.Button('Actor Output', size=(8, 2)), sg.Button('Object Goal Distance',size=(8, 2)),sg.Button('Big Success',size=(8,2)),sg.Button('Load Dictionary',size=(8,2))],
                     [sg.Button('Obj Contacts', size=(8,2)), sg.Button('Aout Comparison', size=(8, 2)),sg.Button('Orientation', size=(8,2)), sg.Button('Multireward', size=(8,2)),sg.Button('Save Dictionary',size=(8,2))],
                     [sg.Button('Finger Goal Path',size=(8,2)),sg.Button('Sampled Poses', size=(8,2)),sg.Button('draw_scatter_max_end',size=(8,2)),sg.Button('Both Errors',size=(8,2)),sg.Button('draw_newshit',size=(8,2))],
-                    [sg.Button('draw_fuckery'), sg.Button('draw_z'), sg.Button('draw_boxen'), sg.Button('b2')]]
+                    [sg.Button('draw_fuckery',size=(8,2)), sg.Button('draw_z',size=(8,2)), sg.Button('draw_boxen',size=(8,2)), sg.Button('b2',size=(8,2)),sg.Button('draw_HRL_path',size=(8,2))],
+                    [sg.Button('draw_HRL_orientation',size=(8,2)), sg.Button('worker_rewards',size=(8,2)), sg.Button('draw_manager_worker_comparison',size=(8,2)),sg.Button('draw_dxdy',size=(8,2))],
+                    [sg.Button('draw_number_achieved', size=(8,2)),sg.Button('draw_average_reward_hrl', size=(8,2)),sg.Button('draw_uppers',size=(8,2))]]
 
     # define layout, show and read the window
     col = [[sg.Text(episode_files[0], size=(80, 3), key='-FILENAME-')],
@@ -97,7 +100,7 @@ def main():
                  [sg.Listbox(values=filenames_only, size=(60, 30), key='-LISTBOX-', enable_events=True)],
                  [sg.Text('Select an episode.  Use scrollwheel or arrow keys on keyboard to scroll through files one by one.')],
                  [sg.Text('Timestep for Completion'), sg.Input(15,size=(5,1),key='tstep')],
-                 [sg.Text('Reward Function'),sg.OptionMenu(values=('Sparse','Distance','Distance + Finger', 'Hinge Distance + Finger', 'Slope', 'Slope + Finger','SmartDistance + Finger','SmartDistance + SmartFinger','ScaledDistance + Finger','ScaledDistance+ScaledFinger', 'SFS','DFS','TripleScaled',"full", "full+finger","Rotation", "Rotation+Finger", "continuous_finger", "end_finger"), k='-rf',default_value='TripleScaled')],
+                 [sg.Text('Reward Function'),sg.OptionMenu(values=('Sparse','Distance','Distance + Finger', 'Hinge Distance + Finger', 'Slope', 'Slope + Finger','SmartDistance + Finger','SmartDistance + SmartFinger','ScaledDistance + Finger','ScaledDistance+ScaledFinger', 'SFS','DFS','TripleScaled',"full", "full+finger","Rotation", "Rotation+Finger", "continuous_finger", "end_finger", "Manager","manager_alt_1", "Worker","worker slide only","worker normalized","worker with finger"), k='-rf',default_value='TripleScaled')],
                  [sg.Text('Colormap'),sg.Input('plasma_r',key='-cmap',size=(8, 1))],
                  [sg.Text('Num Averaged'),sg.Input(1200,key='moving_avg',size=(8,2)), sg.Text("Keep previous graph", key='-toggletext-'), sg.Button(image_data=toggle_btn_off, key='-TOGGLE-GRAPHIC-', button_color=(sg.theme_background_color(), sg.theme_background_color()), border_width=0, metadata=False)],
                  [sg.Text('Translational Success Threshold (mm)'),sg.Input(10,key='success_range', size=(8,1))],
@@ -207,6 +210,9 @@ def main():
             rot_success = float(values['rot_success_range'])
             backend.draw_orientation_region([clicks.x, clicks.y], success_range, rot_success)
             figure_canvas_agg.draw()
+        elif event=='draw_number_achieved':
+            backend.draw_number_achieved(episode_data)
+            figure_canvas_agg.draw()
         elif event == 'Critic Output':
             backend.draw_critic_output(episode_data)
             figure_canvas_agg.draw()
@@ -219,6 +225,12 @@ def main():
         elif event == 'Rewards':
             backend.draw_combined_rewards(episode_data)
             figure_canvas_agg.draw()
+        elif event == 'draw_start_end_bins':
+            backend.draw_start_end_bins(folder,tholds)
+            figure_canvas_agg.draw()
+        elif event == "draw_manager_worker_comparison":
+            backend.draw_manager_worker_comparison(folder,None)
+            figure_canvas_agg.draw()
         elif event == 'Explored Region':
             if 'all' in filename:
                 backend.draw_explored_region(episode_data)
@@ -226,6 +238,9 @@ def main():
             else:
                 backend.draw_explored_region(folder)
                 figure_canvas_agg.draw()
+        elif event == 'worker_rewards':
+            backend.draw_worker_reward_split(episode_data)
+            figure_canvas_agg.draw()
         elif event == 'Aout Comparison':
             backend.draw_aout_comparison(episode_data)
             figure_canvas_agg.draw()
@@ -314,6 +329,9 @@ def main():
         elif event == 'Fingertip Path':
             backend.draw_fingertip_path(episode_data)
             figure_canvas_agg.draw()
+        elif event == 'draw_HRL_orientation':
+            backend.draw_HRL_orientation(episode_data)
+            figure_canvas_agg.draw()
         elif event == 'RewardSplit':
             if 'all' in filename:
                 backend.draw_goal_rewards(episode_data)
@@ -389,6 +407,9 @@ def main():
         elif event == 'Average Efficiency':
             backend.draw_average_efficiency(folder)
             figure_canvas_agg.draw()
+        elif event == 'draw_HRL_path':
+            backend.draw_HRL_path(episode_data)
+            figure_canvas_agg.draw()
         elif event =='Radar Plot':
             backend.draw_radar(folder)
             figure_canvas_agg.draw()
@@ -420,6 +441,12 @@ def main():
             figure_canvas_agg.draw()
         elif event == 'draw_newshit':
             backend.draw_newshit([clicks.x, clicks.y],success_range)
+            figure_canvas_agg.draw()
+        elif event == 'draw_average_reward_hrl':
+            backend.draw_average_reward_hrl(folder)
+            figure_canvas_agg.draw()
+        elif event =='draw_uppers':
+            backend.draw_uppers(folder)
             figure_canvas_agg.draw()
         elif event == 'Both Errors':
             backend.draw_both_errors(folder)
@@ -484,6 +511,9 @@ def main():
         elif event =='draw_boxen':
             rot_success =  float(values['rot_success_range'])
             backend.draw_boxen([clicks.x, clicks.y], rot_success, success_range)
+            figure_canvas_agg.draw()
+        elif event =='draw_dxdy':
+            backend.draw_dxdy(episode_data)
             figure_canvas_agg.draw()
         elif event == '-SAVE-':
             if '.png' in values['save_name']:

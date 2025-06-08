@@ -37,8 +37,6 @@ import multiprocessing
 import json
 
 def make_pybullet(args, pybullet_instance, viz=True):
-
-    
     if viz:
         physics_client = pybullet_instance.connect(pybullet_instance.GUI)
     else:
@@ -140,9 +138,7 @@ def make_pybullet(args, pybullet_instance, viz=True):
 
     return gym_env, args, [obj_id, wall_id]
 
-
 # control types: conventional + options, full, feudal? option keyboard?
-
 
 def simple_interpolatinator(base_path):
     # drastically reduces number of points
@@ -176,14 +172,15 @@ def fancy_interpolatinator(base_path):
 
 import sys
 print(sys.path)
-sys.path.append('/home/orochi/mojo/pybullet-planning')
-# import pybullet_tools.utils as pp
+sys.path.append('/home/mothra/pybullet-planning')
+print(sys.path)
+import pybullet_tools.utils as pp
 
 # Mothra_Slide/FTP_S2
 # HPC_Slide/JA_S3
 
-filepath = './data/Mothra_Slide/FTP_S2/experiment_config.json'
-filename = './data/Mothra_Slide/FTP_S2'
+filepath = './data/HPC_Slide/JA_S3/experiment_config.json'
+filename = './data/HPC_Slide/JA_S3'
 
 with open(filepath, 'r') as argfile:
     args = json.load(argfile)
@@ -216,13 +213,14 @@ state =env.reset(tihng)
 goal_pose = (0.05,0.1,0)
 input('LOOK AT IT')
 obj_limits = ((-0.06, 0.06), (0.06,0.14))
-# obj_path = pp.plan_base_motion(obj_id, goal_pose, obj_limits, obstacles=[wall_id])
-# print('Original path length: ', len(obj_path))
-# # print(obj_path)
-# import matplotlib.pyplot as plt
-# xs = [o[0] for o in obj_path]
-# ys = [o[1] for o in obj_path]
-
+obj_path = pp.plan_base_motion(obj_id, goal_pose, obj_limits, obstacles=[wall_id])
+print('Original path length: ', len(obj_path))
+print(obj_path)
+import matplotlib.pyplot as plt
+xs = [o[0] for o in obj_path]
+ys = [o[1] for o in obj_path]
+plt.scatter(xs,ys)
+plt.show()
 # reduced_obj_path = simple_interpolatinator(obj_path)
 reduced_obj_path = np.random.uniform(-0.05,0.05,(5,3))
 reduced_obj_path = reduced_obj_path + np.array([0,0.1,0])
@@ -241,8 +239,7 @@ for goal in reduced_obj_path:
                                     [goal[0]-0.0025,goal[1]-0.0025,0.11], childFrameOrientation=[0,0,0,1])
     p.setCollisionFilterPair(temp_id, obj_id,-1,-1,0)
     print(temp_id)
-# plt.scatter(xs,ys)
-# plt.show()
+
 # TODO get a policy that isnt shit working with this
 # TODO get a gif of the thing workign with the wall in the way
 # TODO maybe make a more diffcult environment for the thing

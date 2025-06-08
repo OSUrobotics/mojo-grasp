@@ -23,6 +23,13 @@ class MultiprocessRecordData(RecordDataRLPKL):
         self.num_threads = float(Record_id[1])
         self.my_thread = float(Record_id[0])
 
+    def record_episode(self, episode_type='train', frictionList = None, contactList = None):
+        super().record_episode(episode_type)
+        self.current_episode["frictionList"] = frictionList
+        self.current_episode["contactList"] = contactList
+        # print('calling record episode')
+        # print("Friction list in record is :", frictionList)
+
 
     def save_episode(self,evaluated='train', filename=False, hand_type=None):
         """
@@ -30,6 +37,7 @@ class MultiprocessRecordData(RecordDataRLPKL):
         episode dictionary to a pkl file. 
         """
         # print(self.eval_num,self.num_threads, self.my_thread)
+        # print('saving the episode')
         # print(int(self.eval_num*self.num_threads+self.my_thread))
         if self.save_episode_flag and self.data_path != None:
             if evaluated == 'test':
@@ -42,7 +50,7 @@ class MultiprocessRecordData(RecordDataRLPKL):
                 else:
                     file_path = self.data_path + "Eval_" + hand_type+"/Episode_" + str(int(self.eval_num*self.num_threads+self.my_thread)) + '.pkl'
                 self.eval_num +=1
-                print('save episode evaluated', self.eval_num*self.num_threads+self.my_thread, hand_type)
+                # print('save episode evaluated', self.eval_num*self.num_threads+self.my_thread, hand_type)
             elif evaluated == 'asterisk':
                 # print('hu')
                 if hand_type is None:
@@ -55,6 +63,8 @@ class MultiprocessRecordData(RecordDataRLPKL):
                     file_path = self.data_path + "Full_Ast_A/Episode_" + str(int(self.eval_num*self.num_threads+self.my_thread)) + '.pkl'
                 elif hand_type=='B_B':
                     file_path = self.data_path + "Full_Ast_B/Episode_" + str(int(self.eval_num*self.num_threads+self.my_thread)) + '.pkl'
+                else:
+                    file_path = self.data_path + "Ast_" + hand_type+"/Episode_" + str(int(self.eval_num*self.num_threads+self.my_thread)) + '.pkl'
                 self.eval_num +=1
             else:
                 if hand_type is None:

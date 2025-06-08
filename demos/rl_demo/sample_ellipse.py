@@ -90,19 +90,27 @@ num_layers = 3
 #       })
 # df.to_csv("resources/start_poses.csv", index=False)   
 
-
+x2_pts =[]
+y2_pts = []
 for j in range(NUM_POINTS):
-    theta = random.uniform(0, 2*np.pi)
-    rand_r = 1-(random.uniform(0, 0.95))**2
-    rx = rand_r* 70/1000
-    ry = rand_r * 70/1000
+    theta1 = random.uniform(0, 2*np.pi)
+    rand_r1 = 1 - (random.uniform(0.7, 0.95))**2
+    theta2 = theta1 + random.uniform(-3*np.pi/4, 3*np.pi/4)
+    rand_r2 = 1 - (random.uniform(0.1, 0.6))**2
+    r1x = rand_r1 * 70/1000
+    r1y = rand_r1 * 70/1000
+    r2x = rand_r2 * 70/1000
+    r2y = rand_r2 * 70/1000
+    x1 = r1x * np.sin(theta1)
+    y1 = r1y * np.cos(theta1)
+    x2 = r2x * np.sin(theta2)
+    y2 = r2y * np.cos(theta2)
+    x_pts.append(x1)
+    y_pts.append(y1)
+    x2_pts.append(x2)
+    y2_pts.append(y2)
+    orientation = 0
 
-    x = rx * np.sin(theta)
-    y = ry * np.cos(theta)
-    x_pts.append(x)
-    y_pts.append(y)
-    orientation = np.random.uniform(-50/180*np.pi+0.1,50/180*np.pi-0.1)
-    orientation = orientation + np.sign(orientation)*0.1
     angs.append(orientation)
 finger1 = np.random.uniform(-0.01,0.01,NUM_POINTS)
 finger1 = list(finger1)
@@ -119,14 +127,20 @@ finger2 = list(finger2)
 # finger2 = np.zeros(128)
 # finger2 = list(finger2)
 # print(angs)
+plt.scatter(x_pts,y_pts)
+plt.scatter(x2_pts,y2_pts)
+plt.legend(['near','far'])
+plt.show()
 df = pd.DataFrame(
-    {'x': x_pts,
-      'y': y_pts,
+    {'x1': x_pts,
+      'y1': y_pts,
+      'x2':x2_pts,
+      'y2':y2_pts,
       'ang':angs,
       'f1y':finger1,
       'f2y':finger2
       })
-df.to_csv("resources/Big_rotation_50_test.csv", index=False)            
+df.to_csv("resources/simple_HRL.csv", index=False)            
 # create dataframe from lists
 # df = pd.DataFrame(
 #     {'x': x_n,

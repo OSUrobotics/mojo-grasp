@@ -11,8 +11,31 @@ import numpy as np
 from copy import deepcopy
 from mojograsp.simobjects.two_finger_gripper import TwoFingerGripper
 from mojograsp.simcore.goal_holder import *
+# from point_generator import slice_obj_at_y_level, calculate_outer_perimeter, find_intersection_points
+from mojograsp.simcore.image_maker import ImageGenerator
+# import demos.rl_demo.point_generator as pg
         
-        
+class DictHolder():
+    def __init__(self,list_size):
+        self.data = []
+        self.max_len = list_size
+
+    def reset(self):
+        self.data = []
+
+    def append(self, data: dict):
+        self.data.append(data)
+        if len(self.data) > self.max_len:
+            self.data.pop(0)
+
+    def get_full(self):
+        data_dict = self.data[-1].copy()
+        if len(self.data) < self.max_len:
+            data_dict['previous_state'] = [self.data[0] if i<self.max_len-len(self.data) else self.data[i] for i in range(self.max_len-1)]
+        else:
+            data_dict['previous_state'] = self.data[0:-1]
+        return data_dict
+
 class MultiprocessState(StateDefault):
     """
     Default State Class that is used when the user does not need or wish to use the Action class
@@ -31,6 +54,9 @@ class MultiprocessState(StateDefault):
         super().__init__()
         self.p = pybullet_instance
         self.objects = objects 
+        obj_path = self.objects[1].get_path()
+        #print('OBJ PATH', obj_path)
+        # self.slice = pg.get_slice(obj_path)
         for object in self.objects:
             if type(object) == TwoFingerGripper:
                 temp = object.link_lengths
@@ -38,6 +64,7 @@ class MultiprocessState(StateDefault):
                 self.hand_name = object.record_name
         if prev_len > 0:            
             self.previous_states = [{}]*prev_len
+            # self.state_holder = DictHolder(prev_len)
             self.pflag = True
         else:
             self.pflag = False
@@ -47,6 +74,7 @@ class MultiprocessState(StateDefault):
             self.train_flag = True
         else:
             self.eval_goals = None
+        self.image_gen = ImageGenerator((240,240,1))
             
     def evaluate(self):
         if (self.eval_goals is not None) and self.train_flag:
@@ -62,7 +90,7 @@ class MultiprocessState(StateDefault):
             
     def next_run(self):
         for thing in self.objects:
-            if (type(thing) == GoalHolder) | (type(thing) == RandomGoalHolder) | (type(thing) == SingleGoalHolder)|(type(thing) == HRLGoalHolder):
+            if (type(thing) == GoalHolder) | (type(thing) == RandomGoalHolder) | (type(thing) == SingleGoalHolder)|(type(thing) == HRLGoalHolder)|(type(thing) == HRLMultigoalHolder) |(type(thing) == HRLMultigoalFixed)| (type(thing) == HRLMultigoalFixedPaired):
                 fingerys = thing.next_run()
                 temp = thing.get_data()
         return temp, fingerys
@@ -124,8 +152,8 @@ class MultiprocessState(StateDefault):
             # AND MAKE SURE THE OTHER ONES ARENT FUCKED TOO
         super().set_state()
 
-        temp1 = self.p.getClosestPoints(self.objects[1].id, self.objects[0].id, 10, -1, 1, -1)[0]
-        temp2 = self.p.getClosestPoints(self.objects[1].id, self.objects[0].id, 10, -1, 4, -1)[0]
+        #temp1 = self.p.getClosestPoints(self.objects[1].id, self.objects[0].id, 10, -1, 1, -1)[0]
+        #temp2 = self.p.getClosestPoints(self.objects[1].id, self.objects[0].id, 10, -1, 4, -1)[0]
         link1_pose = self.p.getLinkState(self.objects[0].id, 2)
 
         link2_pose = self.p.getLinkState(self.objects[0].id, 5)
@@ -139,17 +167,29 @@ class MultiprocessState(StateDefault):
         self.current_state['f2_base'] = list(link2_base[0])
         self.current_state['f1_ang'] = self.current_state['two_finger_gripper']['joint_angles']['finger0_segment0_joint'] + self.current_state['two_finger_gripper']['joint_angles']['finger0_segment1_joint']
         self.current_state['f2_ang'] = self.current_state['two_finger_gripper']['joint_angles']['finger1_segment0_joint'] + self.current_state['two_finger_gripper']['joint_angles']['finger1_segment1_joint']        
-        self.current_state['f1_contact_pos'] = list(temp1[6])
-        self.current_state['f2_contact_pos'] = list(temp2[6])
+        #self.current_state['f1_contact_pos'] = list(temp1[6])
+        #self.current_state['f2_contact_pos'] = list(temp2[6])
         self.current_state['hand_params'] = self.hand_params.copy()
-
+        # if self.pflag:
+        #     self.state_holder.append(self.current_state.copy())
         #What Jeremiah Is Adding
-        self.current_state['f1_contact_distance'] = self.calc_distance(self.current_state['f1_contact_pos'],self.current_state['obj_2']['pose'][0][0:2])
-        self.current_state['f2_contact_distance'] = self.calc_distance(self.current_state['f2_contact_pos'],self.current_state['obj_2']['pose'][0][0:2])
-        self.current_state['f1_contact_flag'], self.current_state['f2_contact_flag'] = self.check_contact() 
-        self.current_state['f1_contact_angle'], self.current_state['f2_contact_angle'] = self.calc_contact_angle()
+        # self.current_state['slice'] = [0.01948, 0.0, 0.018735, 0.00502, 0.016798, 0.009698, 0.013775, 0.013774, 0.009698, 0.016798, 0.00502,
+        #                                 0.018735, 0.0, 0.01948, -0.00502, 0.018735, -0.009698, 0.016798, -0.013774, 0.013775, -0.016798, 
+        #                                 0.009698, -0.018735, 0.00502, -0.01948, 0.0, -0.018735, -0.00502, -0.016798, -0.009698, -0.013775, 
+        #                                 -0.013774, -0.009698, -0.016798, -0.00502, -0.018735, 0.0, -0.01948, 0.00502, -0.018735, 0.009698, 
+        #                                 -0.016798, 0.013774, -0.013775, 0.016798, -0.009698, 0.018735, -0.00502]
+        if 'upper_goal_position' in self.current_state['goal_pose'].keys():
+            unreached_goals = [[self.current_state['goal_pose']['upper_goal_position'][2*i],self.current_state['goal_pose']['upper_goal_position'][i*2+1]] for i,v in enumerate(self.current_state['goal_pose']['goals_open']) if v]
+            self.current_state['image'] = self.image_gen.draw_stamp(self.current_state['obj_2']['pose'],
+                                                                unreached_goals)
+        # self.current_state['slice'] = self.slice
 
+        #self.current_state['f1_contact_distance'] = self.calc_distance(self.current_state['f1_contact_pos'],self.current_state['obj_2']['pose'][0][0:2])
+        #self.current_state['f2_contact_distance'] = self.calc_distance(self.current_state['f2_contact_pos'],self.current_state['obj_2']['pose'][0][0:2])
+        #self.current_state['f1_contact_flag'], self.current_state['f2_contact_flag'] = self.check_contact() 
+        #self.current_state['f1_contact_angle'], self.current_state['f2_contact_angle'] = self.calc_contact_angle()
 
+        # print('object pose', self.current_state['obj_2']['pose'][0][0:2])
         # print('sim state', self.current_state['two_finger_gripper']['joint_angles'])
         # print('joint state', self.p.getJointState(self.objects[0].id,0))
         
@@ -160,8 +200,8 @@ class MultiprocessState(StateDefault):
         # print('initializing state')
         super().set_state()
         # print(self.current_state)
-        temp1 = self.p.getClosestPoints(self.objects[1].id, self.objects[0].id, 10, -1, 1, -1)[0]
-        temp2 = self.p.getClosestPoints(self.objects[1].id, self.objects[0].id, 10, -1, 4, -1)[0]
+        #temp1 = self.p.getClosestPoints(self.objects[1].id, self.objects[0].id, 10, -1, 1, -1)[0]
+        #temp2 = self.p.getClosestPoints(self.objects[1].id, self.objects[0].id, 10, -1, 4, -1)[0]
         link1_pose = self.p.getLinkState(self.objects[0].id, 2)
         link2_pose = self.p.getLinkState(self.objects[0].id, 5)
         link1_base = self.p.getLinkState(self.objects[0].id, 1)
@@ -172,14 +212,25 @@ class MultiprocessState(StateDefault):
         self.current_state['f2_base'] = list(link2_base[0])
         self.current_state['f1_ang'] = self.current_state['two_finger_gripper']['joint_angles']['finger0_segment0_joint'] + self.current_state['two_finger_gripper']['joint_angles']['finger0_segment1_joint']
         self.current_state['f2_ang'] = self.current_state['two_finger_gripper']['joint_angles']['finger1_segment0_joint'] + self.current_state['two_finger_gripper']['joint_angles']['finger1_segment1_joint']
-        self.current_state['f1_contact_pos'] = list(temp1[6])
-        self.current_state['f2_contact_pos'] = list(temp2[6])
-
+        #self.current_state['f1_contact_pos'] = list(temp1[6])
+        #self.current_state['f2_contact_pos'] = list(temp2[6])
+        self.current_state['hand_params'] = self.hand_params.copy()
         #What Jeremiah Is Adding
-        self.current_state['f1_contact_distance'] = self.calc_distance(self.current_state['f1_contact_pos'], self.current_state['obj_2']['pose'][0][0:2])
-        self.current_state['f2_contact_distance'] = self.calc_distance(self.current_state['f2_contact_pos'], self.current_state['obj_2']['pose'][0][0:2]) 
-        self.current_state['f1_contact_angle'], self.current_state['f2_contact_angle'] = self.calc_contact_angle()
-        self.current_state['f1_contact_flag'], self.current_state['f2_contact_flag'] = self.check_contact()
+        # self.current_state['slice'] = [0.03896, 0.0, 0.037471, 0.01004, 0.033596, 0.019396, 0.027549, 0.027549, 0.019396, 0.033596, 0.01004, 
+        #                                0.037471, 0.0, 0.03896, -0.01004, 0.037471, -0.019396, 0.033596, -0.027549, 0.027549, -0.033596, 0.019396,
+        #                                -0.037471, 0.01004, -0.03896, 0.0, -0.037471, -0.01004, -0.033596, -0.019396, -0.027549, -0.027549, 
+        #                                -0.019396, -0.033596, -0.01004, -0.037471, 0.0, -0.03896, 0.01004, -0.037471, 0.019396, -0.033596, 
+        #                                0.027549, -0.027549, 0.033596, -0.019396, 0.037471, -0.01004]
+        if 'upper_goal_position' in self.current_state['goal_pose'].keys():
+            unreached_goals = [[self.current_state['goal_pose']['upper_goal_position'][2*i],self.current_state['goal_pose']['upper_goal_position'][i*2+1]] for i,v in enumerate(self.current_state['goal_pose']['goals_open']) if v]
+
+            self.current_state['image'] = self.image_gen.draw_stamp(self.current_state['obj_2']['pose'],
+                                                                    unreached_goals)
+        # self.current_state['slice'] = self.slice
+        # self.current_state['f1_contact_distance'] = self.calc_distance(self.current_state['f1_contact_pos'], self.current_state['obj_2']['pose'][0][0:2])
+        # self.current_state['f2_contact_distance'] = self.calc_distance(self.current_state['f2_contact_pos'], self.current_state['obj_2']['pose'][0][0:2]) 
+        # self.current_state['f1_contact_angle'], self.current_state['f2_contact_angle'] = self.calc_contact_angle()
+        # self.current_state['f1_contact_flag'], self.current_state['f2_contact_flag'] = self.check_contact()
 
         # print('LENGTH OF CURRENT STATE')
         # print(len(self.current_state))
@@ -187,7 +238,8 @@ class MultiprocessState(StateDefault):
         if self.pflag:
             for i in range(len(self.previous_states)):
                 self.previous_states[i] = self.current_state.copy()
-                
+        # if self.pflag:
+        #     self.state_holder.append(self.current_state.copy())
          
     def get_state(self) -> dict:
         """
@@ -199,6 +251,14 @@ class MultiprocessState(StateDefault):
         """
         # print('g state')
         # print('goal from get state', self.current_state['goal_pose'])
+
+        # if self.pflag:
+        #     temp = self.state_holder.get_full()
+        #     print(temp)
+        #     return temp
+        # else:
+        #     return self.current_state.copy()
+        # print(self.current_state)
         temp = self.current_state.copy()
         if self.pflag:
             temp['previous_state'] = self.previous_states.copy()
@@ -210,18 +270,32 @@ class MultiprocessState(StateDefault):
                 return thing.get_name()
     
     def set_goal(self,goal_list):
+        # print('SETTING THE GOAL')
         for thing in self.objects:
-            if (type(thing) == GoalHolder) | (type(thing) == RandomGoalHolder)|(type(thing) == HRLGoalHolder):
-                thing.set_pose(goal_list[0:2], goal_list[2])
-                self.current_state[i.name] = i.get_data()
+            if (type(thing) == GoalHolder) | (type(thing) == RandomGoalHolder)|(type(thing) == HRLGoalHolder)|(type(thing) == HRLMultigoalHolder)|(type(thing) == HRLMultigoalFixed)| (type(thing) == HRLMultigoalFixedPaired):
+                # print('setting goal', goal_list)
+                if len(goal_list) > 4:
+                    thing.set_pose(goal_list[0:2], goal_list[2],goal_list[3:5])
+                elif len(goal_list) >=3:
+                    thing.set_pose(goal_list[0:2], goal_list[2])
+                else:
+                    thing.set_pose(goal_list[0:2])
+                self.current_state[thing.name] = thing.get_data()
+                # if self.pflag:
+                #     self.state_holder[-1][thing.name] = thing.get_data()
     
+
     def get_goal(self):
-        # print(self.current_state)
-        # print('goal from state.get_goal',self.current_state['goal_pose'])
         try:
             return self.current_state['goal_pose']
         except KeyError:
             return [0,0]
+
+    def check_goal(self):
+        for thing in self.objects:
+            if (type(thing) == HRLMultigoalHolder) | (type(thing) == HRLMultigoalFixed)| (type(thing) == HRLMultigoalFixedPaired):
+                thing.check_goal([self.current_state['obj_2']['pose'][0][0],self.current_state['obj_2']['pose'][0][1]-0.1])
+
     def __eq__(self, o):
         # Doesnt check that the objects are the same or that the run number is the same,
         # only checks that the values saved in state are the same

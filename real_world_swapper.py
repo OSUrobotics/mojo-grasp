@@ -2,13 +2,13 @@ import pickle as pkl
 from scipy.spatial.transform import Rotation as R
 import os
 
-highest = ['Mothra_Rotation', 'HPC_Rotation','Jeremiah_Rotation']
+highest = ['N_mothra_slide_rerun', 'J_HPC_rerun','N_HPC_slide_rerun']
 
 others = ['JA_S1', 'JA_S2', 'JA_S3', 'FTP_S1', 'FTP_S2', 'FTP_S3']
 
-inside = ['Real_B']
+inside = ['Real_A', 'Real_B']
 
-second_side = ['RB3']
+second_side = ['RA', 'RB']
 
 base_path = '/home/mothra/mojo-grasp/demos/rl_demo/data'
 
@@ -29,7 +29,7 @@ def shenanigans(filename,save_file):
     with open(save_file, 'wb') as file:
         pkl.dump(data,file)
 
-files = os.listdir('/media/mothra/Samsung_T5/JUL_11_Rotation_Real_World_Tests/')
+# files = os.listdir('/media/mothra/Samsung_T5/JUL_11_Rotation_Real_World_Tests/')
 # for file in files:
 #     if '2v2' in file:
 #         pass
@@ -45,7 +45,7 @@ files = os.listdir('/media/mothra/Samsung_T5/JUL_11_Rotation_Real_World_Tests/')
 for h in highest:
     for o in others:
         for i,j in zip(inside,second_side):
-            folder = '/'.join([ssd_path, h, o, i])
+            folder = '/'.join([base_path, h, o, i])
             save_folder = '/'.join([base_path, h, o, j])
             files = os.listdir(folder)
             for file in files:

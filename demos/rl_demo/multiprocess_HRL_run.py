@@ -356,7 +356,7 @@ def replay(argpath, episode_path):
     # load episode data
     with open(episode_path,'rb') as efile:
         data = pkl.load(efile)
-    mirrored = mirror_action(episode_path)
+    # mirrored = mirror_action(episode_path)
     actions = [a['action']['actor_output'] for a in data['timestep_list']]
     obj_pose = [s['state']['obj_2']['pose'] for s in data['timestep_list']]
     f1_poses = [s['state']['f1_pos'] for s in data['timestep_list']]
@@ -447,8 +447,8 @@ def replay(argpath, episode_path):
     p2.configureDebugVisualizer(p2.COV_ENABLE_RENDERING,1)
     step_num = 0
     input('start')
-    for i,act in enumerate(mirrored):
-        print('action vs mirrored:', actions[i],act)
+    for i,act in enumerate(actions):
+        # print('action vs mirrored:', actions[i],act)
         print('joints in pkl file',joint_angles[i+1])
         eval_env.step(np.array(act),viz=True)
         step_num +=1

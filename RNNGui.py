@@ -64,7 +64,7 @@ class RNNGui():
                          [sg.Button("Browse",key='-browse-save',button_color='DarkBlue'),sg.Text("/", key='-save-path')],
                          [sg.Text('Path to Previous Policy if Transferring')],
                          [sg.Button("Browse",key='-browse-load',button_color='DarkBlue'),sg.Text("/", key='-load-path')],
-                         [sg.Text('Object'), sg.OptionMenu(values=('Cube', 'Cylinder', 'circle', 'hourglass', 'ellipse', 'square_concave', 'square', 'triangle', 'cone', 'teardrop'), k='-object', default_value='Cube')],
+                         [sg.Text('Object'), sg.OptionMenu(values=('Cube', 'Cylinder', 'circle', 'hourglass', 'ellipse', 'square_concave', 'square', 'triangle', 'cone', 'teardrop','triple'), k='-object', default_value='Cube')],
                          [sg.Text('Hands Used For Training and Testing')],
                          [sg.Checkbox('2v2_50.50_50.50_43',key='2v2_50.50_50.50_1.1_43',default=False),sg.Checkbox('2v2_50.50_50.50_53',key='2v2_50.50_50.50_1.1_53', default=True),sg.Checkbox('2v2_50.50_50.50_63',key='2v2_50.50_50.50_1.1_63', default=False),sg.Checkbox('2v2_50.50_50.50_73',key='2v2_50.50_50.50_1.1_73', default=False)],
                          [sg.Checkbox('2v2_65.35_50.50_43',key='2v2_65.35_50.50_1.1_43', default=False),sg.Checkbox('2v2_65.35_50.50_53',key='2v2_65.35_50.50_1.1_53', default=False),sg.Checkbox('2v2_65.35_50.50_63',key='2v2_65.35_50.50_1.1_63', default=False),sg.Checkbox('2v2_65.35_50.50_73',key='2v2_65.35_50.50_1.1_73', default=False)],
@@ -77,12 +77,17 @@ class RNNGui():
                          [sg.Text("Task"), sg.OptionMenu(values=('asterisk','single',"big_random",
                           "Rotation_single", "Rotation_region","big_Rotation", "full_task","big_full_task", 'multi', "direction", "wall", "wall_single"), k='-task', default_value='unplanned_random')],
                          [sg.Text("Reward"), sg.OptionMenu(values=('Sparse','Distance','Distance + Finger', 'Hinge Distance + Finger', 'Slope', 'Slope + Finger','SmartDistance + Finger','SmartDistance + SmartFinger','ScaledDistance + Finger','ScaledDistance+ScaledFinger', 'SFS','DFS'), k='-reward',default_value='ScaledDistance+ScaledFinger')],
-                         [sg.Checkbox("Object Start Position", key='-rstart',default=False), sg.Checkbox("Relative Finger Position", key='-rfinger',default=False),sg.Checkbox("Object Orientation", key='-ror',default=False), sg.Checkbox("Finger Open", key='-rfo',default=False), sg.Checkbox("One Finger Straight", key='-sf',default=False)],
+                         [sg.Checkbox("Object Start Position", key='-rstart',default=False), sg.Checkbox("Relative Finger Position", key='-rfinger',default=False),sg.Checkbox("Object Orientation", key='-ror',default=False), sg.Checkbox("Finger Open", key='-rfo',default=False)],
+                         # Jeremiah Added this
+                         [sg.Checkbox("Finger Straight", key='-sf',default=False),sg.Checkbox("Friction Experememnt", key='-fe',default=False),sg.Checkbox("Collision On", key='-co',default=True)],
                          [sg.Text('Rotation limits, only used by Rotation and Full Tasks'), sg.Radio('75 degrees',group_id='rots',key='-75',default=False), sg.Radio('50 degrees',group_id='rots',key='-50',default=True), sg.Radio('15 degrees',group_id='rots',key='-15',default=False)],
                          [sg.Text('Replay Buffer Sampling'), sg.OptionMenu(values=['priority', 'random','random+expert'], k='-sampling', default_value='priority')],
                          [sg.Text('Domain Randomization Options')],
-                         [sg.Checkbox('Finger Friction', default=True, k='-DRFI'),sg.Checkbox('Floor Friction', default=True, k='-DRFL'),sg.Checkbox('Object Size', default=True, k='-DROS'), sg.Checkbox('Object Mass', default=True, k='-DROM')]]
-        
+                         [sg.Checkbox('Finger Friction', default=True, k='-DRFI'),sg.Checkbox('Floor Friction', default=True, k='-DRFL'),sg.Checkbox('Object Size', default=True, k='-DROS'), sg.Checkbox('Object Mass', default=True, k='-DROM'), sg.Checkbox("Rand Shapes", key='-rs',default=False)],
+                         # Jeremiah Added this
+                         [sg.Text('Lateral Friction Values'), sg.Input(0.25, key='-lfl',size=(8, 2)), sg.Input(0.75, key='-lfh',size=(8, 2))],
+                         [sg.Text('Spinning Friction Values'), sg.Input(0.01, key='-sfl',size=(8, 2)), sg.Input(0.0101, key='-sfh',size=(8, 2))],
+                         [sg.Text('Roll Friction Values'), sg.Input(0.04, key='-rfl',size=(8, 2)), sg.Input(0.0401, key='-rfh',size=(8, 2))]]
         
         model_layout = [ [sg.Text('Num Epochs'), sg.Input(1000000, key='-epochs',size=(8, 2)), sg.Text('Batch Size'), sg.Input(100, key='-batch-size',size=(8, 2))],
                          [sg.Text('Learning Rate'), sg.Input(0.0001,key='-learning',size=(8, 2)), sg.Text('Discount Factor'), sg.Input(0.995, key='-df',size=(8, 2))],
@@ -93,7 +98,7 @@ class RNNGui():
                          [sg.Text('State Training Noise'), sg.Input(0.0, key='-snoise',size=(8, 2)),sg.Text('Start Pos Range (mm)'), sg.Input(0, key='-start-noise',size=(8, 2))],
                          [sg.Text('Timestep Frequency'), sg.Input(3,key='-freq',size=(8, 2)), sg.Text('Entropy'), sg.Input(0.0,key='-entropy',size=(8, 2))],
                          [sg.Text('Finger off object frequency'), sg.Input(0.0, key='-fobfreq', size=(8,2))],
-                         [sg.Checkbox('Fingers Start in Contact', default=False, key='-contact_start')]]
+                         [sg.Checkbox('Fingers Start in Contact', default=False, key='-contact_start'),sg.Checkbox('Cirriculum',default=False,key='-cirriculum')]]
         
         plotting_layout = [[sg.Text('Model Title')],
                        [sg.Input('test1',key='-title')],
@@ -110,6 +115,7 @@ class RNNGui():
                        [sg.Checkbox('Goal Position', default=True, k='-gp')],
                        [sg.Checkbox('Goal Orientation', default=True, k = '-go')],
                        [sg.Checkbox('Goal Finger Pos', default=False, k='-gf')],
+                       [sg.Checkbox('Goal Finger Separation', default=False, k='gfs')],
                        [sg.Checkbox('Eigenvalues', default=False,key='-eva')],
                        [sg.Checkbox('Eigenvectors', default=False,key='-evc')],
                        [sg.Checkbox('HandParameters', default=False,key='-params')],
@@ -117,8 +123,10 @@ class RNNGui():
                        [sg.Checkbox('Eigenvectors Times Eigenvalues', default=False,key='-evv')],
                        [sg.Checkbox("Contact Distance", default=False, k='-rad')],
                        [sg.Checkbox("Contact Angle", default=False, k='-ra')],
+                       [sg.Checkbox("Radius Representation", default=False, k='-slice')],
+                       [sg.Checkbox("Moving Radius Representation", default=False, k='-mslice')],
                        [sg.Text('Num Previous States'), sg.Input(2, k='-pv',size=(8, 2)), sg.Text('Success Radius (mm)'), sg.Input(2, key='-sr',size=(8, 2))],
-                       [sg.Text("Distance Scale"),  sg.Input(1,key='-distance_scale',size=(8, 2)), sg.Text('Contact Scale'),  sg.Input(0.2,key='-contact_scale',size=(8, 2)), sg.Text('Success Reward'), sg.Input(1,key='-success_reward',size=(8, 2)), sg.Text('Rotation Scale'), sg.Input(1,key='-rotation_scale',size=(8, 2))],
+                       [sg.Text("Distance Scale"),  sg.Input(1,key='-distance_scale',size=(8, 2)), sg.Text('Contact Scale'),  sg.Input(0.2,key='-contact_scale',size=(8, 2)), sg.Text('Success Reward'), sg.Input(1,key='-success_reward',size=(8, 2)), sg.Text('Rotation Scale'), sg.Input(0,key='-rotation_scale',size=(8, 2))],
                        [sg.Text("Action"), sg.OptionMenu(values=('Joint Velocity','Finger Tip Position','Object Pose'), k='-action',default_value='Joint Velocity')],
                        [sg.Checkbox('Vizualize Simulation', default=False, k='-viz'), sg.Checkbox('Real World?',default=False, k='-rw'), sg.Checkbox('IK every sim step?', default=False, key='-ik-freq')],
                        [sg.Button('Build Config File', key='-build')]]
@@ -148,6 +156,12 @@ class RNNGui():
                      'sampling': values['-sampling'],
                      'reward': values['-reward'],
                      'action': values['-action'],
+                     'roll_fric_low': float(values['-rfl']),
+                     'roll_fric_high': float(values['-rfh']),
+                     'spin_fric_low': float(values['-sfl']),
+                     'spin_fric_high': float(values['-sfh']),
+                     'lat_fric_low': float(values['-lfl']),
+                     'lat_fric_high': float(values['-lfh']),
                      'rollout_size': int(values['-rollout_size']),
                      'rollout_weight': float(values['-rollout_weight']),
                      'tau': float(values['-tau']),
@@ -169,12 +183,17 @@ class RNNGui():
                      'finger_random_start': bool(values['-rfinger']),
                      'object_random_orientation': bool(values['-ror']),
                      'finger_random_off': bool(values['-rfo']),
-                     'one_finger_straight': bool(values['-sf']),
+                     'one_finger': bool(values['-sf']),
+                     'friction_experiment': bool(values['-fe']),
+                     'collision_on': bool(values['-co']),
+
+                     'random_shapes': bool(values['-rs']),
                      'domain_randomization_finger_friction':bool(values['-DRFI']),
                      'domain_randomization_floor_friction':bool(values['-DRFL']),
                      'domain_randomization_object_size':bool(values['-DROS']),
                      'domain_randomization_object_mass':bool(values['-DROM']),
-                     'contact_start':bool(values['-contact_start'])}
+                     'contact_start':bool(values['-contact_start']),
+                     'cirriculum':bool(values['-cirriculum'])}
         state_len = 0
         state_mins = []
         state_maxes = []
@@ -299,6 +318,7 @@ class RNNGui():
             state_maxes.extend([0.072, 0.172, 0.072, 0.172])
             state_len += 4
             state_list.append('gf')
+
         if values['-wall']:
             state_mins.extend([-0.08,0.02,-1,-1,-1,-1])
             state_maxes.extend([0.08,0.18,1,1,1,1])
@@ -307,6 +327,15 @@ class RNNGui():
 
         #What Jereimah added
         #print('state list', state_list)
+
+        if values['-mslice']:
+            # assert True == False, 'mslice not normalized properly'
+            for i in range(48):    
+                state_mins.extend([-0.100])
+                state_maxes.extend([0.100])
+                state_len +=1
+            state_list.append('mslice')
+
         if values['-rad']:
             state_mins.extend([0,0,0,0])
             state_maxes.extend([10,10,1,1])
@@ -319,6 +348,7 @@ class RNNGui():
             state_len += 2
             state_list.append('ra')
 
+        # Anything before is duplicated
         if self.args['pv'] > 0:
             state_len += state_len * self.args['pv']
             temp_mins = state_mins.copy()
@@ -326,7 +356,14 @@ class RNNGui():
             for i in range(self.args['pv']):
                 state_mins.extend(temp_mins)
                 state_maxes.extend(temp_maxes)
+        # Anything after is not duplicated
 
+        if values['-slice']:
+            for i in range(48):    
+                state_mins.extend([-.023])
+                state_maxes.extend([.023])
+                state_len +=1
+            state_list.append('slice')
 
         if state_len == 0:
             print('No selected state space')
@@ -398,7 +435,9 @@ class RNNGui():
                 self.args['object_path'] = [str(resource_path.joinpath('object_models/2v2_mod/2v2_mod_cylinder_small_alt.urdf'))]
         elif values['-object'] == 'circle':
             if self.args['domain_randomization_object_size']:
-                raise NotImplementedError('Sphere size randomization not implemented')
+                self.args['object_path'] = [str(resource_path.joinpath('object_models/Jeremiah_Shapes/20_r_circle.urdf')),
+                                            str(resource_path.joinpath('object_models/Jeremiah_Shapes/small_20_r_circle.urdf')),
+                                            str(resource_path.joinpath('object_models/Jeremiah_Shapes/large_20_r_circle.urdf'))]
             else:
                 self.args['object_path'] = [str(resource_path.joinpath('object_models/Jeremiah_Shapes/20_r_circle.urdf'))]
 
@@ -422,7 +461,9 @@ class RNNGui():
 
         elif values['-object'] == 'square':
             if self.args['domain_randomization_object_size']:
-                raise NotImplementedError('Sphere size randomization not implemented')
+                self.args['object_path'] = [str(resource_path.joinpath('object_models/Jeremiah_Shapes/40x40_square.urdf')),
+                                            str(resource_path.joinpath('object_models/Jeremiah_Shapes/small_40x40_square.urdf')),
+                                            str(resource_path.joinpath('object_models/Jeremiah_Shapes/large_40x40_square.urdf'))]
             else:
                 self.args['object_path'] = [str(resource_path.joinpath('object_models/Jeremiah_Shapes/40x40_square.urdf'))]
 
@@ -443,6 +484,17 @@ class RNNGui():
                 raise NotImplementedError('Sphere size randomization not implemented')
             else:
                 self.args['object_path'] = [str(resource_path.joinpath('object_models/Jeremiah_Shapes/50x30_teardrop.urdf'))]
+
+        elif values['-object'] == 'triple':
+            self.args['object_path'] = [str(resource_path.joinpath('object_models/Jeremiah_Shapes/40x40_square.urdf')),
+                                            str(resource_path.joinpath('object_models/Jeremiah_Shapes/small_40x40_square.urdf')),
+                                            str(resource_path.joinpath('object_models/Jeremiah_Shapes/large_40x40_square.urdf')),
+                                            str(resource_path.joinpath('object_models/Jeremiah_Shapes/20_r_circle.urdf')),
+                                            str(resource_path.joinpath('object_models/Jeremiah_Shapes/small_20_r_circle.urdf')),
+                                            str(resource_path.joinpath('object_models/Jeremiah_Shapes/large_20_r_circle.urdf')),
+                                            str(resource_path.joinpath('object_models/Jeremiah_Shapes/40x40_triangle.urdf')),
+                                            str(resource_path.joinpath('object_models/Jeremiah_Shapes/small_40x40_triangle.urdf')),
+                                            str(resource_path.joinpath('object_models/Jeremiah_Shapes/large_40x40_triangle.urdf'))]
 
         
 

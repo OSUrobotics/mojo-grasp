@@ -33,6 +33,8 @@ import multiprocessing
 from demos.rl_demo.pkl_merger import merge_from_folder
 from scipy.spatial.transform import Rotation as R
 from stable_baselines3.common.noise import NormalActionNoise
+from torch import nn
+
 
 def make_env(arg_dict=None,rank=0,hand_info=None):
     def _init():
@@ -145,7 +147,7 @@ def load_wall(args):
     eval_finger_contacts = None 
     return pose_list, eval_pose_list, orientations, eval_orientations, finger_contacts, eval_finger_contacts, [f1y,f2y,ef1y,ef2y]
     
-def make_pybullet(arg_dict, pybullet_instance, rank, hand_info, viz=False):
+def make_pybullet(arg_dict, pybullet_instance, rank, hand_info, frictionList = None, contactList = None, viz=False):
     # resource paths
     this_path = os.path.abspath(__file__)
     overall_path = os.path.dirname(os.path.dirname(os.path.dirname(this_path)))
@@ -195,40 +197,113 @@ def make_pybullet(arg_dict, pybullet_instance, rank, hand_info, viz=False):
         physics_client = pybullet_instance.connect(pybullet_instance.DIRECT)
 
     # set initial gravity and general features
+    pybullet_instance.resetSimulation()
     pybullet_instance.setAdditionalSearchPath(pybullet_data.getDataPath())
     pybullet_instance.setGravity(0, 0, -10)
-    pybullet_instance.setPhysicsEngineParameter(contactBreakingThreshold=.001)
+    pybullet_instance.setPhysicsEngineParameter(contactBreakingThreshold=.001, contactERP=0.8, enableConeFriction=1, globalCFM=0.01, numSubSteps=1)
+    pybullet_instance.setRealTimeSimulation(0)
     pybullet_instance.resetDebugVisualizerCamera(cameraDistance=.02, cameraYaw=0, cameraPitch=-89.9999,
                                  cameraTargetPosition=[0, 0.1, 0.5])
+    pybullet_instance.configureDebugVisualizer(pybullet_instance.COV_ENABLE_MOUSE_PICKING,0)
+    pybullet_instance.configureDebugVisualizer(pybullet_instance.COV_ENABLE_WIREFRAME,0)
     
     # load hand/hands 
     if rank[1] < len(args['hand_file_list']):
         raise IndexError('TOO MANY HANDS FOR NUMBER OF PROVIDED CORES')
     elif rank[1] % len(args['hand_file_list']) != 0:
         print('WARNING: number of hands does not evenly divide into number of pybullet instances. Hands will have uneven number of samples')
-    
-    if args['domain_randomization_object_size']:
-        if type(args['object_path']) == str:
-            object_path = args['object_path']
-            object_key = "small"
-            print('older version of object loading, no object domain randomization used')
-        else:
-            object_path = args['object_path'][rank[0]%len(args['object_path'])]
-            if 'add10' in object_path:
-                object_key = 'add10'
-            elif 'sub10' in object_path:
-                object_key = 'sub10'
+    try:
+        if args['domain_randomization_object_size']:
+            if type(args['object_path']) == str:
+                object_path = args['object_path']
+                object_key = "small"
+                print('older version of object loading, no object domain randomization used')
             else:
-                object_key = 'small'
-    else:
-        if type(args['object_path']) == str:
-            object_path = args['object_path']
-            object_key = "small"
-            # print('older version of object loading, no object domain randomization used')
+                object_path = args['object_path'][rank[0]%len(args['object_path'])]
+                if 'add10' in object_path:
+                    object_key = 'add10'
+                elif 'sub10' in object_path:
+                    object_key = 'sub10'
+                else:
+                    object_key = 'small'
+        elif args['random_shapes']:
+            object_path = args['object_path'][rank[0]%len(args['object_path'])]
+            if 'square' in object_path:
+                if 'small' in object_path:
+                    object_key = 'sub10'
+                elif 'large' in object_path:
+                    object_key = 'add10'
+                else:
+                    object_key = 'small'
+            if 'circle' in object_path:
+                if 'small' in object_path:
+                    object_key = 'sub10'
+                elif 'large' in object_path:
+                    object_key = 'add10'
+                else:
+                    object_key = 'small'
+            if 'triangle' in object_path:
+                if 'small' in object_path:
+                    object_key = 'sub10'
+                elif 'large' in object_path:
+                    object_key = 'add10'
+                else:
+                    object_key = 'small'
+            # if 'ellipse' in object_path:
+            #     if 'small' in object_path:
+            #         object_key = 'small_ellipse'
+            #     elif 'large' in object_path:
+            #         object_key = 'large_ellipse'
+            #     else:
+            #         object_key = 'medium_ellipse'
+            # if 'teardrop' in object_path:
+            #     if 'small' in object_path:
+            #         object_key = 'small_teardrop'
+            #     elif 'large' in object_path:
+            #         object_key = 'large_teardrop'
+            #     else:
+            #         object_key = 'medium_teardrop'
+            # if 'concave' in object_path:
+            #     if 'small' in object_path:
+            #         object_key = 'small_concave'
+            #     elif 'large' in object_path:
+            #         object_key = 'large_concave'
+            #     else:
+            #         object_key = 'medium_concave'
         else:
-            # print('normally would get object DR but not this time')
-            object_path = args['object_path'][0]
-            object_key = 'small'   
+            if type(args['object_path']) == str:
+                object_path = args['object_path']
+                object_key = "small"
+                # print('older version of object loading, no object domain randomization used')
+            else:
+                # print('normally would get object DR but not this time')
+                object_path = args['object_path'][0]
+                object_key = 'small'   
+
+    except KeyError:
+        if args['domain_randomization_object_size']:
+            if type(args['object_path']) == str:
+                object_path = args['object_path']
+                object_key = "small"
+                print('older version of object loading, no object domain randomization used')
+            else:
+                object_path = args['object_path'][rank[0]%len(args['object_path'])]
+                if 'add10' in object_path:
+                    object_key = 'add10'
+                elif 'sub10' in object_path:
+                    object_key = 'sub10'
+                else:
+                    object_key = 'small'
+        else:
+            if type(args['object_path']) == str:
+                object_path = args['object_path']
+                object_key = "small"
+                print('older version of object loading, no object domain randomization used')
+            else:
+                # print('normally would get object DR but not this time')
+                object_path = args['object_path'][2]
+                object_key = 'add10'   
+
     this_hand = args['hand_file_list'][rank[0]%len(args['hand_file_list'])]
     hand_type = this_hand.split('/')[0]
     hand_keys = hand_type.split('_')
@@ -240,20 +315,22 @@ def make_pybullet(arg_dict, pybullet_instance, rank, hand_info, viz=False):
                         "palm_width":info_1['palm_width'],
                         "hand_name":hand_type}
     else:
-        # print('STARTING AWAY FROM THE OBJECT')
+        print('STARTING AWAY FROM THE OBJECT', object_key)
         hand_param_dict = {"link_lengths":[info_1['link_lengths'],info_2['link_lengths']],
                         "starting_angles":[info_1['near_start_angles'][object_key][0],info_1['near_start_angles'][object_key][1],-info_2['near_start_angles'][object_key][0],-info_2['near_start_angles'][object_key][1]],
                         "palm_width":info_1['palm_width'],
                         "hand_name":hand_type}
-
+        
     # load objects into pybullet
     plane_id = pybullet_instance.loadURDF("plane.urdf", flags=pybullet_instance.URDF_ENABLE_CACHED_GRAPHICS_SHAPES, basePosition=[0.50,0.50,0])
     # other_id = pybullet_instance.loadURDF('./resources/object_models/wallthing/vertical_wall.urdf', basePosition=[0.0,0.0,-0.1],
     hand_id = pybullet_instance.loadURDF(args['hand_path'] + '/' + this_hand, useFixedBase=True,
                          basePosition=[0.0, 0.0, 0.05], flags=pybullet_instance.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
     # print('object path',object_path)
-    obj_id = pybullet_instance.loadURDF(object_path, basePosition=[0.0, 0.10, .05], flags=pybullet_instance.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
-    # print(f'OBJECT ID:{obj_id}')
+    obj_id = pybullet_instance.loadURDF(object_path, basePosition=[0.0, 0.10, .0], flags=pybullet_instance.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
+
+    #obj_id = pybullet_instance.loadSoftBody("/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/resources/object_models/Jeremiah_Shapes/Shapes/torus.vtk", mass = 3, scale = 1, useNeoHookean = 1, NeoHookeanMu = 180, NeoHookeanLambda = 600, NeoHookeanDamping = 0.01, collisionMargin = 0.006, useSelfCollision = 1, frictionCoeff = 0.5, repulsionStiffness = 800)
+
 
     # Create TwoFingerGripper Object and set the initial joint positions
     hand = TwoFingerGripper(hand_id, path=args['hand_path'] + '/' + this_hand,hand_params=hand_param_dict)
@@ -284,9 +361,18 @@ def make_pybullet(arg_dict, pybullet_instance, rank, hand_info, viz=False):
     reward = multiprocess_reward.MultiprocessReward(pybullet_instance)
 
     #change initial physics parameters
-    pybullet_instance.changeDynamics(plane_id,-1,lateralFriction=0.05, spinningFriction=0.05, rollingFriction=0.05)
-    pybullet_instance.changeDynamics(obj.id, -1, mass=.03, restitution=.95, lateralFriction=1)
-    
+    if frictionList is None:
+        pybullet_instance.changeDynamics(plane_id,-1,lateralFriction=0.05, spinningFriction=0.05, rollingFriction=0.05)
+        pybullet_instance.changeDynamics(obj.id, -1, mass=.03, restitution=.95, lateralFriction=1)
+    else:
+        pybullet_instance.changeDynamics(hand_id, -1,lateralFriction=frictionList[0], spinningFriction=frictionList[1], rollingFriction=frictionList[2])
+        pybullet_instance.changeDynamics(plane_id, -1,lateralFriction=frictionList[3], spinningFriction=frictionList[4], rollingFriction=frictionList[5])
+        pybullet_instance.changeDynamics(obj.id, -1, mass=.03, restitution=.95, lateralFriction=frictionList[6],spinningFriction=frictionList[7], rollingFriction=frictionList[8])
+
+
+    if contactList is not None:
+        pybullet_instance.changeDynamics(hand_id, -1,contactStiffness=contactList[0],contactDamping=contactList[1], restitution=contactList[2])
+
     # set up dictionary for manipulation phase
     arg_dict = args.copy()
     if args['action'] == 'Joint Velocity':
@@ -362,6 +448,9 @@ def multiprocess_evaluate_loaded(filepath, aorb):
     elif aorb =='B':
         args['hand_file_list'] = ["2v2_65.35_65.35_1.1_53/hand/2v2_65.35_65.35_1.1_53.urdf"]
         ht = aorb
+    elif aorb =='C':
+        args['hand_file_list'] = ["2v2_65.35_50.50_1.1_53/hand/2v2_65.35_50.50_1.1_53.urdf"]
+        ht = aorb
     else:
         print('not going to evaluate, aorb is wrong')
         return
@@ -370,6 +459,7 @@ def multiprocess_evaluate_loaded(filepath, aorb):
         args['test_path'] = "./resources/Solo_rotation_test.csv"
     vec_env = SubprocVecEnv([make_env(args,[i,num_cpu],hand_info=hand_params) for i in range(num_cpu)])
     vec_env.env_method('set_reduced_save_type', False)
+    # Change to nn.ReLu in kwargs
     model = model_type("MlpPolicy", vec_env, tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-2.3}).load(args['save_path']+'best_model', env=vec_env)
     
     if 'Rotation' in args['task']:
@@ -410,7 +500,7 @@ def multiprocess_evaluate_loaded(filepath, aorb):
                     obs, _, done, _ = vec_env.step_wait()
     vec_env.env_method('disconnect')
 
-def asterisk_test(filepath,hand_type):
+def asterisk_test(filepath,hand_type,frictionList = None, contactList = None):
     # load a trained model and test it on its test set
     print('Evaluating on hands A or B')
     print('Hand A: 2v2_50.50_50.50_53')
@@ -450,10 +540,16 @@ def asterisk_test(filepath,hand_type):
         args['hand_file_list'] = ["2v2_50.50_50.50_1.1_53/hand/2v2_50.50_50.50_1.1_53.urdf"]
     elif hand_type == 'B':
         args['hand_file_list'] = ["2v2_65.35_65.35_1.1_53/hand/2v2_65.35_65.35_1.1_53.urdf"]    
+    elif hand_type =='C':
+        args['hand_file_list'] = ["2v2_65.35_50.50_1.1_53/hand/2v2_65.35_50.50_1.1_53.urdf"]
     else:
         print('get fucked')
         assert 1==0
     asterisk_thing = [[0,0.07],[0.0495,0.0495],[0.07,0.0],[0.0495,-0.0495],[0.0,-0.07],[-0.0495,-0.0495],[-0.07,0.0],[-0.0495,0.0495]]
+    scaled_points = [
+    [0.0, 0.04666666666666667], [0.033, 0.033], [0.04666666666666667, 0.0], 
+    [0.033, -0.033], [0.0, -0.04666666666666667], [-0.033, -0.033], 
+    [-0.04666666666666667, 0.0], [-0.033, 0.033]]
 
     if 'Rotation' in args['task']:
         print('get fucked')
@@ -465,16 +561,54 @@ def asterisk_test(filepath,hand_type):
     eval_env.reduced_saving = False
     model = model_type("MlpPolicy", eval_env, tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-2.3}).load(args['save_path']+'best_model', env=eval_env)
     eval_env.episode_type = 'asterisk'
-    for i in asterisk_thing:
-        eval_env.manipulation_phase.state.objects[-1].set_all_pose(i)
-        obs = eval_env.reset()
-        eval_env.manipulation_phase.state.objects[-1].set_all_pose(i)
-        done = False
+    if frictionList is not None:
+        for friction in range(len(frictionList)):
+            for j in range(1,51):
+                modifiedFrictionList = frictionList.copy()
+                #print("Copied Friction list in wrapper is :", modifiedFrictionList)
+                modifiedFrictionList[friction] = j * 0.1 * modifiedFrictionList[friction]
+                #print("Modified in wrapper is :", modifiedFrictionList)
+                eval_env.set_friction(modifiedFrictionList)
+                for i in asterisk_thing:
+                    eval_env.manipulation_phase.state.objects[-1].set_all_pose(i)
+                    obs = eval_env.reset()
+                    # input('go')
+                    eval_env.manipulation_phase.state.objects[-1].set_all_pose(i)
+                    done = False
 
-        while not done:
-            action, _ = model.predict(obs,deterministic=True)
-            obs, _, done, _ = eval_env.step(action,hand_type=hand_type)
+                    while not done:
+                        action, _ = model.predict(obs,deterministic=True)
+                        obs, _, done, _ = eval_env.step(action,hand_type=hand_type)
 
+    elif contactList is not None:
+        for contact in range(len(contactList)):
+            for j in range(0,101):
+                modifiedContactList = contactList.copy()
+                #print("Copied Contact list in wrapper is :", modifiedContactList)
+                modifiedContactList[contact] = j * 0.1 * modifiedContactList[contact]
+                #print("Modified in wrapper is :", modifiedContactList)
+                eval_env.set_contact(modifiedContactList)
+                for i in asterisk_thing:
+                    eval_env.manipulation_phase.state.objects[-1].set_all_pose(i)
+                    obs = eval_env.reset()
+                    # input('go')
+                    eval_env.manipulation_phase.state.objects[-1].set_all_pose(i)
+                    done = False
+
+                    while not done:
+                        action, _ = model.predict(obs,deterministic=True)
+                        obs, _, done, _ = eval_env.step(action,hand_type=hand_type)
+
+    else:
+        for i in asterisk_thing:
+            eval_env.manipulation_phase.state.objects[-1].set_all_pose(i)
+            obs = eval_env.reset()
+            eval_env.manipulation_phase.state.objects[-1].set_all_pose(i)
+            done = False
+            # input('go')
+            while not done:
+                action, _ = model.predict(obs,deterministic=True)
+                obs, _, done, _ = eval_env.step(action,hand_type=hand_type)
 
 def rotation_test(filepath, hand_type):
     # load a trained model and test it on its test set
@@ -509,6 +643,7 @@ def rotation_test(filepath, hand_type):
     # print('HARDCODING THE TEST PATH TO BE THE ROTATION TEST')
     # args['test_path'] ="/home/mothra/mojo-grasp/demos/rl_demo/resources/Solo_rotation_test.csv"
     max_ang = 50/180*np.pi
+    args['contact_start'] = True
     if not('contact_start' in args.keys()):
         args['contact_start'] = True
         print('we didnt have a contact start so we set it to true')
@@ -561,13 +696,14 @@ def rotation_test(filepath, hand_type):
     model = model_type("MlpPolicy", eval_env, tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-2.3}).load(args['save_path']+'best_model', env=eval_env)
     eval_env.episode_type = 'asterisk'
     i = 0
+    print('we are about to begin testing')
     for start_pos in goal_poses:
         for go in angles:
-            # print(go)
-            eval_env.manipulation_phase.state.objects[-1].set_all_pose(start_pos,fuckdis[i])
+            print(go)
+            eval_env.manipulation_phase.state.objects[-1].set_all_pose(start_pos,go)
             s_dict = {'goal_position':start_pos}#, 'fingers':start_angs}
             obs = eval_env.reset(s_dict)
-            eval_env.manipulation_phase.state.objects[-1].set_all_pose(start_pos,fuckdis[i])
+            eval_env.manipulation_phase.state.objects[-1].set_all_pose(start_pos,go)
             done = False
             i += 1
             # input('next')
@@ -777,7 +913,7 @@ def replay(argpath, episode_path):
     f2_poses = [s['state']['f2_pos'] for s in data['timestep_list']]
     joint_angles = [s['state']['two_finger_gripper']['joint_angles'] for s in data['timestep_list']]
     import pybullet as p2
-    # args['hand_file_list'] = ["2v2_65.35_65.35_1.1_53/hand/2v2_65.35_65.35_1.1_53.urdf"]
+    # args['hand_file_list'] = ["2v2_65.35_50.50_1.1_53/hand/2v2_65.35_50.50_1.1_53.urdf"]
     eval_env , _, poses= make_pybullet(args,p2, [1,3], hand_params,viz=True)
     eval_env.evaluate()
     temp = [joint_angles[0]['finger0_segment0_joint'],joint_angles[0]['finger0_segment1_joint'],joint_angles[0]['finger1_segment0_joint'],joint_angles[0]['finger1_segment1_joint']]
@@ -800,7 +936,9 @@ def replay(argpath, episode_path):
     #print(data['timestep_list'][0]['state']['obj_2'])
     temp = data['timestep_list'][0]['state']['goal_pose']['goal_position']
     angle = data['timestep_list'][0]['state']['goal_pose']['goal_orientation']
-
+    
+    # for i in visual_list:
+    #     eval_env.env.make_viz_point([i[0],i[1],0.0005])
 
     # df2 = pd.read_csv('./resources/start_poses.csv', index_col=False)
     # x_start = df2['x']
@@ -815,7 +953,7 @@ def replay(argpath, episode_path):
     # eval_env.env.make_viz_point(pts)
 
 
-    input('look at it')
+    # input('look at it')
     # angle = -data['timestep_list'][0]['state']['goal_pose']['goal_orientation']
 
     t= R.from_euler('z',angle)
@@ -836,7 +974,7 @@ def replay(argpath, episode_path):
                     baseInertialFramePosition=[0,0,0],
                     baseCollisionShapeIndex=collisionShapeId,
                     baseVisualShapeIndex=visualShapeId,
-                    basePosition=[obj_temp[0]-0.0025,obj_temp[1]+0.1-0.0025,0.11],
+                    basePosition=[obj_temp[0]-0.0025,obj_temp[1]+0.1-0.0025,0.15],
                     baseOrientation =quat,
                     useMaximalCoordinates=True)
     
@@ -845,9 +983,11 @@ def replay(argpath, episode_path):
     curr_id=p2.loadURDF('./resources/object_models/2v2_mod/2v2_mod_cylinder_small_alt.urdf', flags=p2.URDF_ENABLE_CACHED_GRAPHICS_SHAPES,
                 globalScaling=0.2, basePosition=temp_pos, baseOrientation=[ 0.7071068, 0, 0, 0.7071068 ])
     p2.changeVisualShape(curr_id, -1,rgbaColor=[1, 0.5, 0, 1])
-    cid = p2.createConstraint(2, -1, curr_id, -1, p2.JOINT_FIXED, [0, 0, 0], [0, 0, 0], [0,0,0], childFrameOrientation=[ 0.7071068, 0, 0, 0.7071068 ])
     p2.setCollisionFilterPair(curr_id,tting,-1,-1,0)
     p2.setCollisionFilterPair(curr_id,2,-1,-1,0)
+    print(eval_env.env.obj_id)
+    cid = p2.createConstraint(curr_id, -1, eval_env.env.obj_id, -1, p2.JOINT_FIXED, [0, 0, 0], [0, 0, 0], [0,0,0.065], parentFrameOrientation=[ 0.7071068, 0, 0, 0.7071068 ])
+
     
 
     if 'contact' in args['task']:
@@ -910,7 +1050,7 @@ def replay(argpath, episode_path):
         # joints.append()
     p2.disconnect()
 
-def main(filepath = None,learn_type='run', num_cpu=16):
+def main(filepath = None,learn_type='run', num_cpu=16, j_test=False):
     # Create the vectorized environment
     print('cuda y/n?', get_device())
     if filepath is None:
@@ -974,7 +1114,11 @@ def main(filepath = None,learn_type='run', num_cpu=16):
                         batch_size=256,
                         tensorboard_log=args['tname'])
             print('DDPG MODEL INITIALIZED')
+        elif j_test:
+            model = model_type("MlpPolicy", vec_env,tensorboard_log=args['tname'], policy_kwargs={'log_std_init':-0.69,'activation_fn': nn.ReLU})
+            print('J_TEST MODEL INITIALIZED')
         else:
+            # use ReLu in Kwargs and log_std_init = -.69 
             model = model_type("MlpPolicy", vec_env,tensorboard_log=args['tname'])
 
     try:
@@ -992,23 +1136,40 @@ def main(filepath = None,learn_type='run', num_cpu=16):
 
 if __name__ == '__main__':
     import csv
-    # multiprocess_evaluate_loaded('./data/Mothra_Full/FTP_S1/experiment_config.json',"B")
-    # replay('./data/Jeremiah_Full/JA_S1/experiment_config.json', './data/Jeremiah_Full/JA_S1/Eval_A/Episode_26599.pkl')
-    # multiprocess_evaluate_loaded('./data/Mothra_Rotation/JA_S3/experiment_config.json',"B")
-    # multiprocess_evaluate_loaded('./data/Mothra_Rotation/JA_S3/experiment_config.json',"A")
+    replay('./data/Mothra_Rotation/FTP_S3/experiment_config.json','./data/Mothra_Rotation/FTP_S3/Full_Ast_B/Episode_37.pkl')
+    # sub_names = ['FTP_S3','JA_S3']
+    # top_names = ['Mothra_Rotation']#,'Jeremiah_Rotation','HPC_Rotation'] #['N_mothra_slide_rerun','N_HPC_slide_rerun','J_HPC_rerun'] # ,
 
-    # multiprocess_evaluate_loaded('./data/Mothra_Full/FTP_S3/experiment_config.json',"A")
-    # multiprocess_evaluate_loaded('./data/Mothra_Full/FTP_S3/experiment_config.json',"B")
+    main('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/Long_Slice_Improved/Static_Dec3/experiment_config.json','run',j_test=True)
+    #multiprocess_evaluate_loaded('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/Random_Shape_Test/Regular/experiment_config.json','A')
+    #multiprocess_evaluate_loaded('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/Random_Shape_Test/Slice/experiment_config.json','A')
+    #multiprocess_evaluate_loaded('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/Long_Slice/Static_Long_Nov20/experiment_config.json','A')
+    # multiprocess_evaluate_loaded('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/The_last_run/JA_S3/experiment_config.json',"A")
+    # replay('./data/Bogo/JA_S3/experiment_config.json', './data/Bogo/JA_S3/Eval_A/Episode_96.pkl')
+    # replay('./data/New_Fric2/low_c/experiment_config.json', './data/The_last_run/JA_S3/Ast_A/Episode_4.pkl')
+    # replay('./data/Collision_Test/Test2/experiment_config.json', './data/Collision_Test/Test2/Eval_A/Episode_170.pkl')
 
-    # multiprocess_evaluate_loaded('./data/Full_long_test/experiment_config.json',"B")
-    # multiprocess_evaluate_loaded('./data/HPC_Full/JA_S3/experiment_config.json',"B")
+    # multiprocess_evaluate_loaded('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/Slice_Test/Full/experiment_config.json',"A")
+    # multiprocess_evaluate_loaded('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/Slice_Test/Partial/experiment_config.json',"A")
+    # multiprocess_evaluate_loaded('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/Slice_Test/Double_Partial/experiment_config.json',"A")
 
-    # multiprocess_evaluate_loaded('./data/Jeremiah_Full/FTP_S1/experiment_config.json',"A")
-    # multiprocess_evaluate_loaded('./data/Jeremiah_Full/FTP_S1/experiment_config.json',"B")
-    # multiprocess_evaluate_loaded('./data/Jeremiah_Full/FTP_S2/experiment_config.json',"A")
-    # multiprocess_evaluate_loaded('./data/Jeremiah_Full/FTP_S2/experiment_config.json',"B")
-    # multiprocess_evaluate_loaded('./data/Jeremiah_Full/FTP_S3/experiment_config.json',"A")
-    # multiprocess_evaluate_loaded('./data/Jeremiah_Full/FTP_S3/experiment_config.json',"B")
+    #multiprocess_evaluate_loaded('/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/data/The_last_run/JA_S3/experiment_config.json',"A")
+    # multiprocess_evaluate_loaded('./data/HPC_Slide/FTP_S1/experiment_config.json',"B")
+    # multiprocess_evaluate_loaded('./data/HPC_Slide/FTP_S2/experiment_config.json',"A")
+    # multiprocess_evaluate_loaded('./data/HPC_Slide/FTP_S2/experiment_config.json',"B")
+
+    # multiprocess_evaluate_loaded('./data/HPC_Slide/JA_S1/experiment_config.json',"A")
+    # multiprocess_evaluate_loaded('./data/HPC_Slide/JA_S1/experiment_config.json',"B")
+    # multiprocess_evaluate_loaded('./data/HPC_Slide/JA_S2/experiment_config.json',"A")
+    # multiprocess_evaluate_loaded('./data/HPC_Slide/JA_S2/experiment_config.json',"B")
+
+    # multiprocess_evaluate_loaded('./data/HPC_Slide/JA_S3/experiment_config.json',"A")
+    # multiprocess_evaluate_loaded('./data/HPC_Slide/JA_S3/experiment_config.json',"B")
+    # multiprocess_evaluate_loaded('./data/HPC_Slide/FTP_S3/experiment_config.json',"A")
+    # multiprocess_evaluate_loaded('./data/HPC_Slide/FTP_S3/experiment_config.json',"B")
+    # contactList = [9, 6, 0.05]
+    # frictionList = [0.05 ,0.01 ,0.04 ,0.20 ,0.01 ,0.05, 1, 0.001, 0.001]
+    # asterisk_test('./data/The_last_run/JA_S3/experiment_config.json','A')
     # full_test('./data/Mothra_Full_Continue_New_weight/JA_S3/experiment_config.json','A')
     # full_test('./data/Mothra_Full_Continue_New_weight/JA_S3/experiment_config.json','B')
 
@@ -1062,15 +1223,23 @@ if __name__ == '__main__':
     # sub_names = ['FTP_S1','FTP_S2','FTP_S3','JA_S1','JA_S2','JA_S3']
     # top_names = ['Sliding_B']
     # for uname in top_names:
-    #     for lname in sub_names:
-    #         # rotation_test('./data/'+uname+'/'+lname+"/experiment_config.json","A_A")
-    #         # rotation_test('./data/'+uname+'/'+lname+"/experiment_config.json","B_B")
-    #         asterisk_test('./data/'+uname+'/'+lname+"/experiment_config.json","A")
-    #         asterisk_test('./data/'+uname+'/'+lname+"/experiment_config.json","B")
+        # for lname in sub_names:
+            # rotation_test('./data/'+uname+'/'+lname+"/experiment_config.json","A")
+            # rotation_test('./data/'+uname+'/'+lname+"/experiment_config.json","B_B")
+    #         assert False
+    #         # asterisk_test('./data/'+uname+'/'+lname+"/experiment_config.json","A")
+    #         # asterisk_test('./data/'+uname+'/'+lname+"/experiment_config.json","B")
     #         print(uname, lname)
-
+    # top_names = ['N_mothra_slide_rerun']#,'N_HPC_slide_rerun','J_HPC_rerun']
+    # multiprocess_evaluate_loaded("./data/N_HPC_slide_rerun/JA_S3/experiment_config.json","A")
     # for uname in top_names:
     #     for lname in sub_names:
-    #         multiprocess_evaluate_loaded('./data/'+uname+'/'+lname+"/experiment_config.json","A")
+    #         # multiprocess_evaluate_loaded('./data/'+uname+'/'+lname+"/experiment_config.json","A")
+    #         # asterisk_test('./data/'+uname+'/'+lname+"/experiment_config.json","C")
+    #         # rotation_test('./data/'+uname+'/'+lname+"/experiment_config.json","A")
     #         multiprocess_evaluate_loaded('./data/'+uname+'/'+lname+"/experiment_config.json","B")
-    #         print(uname, lname)
+            # multiprocess_evaluate_loaded('./data/'+uname+'/'+lname+"/experiment_config.json","C")
+            # print(uname, lname)
+# # 
+
+

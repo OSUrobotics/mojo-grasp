@@ -3,15 +3,15 @@
 
     <link name="40x40_Triangle">
         <visual>
-            <origin rpy="1.5707963267948966 0 0" xyz="0 0 -0.0525"/>
+            <origin rpy="1.5707963267948966 0 0" xyz="-0.0025 0 -0.0"/>
             <geometry>
-                <mesh filename="Shapes/40x40_triangle.STL" scale=".001 .001 .001"/>
+                <mesh filename="Shapes/40x40_triangle.obj" scale="1 1 1"/>
             </geometry>
         </visual>
         <collision>
-            <origin rpy="1.5707963267948966 0 0" xyz="0 0 -0.0525"/>
+            <origin rpy="1.5707963267948966 0 0" xyz="-0.0025 0 -0.0"/>
             <geometry>
-                <mesh filename="Shapes/40x40_triangle.STL" scale=".001 .001 .001"/>
+                <mesh filename="Shapes/40x40_triangle.obj" scale="1 1 1"/>
             </geometry>
         </collision>
         <inertial>

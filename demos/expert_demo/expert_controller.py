@@ -54,6 +54,7 @@ class ExpertController():
         self.current_cube_pose = self.cube.get_curr_pose()
 
     def get_next_cube_position(self) -> List[float]:
+
         # get current (x,y)
         current_x = self.current_cube_pose[0][0]
         current_y = self.current_cube_pose[0][1]
@@ -167,6 +168,7 @@ class ExpertController():
         return goal
 
     def set_goal_position(self, position: List[float]):
+
         # world coordinates
         self.goal_position = position
 

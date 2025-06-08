@@ -21,20 +21,29 @@ class MultiprocessReward(RewardDefault):
         # print('at least we here', goal_info.keys())
         # Finds distance between current cube position and goal position
         if 'upper_goal_position' in goal_info.keys():
-            goal_position = [goal_info['upper_goal_position'][0],goal_info['upper_goal_position'][1]+0.1]
+            self.current_reward['upper_goal_position'] = [goal_info['upper_goal_position'][0],goal_info['upper_goal_position'][1]+0.1]
             # print('goal in reward.set_reward', goal_position, current_cube_pose)
-            self.current_reward['goal_orientation']= goal_info['upper_goal_orientation']
-            self.current_reward['goal_finger'] = goal_info['upper_goal_finger']
-        else:
-            goal_position = [goal_info['goal_position'][0],goal_info['goal_position'][1]+0.1]
-            # print('goal in reward.set_reward', goal_position, current_cube_pose)
-            self.current_reward['goal_orientation']= goal_info['goal_orientation']
-            self.current_reward['goal_finger'] = goal_info['goal_finger']
+            self.current_reward['upper_goal_orientation']= goal_info['upper_goal_orientation']
+            self.current_reward['upper_goal_finger'] = goal_info['upper_goal_finger']
+            self.current_reward['upper_distance'] = np.sqrt((self.current_reward['upper_goal_position'][0] - current_cube_pose[0][0])**2 +
+                           (self.current_reward['upper_goal_position'][1] - current_cube_pose[0][1])**2)
+            self.current_reward['previous_pos'] = self.prev_pos.copy()
+            self.current_reward['previous_orientation'] = R.from_quat(self.prev_pos[1]).as_euler('xyz')
+            self.current_reward['previous_finger_pose'] = self.prev_finger.copy()
+        if 'goals_reached' in goal_info.keys():
+            self.current_reward['goals_reached'] = goal_info['goals_reached']
+        goal_position = [goal_info['goal_position'][0],goal_info['goal_position'][1]+0.1]
+        # if goal_info['goal_finger'] is not None:
+            # self.current_reward['']
+        # print('goal in reward.set_reward', goal_position, current_cube_pose)
+        self.current_reward['goal_orientation']= goal_info['goal_orientation']
+        self.current_reward['goal_finger'] = goal_info['goal_finger']
         distance = np.sqrt((goal_position[0] - current_cube_pose[0][0])**2 +
                            (goal_position[1] - current_cube_pose[0][1])**2)
         
         old_distance = np.sqrt((goal_position[0] - self.prev_pos[0][0])**2 +
                                (goal_position[1] - self.prev_pos[0][1])**2)
+
 
         f1_dist = self.p.getClosestPoints(cube.id, hand.id, 10, -1, 1, -1)
         f2_dist = self.p.getClosestPoints(cube.id, hand.id, 10, -1, 4, -1)
@@ -50,7 +59,10 @@ class MultiprocessReward(RewardDefault):
         self.current_reward['start_finger'] = self.start_finger
         self.current_reward['finger_pose'] =  [link1_pose[0],link1_pose[1],link2_pose[0],link2_pose[1]]
         if self.start_dist is None:
-            self.start_dist = distance.copy()
+            if 'upper_distance' in self.current_reward.keys():
+                self.start_dist =  self.current_reward['upper_distance'].copy()
+            else:
+                self.start_dist = distance.copy()
         
         self.current_reward['object_velocity'] = velocity[0]
         self.current_reward['start_dist'] = self.start_dist
@@ -67,6 +79,7 @@ class MultiprocessReward(RewardDefault):
             self.current_reward["end_penalty"] = end_reward
             self.current_reward["slope_to_goal"] = old_distance - distance
             self.prev_pos = deepcopy(current_cube_pose)
+            self.prev_finger = deepcopy(self.current_reward['finger_pose'])
             # print(f'old distance {old_distance}, current_distance {distance}')
         except:
             self.current_reward["distance_to_goal"] = distance
@@ -76,9 +89,9 @@ class MultiprocessReward(RewardDefault):
             self.current_reward["end_penalty"] = end_reward
             self.current_reward["slope_to_goal"] = old_distance - distance
             self.prev_pos = deepcopy(current_cube_pose)
+            self.prev_finger = deepcopy(self.current_reward['finger_pose'])
             # print('we are 10 meters away or more. f1 and f2 dists set to 10 since we are already well below minimum possible reward')
         # print('reward in sim', self.current_reward)
-            
 
     def get_reward(self) -> dict:
         # print('reward', self.current_reward['distance_to_goal'])
@@ -91,12 +104,16 @@ class MultiprocessReward(RewardDefault):
         self.start_dist = None
         self.timestep_num = 0
         self.start_finger = [start_state['f1_pos'][0],start_state['f1_pos'][1],start_state['f2_pos'][0],start_state['f2_pos'][1]]
+        self.prev_finger = deepcopy(self.start_finger)
 
     def update_start(self, goal_info: dict, cube):
         current_cube_pose = cube.get_curr_pose()
         # print('goal in reward.update_start', goal_info)
         # Finds distance between current cube position and goal position
-        goal_position = goal_info['goal_position']
+        if 'upper_goal_position' in goal_info.keys():
+            goal_position = goal_info['upper_goal_position']
+        else:
+            goal_position = goal_info['goal_position']
         distance = np.sqrt((goal_position[0] - current_cube_pose[0][0])**2 +
                            (goal_position[1] - current_cube_pose[0][1])**2)
         self.start_dist = distance

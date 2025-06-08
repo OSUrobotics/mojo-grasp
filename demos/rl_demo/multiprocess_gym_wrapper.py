@@ -50,7 +50,6 @@ class MultiprocessGymWrapper(gym.Env):
         self.observation_space = spaces.Box(np.array(args['state_mins']),np.array(args['state_maxes']))
         self.STATE_NOISE = args['state_noise']
         if self.STATE_NOISE > 0:
-            print('WE ARE GETTING NOISEY. YOU SHOULD SEE THIUS. IF YOU DONT WE FYCKED UP')
             self.noisey_boi = NoiseAdder(np.array(args['state_mins']), np.array(args['state_maxes']))
         self.PREV_VALS = args['pv']
         self.REWARD_TYPE = args['reward']
@@ -72,15 +71,20 @@ class MultiprocessGymWrapper(gym.Env):
         self.first = True
         self.reduced_saving = True
         self.small_enough = False #args['epochs'] <= 100000
-        self.ONE_FINGER = args['one_finger_straight']
+        self.frictionList = None
+        self.contactList = None
+        
+        self.OBJECT_POSE_RANDOMIZATION = args['object_random_start']
         try:
             self.DOMAIN_RANDOMIZATION_MASS = args['domain_randomization_object_mass']
             self.DOMAIN_RANDOMIZATION_FINGER = args['domain_randomization_finger_friction']
             self.DOMAIN_RANDOMIZATION_FLOOR = args['domain_randomization_floor_friction']
+            self.ONE_FINGER = args['one_finger']
         except KeyError:
             self.DOMAIN_RANDOMIZATION_MASS = False
             self.DOMAIN_RANDOMIZATION_FINGER = False
             self.DOMAIN_RANDOMIZATION_FLOOR = False
+            self.ONE_FINGER = False
         self.episode_type = 'train'
         try:
             self.SUCCESS_REWARD = args['success_reward']
@@ -98,6 +102,14 @@ class MultiprocessGymWrapper(gym.Env):
                        'CONTACT_SCALING':self.CONTACT_SCALING,
                        'ROTATION_SCALING':self.ROTATION_SCALING,
                        'SUCCESS_REWARD':self.SUCCESS_REWARD}
+        
+    def set_friction(self,frictionList):
+        self.frictionList = frictionList
+        self.env.set_friction(frictionList)
+
+    def set_contact(self,contactList):
+        self.contactList = contactList
+        self.env.set_contact(contactList)
 
     def prep_reward(self):
         """
@@ -143,6 +155,8 @@ class MultiprocessGymWrapper(gym.Env):
                 self.build_reward = rf.double_scaled
             elif self.REWARD_TYPE == 'TripleScaled':
                 self.build_reward = rf.triple_scaled_slide
+            elif self.REWARD_TYPE == 'TripleScaledJ':
+                self.build_reward = rf.triple_scaled_slide_j
             elif self.REWARD_TYPE == 'SFS':
                 self.build_reward = rf.sfs
             elif self.REWARD_TYPE == 'DFS':
@@ -199,14 +213,17 @@ class MultiprocessGymWrapper(gym.Env):
             self.env.reset(self.eval_point)
         elif type(special) is list:
             self.env.reset_to_pos(special[0],special[1])
+
+        # Jeremiah shenanigans I hope this breaks nothing
         elif type(special) is dict:
             # print('reseting with special dict', special)
             if 'fingers' in special.keys():
                 self.env.reset(special['goal_position'], special['fingers'])
+            elif self.ONE_FINGER:
+                self.env.reset([0,0],[-.785,1.57,0.174533,-0.174533])
             else:
                 self.env.reset(special['goal_position'])
-            if self.ONE_FINGER:
-                self.env.reset([0,0],finger=[-0.175,0.175,.785,-1.57])
+            
 
         elif (self.TASK == 'Rotation_region') | ('contact' in self.TASK) | (self.TASK=='big_Rotation'):
             self.env.reset(new_goal['goal_position'],fingerys=fingerys)
@@ -219,17 +236,14 @@ class MultiprocessGymWrapper(gym.Env):
         elif 'wall' in self.TASK:
             self.env.reset([0.0463644396618753, 0.012423314164921])
         elif self.ONE_FINGER:
-            self.env.reset([0,0],finger=[-0.175,0.175])
+            self.env.reset([0,0],[.785,-1.57,0.174533,-0.174533])
         else:
             # print('reseting with NO parameters')
             self.env.reset()
         self.manipulation_phase.setup()
         
         state, _ = self.manipulation_phase.get_episode_info()
-        # print(state['two_  gripper']['joint_angles'])
-        # print('goal pose in reset', state['goal_pose'])
-        # print('start object pos', state['obj_2']['pose'])
-        # print('joint angles', state['two_finger_gripper']['joint_angles'])
+
         if state['goal_pose']['goal_finger'] is not None:
             self.env.set_finger_contact_goal(state['goal_pose']['goal_finger'])
 
@@ -287,7 +301,7 @@ class MultiprocessGymWrapper(gym.Env):
                 if self.reduced_saving:
                     self.record.record_test_round()
                 else:
-                    self.record.record_episode(self.episode_type)
+                    self.record.record_episode(self.episode_type, self.frictionList, self.contactList)
 
                 if self.eval:
                     if self.hand_type is None:
@@ -360,6 +374,27 @@ class MultiprocessGymWrapper(gym.Env):
                         state.extend(state_container['previous_state'][i]['wall']['pose'][0][0:2])
                         state.extend(state_container['previous_state'][i]['wall']['pose'][1][0:4])
                     # What Jeremiah Added
+                    elif key == 'slice':
+                        pass
+                        # state.extend(state_container['previous_state'][i]['slice'].flatten())
+                    elif key == 'mslice':
+                        shape = state_container['previous_state'][i]['slice']
+                        x, y = state_container['previous_state'][i]['obj_2']['pose'][0][0:2]
+                        a, b, c, w = state_container['previous_state'][i]['obj_2']['pose'][1]
+
+                        theta = np.arctan2(2 * (w * c + a * b), 1 - 2 * (b**2 + c**2))
+
+                        rotation_matrix = np.array([
+                            [np.cos(theta), -np.sin(theta)],
+                            [np.sin(theta), np.cos(theta)]
+                        ])
+
+                        shape = shape @ rotation_matrix.T
+                        shape[:, 0] += x
+                        shape[:, 1] += y
+                        state.extend(shape.flatten())                      
+
+
                     elif key == 'rad':
                         state.append(state_container['previous_state'][i]['f1_contact_distance'])
                         state.append(state_container['previous_state'][i]['f2_contact_distance'])
@@ -415,6 +450,24 @@ class MultiprocessGymWrapper(gym.Env):
                 state.extend(state_container['wall']['pose'][1][0:4])
                 
             # What Jeremiah Added
+            elif key == 'slice':
+                    state.extend(state_container['slice'].flatten())
+            elif key == 'mslice':
+                shape = state_container['slice']
+                x,y = state_container['obj_2']['pose'][0][0:2]
+                a,b,c,w = state_container['obj_2']['pose'][1]
+                theta = np.arctan2(2 * (w * c + a * b), 1 - 2 * (b**2 + c**2))
+
+                rotation_matrix = np.array([
+                    [np.cos(theta), -np.sin(theta)],
+                    [np.sin(theta), np.cos(theta)]
+                ])  
+
+                shape = shape @ rotation_matrix.T
+                shape[:, 0] += x
+                shape[:, 1] += y
+                state.extend(shape.flatten())
+
             elif key == 'rad':
                 state.append(state_container['f1_contact_distance'])
                 state.append(state_container['f2_contact_distance'])
