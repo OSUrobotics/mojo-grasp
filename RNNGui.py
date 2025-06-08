@@ -64,7 +64,7 @@ class RNNGui():
                          [sg.Button("Browse",key='-browse-save',button_color='DarkBlue'),sg.Text("/", key='-save-path')],
                          [sg.Text('Path to Previous Policy if Transferring')],
                          [sg.Button("Browse",key='-browse-load',button_color='DarkBlue'),sg.Text("/", key='-load-path')],
-                         [sg.Text('Object'), sg.OptionMenu(values=('Cube', 'Cylinder', 'circle', 'hourglass', 'ellipse', 'square_concave', 'square', 'triangle', 'cone', 'teardrop','triple'), k='-object', default_value='Cube')],
+                         [sg.Text('Object'), sg.OptionMenu(values=('Cube', 'Cylinder', 'circle', 'hourglass', 'ellipse', 'square_concave', 'square', 'triangle', 'cone', 'teardrop','triple','aspect_ratios','aspect_ratios2'), k='-object', default_value='Cube')],
                          [sg.Text('Hands Used For Training and Testing')],
                          [sg.Checkbox('2v2_50.50_50.50_43',key='2v2_50.50_50.50_1.1_43',default=False),sg.Checkbox('2v2_50.50_50.50_53',key='2v2_50.50_50.50_1.1_53', default=True),sg.Checkbox('2v2_50.50_50.50_63',key='2v2_50.50_50.50_1.1_63', default=False),sg.Checkbox('2v2_50.50_50.50_73',key='2v2_50.50_50.50_1.1_73', default=False)],
                          [sg.Checkbox('2v2_65.35_50.50_43',key='2v2_65.35_50.50_1.1_43', default=False),sg.Checkbox('2v2_65.35_50.50_53',key='2v2_65.35_50.50_1.1_53', default=False),sg.Checkbox('2v2_65.35_50.50_63',key='2v2_65.35_50.50_1.1_63', default=False),sg.Checkbox('2v2_65.35_50.50_73',key='2v2_65.35_50.50_1.1_73', default=False)],
@@ -83,8 +83,14 @@ class RNNGui():
                          [sg.Text('Rotation limits, only used by Rotation and Full Tasks'), sg.Radio('75 degrees',group_id='rots',key='-75',default=False), sg.Radio('50 degrees',group_id='rots',key='-50',default=True), sg.Radio('15 degrees',group_id='rots',key='-15',default=False)],
                          [sg.Text('Replay Buffer Sampling'), sg.OptionMenu(values=['priority', 'random','random+expert'], k='-sampling', default_value='priority')],
                          [sg.Text('Domain Randomization Options')],
-                         [sg.Checkbox('Finger Friction', default=True, k='-DRFI'),sg.Checkbox('Floor Friction', default=True, k='-DRFL'),sg.Checkbox('Object Size', default=True, k='-DROS'), sg.Checkbox('Object Mass', default=True, k='-DROM'), sg.Checkbox("Rand Shapes", key='-rs',default=False)],
+                         [sg.Checkbox('Finger Friction', default=True, k='-DRFI'),sg.Checkbox('Floor Friction', default=True, k='-DRFL'),sg.Checkbox('Object Size', default=False, k='-DROS'), sg.Checkbox('Object Mass', default=True, k='-DROM'), sg.Checkbox("Rand Shapes", key='-rs',default=False)],
                          # Jeremiah Added this
+                         [sg.Text('Starting Orientation Range (deg)'), sg.Input(0, key='-sorl', size=(8,2)), sg.Text('To'), sg.Input(0, key='-sorh', size=(8,2))],
+                        #  [sg.Text('Starting X Range (cm)'), sg.Input(-1, key='-sxrl', size=(8,2)), sg.Text('To'), sg.Input(1, key='-sxrh', size=(8,2))],
+                        #  [sg.Text('Starting Y Range (cm)'), sg.Input(-1, key='-syrl', size=(8,2)), sg.Text('To'), sg.Input(1, key='-syrh', size=(8,2))],
+                         [sg.Text('Starting R Range (cm)'), sg.Input(-1, key='-srrl', size=(8,2)), sg.Text('To'), sg.Input(-1, key='-srrh', size=(8,2))],
+                         [sg.Text('Starting Theta Range (deg)'), sg.Input(-1, key='-sthetarl', size=(8,2)), sg.Text('To'), sg.Input(-1, key='-sthetarh', size=(8,2))],
+                         [sg.Text('Friction Randomization Values (Must check box)')],
                          [sg.Text('Lateral Friction Values'), sg.Input(0.25, key='-lfl',size=(8, 2)), sg.Input(0.75, key='-lfh',size=(8, 2))],
                          [sg.Text('Spinning Friction Values'), sg.Input(0.01, key='-sfl',size=(8, 2)), sg.Input(0.0101, key='-sfh',size=(8, 2))],
                          [sg.Text('Roll Friction Values'), sg.Input(0.04, key='-rfl',size=(8, 2)), sg.Input(0.0401, key='-rfh',size=(8, 2))]]
@@ -109,11 +115,12 @@ class RNNGui():
                        [sg.Checkbox('Joint Angle', default=False, k='-ja')],
                        [sg.Checkbox('Object Position', default=True, k='-op')],
                        [sg.Checkbox('Object Orientation', default=True, k='-oo')],
+                       [sg.Checkbox('Corrected Object Orientation', default=False, k='-coo')],
                        [sg.Checkbox('Object Angle', default=False,k='-oa')],
                        [sg.Checkbox('Finger Object Distance', default=False, k='-fod')],
                        [sg.Checkbox('Finger Tip Angle', default=False, k='-fta')],
                        [sg.Checkbox('Goal Position', default=True, k='-gp')],
-                       [sg.Checkbox('Goal Orientation', default=True, k = '-go')],
+                       [sg.Checkbox('Goal Orientation', default=False, k = '-go')],
                        [sg.Checkbox('Goal Finger Pos', default=False, k='-gf')],
                        [sg.Checkbox('Goal Finger Separation', default=False, k='gfs')],
                        [sg.Checkbox('Eigenvalues', default=False,key='-eva')],
@@ -124,7 +131,9 @@ class RNNGui():
                        [sg.Checkbox("Contact Distance", default=False, k='-rad')],
                        [sg.Checkbox("Contact Angle", default=False, k='-ra')],
                        [sg.Checkbox("Radius Representation", default=False, k='-slice')],
+                       [sg.Checkbox("Rotated Radius Representation", default=False, k='-rslice')],
                        [sg.Checkbox("Moving Radius Representation", default=False, k='-mslice')],
+                       [sg.Checkbox("Latent Representation", default=False, k='-latent')],
                        [sg.Text('Num Previous States'), sg.Input(2, k='-pv',size=(8, 2)), sg.Text('Success Radius (mm)'), sg.Input(2, key='-sr',size=(8, 2))],
                        [sg.Text("Distance Scale"),  sg.Input(1,key='-distance_scale',size=(8, 2)), sg.Text('Contact Scale'),  sg.Input(0.2,key='-contact_scale',size=(8, 2)), sg.Text('Success Reward'), sg.Input(1,key='-success_reward',size=(8, 2)), sg.Text('Rotation Scale'), sg.Input(0,key='-rotation_scale',size=(8, 2))],
                        [sg.Text("Action"), sg.OptionMenu(values=('Joint Velocity','Finger Tip Position','Object Pose'), k='-action',default_value='Joint Velocity')],
@@ -164,6 +173,12 @@ class RNNGui():
                      'lat_fric_high': float(values['-lfh']),
                      'rollout_size': int(values['-rollout_size']),
                      'rollout_weight': float(values['-rollout_weight']),
+                     'starting_orientation_low': float(values['-sorl']),
+                     'starting_orientation_high': float(values['-sorh']),
+                     'starting_r_low': float(values['-srrl'])/100,
+                     'starting_r_high': float(values['-srrh'])/100,
+                     'starting_theta_low': float(values['-sthetarl']),
+                     'starting_theta_high':float(values['-sthetarh']),
                      'tau': float(values['-tau']),
                      'pv': int(values['-pv']),
                      'viz': int(values['-viz']),
@@ -230,14 +245,15 @@ class RNNGui():
                 state_maxes.extend([0.108, 0.348, 0.108, 0.348])
             state_len += 4
             state_list.append('fcp')
+        #Changed to 3D
         if values['-op']:
             if not RW:
-                state_mins.extend([-0.072, 0.018])
-                state_maxes.extend([0.072, 0.172])
+                state_mins.extend([-0.072, 0.018, 0])
+                state_maxes.extend([0.072, 0.172, 0.1])
             elif RW:
-                state_mins.extend([-0.108, 0.132])
-                state_maxes.extend([0.108, 0.348])
-            state_len += 2
+                state_mins.extend([-0.108, 0.132, 0.0])
+                state_maxes.extend([0.108, 0.348, 0.1])
+            state_len += 3
             state_list.append('op')
         if values['-oo']:
             if not RW:
@@ -327,14 +343,26 @@ class RNNGui():
 
         #What Jereimah added
         #print('state list', state_list)
+        if values['-coo']:
+            state_mins.extend([-1,-1,-1,-1])
+            state_maxes.extend([1,1,1,1])
+            state_len += 4
+            state_list.append('coo')
 
         if values['-mslice']:
             # assert True == False, 'mslice not normalized properly'
-            for i in range(48):    
-                state_mins.extend([-0.100])
-                state_maxes.extend([0.100])
-                state_len +=1
+            for i in range(24):    
+                state_mins.extend([-0.1,0,0])
+                state_maxes.extend([0.1,0.2,0.1])
+                state_len +=3
             state_list.append('mslice')
+
+        if values['-latent']:
+            for i in range(16):    
+                state_mins.extend([-1])
+                state_maxes.extend([1])
+                state_len +=1
+            state_list.append('latent')
 
         if values['-rad']:
             state_mins.extend([0,0,0,0])
@@ -348,7 +376,10 @@ class RNNGui():
             state_len += 2
             state_list.append('ra')
 
-        # Anything before is duplicated
+        # Anything before is duplicated !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+###################################################################################################################
+        # Anything after is not duplicated !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
         if self.args['pv'] > 0:
             state_len += state_len * self.args['pv']
             temp_mins = state_mins.copy()
@@ -356,14 +387,22 @@ class RNNGui():
             for i in range(self.args['pv']):
                 state_mins.extend(temp_mins)
                 state_maxes.extend(temp_maxes)
-        # Anything after is not duplicated
+
+
 
         if values['-slice']:
             for i in range(48):    
-                state_mins.extend([-.023])
-                state_maxes.extend([.023])
+                state_mins.extend([-.03])
+                state_maxes.extend([.03])
                 state_len +=1
             state_list.append('slice')
+
+        if values['-rslice']:
+            for i in range(48):    
+                state_mins.extend([-0.03])
+                state_maxes.extend([0.03])
+                state_len +=1
+            state_list.append('rslice')
 
         if state_len == 0:
             print('No selected state space')
@@ -495,6 +534,42 @@ class RNNGui():
                                             str(resource_path.joinpath('object_models/Jeremiah_Shapes/40x40_triangle.urdf')),
                                             str(resource_path.joinpath('object_models/Jeremiah_Shapes/small_40x40_triangle.urdf')),
                                             str(resource_path.joinpath('object_models/Jeremiah_Shapes/large_40x40_triangle.urdf'))]
+        
+        elif values['-object'] == 'aspect_ratios':
+            self.args['object_path'] = [str(resource_path.joinpath('object_models/Jeremiah_Shapes/40x40_square.urdf')),
+             str(resource_path.joinpath('object_models/Jeremiah_Shapes/40x40_square_15.urdf')),
+             str(resource_path.joinpath('object_models/Jeremiah_Shapes/40x40_square_2.urdf')),
+             str(resource_path.joinpath('object_models/Jeremiah_Shapes/40x40_square_3.urdf')),
+             str(resource_path.joinpath('object_models/Jeremiah_Shapes/20_r_circle.urdf')),
+             str(resource_path.joinpath('object_models/Jeremiah_Shapes/20_r_circle_15.urdf')),
+             str(resource_path.joinpath('object_models/Jeremiah_Shapes/20_r_circle_2.urdf')),
+             str(resource_path.joinpath('object_models/Jeremiah_Shapes/20_r_circle_3.urdf')),
+             str(resource_path.joinpath('object_models/Jeremiah_Shapes/40x40_triangle.urdf')),
+             str(resource_path.joinpath('object_models/Jeremiah_Shapes/40x40_triangle_15.urdf')),
+             str(resource_path.joinpath('object_models/Jeremiah_Shapes/40x40_triangle_2.urdf')),
+             str(resource_path.joinpath('object_models/Jeremiah_Shapes/40x40_triangle_3.urdf')),
+             str(resource_path.joinpath('object_models/Jeremiah_Shapes/50x30_teardrop.urdf')),
+             str(resource_path.joinpath('object_models/Jeremiah_Shapes/50x30_teardrop_15.urdf')),
+             str(resource_path.joinpath('object_models/Jeremiah_Shapes/50x30_teardrop_2.urdf')),
+             str(resource_path.joinpath('object_models/Jeremiah_Shapes/50x30_teardrop_3.urdf'))]
+            
+        elif values['-object'] == 'aspect_ratios2':
+            self.args['object_path'] = [str(resource_path.joinpath('object_models/Jeremiah_Shapes/40x40_square.urdf')),
+             str(resource_path.joinpath('object_models/Jeremiah_Shapes/40x40_square_15.urdf')),
+             str(resource_path.joinpath('object_models/Jeremiah_Shapes/40x40_square_2.urdf')),
+             str(resource_path.joinpath('object_models/Jeremiah_Shapes/40x40_square_3.urdf')),
+             str(resource_path.joinpath('object_models/Jeremiah_Shapes/20_r_circle.urdf')),
+             str(resource_path.joinpath('object_models/Jeremiah_Shapes/20_r_circle_15.urdf')),
+             str(resource_path.joinpath('object_models/Jeremiah_Shapes/20_r_circle_2.urdf')),
+             str(resource_path.joinpath('object_models/Jeremiah_Shapes/20_r_circle_3.urdf')),
+             str(resource_path.joinpath('object_models/Jeremiah_Shapes/50x30_teardrop.urdf')),
+             str(resource_path.joinpath('object_models/Jeremiah_Shapes/50x30_teardrop_15.urdf')),
+             str(resource_path.joinpath('object_models/Jeremiah_Shapes/50x30_teardrop_2.urdf')),
+             str(resource_path.joinpath('object_models/Jeremiah_Shapes/50x30_teardrop_3.urdf')),
+             str(resource_path.joinpath('object_models/Jeremiah_Shapes/pentagon.urdf')),
+             str(resource_path.joinpath('object_models/Jeremiah_Shapes/pentagon_15.urdf')),
+             str(resource_path.joinpath('object_models/Jeremiah_Shapes/pentagon_2.urdf')),
+             str(resource_path.joinpath('object_models/Jeremiah_Shapes/pentagon_3.urdf'))]
 
         
 

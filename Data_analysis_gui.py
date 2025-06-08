@@ -78,10 +78,10 @@ def main():
     plot_buttons = [[sg.Button('Object Path', size=(8, 2)), sg.Button('Finger Angles', size=(8, 2)), sg.Button('Finger Contact Distance',size=(8, 2)), sg.Button('Rewards', size=(8, 2)),sg.Button('BINGO',size=(8,2))],
                     [sg.Button('Fingertip Path', size=(8,2)), sg.Button('Actor Output', size=(8, 2)), sg.Button('Object Goal Distance',size=(8, 2)),sg.Button('Big Success',size=(8,2)),sg.Button('Load Dictionary',size=(8,2))],
                     [sg.Button('Obj Contacts', size=(8,2)), sg.Button('Aout Comparison', size=(8, 2)),sg.Button('Orientation', size=(8,2)), sg.Button('Multireward', size=(8,2)),sg.Button('Save Dictionary',size=(8,2))],
-                    [sg.Button('Finger Goal Path',size=(8,2)),sg.Button('Sampled Poses', size=(8,2)),sg.Button('draw_scatter_max_end',size=(8,2)),sg.Button('Both Errors',size=(8,2)),sg.Button('draw_newshit',size=(8,2))],
+                    [sg.Button('Finger Goal Path',size=(8,2)),sg.Button('Sampled Poses', size=(8,2)),sg.Button('draw_scatter_max_end',size=(8,2)),sg.Button('Both Errors',size=(8,2)),sg.Button('Radar Plot',size=(8,2))],
                     [sg.Button('draw_fuckery',size=(8,2)), sg.Button('draw_z',size=(8,2)), sg.Button('draw_boxen',size=(8,2)), sg.Button('b2',size=(8,2)),sg.Button('draw_HRL_path',size=(8,2))],
-                    [sg.Button('draw_HRL_orientation',size=(8,2)), sg.Button('worker_rewards',size=(8,2)), sg.Button('draw_manager_worker_comparison',size=(8,2)),sg.Button('draw_dxdy',size=(8,2))],
-                    [sg.Button('draw_number_achieved', size=(8,2)),sg.Button('draw_average_reward_hrl', size=(8,2)),sg.Button('draw_uppers',size=(8,2))]]
+                    [sg.Button('draw_HRL_orientation',size=(8,2)), sg.Button('worker_rewards',size=(8,2)), sg.Button('draw_manager_worker_comparison',size=(8,2)),sg.Button('draw_dxdy',size=(8,2)), sg.Button('Reconstruction Error',size=(8,2))],
+                    [sg.Button('draw_number_achieved', size=(8,2)),sg.Button('draw_average_reward_hrl', size=(8,2)),sg.Button('draw_uppers',size=(8,2)),sg.Button('draw_XY',size=(8,2)), sg.Button('draw_Q_bins',size=(8,2))]]
 
     # define layout, show and read the window
     col = [[sg.Text(episode_files[0], size=(80, 3), key='-FILENAME-')],
@@ -329,6 +329,9 @@ def main():
         elif event == 'Fingertip Path':
             backend.draw_fingertip_path(episode_data)
             figure_canvas_agg.draw()
+        elif event == 'Reconstruction Error':
+            backend.draw_reconstruction_error(episode_data)
+            figure_canvas_agg.draw()
         elif event == 'draw_HRL_orientation':
             backend.draw_HRL_orientation(episode_data)
             figure_canvas_agg.draw()
@@ -447,6 +450,12 @@ def main():
             figure_canvas_agg.draw()
         elif event =='draw_uppers':
             backend.draw_uppers(folder)
+            figure_canvas_agg.draw()
+        elif event == 'draw_XY':
+            backend.draw_XY(folder)
+            figure_canvas_agg.draw()
+        elif event == 'draw_Q_bins':
+            backend.draw_Q_bins(folder)
             figure_canvas_agg.draw()
         elif event == 'Both Errors':
             backend.draw_both_errors(folder)

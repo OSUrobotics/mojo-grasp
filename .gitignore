@@ -151,3 +151,4 @@ tests/no/*
 mojograsp/simcore/wandb/*
 demos/rl_demo/wandb/*
 distance_and_efficiency.csv
+wandb/*

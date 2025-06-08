@@ -75,6 +75,8 @@ class MultiprocessGymWrapper(gym.Env):
         self.contactList = None
         
         self.OBJECT_POSE_RANDOMIZATION = args['object_random_start']
+        self.OBJECT_ORIENTATION_RANDOMIZATION = args['object_random_orientation']
+        self.FINGER_POSITION_RANDOMIZATION = args['finger_random_start']
         try:
             self.DOMAIN_RANDOMIZATION_MASS = args['domain_randomization_object_mass']
             self.DOMAIN_RANDOMIZATION_FINGER = args['domain_randomization_finger_friction']
@@ -181,13 +183,34 @@ class MultiprocessGymWrapper(gym.Env):
         Intended to speed up evaluation of trained policy by allowing
         multiprocessing'''
         print('SETTING RESET POINT', point)
-        self.eval_point = point
+        if type(point) == dict:
+            self.eval_point = point
+        else:
+            self.eval_point = {'translation':point,'rotation':0}
+
+    def set_reset_ori(self,point):
+        '''
+        Function to set a reset start point for all subsequent resets
+        Intended to speed up evaluation of trained policy by allowing
+        multiprocessing'''
+        print('SETTING RESET POINT', point)
+        if type(point) == dict:
+            self.eval_point = point
+        else:
+            orientation = np.random.uniform(-np.pi,np.pi)
+            self.eval_point = {'translation':point,'rotation':orientation}
+
+    def set_reset_single_ori(self, point ,ori):
+        print('Setting starting ori to :', ori)
+        self.eval_point = {'translation':point,'rotation':ori}
 
     def set_reduced_save_type(self,ting):
         self.reduced_saving = ting
 
     def reset(self,special=None):
-
+        # print('RESET IN THE GYM WRAPPER WAS CALLED')
+        # New changes to this will place all the randomization for object and fingers in this function rather
+        # than in the multiprocess_env class
         if not self.first:
             self.thing.append(time.time()-self.past_time)
             self.past_time = time.time()
@@ -195,12 +218,10 @@ class MultiprocessGymWrapper(gym.Env):
                 self.manipulation_phase.reset()
                 # print('average time of episode',np.average(self.thing))
                 self.thing = []
-            new_goal,fingerys = self.manipulation_phase.next_ep()
-            # print('new goal from reset', new_goal)
-        else:
-            new_goal = {'goal_position':[0,0]}
-            fingerys = [0,0]
-
+            self.manipulation_phase.next_ep()
+        obj_dict,finger_dict =  self.manipulation_phase.get_start_info()
+        # print('obj dict and finger dict from manipulation phase in gym wrapper')
+        # print(obj_dict,finger_dict)
         self.timestep=0
         self.first = False
         self.env.apply_domain_randomization(self.DOMAIN_RANDOMIZATION_FINGER,self.DOMAIN_RANDOMIZATION_FLOOR,self.DOMAIN_RANDOMIZATION_MASS)
@@ -209,37 +230,32 @@ class MultiprocessGymWrapper(gym.Env):
             self.eval_run +=1
 
         if self.eval_point is not None:
-            # print('eval point and goal ', self.eval_point, new_goal)
-            self.env.reset(self.eval_point)
+            # if the user has specified an evaluation point, ignore other reset rules
+            obj_dict = self.eval_point
+            finger_dict = None
+        elif self.ONE_FINGER:
+            obj_dict = {'translation':[0,0],'rotation':0}
+            finger_dict = {'joint_angles':[-.785,1.57,0.174533,-0.174533]}
         elif type(special) is list:
-            self.env.reset_to_pos(special[0],special[1])
-
+            raise TypeError('you passed in a list to the reset function. this is no longer supported')
         # Jeremiah shenanigans I hope this breaks nothing
         elif type(special) is dict:
-            # print('reseting with special dict', special)
-            if 'fingers' in special.keys():
-                self.env.reset(special['goal_position'], special['fingers'])
-            elif self.ONE_FINGER:
-                self.env.reset([0,0],[-.785,1.57,0.174533,-0.174533])
-            else:
-                self.env.reset(special['goal_position'])
-            
+            # allow user to reset with argument dictionary. checks for goal_dict and finger_dict sub-dictionaries
+            print('reseting with special dict', special)
+            obj_dict = None
+            finger_dict = None
+            special_keys =  special.keys()
+            if 'goal_dict' in special_keys:
+                obj_dict = special_keys['obj_dict']                
+            if 'finger_dict' in special_keys:
+                finger_dict = special_keys['finger_dict']                
+            if 'goal_position' in special_keys:
+                obj_dict = {'translation':special['goal_position'], 'rotation':0}
+            if 'fingers' in special_keys:
+                finger_dict = {'joint_angles':special['fingers']}
 
-        elif (self.TASK == 'Rotation_region') | ('contact' in self.TASK) | (self.TASK=='big_Rotation'):
-            self.env.reset(new_goal['goal_position'],fingerys=fingerys)
-        elif self.OBJECT_POSE_RANDOMIZATION:
-            random_start = np.random.uniform(0,1,2)
-            x = (1-random_start[0]**2) * np.sin(random_start[1]*2*np.pi) * 0.06
-            y = (1-random_start[0]**2) * np.cos(random_start[1]*2*np.pi) * 0.04
-            # print('x and y',x,y)
-            self.env.reset([x,y])
-        elif 'wall' in self.TASK:
-            self.env.reset([0.0463644396618753, 0.012423314164921])
-        elif self.ONE_FINGER:
-            self.env.reset([0,0],[.785,-1.57,0.174533,-0.174533])
-        else:
-            # print('reseting with NO parameters')
-            self.env.reset()
+        # Reset using parameters either from user specification OR the manipulation phase
+        self.env.reset(obj_dict,finger_dict)
         self.manipulation_phase.setup()
         
         state, _ = self.manipulation_phase.get_episode_info()
@@ -265,9 +281,7 @@ class MultiprocessGymWrapper(gym.Env):
             action = action-1
 
             # print(action)
-        # print('going to manipulation_phase')
         self.manipulation_phase.gym_pre_step(action)
-        # print('executing action')
         self.manipulation_phase.execute_action(viz=viz)
         done = self.manipulation_phase.exit_condition(self.eval)
         self.manipulation_phase.post_step()
@@ -275,6 +289,8 @@ class MultiprocessGymWrapper(gym.Env):
         if self.eval or self.small_enough:
             self.record.record_timestep()
         # print('recorded timesteps')
+        # time.sleep(0.1)
+        
         state, reward_container = self.manipulation_phase.get_episode_info()
         
         info = {}
@@ -310,8 +326,9 @@ class MultiprocessGymWrapper(gym.Env):
                         self.record.save_episode(self.episode_type, hand_type=self.hand_type)
                 else:
                     self.record.save_episode(self.episode_type)
-
+        # print(f'timestep {self.timestep}')
         self.timestep +=1
+
         return state, reward, done, info
         
     def disconnect(self):
@@ -329,14 +346,17 @@ class MultiprocessGymWrapper(gym.Env):
         """
         angle_keys = ["finger0_segment0_joint","finger0_segment1_joint","finger1_segment0_joint","finger1_segment1_joint"]
         state = []
-        #print('state list', self.state_list)
+        #print('state list!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!', self.state_list)
         if self.PREV_VALS > 0:
             for i in range(self.PREV_VALS):
                 for key in self.state_list:
+                    #Changed This to x,y,z from x,y
                     if key == 'op':
-                        state.extend(state_container['previous_state'][i]['obj_2']['pose'][0][0:2])
+                        state.extend(state_container['previous_state'][i]['obj_2']['pose'][0][0:3])
                     elif key == 'oo':
                         state.extend(state_container['previous_state'][i]['obj_2']['pose'][1])
+                    elif key == 'coo':
+                        state.extend(state_container['previous_state'][i]['corrected_orientation'])
                     elif key == 'oa':
                         state.extend([np.sin(state_container['previous_state'][i]['obj_2']['z_angle']),np.cos(state_container['previous_state'][i]['obj_2']['z_angle'])])
                     elif key == 'ftp':
@@ -377,24 +397,14 @@ class MultiprocessGymWrapper(gym.Env):
                     elif key == 'slice':
                         pass
                         # state.extend(state_container['previous_state'][i]['slice'].flatten())
+                    elif key == 'rslice':
+                        pass
                     elif key == 'mslice':
-                        shape = state_container['previous_state'][i]['slice']
-                        x, y = state_container['previous_state'][i]['obj_2']['pose'][0][0:2]
-                        a, b, c, w = state_container['previous_state'][i]['obj_2']['pose'][1]
-
-                        theta = np.arctan2(2 * (w * c + a * b), 1 - 2 * (b**2 + c**2))
-
-                        rotation_matrix = np.array([
-                            [np.cos(theta), -np.sin(theta)],
-                            [np.sin(theta), np.cos(theta)]
-                        ])
-
-                        shape = shape @ rotation_matrix.T
-                        shape[:, 0] += x
-                        shape[:, 1] += y
-                        state.extend(shape.flatten())                      
-
-
+                        state.extend(state_container['previous_state'][i]['dynamic'].flatten())
+                    elif key == 'mat_comp':
+                        state.extend(state_container['previous_state'][i]['mat_comp'])
+                    elif key == 'latent':
+                        state.extend(state_container['previous_state'][i]['latent'].tolist()[0])
                     elif key == 'rad':
                         state.append(state_container['previous_state'][i]['f1_contact_distance'])
                         state.append(state_container['previous_state'][i]['f2_contact_distance'])
@@ -407,8 +417,9 @@ class MultiprocessGymWrapper(gym.Env):
                         raise Exception('key does not match list of known keys')
 
         for key in self.state_list:
+            # changed to x,y,z from x,y
             if key == 'op':
-                state.extend(state_container['obj_2']['pose'][0][0:2])
+                state.extend(state_container['obj_2']['pose'][0][0:3])
             elif key == 'oo':
                 state.extend(state_container['obj_2']['pose'][1])
             elif key == 'oa':
@@ -440,7 +451,7 @@ class MultiprocessGymWrapper(gym.Env):
                 state.extend(state_container['hand_params'])
             elif key == 'gp':
                 state.extend(state_container['goal_pose']['goal_position'])
-                # print(state)
+                # print(state_container['goal_pose']['goal_position'])
             elif key == 'go':
                 state.append(state_container['goal_pose']['goal_orientation'])
             elif key == 'gf':
@@ -451,23 +462,18 @@ class MultiprocessGymWrapper(gym.Env):
                 
             # What Jeremiah Added
             elif key == 'slice':
+                    # print(state_container)
                     state.extend(state_container['slice'].flatten())
             elif key == 'mslice':
-                shape = state_container['slice']
-                x,y = state_container['obj_2']['pose'][0][0:2]
-                a,b,c,w = state_container['obj_2']['pose'][1]
-                theta = np.arctan2(2 * (w * c + a * b), 1 - 2 * (b**2 + c**2))
-
-                rotation_matrix = np.array([
-                    [np.cos(theta), -np.sin(theta)],
-                    [np.sin(theta), np.cos(theta)]
-                ])  
-
-                shape = shape @ rotation_matrix.T
-                shape[:, 0] += x
-                shape[:, 1] += y
-                state.extend(shape.flatten())
-
+                state.extend(state_container['dynamic'].flatten())
+            elif key == 'mat_comp':
+                    state.extend(state_container['mat_comp'])
+            elif key == 'latent':
+                state.extend(state_container['latent'].tolist()[0])
+            elif key == 'coo':
+                state.extend(state_container['corrected_orientation'])
+            elif key == 'rslice':
+                state.extend(state_container['rotated_static'].flatten())
             elif key == 'rad':
                 state.append(state_container['f1_contact_distance'])
                 state.append(state_container['f2_contact_distance'])
@@ -479,7 +485,8 @@ class MultiprocessGymWrapper(gym.Env):
 
             else:
                 raise Exception('key does not match list of known keys')
-            
+        #print('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!', 'Cor_ori ',state_container['corrected_orientation'], 'Ori', state_container['obj_2']['pose'][1])
+        #print('state list!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!', state)
         return state
     
     def build_mirror_state(self, state_container: State):
@@ -552,6 +559,7 @@ class MultiprocessGymWrapper(gym.Env):
                 state.extend([-temp[0],temp[1]])
             else:
                 raise Exception('key does not match list of known keys')
+
         return state
     
     def render(self):
@@ -561,7 +569,7 @@ class MultiprocessGymWrapper(gym.Env):
         self.p.disconnect()
         
     def evaluate(self, ht=None):
-        # print('EVALUATE TRIGGERED')
+        # print('EVALUATE TRIGGERED ', self.env.obj.path)
         self.eval = True
         self.eval_run = 0
         self.manipulation_phase.state.evaluate()
@@ -571,8 +579,13 @@ class MultiprocessGymWrapper(gym.Env):
         self.record.clear()
         self.episode_type = 'test'
         self.hand_type = ht
-        
+        self.record.set_folder('Test')
+
+    def set_record_folder(self,folder,top_folder = None):
+        self.record.set_folder(folder, top_folder)
+
     def train(self):
+        # print('Train TRIGGERED ', self.env.obj.path)
         self.eval = False
         self.manipulation_phase.eval = False
         self.manipulation_phase.state.train()
@@ -580,6 +593,7 @@ class MultiprocessGymWrapper(gym.Env):
         self.reset()
         self.episode_type = 'train'
         self.hand_type = None
+        self.record.set_folder('Train')
 
     def set_goal(self,goal):
         self.env.set_goal(goal)

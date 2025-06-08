@@ -5,7 +5,7 @@ import numpy as np
 import time
 import os
 import pybullet_data
-
+from scipy.spatial.transform import Rotation as R
 
 class MultiprocessSingleShapeEnv(Environment):
     def __init__(self,pybulletInstance, hand: TwoFingerGripper, obj: ObjectBase, hand_type , args=None, finger_points=None):
@@ -168,97 +168,82 @@ class MultiprocessSingleShapeEnv(Environment):
                 temp = self.p.loadURDF("sphere_1cm.urdf", basePosition=i, baseOrientation=[0, 0, 0, 1], globalScaling=0.25)
                 self.p.changeVisualShape(temp,-1,rgbaColor=[0.6,0.6,1,1])
         else:
-            temp=self.p.loadURDF("cube.urdf", basePosition=thing, baseOrientation=[0, 0, 0, 1], globalScaling=0.005)
-            self.p.changeVisualShape(temp,-1,rgbaColor=[0.6,0,0,1])
+            temp=self.p.loadURDF("sphere_1cm.urdf", basePosition=thing, baseOrientation=[0, 0, 0, 1], globalScaling=0.5)
+            self.p.changeVisualShape(temp,-1,rgbaColor=[1,0,0,1])
+            return temp
+        
+    def remove_viz_point(self,point):
+        self.p.removeBody(point)
 
 
-    def reset(self, start_pos=None,finger=None,fingerys=None):
+    def reset(self, obj_dict=None,finger_dict=None):
         # reset the simulator
         # self.p.resetSimulation()
-
+        # print('Reset just got called')
         # self.p.setPhysicsEngineParameter(enableFileCaching=1)
 
-        if start_pos is not None:
-            
-            obj_change = start_pos
+        # Goal of this redesign is to shift all the randomization to outside of this function
+        # this should accept object pos and finger pos and run from there
+        # takes two dictionaries. object_pos {'translation':[x,y], 'rotation':theta}
+        # finger_pos {'joint_angles':[t1,t2,t3,t4]} OR {'finger_y':[f1y,f2y]}
+        # print('entering reset function', obj_dict, finger_dict)
+        self.p.resetJointState(self.hand.id, 0, self.hand.starting_angles[0])
+        self.p.resetJointState(self.hand.id, 1, self.hand.starting_angles[1])
+        self.p.resetJointState(self.hand.id, 3, self.hand.starting_angles[2])
+        self.p.resetJointState(self.hand.id, 4, self.hand.starting_angles[3])
+        if obj_dict is not None:
+            obj_xy = obj_dict['translation']
+            obj_theta = obj_dict['rotation']
         else:
-            # print('start pos was none')
-            #no noise
-            obj_change = np.array([0,0])
-        # print('starting object pose', obj_change)#, self.obj.path)
-
-
+            obj_xy = np.array([0,0])
+            obj_theta = 0
+        if finger_dict is None:
+            link1_pose = self.p.getLinkState(self.hand_id, 2)[0]
+            link2_pose = self.p.getLinkState(self.hand_id, 5)[0]
+            f1_pos = [link1_pose[0]+obj_xy[0], link1_pose[1] + obj_xy[1], 0.05]
+            f2_pos = [link2_pose[0]+obj_xy[0], link2_pose[1] + obj_xy[1], 0.05]
+            f1_angs = self.p.calculateInverseKinematics(self.hand_id, 2, f1_pos, maxNumIterations=3000)
+            f2_angs = self.p.calculateInverseKinematics(self.hand_id, 5, f2_pos, maxNumIterations=3000)
+            angles = [f1_angs[0],f1_angs[1],f2_angs[2],f2_angs[3]]
+            # print('anglessssss')
+        elif 'joint_angles' in finger_dict.keys():
+            angles = finger_dict['joint_angles']
+        elif 'finger_y' in finger_dict.keys():
+            link1_pose = self.p.getLinkState(self.hand_id, 2)[0]
+            link2_pose = self.p.getLinkState(self.hand_id, 5)[0]
+            # print('all relevant things', link1_pose, obj_change,y_change)
+            f1_pos = [link1_pose[0]+obj_xy[0], link1_pose[1] + obj_xy[1] + finger_dict['finger_y'][0], 0.05]
+            f2_pos = [link2_pose[0]+obj_xy[0], link2_pose[1] + obj_xy[1] + finger_dict['finger_y'][1], 0.05]
+            f1_angs = self.p.calculateInverseKinematics(self.hand_id, 2, f1_pos, maxNumIterations=3000)
+            f2_angs = self.p.calculateInverseKinematics(self.hand_id, 5, f2_pos, maxNumIterations=3000)
+            angles = [f1_angs[0],f1_angs[1],f2_angs[2],f2_angs[3]]
+        obj_quat = R.from_euler('xyz',[0,0,obj_theta]).as_quat()
         self.p.resetJointState(self.hand.id, 0, self.hand.starting_angles[0])
         self.p.resetJointState(self.hand.id, 1, self.hand.starting_angles[1])
         self.p.resetJointState(self.hand.id, 3, self.hand.starting_angles[2])
         self.p.resetJointState(self.hand.id, 4, self.hand.starting_angles[3])
         
         # print('starting angs', self.hand.starting_angles)
-        self.p.resetBasePositionAndOrientation(self.obj_id, posObj=[0.0+obj_change[0], 0.10+obj_change[1], .05], ornObj=[0,0,0,1])
+        self.p.resetBasePositionAndOrientation(self.obj_id, posObj=[0.0+obj_xy[0], 0.10+obj_xy[1], .05], ornObj=obj_quat)
         self.p.resetBaseVelocity(self.obj_id, [0,0,0], [0,0,0])
 
-        if fingerys is None:
-            y_change = np.random.uniform(-0.0,0.0,2) * self.rand_finger_position
-            # print(y_change)
-        else:
-            
-            y_change = np.array(fingerys)* self.rand_finger_position
-            # input(y_change)
-        
-        if finger is not None:
-            # print('in the first')
-            self.p.resetJointState(self.hand_id, 0, -np.pi/2)
-            self.p.resetJointState(self.hand_id, 1, np.pi/4)
-            self.p.resetJointState(self.hand_id, 3, np.pi/2)
-            self.p.resetJointState(self.hand_id, 4, -np.pi/4)
-            positions = np.linspace([-np.pi/2,np.pi/4,np.pi/2,-np.pi/4],[finger[0],finger[1],finger[2],finger[3]],20)
-            real_positions = np.ones((30,4))
-            real_positions[0:20,:] = positions
-            real_positions[20:,:] = finger
-            for action_to_execute in real_positions:
-                self.p.setJointMotorControlArray(self.hand_id, jointIndices=self.hand.get_joint_numbers(),
-                                            controlMode=self.p.POSITION_CONTROL, targetPositions=action_to_execute,
-                                            positionGains=[0.8,0.8,0.8,0.8], forces=[0.4,0.4,0.4,0.4])
-                self.step()
-            
-        elif self.rand_finger_all_open and (np.random.rand() < self.finger_open_fraction):
-            # print(' in the second')
-            self.p.resetJointState(self.hand_id, 0, -np.pi/2)
-            self.p.resetJointState(self.hand_id, 1, np.pi/4)
-            self.p.resetJointState(self.hand_id, 3, np.pi/2)
-            self.p.resetJointState(self.hand_id, 4, -np.pi/4)
-        else:
-            # print('in the else')
-            # input('paus')
-            link1_pose = self.p.getLinkState(self.hand_id, 2)[0]
-            link2_pose = self.p.getLinkState(self.hand_id, 5)[0]
-            # print('all relevant things', link1_pose, obj_change,y_change)
-            f1_pos = [link1_pose[0]+obj_change[0], link1_pose[1] + obj_change[1] + y_change[0], 0.05]
-            f2_pos = [link2_pose[0]+obj_change[0], link2_pose[1] + obj_change[1] + y_change[1], 0.05]
-            f1_angs = self.p.calculateInverseKinematics(self.hand_id, 2, f1_pos, maxNumIterations=3000)
-            f2_angs = self.p.calculateInverseKinematics(self.hand_id, 5, f2_pos, maxNumIterations=3000)
-            self.p.resetJointState(self.hand_id, 0, -np.pi/2)
-            self.p.resetJointState(self.hand_id, 1, np.pi/4)
-            self.p.resetJointState(self.hand_id, 3, np.pi/2)
-            self.p.resetJointState(self.hand_id, 4, -np.pi/4)
-            
-            positions = np.linspace([-np.pi/2,np.pi/4,np.pi/2,-np.pi/4],[f1_angs[0],f1_angs[1],f2_angs[2],f2_angs[3]],20)
-            real_positions = np.ones((30,4))
-            real_positions[0:20,:] = positions
-            real_positions[20:,:]=[f1_angs[0],f1_angs[1],f2_angs[2],f2_angs[3]]
-            for action_to_execute in real_positions:
-                self.p.setJointMotorControlArray(self.hand_id, jointIndices=self.hand.get_joint_numbers(),
-                                            controlMode=self.p.POSITION_CONTROL, targetPositions=action_to_execute,
-                                            positionGains=[0.8,0.8,0.8,0.8], forces=[0.4,0.4,0.4,0.4])
-                self.step()
-        # print('fingertip distance')
-        # f1_dist = self.p.getClosestPoints(self.obj.id, self.hand.id, 10, -1, 1, -1)
-        # print('Joint angles', np.round([f1_angs[0],f1_angs[1],f2_angs[2],f2_angs[3]],2))
-        # time.sleep(3)
-        # f2_dist = self.p.getClosestPoints(self.obj.id, self.hand.id, 10, -1, 4, -1)
-        # print(f1_dist[0][8],f2_dist[0][8])
-            # thing = self.p.getBaseVelocity(self.obj_id)
-            # print('object position',obj_change, f1_pos, f2_pos)
+        # print('in the first')
+        self.p.resetJointState(self.hand_id, 0, -np.pi/2)
+        self.p.resetJointState(self.hand_id, 1, np.pi/4)
+        self.p.resetJointState(self.hand_id, 3, np.pi/2)
+        self.p.resetJointState(self.hand_id, 4, -np.pi/4)
+        positions = np.linspace([-np.pi/2,np.pi/4,np.pi/2,-np.pi/4],[angles[0],angles[1],angles[2],angles[3]],20)
+        real_positions = np.ones((30,4))
+        real_positions[0:20,:] = positions
+        real_positions[20:,:] = angles
+        for action_to_execute in real_positions:
+            self.p.setJointMotorControlArray(self.hand_id, jointIndices=self.hand.get_joint_numbers(),
+                                        controlMode=self.p.POSITION_CONTROL, targetPositions=action_to_execute,
+                                        positionGains=[0.8,0.8,0.8,0.8], forces=[0.4,0.4,0.4,0.4])
+            self.step()
+            # print('stepping in reset')
+            # time.sleep(0.1)
+
     def apply_domain_randomization(self, finger_friction, floor_friction, object_mass):
         # print('dr terms',finger_friction, floor_friction, object_mass)
         if object_mass:
@@ -305,7 +290,10 @@ class MultiprocessSingleShapeEnv(Environment):
         self.p.changeDynamics(hand_id, 3, jointLowerLimit=-1.57, jointUpperLimit=1.57, mass=mass_link)
         self.p.changeDynamics(hand_id, 4, jointLowerLimit=-2.09, jointUpperLimit=0, mass=mass_link, contactStiffness=10, contactDamping=0.1)
         
-        obj_id = self.p.loadURDF(self.obj.path, basePosition=[object_pos[0], object_pos[1], .05], useMaximalCoordinates=True,
+        noisex = np.random.normal(0, 0.0015, 2)
+        noisey = np.random.normal(0, 0.0015, 2)
+
+        obj_id = self.p.loadURDF(self.obj.path, basePosition=[object_pos[0] + noisex, object_pos[1] + noisey, .05], useMaximalCoordinates=True,
                         flags=self.p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
         # obj_id = self.p.loadSoftBody("/home/ubuntu/Mojograsp/mojo-grasp/demos/rl_demo/resources/object_models/Jeremiah_Shapes/Shapes/torus.obj",
         #                                   scale = 0.1,
@@ -355,8 +343,6 @@ class MultiprocessSingleShapeEnv(Environment):
     def set_obj_pose(self,pose):
         current_obj_pose = self.p.getBasePositionAndOrientation(self.obj_id)
         self.p.resetBasePositionAndOrientation(self.obj_id, posObj=[pose[0][0],pose[0][1],current_obj_pose[0][2]], ornObj=pose[1])
-
-
 
 class MultiprocessMazeEnv(MultiprocessSingleShapeEnv):
     def __init__(self, pybulletInstance, hand: TwoFingerGripper, obj: ObjectBase, wall: ObjectBase, goal_block, hand_type, args=None, finger_points=None):

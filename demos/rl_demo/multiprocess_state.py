@@ -13,8 +13,16 @@ from mojograsp.simobjects.two_finger_gripper import TwoFingerGripper
 from mojograsp.simcore.goal_holder import *
 # from point_generator import slice_obj_at_y_level, calculate_outer_perimeter, find_intersection_points
 from mojograsp.simcore.image_maker import ImageGenerator
-# import demos.rl_demo.point_generator as pg
-        
+import demos.rl_demo.point_generator as pg
+import torch
+import torch.nn as nn
+import pandas as pd
+from sklearn.preprocessing import MinMaxScaler
+from demos.rl_demo.autoencoder import Autoencoder, load_trained_model
+import pickle as pkl
+from scipy.spatial.transform import Rotation as R
+import os
+
 class DictHolder():
     def __init__(self,list_size):
         self.data = []
@@ -53,10 +61,21 @@ class MultiprocessState(StateDefault):
         """
         super().__init__()
         self.p = pybullet_instance
+        dirname, filename = os.path.split(os.path.abspath(__file__))
+        # print(dirname)
+        self.encoder = load_trained_model(dirname+'/test_best_autoencoder_16.pth',72,16,72)
+        self.encoder.eval()
+        with open(dirname+"/test_input_scaler.pkl", "rb") as f:
+            self.loaded_scaler = pkl.load(f)
+        with open(dirname+"/test_output_scaler.pkl", "rb") as f:
+            self.output_scaler = pkl.load(f)
         self.objects = objects 
         obj_path = self.objects[1].get_path()
+        self.ori_corrector = [0,0,0,0]
         #print('OBJ PATH', obj_path)
-        # self.slice = pg.get_slice(obj_path)
+        self.slice = pg.get_slice(obj_path)
+        self.rotated_static = self.slice
+        #print(len(self.slice))
         for object in self.objects:
             if type(object) == TwoFingerGripper:
                 temp = object.link_lengths
@@ -94,7 +113,14 @@ class MultiprocessState(StateDefault):
                 fingerys = thing.next_run()
                 temp = thing.get_data()
         return temp, fingerys
-        
+    
+    def get_run_start(self):
+        for thing in self.objects:
+            if (type(thing) == GoalHolder) | (type(thing) == RandomGoalHolder) | (type(thing) == SingleGoalHolder)|(type(thing) == HRLGoalHolder)|(type(thing) == HRLMultigoalHolder) |(type(thing) == HRLMultigoalFixed)| (type(thing) == HRLMultigoalFixedPaired):
+                fingerys = thing.get_finger_start()
+                temp = thing.get_data()
+        return temp, fingerys
+    
     def reset(self):
         self.run_num = 0
         for thing in self.objects:
@@ -114,7 +140,6 @@ class MultiprocessState(StateDefault):
         if angle > np.pi:
             angle = angle - 2*np.pi
         return angle
-
 
     def calc_contact_angle(self):
         obj_angle = self.current_state['obj_2']['pose'][1][2] + np.pi/2 #Get yaw
@@ -137,6 +162,86 @@ class MultiprocessState(StateDefault):
             f2 = 1
         else : f2 = 0
         return f1,f2
+
+    def get_dynamic(self, shape, pose, orientation):
+        """
+        Computes the dynamic state of the object by applying a quaternion rotation 
+        and translation to the input shape.
+        """
+        shape = np.hstack((shape, np.full((shape.shape[0], 1), 0.0)))
+
+        x, y, z = pose
+        quaternion = np.array(orientation)
+
+        rotation_matrix = R.from_quat(quaternion).as_matrix()
+
+        shape = shape @ rotation_matrix.T
+
+        shape[:, 0] += x
+        shape[:, 1] += y
+        shape[:, 2] += z
+
+        return shape, rotation_matrix[:2, :].flatten().tolist()
+    
+    def decode_latent(self, model, latent_vector, output_scaler):
+        """
+        Decodes a given latent space representation and scales the output back to its original scale.
+        
+        Parameters:
+        - model: The trained autoencoder model
+        - latent_vector: A tensor or numpy array representing the latent space input
+        - output_scaler: Scaler used to inverse transform the output back to original scale
+        - output_dim: Number of output dimensions (static representation size)
+        
+        Returns:
+        - A tuple containing:
+            - A list of 3 elements
+            - A list of 4 elements
+            - A list of 24 (x, y) coordinate pairs
+        """
+        # Ensure the input is a PyTorch tensor
+        if not isinstance(latent_vector, torch.Tensor):
+            latent_vector = torch.tensor(latent_vector, dtype=torch.float32)
+        
+        # Ensure correct shape (batch size of 1)
+        if latent_vector.dim() == 1:
+            latent_vector = latent_vector.unsqueeze(0)  # Shape: (1, latent_dim)
+        
+        # Decode the latent vector
+        with torch.no_grad():
+            reconstruction = model.decode(latent_vector)  # shape: (1, output_dim)
+        
+        # Convert to numpy and inverse transform
+        reconstruction_np = reconstruction.cpu().numpy()
+        reconstruction_unscaled = output_scaler.inverse_transform(reconstruction_np)[0]
+        
+        # Reshape the output into the required tuple format
+        part_1 = reconstruction_unscaled[:3].tolist()  # 3 elements
+        part_2 = reconstruction_unscaled[3:7].tolist()  # 4 elements
+        part_3 = reconstruction_unscaled[7:].reshape(-1, 2).tolist()  # 24 (x, y) pairs
+        
+        return (part_1, part_2, part_3)
+    
+    def correct_ori(self, corrector, current_orientation):
+        """
+        Corrects the orientation of the object based on the given corrector and current orientation.
+        
+        Parameters:
+        - corrector: The corrector quaternion
+        - current_orientation: The current orientation quaternion
+        
+        Returns:
+        - A list containing the corrected orientation
+        """
+        # Convert to numpy arrays
+        corrector = np.array(corrector)
+        current_orientation = np.array(current_orientation)
+        
+        # Perform quaternion multiplication
+        corrected_orientation = R.from_quat(corrector) * R.from_quat(current_orientation)
+        
+        # Return the corrected orientation as a list
+        return corrected_orientation.as_quat().tolist()
 
 
     def set_state(self):
@@ -172,26 +277,25 @@ class MultiprocessState(StateDefault):
         self.current_state['hand_params'] = self.hand_params.copy()
         # if self.pflag:
         #     self.state_holder.append(self.current_state.copy())
-        #What Jeremiah Is Adding
-        # self.current_state['slice'] = [0.01948, 0.0, 0.018735, 0.00502, 0.016798, 0.009698, 0.013775, 0.013774, 0.009698, 0.016798, 0.00502,
-        #                                 0.018735, 0.0, 0.01948, -0.00502, 0.018735, -0.009698, 0.016798, -0.013774, 0.013775, -0.016798, 
-        #                                 0.009698, -0.018735, 0.00502, -0.01948, 0.0, -0.018735, -0.00502, -0.016798, -0.009698, -0.013775, 
-        #                                 -0.013774, -0.009698, -0.016798, -0.00502, -0.018735, 0.0, -0.01948, 0.00502, -0.018735, 0.009698, 
-        #                                 -0.016798, 0.013774, -0.013775, 0.016798, -0.009698, 0.018735, -0.00502]
+        
         if 'upper_goal_position' in self.current_state['goal_pose'].keys():
             unreached_goals = [[self.current_state['goal_pose']['upper_goal_position'][2*i],self.current_state['goal_pose']['upper_goal_position'][i*2+1]] for i,v in enumerate(self.current_state['goal_pose']['goals_open']) if v]
             self.current_state['image'] = self.image_gen.draw_stamp(self.current_state['obj_2']['pose'],
                                                                 unreached_goals)
-        # self.current_state['slice'] = self.slice
+        #What Jeremiah Is Adding
+        self.current_state['slice'] = self.slice
+        self.current_state['dynamic'], self.current_state['mat_comp'] = self.get_dynamic(self.slice,self.current_state['obj_2']['pose'][0][0:3],self.current_state['obj_2']['pose'][1])
+        dynamic_np = np.array(self.current_state['dynamic'].flatten()).reshape(1, -1)
+        normalized_np = self.loaded_scaler.transform(dynamic_np)
+        normalized_state = torch.tensor(normalized_np, dtype=torch.float32).reshape(1, -1)
+        encoder_state, _ = self.encoder(normalized_state)
+        self.current_state['latent'] = encoder_state.detach().numpy()
 
-        #self.current_state['f1_contact_distance'] = self.calc_distance(self.current_state['f1_contact_pos'],self.current_state['obj_2']['pose'][0][0:2])
-        #self.current_state['f2_contact_distance'] = self.calc_distance(self.current_state['f2_contact_pos'],self.current_state['obj_2']['pose'][0][0:2])
-        #self.current_state['f1_contact_flag'], self.current_state['f2_contact_flag'] = self.check_contact() 
-        #self.current_state['f1_contact_angle'], self.current_state['f2_contact_angle'] = self.calc_contact_angle()
-
-        # print('object pose', self.current_state['obj_2']['pose'][0][0:2])
-        # print('sim state', self.current_state['two_finger_gripper']['joint_angles'])
-        # print('joint state', self.p.getJointState(self.objects[0].id,0))
+        #ADDED April 19th
+        self.current_state['corrected_orientation'] = self.correct_ori(self.ori_corrector,self.current_state['obj_2']['pose'][1])
+        self.current_state['rotated_static'] = self.rotated_static
+        #print(np.mean(self.current_state['latent']))
+        #self.current_state['remade'] = self.decode_latent(self.encoder, self.current_state['latent'], self.output_scaler)
         
     def init_state(self):
         """
@@ -216,24 +320,28 @@ class MultiprocessState(StateDefault):
         #self.current_state['f2_contact_pos'] = list(temp2[6])
         self.current_state['hand_params'] = self.hand_params.copy()
         #What Jeremiah Is Adding
-        # self.current_state['slice'] = [0.03896, 0.0, 0.037471, 0.01004, 0.033596, 0.019396, 0.027549, 0.027549, 0.019396, 0.033596, 0.01004, 
-        #                                0.037471, 0.0, 0.03896, -0.01004, 0.037471, -0.019396, 0.033596, -0.027549, 0.027549, -0.033596, 0.019396,
-        #                                -0.037471, 0.01004, -0.03896, 0.0, -0.037471, -0.01004, -0.033596, -0.019396, -0.027549, -0.027549, 
-        #                                -0.019396, -0.033596, -0.01004, -0.037471, 0.0, -0.03896, 0.01004, -0.037471, 0.019396, -0.033596, 
-        #                                0.027549, -0.027549, 0.033596, -0.019396, 0.037471, -0.01004]
         if 'upper_goal_position' in self.current_state['goal_pose'].keys():
             unreached_goals = [[self.current_state['goal_pose']['upper_goal_position'][2*i],self.current_state['goal_pose']['upper_goal_position'][i*2+1]] for i,v in enumerate(self.current_state['goal_pose']['goals_open']) if v]
 
             self.current_state['image'] = self.image_gen.draw_stamp(self.current_state['obj_2']['pose'],
                                                                     unreached_goals)
-        # self.current_state['slice'] = self.slice
-        # self.current_state['f1_contact_distance'] = self.calc_distance(self.current_state['f1_contact_pos'], self.current_state['obj_2']['pose'][0][0:2])
-        # self.current_state['f2_contact_distance'] = self.calc_distance(self.current_state['f2_contact_pos'], self.current_state['obj_2']['pose'][0][0:2]) 
-        # self.current_state['f1_contact_angle'], self.current_state['f2_contact_angle'] = self.calc_contact_angle()
-        # self.current_state['f1_contact_flag'], self.current_state['f2_contact_flag'] = self.check_contact()
+        self.current_state['slice'] = self.slice
 
-        # print('LENGTH OF CURRENT STATE')
-        # print(len(self.current_state))
+        self.current_state['dynamic'], self.current_state['mat_comp'] = self.get_dynamic(self.slice,self.current_state['obj_2']['pose'][0][0:3],self.current_state['obj_2']['pose'][1])
+
+        dynamic_np = np.array(self.current_state['dynamic'].flatten()).reshape(1, -1)
+        normalized_np = self.loaded_scaler.transform(dynamic_np)
+        normalized_state = torch.tensor(normalized_np, dtype=torch.float32).reshape(1, -1)
+        encoder_state, _ = self.encoder(normalized_state)
+        self.current_state['latent'] = encoder_state.detach().numpy()
+        #ADDED April 19th
+        self.ori_corrector = self.current_state['obj_2']['pose'][1]
+        self.current_state['corrected_orientation'] = self.correct_ori(self.ori_corrector,self.current_state['obj_2']['pose'][1])
+        temp_shape = self.current_state['dynamic'].reshape(24,3)
+        self.rotated_static = temp_shape[:,:2]
+        self.current_state['rotated_static'] = self.rotated_static
+        ##################
+        #self.current_state['remade'] = self.decode_latent(self.encoder, self.current_state['latent'], self.output_scaler)
 
         if self.pflag:
             for i in range(len(self.previous_states)):
